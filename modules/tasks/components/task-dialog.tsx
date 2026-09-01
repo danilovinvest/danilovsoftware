@@ -15,7 +15,7 @@ import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
 import { errorMessage } from "@/shared/api/errors";
 import * as api from "../lib/api";
 import { TASK_STATUS, toOptions } from "../lib/labels";
-import type { Task, TaskPayload, TaskStatus, TaskTargetPayload } from "../lib/types";
+import type { Colleague, Task, TaskPayload, TaskStatus, TaskTargetPayload } from "../lib/types";
 
 /**
  * <input type="datetime-local"> attend une heure locale sans fuseau ; l'API
@@ -43,16 +43,22 @@ export function TaskDialog({
   onSaved,
   /** Cible imposée : la tâche créée depuis une fiche y est rattachée d'office. */
   defaultTarget,
+  /** Colonne d'origine quand on crée depuis le tableau. */
+  initialStatus,
+  colleagues = [],
 }: {
   task: Task | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSaved: () => void;
   defaultTarget?: TaskTargetPayload;
+  initialStatus?: TaskStatus;
+  colleagues?: Colleague[];
 }) {
   const [title, setTitle] = useState(task?.title ?? "");
   const [body, setBody] = useState(task?.body ?? "");
-  const [status, setStatus] = useState<TaskStatus>(task?.status ?? "a_faire");
+  const [status, setStatus] = useState<TaskStatus>(task?.status ?? initialStatus ?? "a_faire");
+  const [assigneeId, setAssigneeId] = useState(task?.assignee_id ?? "");
   const [dueLocal, setDueLocal] = useState(toLocalInput(task?.due_at ?? null));
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string>>({});
@@ -77,7 +83,7 @@ export function TaskDialog({
       body,
       status,
       due_at: toIso(dueLocal),
-      assignee_id: task?.assignee_id ?? null,
+      assignee_id: assigneeId || null,
       targets,
     };
 
@@ -137,6 +143,19 @@ export function TaskDialog({
             type="datetime-local"
             value={dueLocal}
             onChange={(event) => setDueLocal(event.target.value)}
+          />
+          <SelectField
+            label="Assignée à"
+            wrapperClassName="sm:col-span-2"
+            placeholder="Personne"
+            emptyLabel="Personne"
+            options={colleagues.map((c) => ({
+              value: c.id,
+              label: c.name || "Sans nom",
+            }))}
+            value={assigneeId}
+            error={fields.assignee_id}
+            onValueChange={setAssigneeId}
           />
           <TextAreaField
             label="Détails"

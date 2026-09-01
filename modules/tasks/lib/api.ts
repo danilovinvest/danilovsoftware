@@ -1,5 +1,12 @@
 import { apiFetch, type Paginated } from "@/shared/api/client";
-import type { Task, TaskFilters, TaskPayload, TaskStats, TaskStatus } from "./types";
+import type {
+  Colleague,
+  Task,
+  TaskFilters,
+  TaskPayload,
+  TaskStats,
+  TaskStatus,
+} from "./types";
 
 export function listTasks(filters: TaskFilters, signal?: AbortSignal) {
   return apiFetch<Paginated<Task>>("/v1/tasks", {
@@ -42,4 +49,27 @@ export function setTaskStatus(id: string, status: TaskStatus) {
 
 export function deleteTask(id: string) {
   return apiFetch<void>(`/v1/tasks/${id}`, { method: "DELETE" });
+}
+
+/**
+ * Déplace une carte : colonne et rang. Le rang est calculé par l'appelant
+ * entre les deux voisines de destination — voir positionBetween.
+ */
+export function moveTask(id: string, status: TaskStatus, position: number) {
+  return apiFetch<Task>(`/v1/tasks/${id}/move`, {
+    method: "PATCH",
+    body: { status, position },
+  });
+}
+
+export function setTaskAssignee(id: string, assigneeId: string | null) {
+  return apiFetch<Task>(`/v1/tasks/${id}/assignee`, {
+    method: "PATCH",
+    body: { assignee_id: assigneeId },
+  });
+}
+
+/** Annuaire des collègues assignables, accessible à tout compte connecté. */
+export function listColleagues(signal?: AbortSignal) {
+  return apiFetch<{ items: Colleague[] }>("/v1/directory/users", { signal });
 }

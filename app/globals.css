@@ -3,12 +3,13 @@
 @import "shadcn/tailwind.css";
 
 /*
- * Le CRM est volontairement en thème clair uniquement.
+ * Le thème est piloté par une classe, jamais par le média.
  *
- * Les composants shadcn embarquent des classes `dark:` ; redéfinir la variante
- * pour qu'elle ne s'applique que sous un ancêtre `.dark` (qui n'existe nulle
- * part) les neutralise. Sans cette ligne, Tailwind v4 les rattacherait à
- * `prefers-color-scheme` et l'interface virerait au sombre selon l'OS du poste.
+ * `PreferencesProvider` résout le choix de l'utilisateur — clair, sombre ou
+ * « système » — et pose `.dark` sur <html>. Rattacher la variante à cette
+ * classe plutôt qu'à `prefers-color-scheme` (le défaut de Tailwind v4) est ce
+ * qui rend le réglage possible : sinon l'OS du poste imposerait le thème et le
+ * sélecteur des réglages n'aurait aucune prise.
  */
 @custom-variant dark (&:is(.dark *));
 
@@ -103,6 +104,107 @@
       --t-orange-3: color(display-p3 0.989 0.938 0.85);
       --t-orange-9: color(display-p3 0.9 0.45 0.2);
       --t-orange-11: color(display-p3 0.76 0.34 0);
+
+      --t-purple-9: color(display-p3 0.523 0.318 0.751);
+      --t-turquoise-9: color(display-p3 0.297 0.637 0.581);
+    }
+  }
+}
+
+/*
+ * ---------------------------------------------------------------------------
+ * Échelle sombre — THEME_DARK de Twenty.
+ * ---------------------------------------------------------------------------
+ *
+ * Seule l'échelle `--t-*` est redéfinie : la couche sémantique plus bas ne
+ * bouge pas d'une ligne. C'est voulu, et c'est la propriété qui rend le thème
+ * bon marché — chez Twenty le sombre n'est pas un autre habillage, c'est la
+ * même grammaire sur une rampe inversée. `background.primary` reste `gray1`,
+ * `font.color.primary` reste `gray12` ; seul leur contenu change de bout.
+ */
+.dark {
+  color-scheme: dark;
+
+  /* Twenty — GRAY_SCALE_DARK */
+  --t-gray-1: #171717;
+  --t-gray-2: #1b1b1b;
+  --t-gray-3: #191919;
+  --t-gray-4: #1d1d1d;
+  --t-gray-5: #222222;
+  --t-gray-6: #484848;
+  --t-gray-7: #4c4c4c;
+  --t-gray-8: #666666;
+  --t-gray-9: #818181;
+  --t-gray-10: #7b7b7b;
+  --t-gray-11: #b3b3b3;
+  --t-gray-12: #ebebeb;
+
+  /* Radix indigo dark */
+  --t-blue-2: #141726;
+  --t-blue-3: #182449;
+  --t-blue-5: #253974;
+  --t-blue-7: #3a4f97;
+  --t-blue-8: #435db1;
+  --t-blue-9: #3e63dd;
+  --t-blue-11: #9eb1ff;
+
+  --t-green-3: #132d21;
+  --t-green-9: #30a46c;
+  --t-green-11: #3dd68c;
+
+  --t-red-3: #3b1219;
+  --t-red-5: #611623;
+  --t-red-9: #e5484d;
+  --t-red-11: #ff9592;
+
+  --t-orange-3: #331e0b;
+  --t-orange-9: #f76b15;
+  --t-orange-11: #ffa057;
+
+  --t-purple-9: #8e4ec6;
+  --t-turquoise-9: #12a594;
+
+  /* BOX_SHADOW_DARK : mêmes géométries, alpha plus contenu. */
+  --t-shadow-light: 0 2px 4px 0 rgb(0 0 0 / 0.04), 0 0 4px 0 rgb(0 0 0 / 0.08);
+  --t-shadow-strong: 2px 4px 16px 0 rgb(0 0 0 / 0.16), 0 2px 4px 0 rgb(0 0 0 / 0.08);
+}
+
+@supports (color: color(display-p3 1 1 1)) {
+  @media (color-gamut: p3) {
+    .dark {
+      --t-gray-1: color(display-p3 0.09 0.09 0.09);
+      --t-gray-2: color(display-p3 0.106 0.106 0.106);
+      --t-gray-3: color(display-p3 0.098 0.098 0.098);
+      --t-gray-4: color(display-p3 0.114 0.114 0.114);
+      --t-gray-5: color(display-p3 0.133 0.133 0.133);
+      --t-gray-6: color(display-p3 0.282 0.282 0.282);
+      --t-gray-7: color(display-p3 0.298 0.298 0.298);
+      --t-gray-8: color(display-p3 0.4 0.4 0.4);
+      --t-gray-9: color(display-p3 0.506 0.506 0.506);
+      --t-gray-10: color(display-p3 0.482 0.482 0.482);
+      --t-gray-11: color(display-p3 0.702 0.702 0.702);
+      --t-gray-12: color(display-p3 0.922 0.922 0.922);
+
+      --t-blue-2: color(display-p3 0.081 0.089 0.144);
+      --t-blue-3: color(display-p3 0.105 0.141 0.275);
+      --t-blue-5: color(display-p3 0.163 0.22 0.439);
+      --t-blue-7: color(display-p3 0.245 0.309 0.575);
+      --t-blue-8: color(display-p3 0.285 0.362 0.674);
+      --t-blue-9: color(display-p3 0.276 0.384 0.837);
+      --t-blue-11: color(display-p3 0.63 0.69 1);
+
+      --t-green-3: color(display-p3 0.1 0.173 0.133);
+      --t-green-9: color(display-p3 0.332 0.634 0.442);
+      --t-green-11: color(display-p3 0.434 0.828 0.573);
+
+      --t-red-3: color(display-p3 0.211 0.081 0.099);
+      --t-red-5: color(display-p3 0.348 0.11 0.142);
+      --t-red-9: color(display-p3 0.83 0.329 0.324);
+      --t-red-11: color(display-p3 1 0.57 0.55);
+
+      --t-orange-3: color(display-p3 0.189 0.12 0.056);
+      --t-orange-9: color(display-p3 0.9 0.45 0.2);
+      --t-orange-11: color(display-p3 1 0.63 0.38);
 
       --t-purple-9: color(display-p3 0.523 0.318 0.751);
       --t-turquoise-9: color(display-p3 0.297 0.637 0.581);

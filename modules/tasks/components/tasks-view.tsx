@@ -1,35 +1,54 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { PlusIcon, SearchIcon, XIcon } from "lucide-react";
+import { KanbanSquareIcon, ListIcon, PlusIcon, SearchIcon, XIcon } from "lucide-react";
 import { usePermission } from "@/modules/auth";
+import type { Paginated } from "@/shared/api/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { EmptyState, ErrorNotice, Skeleton } from "@/shared/ui/feedback";
 import { cn } from "@/lib/utils";
+import * as api from "../lib/api";
 import { DUE_FILTERS, STATUS_ORDER, TASK_STATUS } from "../lib/labels";
 import { useTasks, useTaskStats } from "../hooks/use-tasks";
+import { useColleagues } from "../hooks/use-colleagues";
+import { TaskBoard } from "./task-board";
 import { TaskDialog } from "./task-dialog";
 import { TaskRow } from "./task-row";
-import type { DueFilter, Task, TaskFilters } from "../lib/types";
+import type { DueFilter, Task, TaskFilters, TaskStatus } from "../lib/types";
 
-/** Écran principal : ce que j'ai à faire, ce qui est en retard, tout le reste. */
+type View = "board" | "list";
+
 export function TasksView() {
   const canWrite = usePermission("tasks:write");
+  const colleagues = useColleagues();
+
+  const [view, setView] = useState<View>("board");
+  // Le tableau s'ouvre sur toute l'équipe : en portée « mes tâches »,
+  // réassigner une carte la ferait disparaître sous le curseur, ce qui se lit
+  // comme une suppression. « Mes tâches » reste à un clic.
   const [filters, setFilters] = useState<TaskFilters>({
-    assignee_id: "mine",
-    sort: "due",
+    sort: "position",
     page: 1,
-    per_page: 50,
+    per_page: 200,
   });
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Task | null>(null);
-  const [creating, setCreating] = useState(false);
+  const [creatingIn, setCreatingIn] = useState<TaskStatus | null>(null);
 
   const { data, loading, error, reload } = useTasks(filters);
   const [statsToken, setStatsToken] = useState(0);
   const stats = useTaskStats(filters.assignee_id, statsToken);
+
+  /**
+   * Correctif local appliqué le temps de l'aller-retour réseau. Sans lui, une
+   * carte déposée reviendrait à sa place jusqu'à la réponse du serveur, ce qui
+   * donne l'impression que le geste a échoué. Il s'invalide de lui-même dès que
+   * le serveur renvoie une nouvelle liste.
+   */
+  const [patched, setPatched] = useState<{ source: Paginated<Task>; items: Task[] } | null>(null);
+  const items = patched && patched.source === data ? patched.items : (data?.items ?? []);
 
   function update(patch: Partial<TaskFilters>) {
     setFilters((current) => ({ ...current, ...patch, page: 1 }));
@@ -38,6 +57,24 @@ export function TasksView() {
   function refresh() {
     reload();
     setStatsToken((value) => value + 1);
+  }
+
+  async function move(task: Task, status: TaskStatus, position: number) {
+    if (data) {
+      setPatched({
+        source: data,
+        items: items.map((item) =>
+          item.id === task.id ? { ...item, status, position } : item,
+        ),
+      });
+    }
+    await api.moveTask(task.id, status, position);
+    refresh();
+  }
+
+  async function assign(task: Task, assigneeId: string | null) {
+    await api.setTaskAssignee(task.id, assigneeId);
+    refresh();
   }
 
   const counts = useMemo(() => {
@@ -58,12 +95,41 @@ export function TasksView() {
             Ce qu&apos;il reste à faire, pour qui, et sur quelle fiche.
           </p>
         </div>
-        {canWrite && (
-          <Button size="lg" onClick={() => setCreating(true)}>
-            <PlusIcon />
-            Nouvelle tâche
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <div className="bg-muted flex rounded-lg p-0.5">
+            {(
+              [
+                { value: "board", label: "Tableau", icon: KanbanSquareIcon },
+                { value: "list", label: "Liste", icon: ListIcon },
+              ] as const
+            ).map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                aria-pressed={view === option.value}
+                onClick={() => {
+                  setView(option.value);
+                  update({ sort: option.value === "board" ? "position" : "due" });
+                }}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                  view === option.value
+                    ? "bg-card shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <option.icon className="size-3.5" />
+                {option.label}
+              </button>
+            ))}
+          </div>
+          {canWrite && (
+            <Button size="lg" onClick={() => setCreatingIn("a_faire")}>
+              <PlusIcon />
+              Nouvelle tâche
+            </Button>
+          )}
+        </div>
       </header>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -92,107 +158,98 @@ export function TasksView() {
         </Card>
       </div>
 
-      <Card className="gap-0 overflow-hidden py-0">
-        <div className="flex flex-col gap-4 p-5">
-          <nav className="flex flex-wrap gap-1" aria-label="Portée">
-            {[
-              { value: "mine", label: "Mes tâches" },
-              { value: undefined, label: "Toute l'équipe" },
-            ].map((scope) => (
+      <div className="flex flex-wrap items-center gap-2">
+        <nav className="bg-muted flex rounded-lg p-0.5" aria-label="Portée">
+          {[
+            { value: "mine" as const, label: "Mes tâches" },
+            { value: undefined, label: "Toute l'équipe" },
+          ].map((scope) => {
+            const active = mine === (scope.value === "mine");
+            return (
               <button
                 key={scope.label}
                 type="button"
-                aria-pressed={mine === (scope.value === "mine")}
+                aria-pressed={active}
                 onClick={() => update({ assignee_id: scope.value })}
                 className={cn(
-                  "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
-                  mine === (scope.value === "mine")
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:bg-muted",
+                  "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                  active ? "bg-card shadow-sm" : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 {scope.label}
               </button>
-            ))}
-          </nav>
+            );
+          })}
+        </nav>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative min-w-56 flex-1">
-              <SearchIcon className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2" />
-              <Input
-                aria-label="Rechercher une tâche"
-                placeholder="Rechercher…"
-                className="pl-8"
-                value={search}
-                onChange={(event) => {
-                  setSearch(event.target.value);
-                  update({ search: event.target.value || undefined });
-                }}
-              />
-            </div>
-
-            {STATUS_ORDER.map((status) => {
-              const active = filters.status?.[0] === status;
-              return (
-                <Button
-                  key={status}
-                  size="sm"
-                  variant={active ? "secondary" : "ghost"}
-                  onClick={() => update({ status: active ? undefined : [status] })}
-                >
-                  {TASK_STATUS[status].label}
-                </Button>
-              );
-            })}
-
-            {DUE_FILTERS.map((due) => {
-              const active = filters.due === due.value;
-              return (
-                <Button
-                  key={due.value}
-                  size="sm"
-                  variant={active ? "secondary" : "ghost"}
-                  onClick={() =>
-                    update({ due: active ? undefined : (due.value as DueFilter) })
-                  }
-                >
-                  {due.label}
-                </Button>
-              );
-            })}
-
-            {filtered && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setSearch("");
-                  setFilters((current) => ({
-                    assignee_id: current.assignee_id,
-                    sort: "due",
-                    page: 1,
-                    per_page: 50,
-                  }));
-                }}
-              >
-                <XIcon />
-                Réinitialiser
-              </Button>
-            )}
-          </div>
+        <div className="relative min-w-48 flex-1">
+          <SearchIcon className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2" />
+          <Input
+            aria-label="Rechercher une tâche"
+            placeholder="Rechercher…"
+            className="pl-8"
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              update({ search: event.target.value || undefined });
+            }}
+          />
         </div>
 
-        {error ? (
-          <div className="px-5 pb-5">
-            <ErrorNotice message={error} />
-          </div>
-        ) : loading && !data ? (
-          <div className="flex flex-col gap-2 p-5">
-            {Array.from({ length: 4 }, (_, i) => (
-              <Skeleton key={i} className="h-12 w-full" />
-            ))}
-          </div>
-        ) : data?.items.length === 0 ? (
+        {DUE_FILTERS.map((due) => {
+          const active = filters.due === due.value;
+          return (
+            <Button
+              key={due.value}
+              size="sm"
+              variant={active ? "secondary" : "ghost"}
+              onClick={() => update({ due: active ? undefined : (due.value as DueFilter) })}
+            >
+              {due.label}
+            </Button>
+          );
+        })}
+
+        {filtered && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setSearch("");
+              setFilters((current) => ({
+                assignee_id: current.assignee_id,
+                sort: current.sort,
+                page: 1,
+                per_page: 200,
+              }));
+            }}
+          >
+            <XIcon />
+            Réinitialiser
+          </Button>
+        )}
+      </div>
+
+      {error ? (
+        <ErrorNotice message={error} />
+      ) : loading && !data ? (
+        <div className="grid gap-4 lg:grid-cols-3">
+          {STATUS_ORDER.map((status) => (
+            <Skeleton key={status} className="h-64 w-full" />
+          ))}
+        </div>
+      ) : view === "board" ? (
+        <TaskBoard
+          tasks={items}
+          colleagues={colleagues}
+          canWrite={canWrite}
+          onOpen={setEditing}
+          onCreate={setCreatingIn}
+          onMove={move}
+          onAssign={assign}
+        />
+      ) : items.length === 0 ? (
+        <Card>
           <EmptyState
             title={filtered ? "Aucune tâche ne correspond" : "Rien à faire pour l'instant"}
             description={
@@ -203,20 +260,24 @@ export function TasksView() {
                   : "Créez la première tâche."
             }
           />
-        ) : (
-          <ul className="divide-y border-t">
-            {data?.items.map((task) => (
+        </Card>
+      ) : (
+        <Card className="gap-0 overflow-hidden py-0">
+          <ul className="divide-y">
+            {items.map((task) => (
               <TaskRow key={task.id} task={task} onChanged={refresh} onOpen={setEditing} />
             ))}
           </ul>
-        )}
-      </Card>
+        </Card>
+      )}
 
-      {creating && (
+      {creatingIn && (
         <TaskDialog
           task={null}
           open
-          onOpenChange={(open) => !open && setCreating(false)}
+          initialStatus={creatingIn}
+          colleagues={colleagues}
+          onOpenChange={(open) => !open && setCreatingIn(null)}
           onSaved={refresh}
         />
       )}
@@ -225,6 +286,7 @@ export function TasksView() {
           key={editing.id}
           task={editing}
           open
+          colleagues={colleagues}
           onOpenChange={(open) => !open && setEditing(null)}
           onSaved={refresh}
         />

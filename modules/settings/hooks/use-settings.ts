@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { listSessions, type DeviceSession } from "@/modules/auth";
 import type { Paginated } from "@/shared/api/client";
 import { errorMessage } from "@/shared/api/errors";
 import * as api from "../lib/api";
@@ -76,5 +77,48 @@ export function useRoles() {
     roles: resolved.data ?? [],
     loading: resolved.key !== key,
     error: resolved.error,
+  };
+}
+
+/**
+ * Appareils connectés au compte courant.
+ *
+ * `reload` est exposé parce que révoquer une session doit se voir tout de
+ * suite : la liste est la seule preuve que le bouton a fait quelque chose.
+ */
+export function useSessions() {
+  const [token, setToken] = useState(0);
+  const key = `sessions:${token}`;
+  const [resolved, setResolved] = useState<Resolved<DeviceSession[]>>({
+    key: "",
+    data: null,
+    error: null,
+  });
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    listSessions()
+      .then((data) => {
+        if (controller.signal.aborted) return;
+        setResolved({ key, data: data.items, error: null });
+      })
+      .catch((cause) => {
+        if (controller.signal.aborted) return;
+        setResolved({ key, data: null, error: errorMessage(cause) });
+      });
+
+    return () => controller.abort();
+    // `token` est capturé par `key`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+
+  const reload = useCallback(() => setToken((value) => value + 1), []);
+
+  return {
+    sessions: resolved.data ?? [],
+    loading: resolved.key !== key,
+    error: resolved.error,
+    reload,
   };
 }

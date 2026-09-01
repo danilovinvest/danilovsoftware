@@ -47,3 +47,20 @@ export type SessionResponse = {
   user: Account;
 };
 
+
+/**
+ * Un appareil connecté, tel que listé dans les réglages.
+ *
+ * La rotation des refresh tokens ne laisse qu'une ligne vivante par chaîne :
+ * une session = un appareil, et `last_seen_at` est l'instant du dernier
+ * renouvellement, donc la dernière activité réelle.
+ */
+export type DeviceSession = {
+  id: string;
+  user_agent: string;
+  ip_address: string;
+  last_seen_at: string;
+  expires_at: string;
+  /** Vrai pour l'appareil qui consulte la liste. */
+  current: boolean;
+};
