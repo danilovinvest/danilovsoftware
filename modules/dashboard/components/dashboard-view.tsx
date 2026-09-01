@@ -1,35 +1,34 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRightIcon, FlaskConicalIcon } from "lucide-react";
+import { ArrowRightIcon, TableIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { MetricCards } from "@/shared/ui/metric-cards";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/modules/auth";
+import { formatDate } from "@/shared/lib/format";
+import { MetricCards } from "@/shared/ui/metric-cards";
 import { useDashboard } from "../hooks/use-dashboard";
+import { PERIODS } from "../lib/labels";
 import { ActivityPanel } from "./activity-panel";
-import { AgendaPanel } from "./agenda-panel";
-import { CashPanel } from "./cash-panel";
 import { DigestTable } from "./digest-table";
 import { HotPanel } from "./hot-panel";
 import { PipelinePanel } from "./pipeline-panel";
 import { RelancePanel } from "./relance-panel";
-import { SourcesPanel } from "./sources-panel";
-import { WorkloadPanel } from "./workload-panel";
-import { PERIODS } from "../lib/labels";
+import { TopClientsPanel } from "./top-clients-panel";
+import { VatPanel } from "./vat-panel";
 
 /**
  * Le tableau de bord, ordonné par ce qu'on en attend le matin.
  *
  * D'abord les chiffres de la période, puis les deux listes de travail — ce
- * qu'il faut relancer, ce qui est près de signer — et seulement ensuite la
- * lecture de fond : pipeline, agenda, synthèse fiche par fiche, et les
- * panneaux d'analyse. Un tableau de bord qui commence par un graphique fait
- * perdre les trente premières secondes de la journée.
+ * qu'il faut relancer, ce qui vient de partir — et seulement ensuite la lecture
+ * de fond : répartition, synthèse fiche par fiche, analyses. Un tableau de bord
+ * qui commence par un graphique fait perdre les trente premières secondes de la
+ * journée.
  */
 export function DashboardView() {
   const { account } = useAuth();
-  const { data, period, setPeriod, at } = useDashboard();
+  const { data, period, setPeriod } = useDashboard();
 
   const firstName = account?.first_name?.trim();
 
@@ -41,9 +40,9 @@ export function DashboardView() {
             {firstName ? `Bonjour ${firstName}` : "Tableau de bord"}
           </h1>
           <p className="text-muted-foreground mt-0.5 text-sm">
-            {data.relances.length > 0
-              ? `${data.relances.length} affaires attendent une relance, ${data.hot.length} sont près de signer.`
-              : "Aucune relance en retard : l'activité est à jour."}
+            {data.relances_total > 0
+              ? `${data.relances_total} devis attendent une réponse dans la fenêtre utile, ${data.hot.length} viennent de partir.`
+              : "Aucun devis en attente dans la fenêtre de relance."}
           </p>
         </div>
         <Button variant="outline" size="sm" asChild>
@@ -55,18 +54,25 @@ export function DashboardView() {
       </header>
 
       {/*
-        Bandeau assumé et non discret : cet écran n'est pas branché sur l'API,
-        et il vit à côté d'écrans qui, eux, affichent de vraies fiches clients.
-        Confondre les deux ferait prendre une décision sur des chiffres
-        inventés.
+        L'origine des chiffres, en clair. Cet écran n'est pas branché sur l'API :
+        il lit un export figé, et ce que l'export ne contient pas — origine de la
+        demande, responsable, relances déjà faites, règlements — n'apparaît nulle
+        part plutôt que d'être approximé.
       */}
-      <div className="border-warning/30 bg-warning-soft/50 text-warning flex items-start gap-2 rounded-xl border px-3 py-2 text-xs">
-        <FlaskConicalIcon className="mt-0.5 size-3.5 shrink-0" />
+      <div className="border-info/30 bg-info-soft/50 text-info flex items-start gap-2 rounded-xl border px-3 py-2 text-xs">
+        <TableIcon className="mt-0.5 size-3.5 shrink-0" />
         <p>
-          <span className="font-medium">Données de démonstration.</span> Fiches,
-          montants et échéances de cet écran sont fictifs et calculés dans le
-          navigateur — ils ne viennent pas de la base. Les autres écrans du CRM
-          affichent, eux, les données réelles.
+          <span className="font-medium">
+            Données réelles, arrêtées au {formatDate(data.source_date)}.
+          </span>{" "}
+          Reprises de <code className="font-mono">{data.source_file}</code> —
+          151 devis, 103 clients. Les étapes viennent du statut d&apos;origine
+          (<code className="font-mono">etude</code> → devis envoyé,{" "}
+          <code className="font-mono">accepte</code> → gagné,{" "}
+          <code className="font-mono">facture</code> → réalisé) et les priorités
+          sont calculées à partir du montant et de l&apos;ancienneté. L&apos;export
+          ne porte ni origine de la demande, ni responsable, ni historique de
+          relance : ces colonnes sont absentes plutôt que vides.
         </p>
       </div>
 
@@ -75,9 +81,8 @@ export function DashboardView() {
           <h2 className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
             Compteurs
           </h2>
-          {/* Le sélecteur est ici, et non dans l'en-tête de page : il ne pilote
-              que les compteurs. Les listes de travail sont, elles, toujours au
-              présent. */}
+          {/* Le sélecteur ne pilote que les compteurs : les listes de travail
+              sont, elles, toujours au présent. */}
           <div className="bg-muted flex rounded-[4px] p-0.5">
             {PERIODS.map((entry) => (
               <button
@@ -101,22 +106,24 @@ export function DashboardView() {
       </section>
 
       <div className="grid items-start gap-4 xl:grid-cols-3">
-        <RelancePanel rows={data.relances} className="xl:col-span-2" />
+        <RelancePanel
+          rows={data.relances}
+          total={data.relances_total}
+          className="xl:col-span-2"
+        />
         <HotPanel rows={data.hot} />
       </div>
 
       <div className="grid items-start gap-4 lg:grid-cols-2">
         <PipelinePanel buckets={data.pipeline} />
-        <AgendaPanel events={data.agenda} now={at} />
+        <ActivityPanel rows={data.activity} />
       </div>
 
       <DigestTable rows={data.digest} />
 
       <div className="grid items-start gap-4 lg:grid-cols-2">
-        <CashPanel rows={data.cash} />
-        <SourcesPanel buckets={data.sources} />
-        <WorkloadPanel rows={data.workload} />
-        <ActivityPanel rows={data.activity} />
+        <TopClientsPanel rows={data.top_clients} />
+        <VatPanel buckets={data.vat} />
       </div>
     </div>
   );
