@@ -19,7 +19,13 @@ import { Panel, RowShell, ScorePill, scoreTone } from "./ui";
  * normaux. C'est ce qui fait la différence entre une liste qu'on ouvre le
  * matin et une liste qu'on finit par ignorer.
  */
-export function RelancePanel({ rows }: { rows: RelanceRow[] }) {
+export function RelancePanel({
+  rows,
+  className,
+}: {
+  rows: RelanceRow[];
+  className?: string;
+}) {
   // Le CRM enregistre les relances d'un clic ; ici rien ne part au serveur, on
   // se contente de retirer la ligne pour que la démonstration se joue.
   const [done, setDone] = useState<Record<string, boolean>>({});
@@ -37,6 +43,7 @@ export function RelancePanel({ rows }: { rows: RelanceRow[] }) {
       }
       icon={AlarmClockIcon}
       tone="danger"
+      className={className}
       bodyClassName="divide-y"
     >
       {pending.length === 0 ? (
