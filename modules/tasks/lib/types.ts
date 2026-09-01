@@ -1,0 +1,61 @@
+export type TaskStatus = "a_faire" | "en_cours" | "terminee";
+
+/** Filtres d'échéance servis par l'API — jamais recalculés côté navigateur. */
+export type DueFilter = "overdue" | "today" | "week" | "none";
+
+/** Ce qu'une tâche vise : une fiche client ou une affaire, jamais les deux. */
+export type TaskTarget = {
+  id: string;
+  customer_id: string | null;
+  project_id: string | null;
+  label: string;
+  reference: string;
+};
+
+export type Task = {
+  id: string;
+  title: string;
+  body: string;
+  status: TaskStatus;
+  due_at: string | null;
+  completed_at: string | null;
+  position: number;
+  assignee_id: string | null;
+  assignee_name: string;
+  targets: TaskTarget[];
+  /** Calculé par le serveur : l'horloge d'un poste ne décide pas du retard. */
+  is_overdue: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TaskStats = {
+  by_status: Array<{ status: TaskStatus; total: number }>;
+  overdue: number;
+};
+
+export type TaskFilters = {
+  search?: string;
+  status?: TaskStatus[];
+  /** "mine" est résolu côté serveur en l'identifiant de l'appelant. */
+  assignee_id?: string;
+  customer_id?: string;
+  due?: DueFilter;
+  sort?: "recent" | "due" | "position";
+  page?: number;
+  per_page?: number;
+};
+
+export type TaskTargetPayload = {
+  customer_id?: string | null;
+  project_id?: string | null;
+};
+
+export type TaskPayload = {
+  title: string;
+  body: string;
+  status: TaskStatus;
+  due_at: string | null;
+  assignee_id: string | null;
+  targets: TaskTargetPayload[];
+};

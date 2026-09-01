@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRightIcon } from "lucide-react";
 import { useAuth } from "@/modules/auth";
+import { SettingsNav } from "@/modules/settings";
 import {
   Collapsible,
   CollapsibleContent,
@@ -23,24 +24,33 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { NAV_ITEM_CLASS } from "@/shared/ui/nav";
 import { NAVIGATION } from "../lib/navigation";
 import { CommandSearch } from "./command-search";
 import { WorkspaceMenu } from "./workspace-menu";
 
 /**
- * Chez Twenty l'entrée de navigation est basse (28 px), en gris secondaire, et
- * ne s'allume qu'à l'état actif — un aplat gris, jamais une teinte. Ces classes
- * sont partagées par les entrées de premier niveau et leurs sous-entrées pour
- * que la colonne garde un seul rythme.
+ * Le tiroir latéral a deux états, comme chez Twenty : la navigation de
+ * l'espace de travail, ou celle des réglages. On n'ajoute pas les réglages à
+ * côté du reste — on y entre, et toute la colonne bascule.
  */
-const ITEM = "h-7 gap-2 rounded-[4px] px-1.5 text-sm font-normal";
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const pathname = usePathname();
+
+  return (
+    <Sidebar variant="inset" collapsible="icon" {...props}>
+      {pathname.startsWith("/settings") ? <SettingsNav /> : <WorkspaceNav />}
+      <SidebarRail />
+    </Sidebar>
+  );
+}
+
+function WorkspaceNav() {
   const pathname = usePathname();
   const { can } = useAuth();
 
   return (
-    <Sidebar variant="inset" collapsible="icon" {...props}>
+    <>
       <SidebarHeader className="gap-0.5 p-2">
         <WorkspaceMenu />
         <CommandSearch />
@@ -63,7 +73,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
                       tooltip={`${item.label} — à venir`}
-                      className={`${ITEM} cursor-not-allowed opacity-50`}
+                      className={`${NAV_ITEM_CLASS} cursor-not-allowed opacity-50`}
                       aria-disabled
                     >
                       <Icon />
@@ -87,7 +97,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       asChild
                       isActive={active}
                       tooltip={item.label}
-                      className={ITEM}
+                      className={NAV_ITEM_CLASS}
                     >
                       <Link href={item.href}>
                         <Icon />
@@ -110,7 +120,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       <SidebarMenuButton
                         tooltip={item.label}
                         isActive={active}
-                        className={ITEM}
+                        className={NAV_ITEM_CLASS}
                       >
                         <Icon />
                         <span>{item.label}</span>
@@ -124,7 +134,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                             <SidebarMenuSubButton
                               asChild
                               isActive={pathname === sub.href}
-                              className={ITEM}
+                              className={NAV_ITEM_CLASS}
                             >
                               <Link href={sub.href}>
                                 <span>{sub.label}</span>
@@ -141,8 +151,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
-
-      <SidebarRail />
-    </Sidebar>
+    </>
   );
 }

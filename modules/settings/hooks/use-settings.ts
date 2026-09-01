@@ -15,8 +15,13 @@ type Resolved<T> = { key: string; data: T | null; error: string | null };
  * la plus récente.
  */
 
-export function useWorkspaceUsers(search: string) {
-  const key = `users:${search}`;
+/**
+ * Les membres d'un bureau d'études tiennent largement en une page : on charge
+ * la liste entière une fois et le filtrage se fait dans le navigateur, sans
+ * aller-retour ni anti-rebond à régler.
+ */
+export function useWorkspaceUsers() {
+  const key = "users";
   const [resolved, setResolved] = useState<Resolved<Paginated<WorkspaceUser>>>({
     key: "",
     data: null,
@@ -27,7 +32,7 @@ export function useWorkspaceUsers(search: string) {
     const controller = new AbortController();
 
     api
-      .listUsers({ search: search || undefined, per_page: 100 }, controller.signal)
+      .listUsers({ per_page: 100 }, controller.signal)
       .then((data) => setResolved({ key, data, error: null }))
       .catch((cause) => {
         if (controller.signal.aborted) return;
@@ -35,9 +40,7 @@ export function useWorkspaceUsers(search: string) {
       });
 
     return () => controller.abort();
-    // `search` est capturé par `key`.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
+  }, []);
 
   return {
     users: resolved.data?.items ?? [],
