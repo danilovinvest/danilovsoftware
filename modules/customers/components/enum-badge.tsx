@@ -5,7 +5,8 @@ import type { Tone } from "../lib/labels";
 /**
  * Les tonalités du CRM (statut de fiche, de devis, de règlement) dépassent les
  * variantes de shadcn : chaque teinte a son fond « soft » déclaré dans
- * globals.css.
+ * globals.css, sur le modèle des tags de Twenty — le cran 3 de la teinte en
+ * fond, le cran 11 en texte.
  */
 const TONE_CLASSES: Record<Tone, string> = {
   neutral: "bg-neutral-soft text-neutral",
@@ -31,7 +32,15 @@ export function EnumBadge<T extends string>({
 }) {
   const entry = entries[value];
   return (
-    <Badge className={cn(TONE_CLASSES[entry?.tone ?? "neutral"], className)}>
+    // Les tags de Twenty sont des rectangles à petit rayon, pas des pastilles :
+    // le `rounded-4xl` par défaut de shadcn est ramené au cran `sm` (4 px).
+    <Badge
+      className={cn(
+        "rounded-[4px]",
+        TONE_CLASSES[entry?.tone ?? "neutral"],
+        className,
+      )}
+    >
       {entry?.label ?? value}
     </Badge>
   );
