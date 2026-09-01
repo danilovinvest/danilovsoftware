@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { TextField } from "@/shared/ui/form";
 import { ErrorNotice } from "@/shared/ui/feedback";
 import { useAuth } from "../auth-context";
+import { DevAccountPicker } from "./dev-account-picker";
 
 export function LoginForm() {
   const router = useRouter();
@@ -25,7 +26,7 @@ export function LoginForm() {
     setError(null);
     try {
       await login(email, password);
-      router.replace(params.get("next") ?? "/customers");
+      goToApp();
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
@@ -33,8 +34,12 @@ export function LoginForm() {
     }
   }
 
+  const goToApp = () => router.replace(params.get("next") ?? "/customers");
+
   return (
     <form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">
+      <DevAccountPicker onSignedIn={goToApp} />
+
       <div className="flex flex-col gap-2">
         <div className="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded-lg">
           <CompassIcon className="size-4" />
