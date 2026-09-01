@@ -13,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { EmptyState, ErrorNotice, Skeleton } from "@/shared/ui/feedback";
+import { GradientAvatar } from "@/shared/ui/gradient-avatar";
 import { formatRelative, initials } from "@/shared/lib/format";
 import { useWorkspaceUsers } from "../hooks/use-settings";
 import { SettingsPage, SettingsSection } from "./settings-page";
@@ -95,12 +96,11 @@ export function MembersPanel() {
                       <TableRow key={user.id}>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <span
-                              aria-hidden
-                              className="bg-muted text-foreground flex size-6 shrink-0 items-center justify-center rounded-[4px] text-[10px] font-semibold"
-                            >
-                              {initials(name)}
-                            </span>
+                            <GradientAvatar
+                              seed={user.email}
+                              text={initials(name)}
+                              size={24}
+                            />
                             <div className="min-w-0">
                               <p className="truncate font-medium">{name}</p>
                               <p className="text-muted-foreground truncate text-xs">

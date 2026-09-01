@@ -12,11 +12,14 @@ import {
   UserPlusIcon,
 } from "lucide-react";
 import { useAuth, usePermission } from "@/modules/auth";
+import { setPreferences, usePreferences } from "@/modules/settings";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
@@ -28,8 +31,16 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { GradientAvatar } from "@/shared/ui/gradient-avatar";
 import { initials } from "@/shared/lib/format";
 import { WORKSPACE } from "@/shared/lib/workspace";
+import type { ThemeChoice } from "@/modules/settings";
+
+const THEME_LABELS: Record<ThemeChoice, string> = {
+  light: "Clair",
+  dark: "Sombre",
+  system: "Système",
+};
 
 /**
  * Le sélecteur d'espace de travail, en haut de la barre latérale.
@@ -42,6 +53,7 @@ import { WORKSPACE } from "@/shared/lib/workspace";
 export function WorkspaceMenu() {
   const { account, logout } = useAuth();
   const canInvite = usePermission("users:write");
+  const { theme } = usePreferences();
   const router = useRouter();
 
   // Le shell est monté sous RequireAuth ; ce garde-fou couvre l'instant de
@@ -85,12 +97,11 @@ export function WorkspaceMenu() {
               <DropdownMenuSubContent className="w-60">
                 <DropdownMenuLabel className="p-0 font-normal">
                   <div className="flex items-center gap-2 px-1 py-1.5 text-left">
-                    <span
-                      aria-hidden
-                      className="bg-muted text-foreground flex size-8 shrink-0 items-center justify-center rounded-[4px] text-xs font-semibold"
-                    >
-                      {initials(name)}
-                    </span>
+                    <GradientAvatar
+                      seed={account.email}
+                      text={initials(name)}
+                      size={32}
+                    />
                     <div className="grid min-w-0 flex-1 leading-tight">
                       <span className="truncate text-sm font-medium">{name}</span>
                       <span className="text-muted-foreground truncate text-xs">
@@ -121,13 +132,31 @@ export function WorkspaceMenu() {
 
             <DropdownMenuSeparator />
 
-            {/* Le thème est figé en clair par décision d'architecture (voir
-                app/globals.css) : la ligne informe, elle ne bascule rien. */}
-            <DropdownMenuItem disabled>
-              <MoonIcon />
-              Thème
-              <span className="text-muted-foreground ml-auto">Clair</span>
-            </DropdownMenuItem>
+            {/* Le thème est joignable ici comme chez Twenty, sans passer par
+                les réglages : c'est le changement qu'on fait le plus souvent. */}
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <MoonIcon />
+                Thème
+                <span className="text-muted-foreground ml-auto">
+                  {THEME_LABELS[theme]}
+                </span>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuRadioGroup
+                  value={theme}
+                  onValueChange={(value) =>
+                    setPreferences({ theme: value as ThemeChoice })
+                  }
+                >
+                  {(Object.keys(THEME_LABELS) as ThemeChoice[]).map((choice) => (
+                    <DropdownMenuRadioItem key={choice} value={choice}>
+                      {THEME_LABELS[choice]}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
 
             {canInvite && (
               <DropdownMenuItem asChild>
