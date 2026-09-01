@@ -46,7 +46,9 @@ export function CustomerTable({
 
   return (
     <div className="overflow-x-auto">
-      <Table className="min-w-[64rem]">
+      {/* En-têtes de colonne à la Twenty : une ligne basse, en gris
+          tertiaire, qui ne rivalise pas avec le contenu. */}
+      <Table className="min-w-[64rem] [&_thead_th]:text-muted-foreground [&_thead_th]:h-8 [&_thead_th]:text-xs [&_thead_th]:font-medium">
         <TableHeader>
           <TableRow>
             <TableHead className="w-8" />
@@ -93,7 +95,7 @@ export function CustomerTable({
                       <TableCell>
                         <Link
                           href={`/customers/${customer.id}`}
-                          className="hover:text-primary font-medium"
+                          className="font-medium hover:underline"
                         >
                           {customer.display_name}
                         </Link>
@@ -137,7 +139,7 @@ export function CustomerTable({
                             <div className="border-border ml-1 border-l pl-3">
                               <Link
                                 href={`/customers/${customer.id}`}
-                                className="hover:text-primary text-sm"
+                                className="text-sm hover:underline"
                               >
                                 {project.label}
                               </Link>

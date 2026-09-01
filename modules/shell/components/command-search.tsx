@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   FileTextIcon,
@@ -32,6 +32,9 @@ type Entry = {
   href: string;
 };
 
+/** En deçà, on ne dérange pas l'API : le menu affiche ses actions. */
+const MIN_QUERY = 2;
+
 /**
  * Recherche globale au ⌘K, reprise du menu de commandes de Twenty.
  *
@@ -41,21 +44,27 @@ type Entry = {
  * diverger.
  *
  * À vide, le menu propose les actions du module ; dès deux caractères il
- * interroge les fiches. La requête précédente est annulée à chaque frappe —
- * même précaution que `useCustomers`, une réponse lente ne doit pas écraser la
- * plus récente.
+ * interroge les fiches. Comme `useCustomers`, il ne stocke qu'une réponse
+ * *avec la question qui l'a produite* : « en cours » et « résultats affichés »
+ * s'en déduisent, aucun état à resynchroniser dans un effet — et une réponse
+ * lente ne peut pas se retrouver collée sous une frappe plus récente.
  */
 export function CommandSearch() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<CustomerListItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [cursor, setCursor] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [resolved, setResolved] = useState<{
+    key: string;
+    items: CustomerListItem[];
+  }>({ key: "", items: [] });
 
   const canCreate = usePermission("customers:write");
   const canImport = usePermission("imports:run");
+
+  const trimmed = query.trim();
+  const key = trimmed.length < MIN_QUERY ? "" : trimmed;
+  const loading = key !== "" && resolved.key !== key;
+  const results = resolved.key === key ? resolved.items : [];
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -70,31 +79,19 @@ export function CommandSearch() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  const trimmed = query.trim();
-
   useEffect(() => {
-    if (trimmed.length < 2) {
-      setResults([]);
-      setLoading(false);
-      return;
-    }
+    if (key === "") return;
 
     const controller = new AbortController();
-    setLoading(true);
-
     const timer = setTimeout(() => {
       listCustomers(
-        { search: trimmed, sort: "recent", page: 1, per_page: 7 },
+        { search: key, sort: "recent", page: 1, per_page: 7 },
         controller.signal,
       )
-        .then((page) => {
-          setResults(page.items);
-          setLoading(false);
-        })
+        .then((page) => setResolved({ key, items: page.items }))
         .catch(() => {
           if (controller.signal.aborted) return;
-          setResults([]);
-          setLoading(false);
+          setResolved({ key, items: [] });
         });
     }, 200);
 
@@ -102,7 +99,7 @@ export function CommandSearch() {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [trimmed]);
+  }, [key]);
 
   const actions: Entry[] = [
     ...(canCreate
@@ -134,7 +131,7 @@ export function CommandSearch() {
   ];
 
   const entries: Entry[] =
-    trimmed.length < 2
+    key === ""
       ? actions
       : results.map((customer) => ({
           key: customer.id,
@@ -144,9 +141,21 @@ export function CommandSearch() {
           href: `/customers/${customer.id}`,
         }));
 
-  // Le curseur revient en tête dès que la liste change : garder l'index d'une
-  // liste plus longue sélectionnerait le vide.
-  useEffect(() => setCursor(0), [trimmed, results]);
+  /*
+   * Le curseur est rangé avec la liste qu'il désigne. Une liste renouvelée
+   * (autre requête, autre réponse) rend l'index caduc et le ramène en tête,
+   * sans effet de resynchronisation.
+   */
+  const listKey = key === "" ? "actions" : `${key}#${resolved.key}`;
+  const [pointer, setPointer] = useState({ listKey: "", index: 0 });
+  const cursor =
+    pointer.listKey === listKey
+      ? Math.min(pointer.index, Math.max(entries.length - 1, 0))
+      : 0;
+
+  function moveCursor(index: number) {
+    setPointer({ listKey, index: Math.min(Math.max(index, 0), entries.length - 1) });
+  }
 
   function go(entry: Entry | undefined) {
     if (!entry) return;
@@ -180,10 +189,10 @@ export function CommandSearch() {
           onKeyDown={(event) => {
             if (event.key === "ArrowDown") {
               event.preventDefault();
-              setCursor((index) => Math.min(index + 1, entries.length - 1));
+              moveCursor(cursor + 1);
             } else if (event.key === "ArrowUp") {
               event.preventDefault();
-              setCursor((index) => Math.max(index - 1, 0));
+              moveCursor(cursor - 1);
             } else if (event.key === "Enter") {
               event.preventDefault();
               go(entries[cursor]);
@@ -198,7 +207,6 @@ export function CommandSearch() {
           <div className="flex h-11 items-center gap-2 border-b px-3">
             <SearchIcon className="text-muted-foreground size-4 shrink-0" />
             <input
-              ref={inputRef}
               autoFocus
               value={query}
               onChange={(event) => setQuery(event.target.value)}
@@ -209,7 +217,7 @@ export function CommandSearch() {
 
           <div className="max-h-80 overflow-y-auto p-1.5">
             <p className="text-muted-foreground px-2 py-1.5 text-[11px] font-medium">
-              {trimmed.length < 2 ? "Actions" : "Fiches client"}
+              {key === "" ? "Actions" : "Fiches client"}
             </p>
 
             {entries.length === 0 ? (
@@ -223,7 +231,7 @@ export function CommandSearch() {
                   <button
                     key={entry.key}
                     type="button"
-                    onMouseEnter={() => setCursor(index)}
+                    onMouseEnter={() => moveCursor(index)}
                     onClick={() => go(entry)}
                     className={cn(
                       "flex h-8 w-full items-center gap-2 rounded-[4px] px-2 text-left text-sm",
