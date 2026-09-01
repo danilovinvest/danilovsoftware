@@ -1,9 +1,4 @@
-import {
-  FileTextIcon,
-  LayoutGridIcon,
-  UsersIcon,
-  type LucideIcon,
-} from "lucide-react";
+import { FileTextIcon, UsersIcon, type LucideIcon } from "lucide-react";
 import type { Permission } from "@/modules/auth";
 
 /**
@@ -30,11 +25,9 @@ export const NAVIGATION: NavItem[] = [
     permission: "customers:read",
     items: [
       { href: "/customers", label: "Toutes les fiches" },
-      {
-        href: "/customers/nouveau",
-        label: "Nouvelle fiche",
-        permission: "customers:write",
-      },
+      // « Nouvelle fiche » n'est pas repris ici : la création a déjà son bouton
+      // en tête de liste, et Twenty ne double jamais une action par une entrée
+      // de navigation.
       {
         href: "/customers/import",
         label: "Sync Excel",
@@ -47,13 +40,6 @@ export const NAVIGATION: NavItem[] = [
     label: "Utilisateurs",
     icon: UsersIcon,
     permission: "users:read",
-    comingSoon: true,
-  },
-  {
-    href: "/settings",
-    label: "Paramètres",
-    icon: LayoutGridIcon,
-    permission: "system:admin",
     comingSoon: true,
   },
 ];
