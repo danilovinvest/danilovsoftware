@@ -57,9 +57,9 @@ export function DevAccountPicker({ onSignedIn }: { onSignedIn: () => void }) {
             className="h-auto justify-start px-2 py-1.5 text-left"
           >
             <span className="flex min-w-0 flex-1 flex-col">
-              <span className="flex items-baseline gap-2">
-                <span className="font-medium">{account.label}</span>
-                <span className="text-muted-foreground font-mono text-[0.7rem]">
+              <span className="flex min-w-0 items-baseline gap-2">
+                <span className="shrink-0 font-medium">{account.label}</span>
+                <span className="text-muted-foreground min-w-0 truncate font-mono text-[0.7rem]">
                   {account.email}
                 </span>
               </span>
