@@ -15,17 +15,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatAmount, formatDate, formatPhone } from "@/shared/lib/format";
-import {
-  CUSTOMER_SOURCE,
-  CUSTOMER_STATUS,
-  PROJECT_OUTCOME,
-  PROJECT_STAGE,
-} from "../lib/labels";
+import { CUSTOMER_SOURCE, PROJECT_OUTCOME, PROJECT_STAGE } from "../lib/labels";
 import { EnumBadge } from "./enum-badge";
 import { RelanceButton } from "./relance-button";
 import type { CustomerListItem } from "../lib/types";
 
-const COLUMNS = 9;
+const COLUMNS = 8;
 
 export function CustomerTable({
   items,
@@ -56,7 +51,6 @@ export function CustomerTable({
           <TableRow>
             <TableHead className="w-8" />
             <TableHead>Fiche</TableHead>
-            <TableHead>Statut</TableHead>
             <TableHead>Coordonnées</TableHead>
             <TableHead>Ville</TableHead>
             <TableHead>Source</TableHead>
@@ -108,9 +102,6 @@ export function CustomerTable({
                           {customer.company_name && ` · ${customer.company_name}`}
                         </p>
                       </TableCell>
-                      <TableCell>
-                        <EnumBadge value={customer.status} entries={CUSTOMER_STATUS} />
-                      </TableCell>
                       <TableCell className="text-muted-foreground text-xs">
                         {customer.email && <div>{customer.email}</div>}
                         {customer.phone && <div>{formatPhone(customer.phone)}</div>}
@@ -142,7 +133,7 @@ export function CustomerTable({
                           className="bg-muted/40 hover:bg-muted/60 border-0"
                         >
                           <TableCell />
-                          <TableCell colSpan={2} className="py-2">
+                          <TableCell className="py-2">
                             <div className="border-border ml-1 border-l pl-3">
                               <Link
                                 href={`/customers/${customer.id}`}
