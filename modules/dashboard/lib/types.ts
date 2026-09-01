@@ -33,11 +33,17 @@ export type Metric = {
   /** Ce que le chiffre veut dire, en une ligne — un KPI sans définition ment. */
   hint: string;
   value: number;
-  /** Même mesure sur la période précédente de même durée. */
-  previous: number;
+  /**
+   * Même mesure sur la période précédente de même durée, ou `null` quand la
+   * comparaison n'a pas de sens — un encours se lit à l'instant t, il n'a pas
+   * de « mois dernier ».
+   */
+  previous: number | null;
   format: MetricFormat;
-  /** Points de la courbe de fond, du plus ancien au plus récent. */
+  /** Douze points mensuels, du plus ancien au plus récent. */
   trend: number[];
+  /** Ce que la courbe montre — une sparkline sans légende raconte n'importe quoi. */
+  trend_label: string;
 };
 
 /**
