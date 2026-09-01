@@ -8,13 +8,17 @@ import type { Metric } from "../lib/types";
 import { Sparkline } from "./ui";
 
 /** Un compteur brut ne dit rien : c'est l'écart qui informe. */
-function Delta({ value, previous }: { value: number; previous: number | null }) {
+function Delta({
+  value,
+  previous,
+  note,
+}: {
+  value: number;
+  previous: number | null;
+  note?: string;
+}) {
   if (previous === null) {
-    return (
-      <span className="text-muted-foreground text-xs">
-        Encours — pas de période précédente
-      </span>
-    );
+    return <span className="text-muted-foreground text-xs">{note ?? "Sans comparaison"}</span>;
   }
 
   // Passer de rien à quelque chose n'est pas « +∞ % » : on le dit en toutes
@@ -63,7 +67,7 @@ export function MetricCards({ metrics }: { metrics: Metric[] }) {
               {metric.label}
             </p>
             <p className="text-xl font-semibold tabular-nums">{display(metric)}</p>
-            <Delta value={metric.value} previous={metric.previous} />
+            <Delta value={metric.value} previous={metric.previous} note={metric.note} />
           </div>
           <div className="mt-2 px-2">
             <Sparkline

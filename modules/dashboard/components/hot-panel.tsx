@@ -1,7 +1,7 @@
 import { FlameIcon } from "lucide-react";
 import { EnumBadge, PROJECT_STAGE } from "@/modules/customers";
 import { EmptyState } from "@/shared/ui/feedback";
-import { eurosShort, sinceDays } from "../lib/labels";
+import { agoLabel, eurosShort } from "../lib/labels";
 import type { HotRow } from "../lib/types";
 import { Meter, Panel, RowShell, ScorePill, heatTone } from "./ui";
 
@@ -51,7 +51,7 @@ export function HotPanel({ rows }: { rows: HotRow[] }) {
                   {eurosShort(row.amount)}
                 </p>
                 <p className="text-muted-foreground text-[11px]">
-                  vu il y a {sinceDays(row.days_since)}
+                  vu {agoLabel(row.days_since)}
                 </p>
               </div>
             </div>

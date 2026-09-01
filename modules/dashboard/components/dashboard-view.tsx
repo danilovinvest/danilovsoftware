@@ -100,19 +100,19 @@ export function DashboardView() {
         <MetricCards metrics={data.metrics} />
       </section>
 
-      <div className="grid gap-4 xl:grid-cols-3">
+      <div className="grid items-start gap-4 xl:grid-cols-3">
         <RelancePanel rows={data.relances} className="xl:col-span-2" />
         <HotPanel rows={data.hot} />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid items-start gap-4 lg:grid-cols-2">
         <PipelinePanel buckets={data.pipeline} />
         <AgendaPanel events={data.agenda} now={at} />
       </div>
 
       <DigestTable rows={data.digest} />
 
-      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+      <div className="grid items-start gap-4 lg:grid-cols-2">
         <CashPanel rows={data.cash} />
         <SourcesPanel buckets={data.sources} />
         <WorkloadPanel rows={data.workload} />

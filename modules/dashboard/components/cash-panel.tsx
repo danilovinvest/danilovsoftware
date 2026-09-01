@@ -59,12 +59,17 @@ export function CashPanel({ rows }: { rows: CashRow[] }) {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs font-medium">{row.customer_name}</p>
                 <p className="text-muted-foreground truncate text-[11px]">
-                  {row.reference} · depuis {sinceDays(row.days_since)}
+                  {row.reference} · {row.label}
                 </p>
               </div>
-              <span className="shrink-0 text-xs font-medium tabular-nums">
-                {eurosShort(row.amount)}
-              </span>
+              <div className="shrink-0 text-right">
+                <p className="text-xs font-medium tabular-nums">
+                  {eurosShort(row.amount)}
+                </p>
+                <p className="text-muted-foreground text-[11px]">
+                  depuis {sinceDays(row.days_since)}
+                </p>
+              </div>
             </div>
           ))
         )}

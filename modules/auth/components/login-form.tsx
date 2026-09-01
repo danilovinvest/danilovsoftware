@@ -34,7 +34,9 @@ export function LoginForm() {
     }
   }
 
-  const goToApp = () => router.replace(params.get("next") ?? "/customers");
+  // Après connexion on arrive sur la synthèse, pas sur la liste : elle dit
+  // quoi faire aujourd'hui, là où la liste demande de chercher.
+  const goToApp = () => router.replace(params.get("next") ?? "/dashboard");
 
   return (
     <form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">

@@ -1,6 +1,6 @@
 import { CompassIcon } from "lucide-react";
 import { CUSTOMER_SOURCE } from "@/modules/customers";
-import { eurosShort } from "../lib/labels";
+import { eurosShort, plural } from "../lib/labels";
 import type { SourceBucket } from "../lib/types";
 import { Meter, Panel } from "./ui";
 
@@ -33,7 +33,7 @@ export function SourcesPanel({ buckets }: { buckets: SourceBucket[] }) {
               {CUSTOMER_SOURCE[bucket.source].label}
             </span>
             <span className="text-muted-foreground text-xs tabular-nums">
-              {bucket.requests} demandes · {rate} % signées
+              {plural(bucket.requests, "demande")} · {rate} % signées
             </span>
             <div className="col-span-2 flex items-center gap-2">
               <Meter

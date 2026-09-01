@@ -92,6 +92,33 @@ function isClosed(project: SeedProject): boolean {
   return project.outcome !== null && !isPaused(project.outcome);
 }
 
+/**
+ * Affaire encore en cours.
+ *
+ * « Réalisé » en est exclu : l'étude est remise, l'argent est signé, il n'y a
+ * plus rien à piloter. La garder dans les affaires ouvertes gonflerait le
+ * pipeline d'un montant qui n'est plus en jeu, et ferait dire à la synthèse
+ * « relancer le devis » sur un dossier terminé.
+ */
+function isActive(project: SeedProject): boolean {
+  return !isClosed(project) && project.stage !== "realise";
+}
+
+/** Étapes du pipeline : celles qu'il reste à franchir. */
+const PIPELINE_STAGES = STAGE_ORDER.filter((stage) => stage !== "realise");
+
+/**
+ * Une intervention ne se planifie pas un dimanche. Les échéances tombant sur
+ * un week-end glissent au lundi — sans quoi la démonstration afficherait des
+ * réunions de chantier le samedi une semaine sur trois.
+ */
+function toWorkday(date: Date): Date {
+  const day = date.getDay();
+  if (day === 6) date.setDate(date.getDate() + 2);
+  if (day === 0) date.setDate(date.getDate() + 1);
+  return date;
+}
+
 /** Montant en jeu : la somme des devis vivants, ou 0 si rien n'est chiffré. */
 function stake(project: SeedProject): number {
   return project.quotes
@@ -239,7 +266,7 @@ export function buildSnapshot(period: Period, at: Date = new Date()): DashboardS
       id: `${customer.id}-p${index + 1}`,
     })),
   );
-  const open = projects.filter(({ project }) => !isClosed(project));
+  const open = projects.filter(({ project }) => isActive(project));
   const quotes = projects.flatMap(({ customer, project, id }) =>
     project.quotes.map((quote) => ({ customer, project, quote, projectId: id })),
   );
@@ -299,6 +326,7 @@ export function buildSnapshot(period: Period, at: Date = new Date()): DashboardS
       hint: "Devis envoyés que le client n'a pas encore tranchés, à ce jour",
       value: pending,
       previous: null,
+      note: "Encours — se lit à l'instant t",
       format: "amount",
       trend: monthlySeries(
         at,
@@ -325,6 +353,7 @@ export function buildSnapshot(period: Period, at: Date = new Date()): DashboardS
       hint: "Affaires gagnées parmi les affaires tranchées, 12 mois glissants",
       value: decided.length === 0 ? 0 : Math.round((won / decided.length) * 100),
       previous: null,
+      note: `${won} gagnées sur ${decided.length} affaires tranchées`,
       format: "percent",
       trend: monthlySeries(
         at,
@@ -388,7 +417,7 @@ export function buildSnapshot(period: Period, at: Date = new Date()): DashboardS
 
   // ---- Pipeline ------------------------------------------------------------
 
-  const pipeline: StageBucket[] = STAGE_ORDER.map((stage) => {
+  const pipeline: StageBucket[] = PIPELINE_STAGES.map((stage) => {
     const bucket = open.filter(({ project }) => project.stage === stage);
     return {
       stage,
@@ -488,7 +517,7 @@ export function buildSnapshot(period: Period, at: Date = new Date()): DashboardS
 
   const digest: DigestRow[] = SEED_CUSTOMERS.map((customer) => {
     const all = customer.projects;
-    const alive = all.filter((project) => !isClosed(project));
+    const alive = all.filter((project) => isActive(project));
 
     const scored = alive.map((project) => ({
       project,
@@ -514,8 +543,11 @@ export function buildSnapshot(period: Period, at: Date = new Date()): DashboardS
     // Le signal le plus fort l'emporte, et « à relancer » passe avant « chaud » :
     // une fiche qui demande une action aujourd'hui ne doit pas être rangée
     // parmi celles qui vont bien.
+    //
+    // Le seuil est le même que celui du panneau des relances — une affaire
+    // au-delà du délai de son étape — pour que les deux comptages s'accordent.
     let health: Health;
-    if (urgency >= 55) health = "a_relancer";
+    if (urgency > 0) health = "a_relancer";
     else if (temperature >= 55) health = "chaud";
     else if (alive.length === 0 && amountWon > 0) health = "gagne";
     else if (alive.length === 0 || (lastContact ?? 0) > 60) health = "dormant";
@@ -571,14 +603,18 @@ export function buildSnapshot(period: Period, at: Date = new Date()): DashboardS
 
   // ---- Agenda --------------------------------------------------------------
 
-  const agenda: AgendaEvent[] = SEED_AGENDA.map((event) => ({
-    id: event.id,
-    at: iso(now, -event.inDays, event.hour),
-    kind: event.kind,
-    label: event.label,
-    customer_name: event.customer,
-    owner_name: event.owner,
-  })).sort((a, b) => a.at.localeCompare(b.at));
+  const agenda: AgendaEvent[] = SEED_AGENDA.map((event) => {
+    const date = toWorkday(new Date(now + event.inDays * DAY));
+    date.setHours(event.hour, event.inDays % 2 === 0 ? 15 : 40, 0, 0);
+    return {
+      id: event.id,
+      at: date.toISOString(),
+      kind: event.kind,
+      label: event.label,
+      customer_name: event.customer,
+      owner_name: event.owner,
+    };
+  }).sort((a, b) => a.at.localeCompare(b.at));
 
   return {
     generated_at: at.toISOString(),

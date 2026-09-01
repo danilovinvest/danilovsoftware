@@ -1,14 +1,14 @@
 import { UsersIcon } from "lucide-react";
 import { GradientAvatar } from "@/shared/ui/gradient-avatar";
 import { initials } from "@/shared/lib/format";
-import { eurosShort } from "../lib/labels";
+import { eurosShort, plural } from "../lib/labels";
 import type { WorkloadRow } from "../lib/types";
 import { Meter, Panel } from "./ui";
 
 /**
  * Répartition de la charge.
  *
- * Le nombre d'affaires ne dit pas grand-chose seul — c'est la colonne
+ * Le nombre d'affaires ne dit pas grand-chose seul — c'est la ligne
  * « relances en retard » qui identifie celui qui décroche.
  */
 export function WorkloadPanel({ rows }: { rows: WorkloadRow[] }) {
@@ -23,41 +23,45 @@ export function WorkloadPanel({ rows }: { rows: WorkloadRow[] }) {
       bodyClassName="divide-y"
     >
       {rows.map((row) => (
-        <div key={row.owner_name} className="flex items-center gap-3 px-4 py-2.5">
-          <GradientAvatar
-            seed={row.owner_name}
-            text={initials(row.owner_name)}
-            size={24}
-          />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-medium">{row.owner_name}</p>
-            <div className="mt-1">
-              <Meter
-                value={row.open_projects}
-                max={max}
-                tone={row.late_relances > 1 ? "warning" : "info"}
-              />
-            </div>
-          </div>
-          <div className="text-muted-foreground shrink-0 text-right text-[11px] tabular-nums">
-            <p>
+        <div key={row.owner_name} className="flex flex-col gap-1.5 px-4 py-2.5">
+          <div className="flex items-center gap-2">
+            <GradientAvatar
+              seed={row.owner_name}
+              text={initials(row.owner_name)}
+              size={22}
+            />
+            <span className="min-w-0 flex-1 truncate text-xs font-medium">
+              {row.owner_name}
+            </span>
+            <span className="text-muted-foreground shrink-0 text-[11px] tabular-nums">
               <span className="text-foreground font-medium">{row.open_projects}</span>{" "}
               affaires · {eurosShort(row.amount_open)}
-            </p>
-            <p>
-              {row.late_relances > 0 ? (
-                <span className="text-danger">{row.late_relances} relances en retard</span>
-              ) : (
-                <span>Relances à jour</span>
-              )}
-              {" · "}
-              {row.overdue_tasks > 0 ? (
-                <span className="text-warning">{row.overdue_tasks} tâches en retard</span>
-              ) : (
-                <span>{row.open_tasks} tâches</span>
-              )}
-            </p>
+            </span>
           </div>
+
+          <Meter
+            value={row.open_projects}
+            max={max}
+            tone={row.late_relances > 1 ? "warning" : "info"}
+          />
+
+          <p className="text-muted-foreground text-[11px]">
+            {row.late_relances > 0 ? (
+              <span className="text-danger">
+                {plural(row.late_relances, "relance")} en retard
+              </span>
+            ) : (
+              <span>Relances à jour</span>
+            )}
+            {" · "}
+            {row.overdue_tasks > 0 ? (
+              <span className="text-warning">
+                {plural(row.overdue_tasks, "tâche")} en retard
+              </span>
+            ) : (
+              <span>{plural(row.open_tasks, "tâche")}</span>
+            )}
+          </p>
         </div>
       ))}
     </Panel>

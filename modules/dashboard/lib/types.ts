@@ -39,6 +39,8 @@ export type Metric = {
    * de « mois dernier ».
    */
   previous: number | null;
+  /** Ce qu'on affiche à la place de l'écart quand `previous` est nul. */
+  note?: string;
   format: MetricFormat;
   /** Douze points mensuels, du plus ancien au plus récent. */
   trend: number[];

@@ -76,7 +76,16 @@ export function eurosShort(value: number): string {
   return `${thousands.toFixed(digits).replace(".", ",")} k€`;
 }
 
-/** « il y a 3 jours », mais en version compacte pour les tableaux denses. */
+/** Phrase complète : « hier » ne se préfixe pas de « il y a ». */
+export function agoLabel(days: number | null): string {
+  if (days === null) return "—";
+  if (days === 0) return "aujourd'hui";
+  if (days === 1) return "hier";
+  if (days < 31) return `il y a ${days} j`;
+  return `il y a ${Math.round(days / 30)} mois`;
+}
+
+/** Forme courte pour les colonnes de tableau, sans « il y a ». */
 export function sinceDays(days: number | null): string {
   if (days === null) return "—";
   if (days === 0) return "aujourd'hui";
@@ -84,4 +93,9 @@ export function sinceDays(days: number | null): string {
   if (days < 31) return `${days} j`;
   const months = Math.round(days / 30);
   return `${months} mois`;
+}
+
+/** Accord au pluriel — « 1 relances » saute aux yeux dans un tableau de bord. */
+export function plural(count: number, singular: string, plural = `${singular}s`): string {
+  return `${count} ${count > 1 ? plural : singular}`;
 }
