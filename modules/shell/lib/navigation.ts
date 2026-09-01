@@ -1,6 +1,7 @@
 import {
   CheckSquareIcon,
   FileTextIcon,
+  LayoutDashboardIcon,
   UsersIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -23,6 +24,14 @@ export type NavItem = {
 };
 
 export const NAVIGATION: NavItem[] = [
+  {
+    href: "/dashboard",
+    label: "Tableau de bord",
+    icon: LayoutDashboardIcon,
+    // La synthèse ne montre rien de plus que les fiches : qui peut les lire
+    // peut la lire.
+    permission: "customers:read",
+  },
   {
     href: "/customers",
     label: "Fiches client",
