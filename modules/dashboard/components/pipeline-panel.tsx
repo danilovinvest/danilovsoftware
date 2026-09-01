@@ -1,25 +1,26 @@
 import { GaugeIcon } from "lucide-react";
 import { PROJECT_STAGE } from "@/modules/customers";
-import type { StageBucket } from "../lib/types";
-import { euros, eurosShort } from "@/shared/lib/format";
+import { euros, eurosShort, plural } from "@/shared/lib/format";
 import { Meter, Panel } from "@/shared/ui/panel";
+import type { StageBucket } from "../lib/types";
 
 /**
- * Le pipeline dans l'ordre des étapes — pas trié par volume.
+ * Les devis par étape, dans l'ordre du parcours.
  *
- * Un entonnoir se lit dans le sens du parcours : c'est l'endroit où il se
- * pince qui apprend quelque chose, et trier par taille effacerait justement
- * cette information.
+ * Seules trois étapes existent dans l'export — envoyé, gagné, réalisé — parce
+ * que c'est tout ce que le statut d'origine distingue. Afficher les huit
+ * étapes du pipeline avec cinq barres à zéro laisserait croire à un suivi qui
+ * n'a pas encore lieu.
  */
 export function PipelinePanel({ buckets }: { buckets: StageBucket[] }) {
   const maxCount = Math.max(...buckets.map((bucket) => bucket.count), 1);
   const total = buckets.reduce((sum, bucket) => sum + bucket.amount, 0);
-  const affairs = buckets.reduce((sum, bucket) => sum + bucket.count, 0);
+  const count = buckets.reduce((sum, bucket) => sum + bucket.count, 0);
 
   return (
     <Panel
-      title="Pipeline"
-      description={`${affairs} affaires ouvertes · ${euros(total)} en jeu`}
+      title="Devis par étape"
+      description={`${plural(count, "devis", "devis")} · ${euros(total)} HT au total`}
       icon={GaugeIcon}
       tone="info"
       bodyClassName="flex flex-col gap-2.5 p-4"

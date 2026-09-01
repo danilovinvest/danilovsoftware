@@ -70,7 +70,7 @@ export function RelancePanel({
                     !row.named && "text-muted-foreground italic",
                   )}
                 >
-                  {row.name_or_id ?? row.customer_name}
+                  {row.customer_name}
                 </span>
                 <span className="text-muted-foreground font-mono text-[11px]">
                   {row.reference}
