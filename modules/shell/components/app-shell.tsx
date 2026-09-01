@@ -10,7 +10,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
   SidebarProvider,
@@ -21,21 +20,34 @@ import { NAVIGATION } from "../lib/navigation";
 import { AppSidebar } from "./app-sidebar";
 import { PageTitleProvider, usePageTitle } from "./page-title";
 
+/** Largeur du tiroir de navigation de Twenty. */
+const SIDEBAR_WIDTH = "236px";
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <PageTitleProvider>
       {/* Les libellés de la barre latérale repliée passent par des tooltips
           Radix, qui exigent un provider au-dessus d'eux. */}
       <TooltipProvider delayDuration={200}>
-        <SidebarProvider>
+        <SidebarProvider
+          style={{ "--sidebar-width": SIDEBAR_WIDTH } as React.CSSProperties}
+        >
           <AppSidebar />
-          <SidebarInset>
-            <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
-              <SidebarTrigger className="-ml-1" />
-              <Separator orientation="vertical" className="mr-2 !h-4" />
+          {/*
+            Le panneau principal de Twenty ne remplit pas la fenêtre : il flotte
+            sur le gris de la barre latérale, détaché par une gouttière, un
+            liseré et un rayon. C'est `variant="inset"` de shadcn qui pose la
+            marge et le rayon ; le liseré se rajoute ici, sinon deux gris aussi
+            proches (gray1 et gray2) ne se distingueraient pas.
+          */}
+          <SidebarInset className="md:peer-data-[variant=inset]:border">
+            <header className="flex h-10 shrink-0 items-center gap-1 border-b px-2">
+              <SidebarTrigger className="text-muted-foreground size-7" />
               <ShellBreadcrumb />
             </header>
-            <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">{children}</div>
+            <div className="flex flex-1 flex-col gap-5 p-4 md:px-6 md:py-5">
+              {children}
+            </div>
           </SidebarInset>
         </SidebarProvider>
       </TooltipProvider>
@@ -58,23 +70,26 @@ function ShellBreadcrumb() {
 
   if (!active) return null;
 
+  const Icon = active.icon;
+
   return (
     <Breadcrumb>
-      <BreadcrumbList>
-        <BreadcrumbItem>
+      <BreadcrumbList className="gap-1 text-sm sm:gap-1">
+        <BreadcrumbItem className="gap-1.5">
+          <Icon className="text-muted-foreground size-3.5" />
           {leaf ? (
-            <BreadcrumbLink asChild>
+            <BreadcrumbLink asChild className="hover:text-foreground">
               <Link href={active.href}>{active.label}</Link>
             </BreadcrumbLink>
           ) : (
-            <BreadcrumbPage>{active.label}</BreadcrumbPage>
+            <BreadcrumbPage className="font-medium">{active.label}</BreadcrumbPage>
           )}
         </BreadcrumbItem>
         {leaf && (
           <>
-            <BreadcrumbSeparator />
+            <BreadcrumbSeparator className="[&>svg]:size-3" />
             <BreadcrumbItem>
-              <BreadcrumbPage>{leaf}</BreadcrumbPage>
+              <BreadcrumbPage className="font-medium">{leaf}</BreadcrumbPage>
             </BreadcrumbItem>
           </>
         )}

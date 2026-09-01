@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronRightIcon, CompassIcon } from "lucide-react";
+import { ChevronRightIcon } from "lucide-react";
 import { useAuth } from "@/modules/auth";
 import {
   Collapsible,
@@ -12,7 +12,6 @@ import {
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupLabel,
   SidebarHeader,
@@ -25,38 +24,34 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { NAVIGATION } from "../lib/navigation";
-import { NavUser } from "./nav-user";
+import { CommandSearch } from "./command-search";
+import { WorkspaceMenu } from "./workspace-menu";
+
+/**
+ * Chez Twenty l'entrée de navigation est basse (28 px), en gris secondaire, et
+ * ne s'allume qu'à l'état actif — un aplat gris, jamais une teinte. Ces classes
+ * sont partagées par les entrées de premier niveau et leurs sous-entrées pour
+ * que la colonne garde un seul rythme.
+ */
+const ITEM = "h-7 gap-2 rounded-[4px] px-1.5 text-sm font-normal";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
   const { can } = useAuth();
 
   return (
-    <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <Link href="/customers">
-                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                  <CompassIcon className="size-4" />
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">Danilov</span>
-                  <span className="text-muted-foreground truncate text-xs">
-                    Bureau d&apos;études
-                  </span>
-                </div>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+    <Sidebar variant="inset" collapsible="icon" {...props}>
+      <SidebarHeader className="gap-0.5 p-2">
+        <WorkspaceMenu />
+        <CommandSearch />
       </SidebarHeader>
 
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Modules</SidebarGroupLabel>
-          <SidebarMenu>
+      <SidebarContent className="px-2">
+        <SidebarGroup className="p-0">
+          <SidebarGroupLabel className="text-muted-foreground h-7 px-1.5 text-[11px] font-medium">
+            Espace de travail
+          </SidebarGroupLabel>
+          <SidebarMenu className="gap-0.5">
             {NAVIGATION.filter((item) => can(item.permission)).map((item) => {
               const active = pathname.startsWith(item.href);
               const Icon = item.icon;
@@ -68,12 +63,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
                       tooltip={`${item.label} — à venir`}
-                      className="cursor-not-allowed opacity-50"
+                      className={`${ITEM} cursor-not-allowed opacity-50`}
                       aria-disabled
                     >
                       <Icon />
                       <span>{item.label}</span>
-                      <span className="text-muted-foreground ml-auto text-[0.65rem] uppercase">
+                      <span className="text-muted-foreground ml-auto text-[10px]">
                         bientôt
                       </span>
                     </SidebarMenuButton>
@@ -88,7 +83,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               if (subItems.length === 0) {
                 return (
                   <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton asChild isActive={active} tooltip={item.label}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={active}
+                      tooltip={item.label}
+                      className={ITEM}
+                    >
                       <Link href={item.href}>
                         <Icon />
                         <span>{item.label}</span>
@@ -107,17 +107,25 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 >
                   <SidebarMenuItem>
                     <CollapsibleTrigger asChild>
-                      <SidebarMenuButton tooltip={item.label} isActive={active}>
+                      <SidebarMenuButton
+                        tooltip={item.label}
+                        isActive={active}
+                        className={ITEM}
+                      >
                         <Icon />
                         <span>{item.label}</span>
-                        <ChevronRightIcon className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                        <ChevronRightIcon className="text-muted-foreground ml-auto size-3.5! transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                      <SidebarMenuSub>
+                      <SidebarMenuSub className="mx-0 gap-0.5 border-none py-0.5 pr-0 pl-4">
                         {subItems.map((sub) => (
                           <SidebarMenuSubItem key={sub.href}>
-                            <SidebarMenuSubButton asChild>
+                            <SidebarMenuSubButton
+                              asChild
+                              isActive={pathname === sub.href}
+                              className={ITEM}
+                            >
                               <Link href={sub.href}>
                                 <span>{sub.label}</span>
                               </Link>
@@ -134,9 +142,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter>
-        <NavUser />
-      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );
