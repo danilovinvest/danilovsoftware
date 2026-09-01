@@ -3,7 +3,7 @@ import { CUSTOMER_KIND } from "@/modules/customers";
 import { cn } from "@/lib/utils";
 import { eurosShort, initials, plural, sinceDays } from "@/shared/lib/format";
 import { GradientAvatar } from "@/shared/ui/gradient-avatar";
-import { Meter, Panel } from "@/shared/ui/panel";
+import { Panel } from "@/shared/ui/panel";
 import type { TopClient } from "../lib/types";
 
 /**
@@ -72,9 +72,6 @@ export function TopClientsPanel({ rows }: { rows: TopClient[] }) {
           </p>
         </div>
       ))}
-      <div className="hidden">
-        <Meter value={0} max={1} />
-      </div>
     </Panel>
   );
 }
