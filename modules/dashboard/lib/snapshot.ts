@@ -192,7 +192,8 @@ export function buildSnapshot(period: Period, at: Date = new Date()): DashboardS
     {
       key: "pending",
       label: "En attente de réponse",
-      hint: "Tous les devis encore au statut « étude », quelle que soit leur date",
+      hint:
+        "Devis au statut « étude », toutes dates confondues. Les variantes d'un même chantier y comptent chacune pour elle-même : l'export ne les relie pas.",
       value: Math.round(pendingAmount),
       previous: null,
       note: `${pending.length} devis en attente`,
@@ -289,10 +290,12 @@ export function buildSnapshot(period: Period, at: Date = new Date()): DashboardS
       amount: 0,
     };
     entry.count += 1;
-    entry.amount = Math.round(entry.amount + quote.amount);
+    entry.amount += quote.amount;
     vatMap.set(rate, entry);
   }
-  const vat = [...vatMap.values()].sort((a, b) => b.amount - a.amount);
+  const vat = [...vatMap.values()]
+    .map((bucket) => ({ ...bucket, amount: Math.round(bucket.amount) }))
+    .sort((a, b) => b.amount - a.amount);
 
   // ---- Synthèse par fiche --------------------------------------------------
 
