@@ -90,12 +90,14 @@ export function ProjectsPanel({
       )}
 
       <ProjectDialog
+        key={projectOpen ? "project-open" : "project-closed"}
         customerId={customerId}
         open={projectOpen}
         onOpenChange={setProjectOpen}
         onSaved={onChanged}
       />
       <QuoteDialog
+        key={quoteFor?.id ?? "quote-closed"}
         project={quoteFor}
         onOpenChange={(open) => !open && setQuoteFor(null)}
         onSaved={onChanged}

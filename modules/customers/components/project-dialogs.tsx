@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -44,6 +44,11 @@ const EMPTY_QUOTE: QuotePayload = {
   comment: "",
 };
 
+/**
+ * Les deux boîtes de dialogue partent d'un état neuf à chaque ouverture. Le
+ * remontage est provoqué par une `key` posée à l'appel plutôt que par un effet
+ * de réinitialisation, qui déclencherait un rendu en cascade.
+ */
 export function ProjectDialog({
   customerId,
   open,
@@ -57,10 +62,6 @@ export function ProjectDialog({
 }) {
   const [values, setValues] = useState<ProjectPayload>(EMPTY_PROJECT);
   const create = useAction(() => api.createProject(customerId, values));
-
-  useEffect(() => {
-    if (open) setValues(EMPTY_PROJECT);
-  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -150,13 +151,7 @@ export function QuoteDialog({
   onSaved: () => void;
 }) {
   const [values, setValues] = useState<QuotePayload>(EMPTY_QUOTE);
-  const create = useAction(() =>
-    api.createQuote(project?.id ?? "", values),
-  );
-
-  useEffect(() => {
-    if (project) setValues(EMPTY_QUOTE);
-  }, [project]);
+  const create = useAction(() => api.createQuote(project?.id ?? "", values));
 
   return (
     <Dialog open={project !== null} onOpenChange={onOpenChange}>
