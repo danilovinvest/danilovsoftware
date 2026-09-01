@@ -1,0 +1,144 @@
+import type { CalendarView, ColorKey, ResponseStatus } from "./types";
+
+/**
+ * Habillage du calendrier.
+ *
+ * Les cinq agendas prennent les cinq teintes de graphique du thème
+ * (`--chart-1` à `--chart-5`), qui sont précisément faites pour cela : elles
+ * sont distinctes entre elles et redéfinies dans le bloc sombre. Aucune couleur
+ * littérale n'entre ici, sans quoi le thème sombre cesserait de fonctionner.
+ *
+ * Les classes sont écrites en toutes lettres et non composées à la volée :
+ * Tailwind ne voit pas `bg-chart-${n}`.
+ */
+export const CALENDAR_STYLE: Record<
+  ColorKey,
+  { dot: string; soft: string; text: string; solid: string; rail: string }
+> = {
+  chantier: {
+    dot: "bg-chart-1",
+    soft: "bg-chart-1/10 hover:bg-chart-1/20",
+    text: "text-chart-1",
+    solid: "bg-chart-1 text-white",
+    rail: "border-l-chart-1",
+  },
+  etude: {
+    dot: "bg-chart-4",
+    soft: "bg-chart-4/10 hover:bg-chart-4/20",
+    text: "text-chart-4",
+    solid: "bg-chart-4 text-white",
+    rail: "border-l-chart-4",
+  },
+  client: {
+    dot: "bg-chart-3",
+    soft: "bg-chart-3/10 hover:bg-chart-3/20",
+    text: "text-chart-3",
+    solid: "bg-chart-3 text-white",
+    rail: "border-l-chart-3",
+  },
+  interne: {
+    dot: "bg-chart-5",
+    soft: "bg-chart-5/10 hover:bg-chart-5/20",
+    text: "text-chart-5",
+    solid: "bg-chart-5 text-white",
+    rail: "border-l-chart-5",
+  },
+  absence: {
+    dot: "bg-chart-2",
+    soft: "bg-chart-2/10 hover:bg-chart-2/20",
+    text: "text-chart-2",
+    solid: "bg-chart-2 text-white",
+    rail: "border-l-chart-2",
+  },
+};
+
+export const VIEWS: Array<{ value: CalendarView; label: string }> = [
+  { value: "mois", label: "Mois" },
+  { value: "semaine", label: "Semaine" },
+  { value: "agenda", label: "Agenda" },
+];
+
+export const RESPONSE: Record<ResponseStatus, { label: string; tone: string }> = {
+  accepted: { label: "A accepté", tone: "text-success" },
+  declined: { label: "A décliné", tone: "text-danger" },
+  tentative: { label: "Peut-être", tone: "text-warning" },
+  needsAction: { label: "Sans réponse", tone: "text-muted-foreground" },
+};
+
+/** Lundi en tête : la semaine française, pas celle du calendrier américain. */
+export const WEEKDAYS = ["lun.", "mar.", "mer.", "jeu.", "ven.", "sam.", "dim."];
+
+/** Plage horaire peinte par la vue semaine. Un BET ne travaille pas la nuit. */
+export const DAY_START_HOUR = 7;
+export const DAY_END_HOUR = 20;
+
+const monthYear = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" });
+const dayLong = new Intl.DateTimeFormat("fr-FR", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+});
+const dayShort = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });
+const time = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" });
+
+export function formatMonthYear(date: Date): string {
+  return monthYear.format(date);
+}
+
+export function formatDayLong(date: Date): string {
+  return dayLong.format(date);
+}
+
+export function formatDayShort(date: Date): string {
+  return dayShort.format(date);
+}
+
+export function formatTime(date: Date): string {
+  return time.format(date);
+}
+
+/** « 14:00 – 15:30 » ; « Toute la journée » pour un événement sans heure. */
+export function formatRange(start: Date, end: Date, isAllDay: boolean): string {
+  if (isAllDay) return "Toute la journée";
+  return `${time.format(start)} – ${time.format(end)}`;
+}
+
+export function formatDuration(start: Date, end: Date): string {
+  const minutes = Math.round((end.getTime() - start.getTime()) / 60_000);
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest === 0 ? `${hours} h` : `${hours} h ${String(rest).padStart(2, "0")}`;
+}
+
+const RRULE_DAYS: Record<string, string> = {
+  MO: "lundi",
+  TU: "mardi",
+  WE: "mercredi",
+  TH: "jeudi",
+  FR: "vendredi",
+  SA: "samedi",
+  SU: "dimanche",
+};
+
+/** Traduit la RRULE en français plutôt que de l'afficher brute. */
+export function describeRecurrence(rules: string[] | undefined): string | null {
+  const rule = rules?.[0];
+  if (!rule) return null;
+
+  const day = /BYDAY=(\d?)([A-Z]{2})/.exec(rule);
+  const label = day ? RRULE_DAYS[day[2]] : null;
+
+  if (rule.includes("FREQ=WEEKLY")) {
+    return label ? `Toutes les semaines, le ${label}` : "Toutes les semaines";
+  }
+  if (rule.includes("FREQ=MONTHLY")) {
+    const nth = day?.[1];
+    if (label && nth) {
+      const ordinal = nth === "1" ? "premier" : `${nth}ᵉ`;
+      return `Tous les mois, le ${ordinal} ${label}`;
+    }
+    return "Tous les mois";
+  }
+  return "Événement récurrent";
+}
