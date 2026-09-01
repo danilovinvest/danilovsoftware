@@ -1,4 +1,5 @@
 import {
+  FileSpreadsheetIcon,
   FileTextIcon,
   LayoutGridIcon,
   UsersIcon,
@@ -30,14 +31,18 @@ export const NAVIGATION: NavItem[] = [
     permission: "customers:read",
     items: [
       { href: "/customers", label: "Toutes les fiches" },
-      { href: "/customers?status=prospect", label: "Prospects" },
-      { href: "/customers?status=client", label: "Clients" },
       {
         href: "/customers/nouveau",
         label: "Nouvelle fiche",
         permission: "customers:write",
       },
     ],
+  },
+  {
+    href: "/import",
+    label: "Sync Excel",
+    icon: FileSpreadsheetIcon,
+    permission: "imports:run",
   },
   {
     href: "/users",

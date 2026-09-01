@@ -12,6 +12,7 @@ export type Permission =
   | "users:delete"
   | "roles:read"
   | "roles:write"
+  | "imports:run"
   | "system:admin";
 
 export type RoleSlug = "user" | "admin" | "developer";
