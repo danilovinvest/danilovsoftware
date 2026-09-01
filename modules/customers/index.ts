@@ -7,6 +7,9 @@ export { CustomerDetailView } from "./components/customer-detail-view";
 export { CustomerForm } from "./components/customer-form";
 export { CustomerWizard } from "./components/customer-wizard";
 export { EnumBadge } from "./components/enum-badge";
+// Exposé pour la recherche globale du shell (⌘K), qui interroge les fiches
+// sans pour autant dépendre des composants du module.
+export { listCustomers } from "./lib/api";
 export * from "./lib/labels";
 export * from "./lib/types";
 export { ImportView } from "./import";
