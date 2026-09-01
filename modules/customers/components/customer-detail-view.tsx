@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { usePermission } from "@/modules/auth";
 import { useSetPageTitle } from "@/modules/shell";
+import { CustomerTasksPanel } from "@/modules/tasks";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -152,6 +153,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
               {customer.interactions.length}
             </span>
           </TabsTrigger>
+          <TabsTrigger value="taches">Tâches</TabsTrigger>
           <TabsTrigger value="details">Détails</TabsTrigger>
         </TabsList>
 
@@ -171,6 +173,10 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
             projects={customer.projects}
             onChanged={reload}
           />
+        </TabsContent>
+
+        <TabsContent value="taches" className="mt-4">
+          <CustomerTasksPanel customerId={customer.id} />
         </TabsContent>
 
         <TabsContent value="details" className="mt-4">

@@ -36,6 +36,12 @@ export const NAVIGATION: NavItem[] = [
     ],
   },
   {
+    href: "/tasks",
+    label: "Tâches",
+    icon: CheckSquareIcon,
+    permission: "tasks:read",
+  },
+  {
     href: "/users",
     label: "Utilisateurs",
     icon: UsersIcon,

@@ -14,6 +14,9 @@ export type Permission =
   | "roles:write"
   | "teams:read"
   | "teams:write"
+  | "tasks:read"
+  | "tasks:write"
+  | "tasks:delete"
   | "imports:run"
   | "system:admin";
 

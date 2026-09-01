@@ -10,6 +10,8 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { SettingsIcon } from "lucide-react";
+import { settingsLabel } from "@/modules/settings";
 import {
   SidebarInset,
   SidebarProvider,
@@ -63,6 +65,36 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 function ShellBreadcrumb() {
   const pathname = usePathname();
   const pageTitle = usePageTitle();
+
+  // Les réglages ne figurent pas dans NAVIGATION — on y entre par le menu de
+  // l'espace de travail — mais le fil d'Ariane doit quand même les situer.
+  if (pathname.startsWith("/settings")) {
+    const section = settingsLabel(pathname);
+    return (
+      <Breadcrumb>
+        <BreadcrumbList className="gap-1 text-sm sm:gap-1">
+          <BreadcrumbItem className="gap-1.5">
+            <SettingsIcon className="text-muted-foreground size-3.5" />
+            {section ? (
+              <BreadcrumbLink asChild className="hover:text-foreground">
+                <Link href="/settings">Paramètres</Link>
+              </BreadcrumbLink>
+            ) : (
+              <BreadcrumbPage className="font-medium">Paramètres</BreadcrumbPage>
+            )}
+          </BreadcrumbItem>
+          {section && (
+            <>
+              <BreadcrumbSeparator className="[&>svg]:size-3" />
+              <BreadcrumbItem>
+                <BreadcrumbPage className="font-medium">{section}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </>
+          )}
+        </BreadcrumbList>
+      </Breadcrumb>
+    );
+  }
 
   const active = NAVIGATION.find((item) => pathname.startsWith(item.href));
   const rest = active ? pathname.slice(active.href.length).replace(/^\//, "") : "";
