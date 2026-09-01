@@ -18,6 +18,20 @@ const sizes: Record<Size, string> = {
   md: "h-10 px-4 text-sm",
 };
 
+/**
+ * Classes du bouton, exposées séparément pour styler un <Link> de next/link
+ * sans imbriquer une ancre dans un <button>.
+ */
+export function buttonClass(variant: Variant = "primary", size: Size = "md", className?: string) {
+  return cn(
+    "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors",
+    "disabled:cursor-not-allowed disabled:opacity-50",
+    variants[variant],
+    sizes[size],
+    className,
+  );
+}
+
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: Variant;
   size?: Size;
@@ -37,13 +51,7 @@ export function Button({
     <button
       {...props}
       disabled={disabled || loading}
-      className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors",
-        "disabled:cursor-not-allowed disabled:opacity-50",
-        variants[variant],
-        sizes[size],
-        className,
-      )}
+      className={buttonClass(variant, size, className)}
     >
       {loading && (
         <span
