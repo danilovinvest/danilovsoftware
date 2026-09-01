@@ -73,3 +73,52 @@ export function initials(name: string): string {
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("");
 }
+
+/**
+ * Échéance exprimée en temps restant, avec la tonalité qui va avec.
+ *
+ * « dans 3 jours » se lit plus vite que « 05/09/2026 » quand on trie une pile
+ * de tâches. Le calcul se fait par jours calendaires, pas par heures écoulées :
+ * une échéance ce soir doit dire « aujourd'hui », pas « dans 6 heures ».
+ */
+export type DueTone = "overdue" | "today" | "soon" | "later" | "none";
+
+export type DueInfo = {
+  label: string;
+  tone: DueTone;
+  /** Date complète, pour l'infobulle. */
+  title: string;
+};
+
+const relative = new Intl.RelativeTimeFormat("fr-FR", { numeric: "auto" });
+
+export function describeDue(iso: string | null | undefined, done = false): DueInfo {
+  if (!iso) return { label: "Sans échéance", tone: "none", title: "" };
+
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
+    return { label: "Sans échéance", tone: "none", title: "" };
+  }
+
+  const title = formatDateTime(iso);
+
+  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const days = Math.round(
+    (startOfDay(date).getTime() - startOfDay(new Date()).getTime()) / 86_400_000,
+  );
+
+  // Une tâche close n'est plus « en retard » : elle porte sa date, sans alarme.
+  if (done) return { label: formatDate(iso), tone: "none", title };
+
+  if (days < 0) {
+    const label = days === -1 ? "hier" : relative.format(days, "day");
+    return { label: `En retard — ${label}`, tone: "overdue", title };
+  }
+  if (days === 0) return { label: "Aujourd'hui", tone: "today", title };
+  if (days === 1) return { label: "Demain", tone: "soon", title };
+  if (days <= 7) return { label: relative.format(days, "day"), tone: "soon", title };
+  if (days <= 30) {
+    return { label: relative.format(Math.round(days / 7), "week"), tone: "later", title };
+  }
+  return { label: formatDate(iso), tone: "later", title };
+}

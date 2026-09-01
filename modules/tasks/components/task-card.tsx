@@ -3,17 +3,30 @@
 import Link from "next/link";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { CalendarClockIcon, GripVerticalIcon } from "lucide-react";
+import {
+  AlertTriangleIcon,
+  BriefcaseIcon,
+  CalendarClockIcon,
+  CheckIcon,
+  GripVerticalIcon,
+  UserRoundIcon,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { formatDate } from "@/shared/lib/format";
+import { describeDue, formatRelative } from "@/shared/lib/format";
+import { DUE_ACCENT, DUE_TEXT } from "../lib/labels";
 import { AssigneePicker } from "./assignee-picker";
 import type { Colleague, Task } from "../lib/types";
 
 /**
- * Carte du tableau. La poignée de gauche est la seule zone qui déclenche le
- * glisser : sans elle, cliquer sur le titre ou sur l'assigné amorcerait un
- * déplacement au lieu d'ouvrir la tâche ou le menu.
+ * Carte du tableau.
+ *
+ * La poignée de gauche est la seule zone qui déclenche le glisser : sans elle,
+ * cliquer sur le titre ou sur l'assigné amorcerait un déplacement au lieu
+ * d'ouvrir la tâche ou le menu.
+ *
+ * La bordure gauche colore l'urgence — rouge en retard, ambre aujourd'hui —
+ * pour que l'état se lise sans parcourir les dates.
  */
 export function TaskCard({
   task,
@@ -28,10 +41,14 @@ export function TaskCard({
   canWrite: boolean;
   onOpen: (task: Task) => void;
   onAssign: (task: Task, assigneeId: string | null) => void;
-  /** Rendu au-dessus du tableau pendant le glisser : ni tri ni interaction. */
   overlay?: boolean;
 }) {
   const sortable = useSortable({ id: task.id, disabled: !canWrite || overlay });
+  const done = task.status === "terminee";
+  const due = describeDue(task.due_at, done);
+
+  const customers = task.targets.filter((t) => t.customer_id);
+  const projects = task.targets.filter((t) => t.project_id);
 
   return (
     <li
@@ -39,19 +56,29 @@ export function TaskCard({
       style={
         overlay
           ? undefined
-          : { transform: CSS.Translate.toString(sortable.transform), transition: sortable.transition }
+          : {
+              transform: CSS.Translate.toString(sortable.transform),
+              transition: sortable.transition,
+            }
       }
       className={cn(
-        "bg-card group flex gap-2 rounded-lg border p-3 shadow-sm",
-        sortable.isDragging && "opacity-40",
-        overlay && "rotate-2 shadow-lg",
+        "bg-card group relative flex gap-2 rounded-lg border border-l-3 p-3",
+        "shadow-sm transition-shadow hover:shadow-md",
+        DUE_ACCENT[due.tone],
+        // La carte d'origine s'efface pendant le glisser : c'est le calque
+        // flottant qui suit le curseur.
+        sortable.isDragging && "opacity-30",
+        overlay && "rotate-2 cursor-grabbing shadow-xl",
       )}
     >
       {canWrite && (
         <button
           type="button"
           aria-label={`Déplacer « ${task.title} »`}
-          className="text-muted-foreground/40 hover:text-muted-foreground -ml-1 cursor-grab touch-none active:cursor-grabbing"
+          className={cn(
+            "text-muted-foreground/30 hover:text-muted-foreground -ml-1 shrink-0 cursor-grab",
+            "touch-none self-start pt-0.5 transition-colors active:cursor-grabbing",
+          )}
           {...sortable.attributes}
           {...sortable.listeners}
         >
@@ -63,59 +90,79 @@ export function TaskCard({
         <button
           type="button"
           onClick={() => onOpen(task)}
-          className="hover:text-primary block w-full text-left text-sm font-medium"
+          className="hover:text-primary block w-full text-left text-sm leading-snug font-medium"
         >
-          {task.title}
+          <span className={cn(done && "text-muted-foreground line-through")}>
+            {task.title}
+          </span>
         </button>
 
         {task.body && (
-          <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">{task.body}</p>
+          <p className="text-muted-foreground mt-1 line-clamp-2 text-xs leading-relaxed">
+            {task.body}
+          </p>
         )}
 
-        {task.targets.length > 0 && (
+        {(customers.length > 0 || projects.length > 0) && (
           <div className="mt-2 flex flex-wrap gap-1">
-            {task.targets.map((target) =>
-              target.customer_id ? (
-                <Badge key={target.id} variant="outline" asChild className="max-w-full">
-                  <Link
-                    href={`/customers/${target.customer_id}`}
-                    className="truncate"
-                    onPointerDown={(event) => event.stopPropagation()}
-                  >
-                    {target.label}
-                  </Link>
-                </Badge>
-              ) : (
-                <Badge key={target.id} variant="outline" className="max-w-full truncate">
-                  {target.label}
-                </Badge>
-              ),
-            )}
+            {customers.map((target) => (
+              <Badge
+                key={target.id}
+                asChild
+                className="bg-accent text-accent-foreground max-w-full gap-1"
+              >
+                <Link
+                  href={`/customers/${target.customer_id}`}
+                  className="truncate"
+                  onPointerDown={(event) => event.stopPropagation()}
+                >
+                  <UserRoundIcon />
+                  <span className="truncate">{target.label}</span>
+                </Link>
+              </Badge>
+            ))}
+            {projects.map((target) => (
+              <Badge key={target.id} variant="outline" className="max-w-full gap-1">
+                <BriefcaseIcon />
+                <span className="truncate">{target.label}</span>
+              </Badge>
+            ))}
           </div>
         )}
 
-        <div className="mt-2 flex items-center justify-between gap-2">
-          {task.due_at ? (
-            <span
-              className={cn(
-                "flex items-center gap-1 text-xs",
-                task.is_overdue ? "text-danger font-medium" : "text-muted-foreground",
-              )}
-            >
+        <div className="mt-2.5 flex items-center justify-between gap-2">
+          <span
+            title={due.title}
+            className={cn("flex items-center gap-1 text-xs", DUE_TEXT[due.tone])}
+          >
+            {due.tone === "overdue" ? (
+              <AlertTriangleIcon className="size-3.5" />
+            ) : done ? (
+              <CheckIcon className="size-3.5" />
+            ) : (
               <CalendarClockIcon className="size-3.5" />
-              {formatDate(task.due_at)}
-            </span>
-          ) : (
-            <span className="text-muted-foreground/60 text-xs">Sans échéance</span>
-          )}
+            )}
+            {due.label}
+          </span>
 
-          <AssigneePicker
-            assigneeId={task.assignee_id}
-            assigneeName={task.assignee_name}
-            colleagues={colleagues}
-            disabled={!canWrite || overlay}
-            onChange={(assigneeId) => onAssign(task, assigneeId)}
-          />
+          <div className="flex items-center gap-2">
+            {/* Une tâche qui traîne sans échéance mérite qu'on le voie. */}
+            {!task.due_at && !done && (
+              <span
+                className="text-muted-foreground/50 text-[0.65rem]"
+                title={`Créée le ${new Date(task.created_at).toLocaleDateString("fr-FR")}`}
+              >
+                créée {formatRelative(task.created_at)}
+              </span>
+            )}
+            <AssigneePicker
+              assigneeId={task.assignee_id}
+              assigneeName={task.assignee_name}
+              colleagues={colleagues}
+              disabled={!canWrite || overlay}
+              onChange={(assigneeId) => onAssign(task, assigneeId)}
+            />
+          </div>
         </div>
       </div>
     </li>
