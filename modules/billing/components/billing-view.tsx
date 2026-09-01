@@ -3,7 +3,7 @@
 import { FlaskConicalIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePermission } from "@/modules/auth";
-import { euros } from "@/shared/lib/format";
+import { plural } from "@/shared/lib/format";
 import { MetricCards } from "@/shared/ui/metric-cards";
 import { useBilling } from "../hooks/use-billing";
 import { ENTITY_BY_ID } from "../lib/entities";
@@ -50,7 +50,7 @@ export function BillingView() {
         <p className="text-muted-foreground mt-0.5 text-sm">
           {entity
             ? `${entity.legal_form} · SIREN ${formatSiren(entity.siren)} · ${entity.naf_label}`
-            : `Les cinq sociétés du groupe · ${euros(data.consolidated)} facturés hors groupe sur la période`}
+            : `Les cinq sociétés du groupe · ${plural(data.invoices.length, "facture")} au journal`}
         </p>
       </header>
 
