@@ -1,26 +1,94 @@
 @import "tailwindcss";
 
+/*
+ * Jetons de couleur du CRM. Tout est déclaré ici et exposé à Tailwind via
+ * @theme inline : les composants n'écrivent jamais une couleur en dur.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  --background: #f6f7f9;
+  --surface: #ffffff;
+  --surface-muted: #f2f4f7;
+  --foreground: #101828;
+  --muted-foreground: #667085;
+  --border: #e4e7ec;
+  --border-strong: #d0d5dd;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --accent: #1f6feb;
+  --accent-hover: #1a5fd0;
+  --accent-soft: #e8f0fe;
+  --accent-foreground: #ffffff;
+
+  --success: #067647;
+  --success-soft: #e6f4ec;
+  --warning: #b54708;
+  --warning-soft: #fdf1e6;
+  --danger: #b42318;
+  --danger-soft: #fdeceb;
+  --neutral: #475467;
+  --neutral-soft: #eef0f3;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0c0f14;
+    --surface: #141920;
+    --surface-muted: #1b212a;
+    --foreground: #e8eaed;
+    --muted-foreground: #98a2b3;
+    --border: #252c36;
+    --border-strong: #333c48;
+
+    --accent: #4c8dff;
+    --accent-hover: #6ba0ff;
+    --accent-soft: #16233a;
+    --accent-foreground: #0c0f14;
+
+    --success: #4ade80;
+    --success-soft: #14261c;
+    --warning: #fbbf24;
+    --warning-soft: #2a2013;
+    --danger: #f87171;
+    --danger-soft: #2c1717;
+    --neutral: #98a2b3;
+    --neutral-soft: #1d232c;
   }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border-subtle: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-neutral: var(--neutral);
+  --color-neutral-soft: var(--neutral-soft);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* Anneau de focus unique pour tous les éléments interactifs. */
+:where(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
