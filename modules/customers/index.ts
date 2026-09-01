@@ -9,3 +9,4 @@ export { CustomerWizard } from "./components/customer-wizard";
 export { EnumBadge } from "./components/enum-badge";
 export * from "./lib/labels";
 export * from "./lib/types";
+export { ImportView } from "./import";

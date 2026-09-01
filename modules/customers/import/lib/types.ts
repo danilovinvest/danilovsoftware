@@ -8,7 +8,7 @@ import type {
   ProjectStage,
   QuoteKind,
   QuoteStatus,
-} from "@/modules/customers";
+} from "../../lib/types";
 
 export type ImportStatus = {
   default_file_available: boolean;
@@ -47,7 +47,8 @@ export type PlannedProject = {
   site_postal_code: string;
   site_city: string;
   started_at: string | null;
-  /** Le texte d'origine de la colonne « Statut », gardé pour la relecture. */
+  /** Le texte d'origine de la colonne « Statut », gardé pour la relecture
+   *  dans l'aperçu puis stocké sur l'affaire (champ source_status). */
   raw_status: string;
   confidence: number;
   classified_by: "openai" | "regles";

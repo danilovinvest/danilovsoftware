@@ -61,6 +61,7 @@ export type ProjectSummary = {
   stage: ProjectStage;
   outcome: ProjectOutcome | null;
   outcome_note: string;
+  source_status: string;
   site_city: string;
   started_at: string | null;
   quote_count: number;
@@ -134,6 +135,8 @@ export type Project = {
   stage: ProjectStage;
   outcome: ProjectOutcome | null;
   outcome_note: string;
+  /** Texte brut repris du classeur Excel ; vide pour une affaire saisie ici. */
+  source_status: string;
   site_address: string;
   site_postal_code: string;
   site_city: string;
@@ -235,6 +238,7 @@ export type ProjectPayload = Omit<
   | "quote_count"
   | "total_amount_ttc"
   | "last_reminder_at"
+  | "source_status"
 >;
 
 export type StagePayload = {

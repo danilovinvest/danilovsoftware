@@ -13,7 +13,7 @@ import {
   PROJECT_OUTCOME,
   PROJECT_STAGE,
   QUOTE_STATUS,
-} from "@/modules/customers";
+} from "../..";
 import { LOW_CONFIDENCE, type Plan, type PlannedCustomer } from "../lib/types";
 
 /**

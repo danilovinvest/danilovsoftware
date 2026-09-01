@@ -144,6 +144,12 @@ function ProjectBlock({
               .join(", ") || "Chantier non renseigné"}
             {project.outcome_note && ` — ${project.outcome_note}`}
           </p>
+          {project.source_status && (
+            <p className="text-muted-foreground mt-1 text-xs">
+              Suivi Excel :{" "}
+              <span className="text-foreground font-mono">« {project.source_status} »</span>
+            </p>
+          )}
         </div>
         <p className="text-lg font-semibold tabular-nums">
           {project.total_amount_ttc === "0"
@@ -227,6 +233,11 @@ function ProjectBlock({
                   acompte {PAYMENT_STATUS[quote.deposit_status].label.toLowerCase()}
                 </span>
               )}
+              {quote.balance_status !== "non_applicable" && (
+                <span className="text-muted-foreground text-xs">
+                  solde {PAYMENT_STATUS[quote.balance_status].label.toLowerCase()}
+                </span>
+              )}
               <span className="text-muted-foreground text-xs">
                 {formatDate(quote.issued_at)}
               </span>
@@ -235,6 +246,11 @@ function ProjectBlock({
                   ? formatAmount(quote.amount_ttc)
                   : quote.amount_note || "—"}
               </span>
+              {quote.comment && (
+                <span className="text-muted-foreground w-full text-xs">
+                  {quote.comment}
+                </span>
+              )}
             </li>
           ))}
         </ul>
