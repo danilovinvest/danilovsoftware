@@ -1,4 +1,5 @@
 import {
+  CalendarIcon,
   CheckSquareIcon,
   FileTextIcon,
   LayoutDashboardIcon,
@@ -55,6 +56,14 @@ export const NAVIGATION: NavItem[] = [
     label: "Tâches",
     icon: CheckSquareIcon,
     permission: "tasks:read",
+  },
+  {
+    href: "/calendar",
+    label: "Calendrier",
+    icon: CalendarIcon,
+    // Le calendrier ne montre rien de plus que les fiches : qui peut les lire
+    // peut le lire.
+    permission: "customers:read",
   },
   {
     href: "/billing",
