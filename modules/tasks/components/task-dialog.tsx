@@ -12,29 +12,11 @@ import {
 } from "@/components/ui/dialog";
 import { ErrorNotice } from "@/shared/ui/feedback";
 import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
+import { DateTimeField } from "@/shared/ui/date-time-field";
 import { errorMessage } from "@/shared/api/errors";
 import * as api from "../lib/api";
 import { TASK_STATUS, toOptions } from "../lib/labels";
 import type { Colleague, Task, TaskPayload, TaskStatus, TaskTargetPayload } from "../lib/types";
-
-/**
- * <input type="datetime-local"> attend une heure locale sans fuseau ; l'API
- * parle ISO. Les deux conversions vivent ici, nulle part ailleurs.
- */
-function toLocalInput(iso: string | null): string {
-  if (!iso) return "";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "";
-  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000)
-    .toISOString()
-    .slice(0, 16);
-}
-
-function toIso(local: string): string | null {
-  if (!local) return null;
-  const date = new Date(local);
-  return Number.isNaN(date.getTime()) ? null : date.toISOString();
-}
 
 export function TaskDialog({
   task,
@@ -59,7 +41,7 @@ export function TaskDialog({
   const [body, setBody] = useState(task?.body ?? "");
   const [status, setStatus] = useState<TaskStatus>(task?.status ?? initialStatus ?? "a_faire");
   const [assigneeId, setAssigneeId] = useState(task?.assignee_id ?? "");
-  const [dueLocal, setDueLocal] = useState(toLocalInput(task?.due_at ?? null));
+  const [dueAt, setDueAt] = useState<string | null>(task?.due_at ?? null);
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string>>({});
   const [pending, setPending] = useState(false);
@@ -82,7 +64,7 @@ export function TaskDialog({
       title,
       body,
       status,
-      due_at: toIso(dueLocal),
+      due_at: dueAt,
       assignee_id: assigneeId || null,
       targets,
     };
@@ -138,12 +120,7 @@ export function TaskDialog({
             error={fields.status}
             onValueChange={(value) => setStatus(value as TaskStatus)}
           />
-          <TextField
-            label="Échéance"
-            type="datetime-local"
-            value={dueLocal}
-            onChange={(event) => setDueLocal(event.target.value)}
-          />
+          <DateTimeField label="Échéance" value={dueAt} onChange={setDueAt} />
           <SelectField
             label="Assignée à"
             wrapperClassName="sm:col-span-2"

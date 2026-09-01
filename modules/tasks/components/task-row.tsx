@@ -6,8 +6,9 @@ import { usePermission } from "@/modules/auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { formatDateTime } from "@/shared/lib/format";
+import { describeDue } from "@/shared/lib/format";
 import * as api from "../lib/api";
+import { DUE_TEXT } from "../lib/labels";
 import { TaskStatusBadge } from "./task-badge";
 import type { Task, TaskStatus } from "../lib/types";
 
@@ -27,6 +28,7 @@ export function TaskRow({
   const canWrite = usePermission("tasks:write");
   const canDelete = usePermission("tasks:delete");
   const done = task.status === "terminee";
+  const due = describeDue(task.due_at, done);
 
   async function toggle() {
     const next: TaskStatus = done ? "a_faire" : "terminee";
@@ -72,14 +74,11 @@ export function TaskRow({
 
           {task.due_at && (
             <span
-              className={cn(
-                "flex items-center gap-1",
-                task.is_overdue ? "text-danger font-medium" : "text-muted-foreground",
-              )}
+              title={due.title}
+              className={cn("flex items-center gap-1", DUE_TEXT[due.tone])}
             >
               <CalendarClockIcon className="size-3.5" />
-              {formatDateTime(task.due_at)}
-              {task.is_overdue && " — en retard"}
+              {due.label}
             </span>
           )}
 

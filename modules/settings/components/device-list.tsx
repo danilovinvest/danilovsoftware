@@ -7,9 +7,32 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ErrorNotice, Skeleton } from "@/shared/ui/feedback";
 import { errorMessage } from "@/shared/api/errors";
-import { formatRelative } from "@/shared/lib/format";
+
 import { useSessions } from "../hooks/use-settings";
 import { SettingsSection } from "./settings-page";
+
+/**
+ * « Vu il y a 5 min ».
+ *
+ * `formatRelative` du domaine raisonne en jours : pour des sessions, tout
+ * tomberait sur « aujourd'hui ». Une session se juge à l'heure près, d'où ce
+ * formateur local plutôt qu'un élargissement du formateur partagé, qui
+ * changerait l'affichage des dates métier.
+ */
+function formatLastSeen(iso: string): string {
+  const seen = new Date(iso).getTime();
+  if (Number.isNaN(seen)) return "date inconnue";
+
+  const minutes = Math.round((Date.now() - seen) / 60_000);
+  if (minutes < 1) return "à l'instant";
+  if (minutes < 60) return `il y a ${minutes} min`;
+
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `il y a ${hours} h`;
+
+  const relative = new Intl.RelativeTimeFormat("fr-FR", { numeric: "auto" });
+  return relative.format(-Math.round(hours / 24), "day");
+}
 
 /**
  * Lit un user-agent juste assez pour nommer l'appareil.
@@ -78,7 +101,7 @@ export function DeviceList() {
       {error ? (
         <ErrorNotice message={error} />
       ) : (
-        <div className="divide-y overflow-hidden rounded-lg border">
+        <div className="max-h-80 divide-y overflow-y-auto rounded-lg border">
           {failure && <ErrorNotice message={failure} className="m-2" />}
 
           {loading
@@ -98,7 +121,7 @@ export function DeviceList() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm">{label}</p>
                       <p className="text-muted-foreground truncate text-xs">
-                        Vu {formatRelative(session.last_seen_at)} ·{" "}
+                        Vu {formatLastSeen(session.last_seen_at)} ·{" "}
                         <span className="font-mono">{session.ip_address}</span>
                       </p>
                     </div>
