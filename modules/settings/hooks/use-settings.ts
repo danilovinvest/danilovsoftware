@@ -109,8 +109,6 @@ export function useSessions() {
       });
 
     return () => controller.abort();
-    // `token` est capturé par `key`.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
   const reload = useCallback(() => setToken((value) => value + 1), []);

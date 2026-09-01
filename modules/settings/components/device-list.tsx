@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { MonitorIcon, SmartphoneIcon, TabletIcon } from "lucide-react";
-import { revokeSession, type DeviceSession } from "@/modules/auth";
+import { revokeSession } from "@/modules/auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ErrorNotice, Skeleton } from "@/shared/ui/feedback";
