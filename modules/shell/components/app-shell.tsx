@@ -2,61 +2,78 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAuth, UserMenu } from "@/modules/auth";
-import { cn } from "@/shared/lib/cn";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { Separator } from "@/components/ui/separator";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import { NAVIGATION } from "../lib/navigation";
+import { AppSidebar } from "./app-sidebar";
+import { PageTitleProvider, usePageTitle } from "./page-title";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const { can } = useAuth();
+  return (
+    <PageTitleProvider>
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 !h-4" />
+            <ShellBreadcrumb />
+          </header>
+          <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">{children}</div>
+        </SidebarInset>
+      </SidebarProvider>
+    </PageTitleProvider>
+  );
+}
 
-  const items = NAVIGATION.filter((item) => can(item.permission));
+/**
+ * Fil d'Ariane déduit de l'URL : le premier segment identifie le module, le
+ * second est soit connu (« nouvelle fiche »), soit fourni par la page elle-même
+ * via useSetPageTitle.
+ */
+function ShellBreadcrumb() {
+  const pathname = usePathname();
+  const pageTitle = usePageTitle();
+
+  const module = NAVIGATION.find((item) => pathname.startsWith(item.href));
+  const rest = module ? pathname.slice(module.href.length).replace(/^\//, "") : "";
+  const leaf = rest === "nouveau" ? "Nouvelle fiche" : rest ? pageTitle : null;
+
+  if (!module) return null;
 
   return (
-    <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-10 border-b border-border-subtle bg-surface/80 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-6 px-6 py-3">
-          <div className="flex items-center gap-8">
-            <Link href="/customers" className="text-sm font-semibold tracking-tight">
-              Danilov <span className="text-muted-foreground">CRM</span>
-            </Link>
-            <nav className="flex gap-1" aria-label="Modules">
-              {items.map((item) => {
-                const active = pathname.startsWith(item.href);
-                if (item.comingSoon) {
-                  return (
-                    <span
-                      key={item.href}
-                      title="Module à venir"
-                      className="cursor-not-allowed rounded-lg px-3 py-1.5 text-sm text-muted-foreground/50"
-                    >
-                      {item.label}
-                    </span>
-                  );
-                }
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    aria-current={active ? "page" : undefined}
-                    className={cn(
-                      "rounded-lg px-3 py-1.5 text-sm transition-colors",
-                      active
-                        ? "bg-accent-soft font-medium text-accent"
-                        : "text-muted-foreground hover:bg-surface-muted",
-                    )}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
-          <UserMenu />
-        </div>
-      </header>
-
-      <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-8">{children}</main>
-    </div>
+    <Breadcrumb>
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          {leaf ? (
+            <BreadcrumbLink asChild>
+              <Link href={module.href}>{module.label}</Link>
+            </BreadcrumbLink>
+          ) : (
+            <BreadcrumbPage>{module.label}</BreadcrumbPage>
+          )}
+        </BreadcrumbItem>
+        {leaf && (
+          <>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{leaf}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </>
+        )}
+      </BreadcrumbList>
+    </Breadcrumb>
   );
 }
