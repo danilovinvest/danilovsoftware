@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { ChevronsUpDownIcon, LogOutIcon, ShieldCheckIcon } from "lucide-react";
-import { ROLE_LABELS, useAuth } from "@/modules/auth";
+import { useAuth } from "@/modules/auth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -47,7 +47,7 @@ export function NavUser() {
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{display}</span>
                 <span className="text-muted-foreground truncate text-xs">
-                  {ROLE_LABELS[account.role]}
+                  {account.role_name}
                 </span>
               </div>
               <ChevronsUpDownIcon className="ml-auto size-4" />
@@ -79,7 +79,7 @@ export function NavUser() {
             <DropdownMenuSeparator />
             <DropdownMenuItem disabled>
               <ShieldCheckIcon />
-              {ROLE_LABELS[account.role]} · {account.permissions.length} permissions
+              {account.role_name} · {account.permissions.length} permissions
             </DropdownMenuItem>
 
             <DropdownMenuSeparator />

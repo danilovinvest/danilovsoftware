@@ -12,10 +12,17 @@ export type Permission =
   | "users:delete"
   | "roles:read"
   | "roles:write"
+  | "teams:read"
+  | "teams:write"
   | "imports:run"
   | "system:admin";
 
-export type RoleSlug = "user" | "admin" | "developer";
+/**
+ * Identifiant de rôle. Volontairement une chaîne libre : les rôles sur mesure
+ * sont créés en base, une union fermée deviendrait fausse au premier rôle
+ * ajouté. Le libellé lisible arrive dans `role_name`, jamais reconstitué ici.
+ */
+export type RoleSlug = string;
 
 export type Account = {
   id: string;
@@ -37,8 +44,3 @@ export type SessionResponse = {
   user: Account;
 };
 
-export const ROLE_LABELS: Record<RoleSlug, string> = {
-  user: "Utilisateur",
-  admin: "Administrateur",
-  developer: "Développeur",
-};
