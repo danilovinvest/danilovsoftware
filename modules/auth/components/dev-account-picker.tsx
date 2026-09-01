@@ -5,23 +5,23 @@ import { KeyRoundIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ErrorNotice } from "@/shared/ui/feedback";
 import { errorMessage } from "@/shared/api/errors";
-import { DEV_ACCOUNTS, type DevAccount } from "../lib/dev-accounts";
+import { DEV_ACCOUNTS, DEV_LOGIN_ENABLED, type DevAccount } from "../lib/dev-accounts";
 import { useAuth } from "../auth-context";
 
 /**
  * Raccourci de connexion pour tester chaque rôle.
  *
- * Le composant s'auto-neutralise en production : `process.env.NODE_ENV` est
- * remplacé par une constante à la compilation, donc le corps de la fonction —
- * et l'import des identifiants avec lui — disparaît du bundle. Rien à
- * désactiver au déploiement, rien à oublier.
+ * Piloté par NEXT_PUBLIC_DEV_LOGIN, figé à la compilation : sans le drapeau,
+ * le corps de la fonction et les identifiants disparaissent du bundle. Un
+ * serveur de recette peut donc l'activer tout en tournant en build de
+ * production.
  */
 export function DevAccountPicker({ onSignedIn }: { onSignedIn: () => void }) {
   const { login } = useAuth();
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  if (process.env.NODE_ENV !== "development") return null;
+  if (!DEV_LOGIN_ENABLED || DEV_ACCOUNTS.length === 0) return null;
 
   async function signIn(account: DevAccount) {
     setPending(account.email);

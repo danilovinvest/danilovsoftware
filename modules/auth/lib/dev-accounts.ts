@@ -1,14 +1,18 @@
 /**
- * Comptes de démonstration, pour basculer d'un rôle à l'autre sans retaper
- * d'identifiants pendant le développement.
+ * Comptes de démonstration pour basculer d'un rôle à l'autre sans retaper
+ * d'identifiants.
  *
- * Ces mots de passe sont ceux de la base de développement locale, créés par
- * l'amorçage et les tests — ils n'existent nulle part ailleurs. Le sélecteur
- * qui les utilise est enfermé dans une condition
- * `process.env.NODE_ENV === "development"` : Next remplace cette expression à
- * la compilation, si bien que le bloc entier — et donc cette liste — est
- * éliminé du bundle de production. C'est une garantie de compilation, pas une
- * simple vérification à l'exécution.
+ * Le sélecteur n'existe que si `NEXT_PUBLIC_DEV_LOGIN` vaut "1" à la
+ * compilation. Next remplace cette expression par une constante, si bien que
+ * sans le drapeau le bloc entier — et la liste avec lui — est éliminé du
+ * bundle : c'est une garantie de compilation, pas un test à l'exécution.
+ *
+ * Le drapeau est délibérément distinct de NODE_ENV : un serveur de recette
+ * tourne en build de production tout en restant un environnement de travail.
+ *
+ * ATTENTION : là où le drapeau est actif, les identifiants sont lisibles dans
+ * le JavaScript servi au navigateur. À n'activer que sur un déploiement dont
+ * l'accès est déjà restreint.
  */
 export type DevAccount = {
   email: string;
@@ -18,7 +22,8 @@ export type DevAccount = {
   hint: string;
 };
 
-export const DEV_ACCOUNTS: DevAccount[] = [
+/** Comptes de la base de développement locale (docker compose). */
+const LOCAL_ACCOUNTS: DevAccount[] = [
   {
     email: "adm@danilov.local",
     password: "motdepasse-admin",
@@ -48,3 +53,24 @@ export const DEV_ACCOUNTS: DevAccount[] = [
     hint: "Compte technique de secours",
   },
 ];
+
+export const DEV_LOGIN_ENABLED = process.env.NEXT_PUBLIC_DEV_LOGIN === "1";
+
+/**
+ * Liste servie au sélecteur. Un déploiement peut fournir la sienne via
+ * NEXT_PUBLIC_DEV_ACCOUNTS (JSON) ; sans quoi on retombe sur les comptes
+ * locaux. Un JSON illisible ne doit pas casser la page de connexion.
+ */
+export const DEV_ACCOUNTS: DevAccount[] = (() => {
+  if (!DEV_LOGIN_ENABLED) return [];
+
+  const raw = process.env.NEXT_PUBLIC_DEV_ACCOUNTS;
+  if (!raw) return LOCAL_ACCOUNTS;
+
+  try {
+    const parsed = JSON.parse(raw) as DevAccount[];
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : LOCAL_ACCOUNTS;
+  } catch {
+    return LOCAL_ACCOUNTS;
+  }
+})();
