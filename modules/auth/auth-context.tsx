@@ -29,10 +29,35 @@ const AuthContext = createContext<AuthState | null>(null);
 /** Marge avant expiration : on renouvelle sans jamais laisser le jeton périmer. */
 const REFRESH_MARGIN_MS = 60_000;
 
+/** Échange le cookie httpOnly contre une nouvelle session, ou null s'il n'est plus valide. */
+async function requestSession(): Promise<SessionResponse | null> {
+  try {
+    const response = await fetch(`${API_URL}/v1/auth/refresh`, {
+      method: "POST",
+      credentials: "include",
+    });
+    if (!response.ok) return null;
+    return (await response.json()) as SessionResponse;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * L'état de session est une seule valeur : « pas encore résolue » puis
+ * « résolue, avec ou sans compte ». Le drapeau de chargement en est déduit,
+ * ce qui évite tout setState synchrone dans un effet.
+ */
+type SessionState = { status: "loading" } | { status: "ready"; account: Account | null };
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [account, setAccount] = useState<Account | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [state, setState] = useState<SessionState>({ status: "loading" });
+  const account = state.status === "ready" ? state.account : null;
+  const loading = state.status === "loading";
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Le minuteur de renouvellement doit rappeler `renew`, qui dépend lui-même de
+  // la planification : la référence casse ce cycle.
+  const renewRef = useRef<() => void>(() => {});
 
   const clearTimer = useCallback(() => {
     if (timerRef.current) {
@@ -44,39 +69,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const applySession = useCallback(
     (session: SessionResponse) => {
       setAccessToken(session.access_token);
-      setAccount(session.user);
+      setState({ status: "ready", account: session.user });
 
       // Le jeton d'accès est court : on programme son renouvellement plutôt que
       // d'attendre un 401 au milieu d'une saisie.
       clearTimer();
       const delay = Math.max(session.expires_in * 1000 - REFRESH_MARGIN_MS, 10_000);
-      timerRef.current = setTimeout(() => {
-        void renew();
-      }, delay);
+      timerRef.current = setTimeout(() => renewRef.current(), delay);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [clearTimer],
   );
 
+  const forget = useCallback(() => {
+    setAccessToken(null);
+    setState({ status: "ready", account: null });
+    clearTimer();
+  }, [clearTimer]);
+
   const renew = useCallback(async () => {
-    try {
-      const response = await fetch(`${API_URL}/v1/auth/refresh`, {
-        method: "POST",
-        credentials: "include",
-      });
-      if (!response.ok) throw new Error("refresh failed");
-      applySession((await response.json()) as SessionResponse);
-    } catch {
-      setAccessToken(null);
-      setAccount(null);
-      clearTimer();
-    }
-  }, [applySession, clearTimer]);
+    const session = await requestSession();
+    if (session) applySession(session);
+    else forget();
+  }, [applySession, forget]);
+
+  useEffect(() => {
+    renewRef.current = () => void renew();
+  }, [renew]);
 
   // Au chargement, la session est reconstruite depuis le cookie httpOnly :
   // rien n'est conservé côté navigateur entre deux visites.
   useEffect(() => {
-    void renew().finally(() => setLoading(false));
+    void renew();
     return clearTimer;
   }, [renew, clearTimer]);
 
@@ -91,17 +114,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           await authApi.logout();
         } finally {
-          setAccessToken(null);
-          setAccount(null);
-          clearTimer();
+          forget();
         }
       },
       can: (permission) => account?.permissions.includes(permission) ?? false,
       refreshAccount: async () => {
-        setAccount(await authApi.me());
+        setState({ status: "ready", account: await authApi.me() });
       },
     }),
-    [account, loading, applySession, clearTimer],
+    [account, loading, applySession, forget],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

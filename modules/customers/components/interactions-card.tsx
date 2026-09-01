@@ -110,7 +110,7 @@ export function InteractionsCard({
             />
             <div className="flex items-end sm:col-span-4">
               <Button type="submit" size="sm" loading={create.pending}>
-                Ajouter l'échange
+                Ajouter l&apos;échange
               </Button>
             </div>
           </form>

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { usePermission } from "@/modules/auth";
 import { Button } from "@/shared/ui/button";
-import { Card, CardBody, CardHeader } from "@/shared/ui/card";
+import { Card, CardHeader } from "@/shared/ui/card";
 import { TextField } from "@/shared/ui/field";
 import { EmptyState, ErrorNotice } from "@/shared/ui/feedback";
 import { Modal } from "@/shared/ui/modal";

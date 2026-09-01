@@ -6,43 +6,48 @@ import { errorMessage } from "@/shared/api/errors";
 import * as api from "../lib/api";
 import type { CustomerFilters, CustomerListItem, CustomerStats } from "../lib/types";
 
+type Resolved<T> = { key: string; data: T | null; error: string | null };
+
 /**
  * Charge la liste des fiches. Chaque changement de filtre annule la requête
  * précédente : une frappe rapide dans la recherche ne laisse pas une réponse
  * périmée écraser la plus récente.
  */
 export function useCustomers(filters: CustomerFilters) {
-  const [data, setData] = useState<Paginated<CustomerListItem> | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
+  // Les filtres sont sérialisés pour servir de dépendance stable : un objet
+  // littéral changerait d'identité à chaque rendu et relancerait la requête.
+  const key = `${JSON.stringify(filters)}#${reloadToken}`;
 
-  // Sérialisé pour servir de dépendance stable : un objet littéral changerait
-  // d'identité à chaque rendu et relancerait la requête en boucle.
-  const key = JSON.stringify(filters);
+  const [resolved, setResolved] = useState<Resolved<Paginated<CustomerListItem>>>({
+    key: "",
+    data: null,
+    error: null,
+  });
+
+  // « En cours » est dérivé, pas stocké : aucun setState synchrone dans l'effet.
+  const loading = resolved.key !== key;
 
   useEffect(() => {
     const controller = new AbortController();
-    setLoading(true);
-    setError(null);
 
     api
-      .listCustomers(JSON.parse(key) as CustomerFilters, controller.signal)
-      .then(setData)
+      .listCustomers(filters, controller.signal)
+      .then((data) => setResolved({ key, data, error: null }))
       .catch((cause) => {
         if (controller.signal.aborted) return;
-        setError(errorMessage(cause));
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
+        setResolved({ key, data: null, error: errorMessage(cause) });
       });
 
     return () => controller.abort();
-  }, [key, reloadToken]);
+    // `filters` est capturé via `key` : le comparer par identité relancerait
+    // la requête à chaque rendu.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
 
   const reload = useCallback(() => setReloadToken((value) => value + 1), []);
 
-  return { data, loading, error, reload };
+  return { data: resolved.data, loading, error: resolved.error, reload };
 }
 
 export function useCustomerStats() {

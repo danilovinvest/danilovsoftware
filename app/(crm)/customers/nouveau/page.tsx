@@ -15,7 +15,7 @@ export default function NewCustomerPage() {
           </Link>
           <h1 className="mt-2 text-xl font-semibold text-foreground">Nouvelle fiche client</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Les projets, devis et échanges s'ajoutent ensuite depuis la fiche.
+            Les projets, devis et échanges s&apos;ajoutent ensuite depuis la fiche.
           </p>
         </div>
         <CustomerForm />
