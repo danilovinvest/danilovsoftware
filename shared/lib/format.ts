@@ -122,3 +122,53 @@ export function describeDue(iso: string | null | undefined, done = false): DueIn
   }
   return { label: formatDate(iso), tone: "later", title };
 }
+
+/**
+ * Montants arrondis à l'euro.
+ *
+ * Le reste du CRM affiche les centimes — un devis se lit au centime près. Un
+ * tableau de bord additionne des dizaines de lignes : « 148 350 € » se compare
+ * d'un coup d'œil, « 148 350,00 € » se déchiffre.
+ */
+const euroFormat = new Intl.NumberFormat("fr-FR", {
+  style: "currency",
+  currency: "EUR",
+  maximumFractionDigits: 0,
+});
+
+export function euros(value: number): string {
+  return euroFormat.format(value);
+}
+
+/** Forme courte pour les axes et les pastilles : 42 000 € → 42 k€. */
+export function eurosShort(value: number): string {
+  if (value === 0) return "—";
+  if (Math.abs(value) < 1000) return `${Math.round(value)} €`;
+  const thousands = value / 1000;
+  const digits = Math.abs(thousands) < 10 ? 1 : 0;
+  return `${thousands.toFixed(digits).replace(".", ",")} k€`;
+}
+
+/** Phrase complète : « hier » ne se préfixe pas de « il y a ». */
+export function agoLabel(days: number | null): string {
+  if (days === null) return "—";
+  if (days === 0) return "aujourd'hui";
+  if (days === 1) return "hier";
+  if (days < 31) return `il y a ${days} j`;
+  return `il y a ${Math.round(days / 30)} mois`;
+}
+
+/** Forme courte pour les colonnes de tableau, sans « il y a ». */
+export function sinceDays(days: number | null): string {
+  if (days === null) return "—";
+  if (days === 0) return "aujourd'hui";
+  if (days === 1) return "hier";
+  if (days < 31) return `${days} j`;
+  const months = Math.round(days / 30);
+  return `${months} mois`;
+}
+
+/** Accord au pluriel — « 1 relances » saute aux yeux dans un tableau de bord. */
+export function plural(count: number, singular: string, plural = `${singular}s`): string {
+  return `${count} ${count > 1 ? plural : singular}`;
+}

@@ -1,9 +1,9 @@
 import { CalendarClockIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/shared/ui/feedback";
-import { AGENDA_KIND } from "../lib/labels";
 import type { AgendaEvent } from "../lib/types";
-import { Panel, TONE_SOFT } from "./ui";
+import { Panel, TONE_SOFT } from "@/shared/ui/panel";
+import { AGENDA_KIND } from "../lib/labels";
 
 const dayFormat = new Intl.DateTimeFormat("fr-FR", {
   weekday: "long",

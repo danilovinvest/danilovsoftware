@@ -2,7 +2,7 @@ import { ActivityIcon } from "lucide-react";
 import { EnumBadge, INTERACTION_KIND } from "@/modules/customers";
 import { formatRelative } from "@/shared/lib/format";
 import type { ActivityRow } from "../lib/types";
-import { Panel } from "./ui";
+import { Panel } from "@/shared/ui/panel";
 
 /** Ce qui s'est passé récemment, toutes fiches confondues. */
 export function ActivityPanel({ rows }: { rows: ActivityRow[] }) {

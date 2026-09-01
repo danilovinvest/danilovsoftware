@@ -2,6 +2,7 @@ import {
   CheckSquareIcon,
   FileTextIcon,
   LayoutDashboardIcon,
+  ReceiptEuroIcon,
   UsersIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -54,6 +55,15 @@ export const NAVIGATION: NavItem[] = [
     label: "Tâches",
     icon: CheckSquareIcon,
     permission: "tasks:read",
+  },
+  {
+    href: "/billing",
+    label: "Facturation",
+    icon: ReceiptEuroIcon,
+    // Faute d'une permission « invoices:read » côté API, la facturation suit
+    // celle des devis. La vue consolidée du groupe est en revanche réservée à
+    // la direction, dans le module lui-même.
+    permission: "quotes:read",
   },
   {
     href: "/users",

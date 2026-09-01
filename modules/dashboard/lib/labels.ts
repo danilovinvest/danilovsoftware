@@ -50,52 +50,17 @@ export const PERIODS: Array<{ value: "30j" | "90j" | "12m"; label: string }> = [
   { value: "12m", label: "12 mois" },
 ];
 
-/**
- * Montants arrondis à l'euro.
- *
- * Le reste du CRM affiche les centimes — un devis se lit au centime près. Un
- * tableau de bord additionne des dizaines de lignes : « 148 350 € » se compare
- * d'un coup d'œil, « 148 350,00 € » se déchiffre.
- */
-const euroFormat = new Intl.NumberFormat("fr-FR", {
-  style: "currency",
-  currency: "EUR",
-  maximumFractionDigits: 0,
-});
-
-export function euros(value: number): string {
-  return euroFormat.format(value);
+/** Tonalité d'un score 0-100, dans le sens « plus c'est haut, plus ça presse ». */
+export function scoreTone(score: number): Tone {
+  if (score >= 70) return "danger";
+  if (score >= 50) return "warning";
+  if (score >= 30) return "info";
+  return "neutral";
 }
 
-/** Forme courte pour les axes et les pastilles : 42 000 € → 42 k€. */
-export function eurosShort(value: number): string {
-  if (value === 0) return "—";
-  if (Math.abs(value) < 1000) return `${Math.round(value)} €`;
-  const thousands = value / 1000;
-  const digits = Math.abs(thousands) < 10 ? 1 : 0;
-  return `${thousands.toFixed(digits).replace(".", ",")} k€`;
-}
-
-/** Phrase complète : « hier » ne se préfixe pas de « il y a ». */
-export function agoLabel(days: number | null): string {
-  if (days === null) return "—";
-  if (days === 0) return "aujourd'hui";
-  if (days === 1) return "hier";
-  if (days < 31) return `il y a ${days} j`;
-  return `il y a ${Math.round(days / 30)} mois`;
-}
-
-/** Forme courte pour les colonnes de tableau, sans « il y a ». */
-export function sinceDays(days: number | null): string {
-  if (days === null) return "—";
-  if (days === 0) return "aujourd'hui";
-  if (days === 1) return "hier";
-  if (days < 31) return `${days} j`;
-  const months = Math.round(days / 30);
-  return `${months} mois`;
-}
-
-/** Accord au pluriel — « 1 relances » saute aux yeux dans un tableau de bord. */
-export function plural(count: number, singular: string, plural = `${singular}s`): string {
-  return `${count} ${count > 1 ? plural : singular}`;
+/** Même échelle, sens inverse : un score haut est une bonne nouvelle. */
+export function heatTone(score: number): Tone {
+  if (score >= 70) return "success";
+  if (score >= 50) return "info";
+  return "neutral";
 }

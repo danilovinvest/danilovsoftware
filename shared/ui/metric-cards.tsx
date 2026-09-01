@@ -3,9 +3,32 @@
 import { ArrowDownRightIcon, ArrowUpRightIcon, MinusIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { euros } from "../lib/labels";
-import type { Metric } from "../lib/types";
-import { Sparkline } from "./ui";
+import { euros } from "@/shared/lib/format";
+import { Sparkline } from "./panel";
+
+/**
+ * Rangée de compteurs, partagée par les écrans de synthèse.
+ *
+ * Le type est déclaré ici et non dans un module : TypeScript étant structurel,
+ * n'importe quel module peut passer ses propres compteurs du moment qu'ils ont
+ * cette forme — aucun des deux n'a besoin de connaître l'autre.
+ */
+export type Metric = {
+  key: string;
+  label: string;
+  /** Ce que le chiffre veut dire — un KPI sans définition ment. */
+  hint: string;
+  value: number;
+  /** Mesure précédente, ou null quand la comparaison n'a pas de sens. */
+  previous: number | null;
+  /** Ce qu'on affiche à la place de l'écart quand `previous` est nul. */
+  note?: string;
+  format: "amount" | "count" | "percent";
+  /** Douze points mensuels, du plus ancien au plus récent. */
+  trend: number[];
+  /** Ce que la courbe montre — une sparkline sans légende raconte n'importe quoi. */
+  trend_label: string;
+};
 
 /** Un compteur brut ne dit rien : c'est l'écart qui informe. */
 function Delta({

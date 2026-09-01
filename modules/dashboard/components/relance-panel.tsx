@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { EnumBadge, PROJECT_STAGE } from "@/modules/customers";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/shared/ui/feedback";
-import { eurosShort } from "../lib/labels";
 import type { RelanceRow } from "../lib/types";
-import { Panel, RowShell, ScorePill, scoreTone } from "./ui";
+import { eurosShort } from "@/shared/lib/format";
+import { Panel, RowShell, ScorePill } from "@/shared/ui/panel";
+import { scoreTone } from "../lib/labels";
 
 /**
  * Les affaires qui ont dépassé le délai de relance de leur étape, la plus

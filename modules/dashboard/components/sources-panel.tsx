@@ -1,8 +1,8 @@
 import { CompassIcon } from "lucide-react";
 import { CUSTOMER_SOURCE } from "@/modules/customers";
-import { eurosShort, plural } from "../lib/labels";
 import type { SourceBucket } from "../lib/types";
-import { Meter, Panel } from "./ui";
+import { eurosShort, plural } from "@/shared/lib/format";
+import { Meter, Panel } from "@/shared/ui/panel";
 
 /**
  * D'où viennent les demandes, et lesquelles se transforment.

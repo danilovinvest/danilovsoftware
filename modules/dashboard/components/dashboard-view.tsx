@@ -3,20 +3,20 @@
 import Link from "next/link";
 import { ArrowRightIcon, FlaskConicalIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { MetricCards } from "@/shared/ui/metric-cards";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/modules/auth";
 import { useDashboard } from "../hooks/use-dashboard";
-import { PERIODS } from "../lib/labels";
 import { ActivityPanel } from "./activity-panel";
 import { AgendaPanel } from "./agenda-panel";
 import { CashPanel } from "./cash-panel";
 import { DigestTable } from "./digest-table";
 import { HotPanel } from "./hot-panel";
-import { MetricCards } from "./metric-cards";
 import { PipelinePanel } from "./pipeline-panel";
 import { RelancePanel } from "./relance-panel";
 import { SourcesPanel } from "./sources-panel";
 import { WorkloadPanel } from "./workload-panel";
+import { PERIODS } from "../lib/labels";
 
 /**
  * Le tableau de bord, ordonné par ce qu'on en attend le matin.

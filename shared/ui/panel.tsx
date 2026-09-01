@@ -4,7 +4,8 @@ import { Card } from "@/components/ui/card";
 import type { Tone } from "@/modules/customers";
 
 /**
- * Briques d'affichage du tableau de bord.
+ * Briques d'affichage des écrans de synthèse : panneau, courbe de fond, barre
+ * proportionnelle, pastille de score.
  *
  * Aucune couleur littérale ici : tout passe par les tonalités sémantiques du
  * thème (`--success`, `--warning`…), ce qui est la condition pour que le mode
@@ -169,21 +170,6 @@ export function Meter({
       />
     </div>
   );
-}
-
-/** Tonalité d'un score 0-100, dans le sens « plus c'est haut, plus ça presse ». */
-export function scoreTone(score: number): Tone {
-  if (score >= 70) return "danger";
-  if (score >= 50) return "warning";
-  if (score >= 30) return "info";
-  return "neutral";
-}
-
-/** Même échelle, sens inverse : un score haut est une bonne nouvelle. */
-export function heatTone(score: number): Tone {
-  if (score >= 70) return "success";
-  if (score >= 50) return "info";
-  return "neutral";
 }
 
 /** Pastille de score : le chiffre, et la couleur qui le résume. */

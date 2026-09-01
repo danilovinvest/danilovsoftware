@@ -527,10 +527,17 @@ export function buildSnapshot(period: Period, at: Date = new Date()): DashboardS
 
     const urgency = Math.max(0, ...scored.map((s) => s.urgency));
     const temperature = Math.max(0, ...scored.map((s) => s.temperature));
+    // L'affaire qui « porte » la ligne : celle en retard s'il y en a une,
+    // sinon la plus chaude, sinon la plus avancée. C'est elle qui donne
+    // l'étape et l'action affichées — sans quoi la ligne annoncerait
+    // « Gagné » tout en demandant de relancer une proposition.
     const driver =
-      scored.find((s) => s.urgency === urgency && urgency > 0) ??
-      scored.find((s) => s.temperature === temperature && temperature > 0) ??
-      scored[0];
+      scored.find((entry) => entry.urgency === urgency && urgency > 0) ??
+      scored.find((entry) => entry.temperature === temperature && temperature > 0) ??
+      [...scored].sort(
+        (a, b) =>
+          STAGE_ORDER.indexOf(b.project.stage) - STAGE_ORDER.indexOf(a.project.stage),
+      )[0];
 
     const lastContact = all.length
       ? Math.min(...all.map((project) => project.lastContact))
@@ -553,13 +560,6 @@ export function buildSnapshot(period: Period, at: Date = new Date()): DashboardS
     else if (alive.length === 0 || (lastContact ?? 0) > 60) health = "dormant";
     else health = "en_cours";
 
-    const stage =
-      alive.length === 0
-        ? null
-        : alive
-            .map((project) => project.stage)
-            .sort((a, b) => STAGE_ORDER.indexOf(b) - STAGE_ORDER.indexOf(a))[0];
-
     return {
       customer_id: customer.id,
       name: customer.name,
@@ -578,7 +578,7 @@ export function buildSnapshot(period: Period, at: Date = new Date()): DashboardS
           ? "Reprendre contact — affaire suspendue"
           : NEXT_ACTION[driver.project.stage]
         : "Aucune affaire ouverte",
-      stage,
+      stage: driver?.project.stage ?? null,
       temperature,
       urgency,
     } satisfies DigestRow;

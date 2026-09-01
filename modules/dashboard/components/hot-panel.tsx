@@ -1,9 +1,10 @@
 import { FlameIcon } from "lucide-react";
 import { EnumBadge, PROJECT_STAGE } from "@/modules/customers";
 import { EmptyState } from "@/shared/ui/feedback";
-import { agoLabel, eurosShort } from "../lib/labels";
 import type { HotRow } from "../lib/types";
-import { Meter, Panel, RowShell, ScorePill, heatTone } from "./ui";
+import { agoLabel, eurosShort } from "@/shared/lib/format";
+import { Meter, Panel, RowShell, ScorePill } from "@/shared/ui/panel";
+import { heatTone } from "../lib/labels";
 
 /**
  * Les affaires qui avancent — celles où l'effort a le meilleur rendement.

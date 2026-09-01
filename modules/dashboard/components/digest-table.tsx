@@ -18,11 +18,11 @@ import {
   PROJECT_STAGE,
 } from "@/modules/customers";
 import { GradientAvatar } from "@/shared/ui/gradient-avatar";
-import { initials } from "@/shared/lib/format";
+import { euros, eurosShort, initials, sinceDays } from "@/shared/lib/format";
 import { EmptyState } from "@/shared/ui/feedback";
-import { HEALTH, euros, eurosShort, sinceDays } from "../lib/labels";
 import type { DigestRow, Health } from "../lib/types";
-import { Panel, TONE_SOFT } from "./ui";
+import { Panel, TONE_SOFT } from "@/shared/ui/panel";
+import { HEALTH } from "../lib/labels";
 
 /**
  * Une ligne par fiche : où elle en est, ce qu'elle pèse, ce qu'elle attend.
@@ -89,7 +89,7 @@ export function DigestTable({ rows }: { rows: DigestRow[] }) {
               <TableRow>
                 <TableHead>Fiche</TableHead>
                 <TableHead>Santé</TableHead>
-                <TableHead>Étape la plus avancée</TableHead>
+                <TableHead>Étape à traiter</TableHead>
                 <TableHead className="text-right">En jeu</TableHead>
                 <TableHead className="text-right">Signé</TableHead>
                 <TableHead className="text-right">Dernier contact</TableHead>

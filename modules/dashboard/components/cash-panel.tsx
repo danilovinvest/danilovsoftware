@@ -1,9 +1,10 @@
 import { ReceiptEuroIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/shared/ui/feedback";
-import { WAITING, euros, eurosShort, sinceDays } from "../lib/labels";
 import type { CashRow } from "../lib/types";
-import { Panel, TONE_SOFT } from "./ui";
+import { euros, eurosShort, sinceDays } from "@/shared/lib/format";
+import { Panel, TONE_SOFT } from "@/shared/ui/panel";
+import { WAITING } from "../lib/labels";
 
 /**
  * Ce que l'argent attend : une réponse, un acompte, un solde.

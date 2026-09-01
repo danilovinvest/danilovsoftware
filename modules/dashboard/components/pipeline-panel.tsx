@@ -1,8 +1,8 @@
 import { GaugeIcon } from "lucide-react";
 import { PROJECT_STAGE } from "@/modules/customers";
-import { euros, eurosShort } from "../lib/labels";
 import type { StageBucket } from "../lib/types";
-import { Meter, Panel } from "./ui";
+import { euros, eurosShort } from "@/shared/lib/format";
+import { Meter, Panel } from "@/shared/ui/panel";
 
 /**
  * Le pipeline dans l'ordre des étapes — pas trié par volume.

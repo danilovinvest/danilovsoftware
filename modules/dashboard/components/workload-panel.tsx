@@ -1,9 +1,8 @@
 import { UsersIcon } from "lucide-react";
 import { GradientAvatar } from "@/shared/ui/gradient-avatar";
-import { initials } from "@/shared/lib/format";
-import { eurosShort, plural } from "../lib/labels";
+import { eurosShort, initials, plural } from "@/shared/lib/format";
 import type { WorkloadRow } from "../lib/types";
-import { Meter, Panel } from "./ui";
+import { Meter, Panel } from "@/shared/ui/panel";
 
 /**
  * Répartition de la charge.
