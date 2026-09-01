@@ -105,7 +105,7 @@ export function CustomerWizard() {
   }
 
   return (
-    <div className="flex w-full max-w-3xl flex-col gap-6">
+    <div className="flex w-full flex-col gap-6">
       <Steps current={step} />
 
       <Card>

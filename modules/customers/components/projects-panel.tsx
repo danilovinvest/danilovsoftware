@@ -146,7 +146,9 @@ function ProjectBlock({
           </p>
         </div>
         <p className="text-lg font-semibold tabular-nums">
-          {formatAmount(project.total_amount_ttc)}
+          {project.total_amount_ttc === "0"
+            ? <span className="text-muted-foreground text-sm font-normal">Pas encore chiffrée</span>
+            : formatAmount(project.total_amount_ttc)}
         </p>
       </div>
 
