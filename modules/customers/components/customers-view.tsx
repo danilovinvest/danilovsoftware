@@ -36,13 +36,15 @@ export function CustomersView() {
     <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold">Fiches client</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
+          {/* Twenty tient ses titres de page bas : c'est le contenu qui porte
+              la hiérarchie, pas la taille du titre. */}
+          <h1 className="text-base font-semibold">Fiches client</h1>
+          <p className="text-muted-foreground mt-0.5 text-sm">
             Prospects et clients, leurs projets, devis et échanges.
           </p>
         </div>
         {canCreate && (
-          <Button asChild size="lg">
+          <Button asChild>
             <Link href="/customers/nouveau">
               <PlusIcon />
               Nouvelle fiche
@@ -53,12 +55,12 @@ export function CustomersView() {
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {STATUS_ORDER.map((status) => (
-          <Card key={status}>
-            <CardContent>
+          <Card key={status} className="gap-0 py-3">
+            <CardContent className="px-4">
               <p className="text-muted-foreground text-xs">
                 {CUSTOMER_STATUS[status].label}
               </p>
-              <p className="mt-1 text-2xl font-semibold tabular-nums">
+              <p className="mt-0.5 text-xl font-semibold tabular-nums">
                 {counts[status] ?? 0}
               </p>
             </CardContent>
@@ -67,7 +69,7 @@ export function CustomersView() {
       </div>
 
       <Card className="gap-0 overflow-hidden py-0">
-        <div className="p-5">
+        <div className="p-4">
           <CustomerFiltersBar
             filters={filters}
             onChange={update}
@@ -78,7 +80,7 @@ export function CustomersView() {
         </div>
 
         {error ? (
-          <div className="px-5 pb-5">
+          <div className="px-4 pb-4">
             <ErrorNotice message={error} />
           </div>
         ) : !loading && data?.items.length === 0 ? (
