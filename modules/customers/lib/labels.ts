@@ -4,7 +4,8 @@ import type {
   CustomerStatus,
   InteractionKind,
   PaymentStatus,
-  ProjectStatus,
+  ProjectOutcome,
+  ProjectStage,
   QuoteKind,
   QuoteStatus,
 } from "./types";
@@ -43,13 +44,44 @@ export const CUSTOMER_KIND: Entry<CustomerKind> = {
   autre: { label: "Autre", tone: "neutral" },
 };
 
-export const PROJECT_STATUS: Entry<ProjectStatus> = {
-  a_qualifier: { label: "À qualifier", tone: "neutral" },
-  en_cours: { label: "En cours", tone: "info" },
-  termine: { label: "Terminé", tone: "success" },
-  sans_suite: { label: "Sans suite", tone: "warning" },
-  annule: { label: "Annulé", tone: "danger" },
+/**
+ * Étapes dans l'ordre du pipeline. L'ordre de déclaration fait foi : il sert
+ * aussi bien aux listes déroulantes qu'à l'indicateur d'avancement.
+ */
+export const PROJECT_STAGE: Entry<ProjectStage> = {
+  demande_recue: { label: "Demande reçue", tone: "neutral" },
+  qualification: { label: "Qualification", tone: "neutral" },
+  rdv_planifie: { label: "RDV planifié", tone: "info" },
+  etude_a_produire: { label: "Étude à produire", tone: "warning" },
+  proposition_envoyee: { label: "Proposition envoyée", tone: "info" },
+  devis_envoye: { label: "Devis envoyé", tone: "info" },
+  gagne: { label: "Gagné", tone: "success" },
+  realise: { label: "Réalisé", tone: "success" },
 };
+
+export const STAGE_ORDER = Object.keys(PROJECT_STAGE) as ProjectStage[];
+
+/**
+ * Issues possibles. Les cinq premières closent l'affaire, les deux dernières
+ * la suspendent — c'est l'API qui fait autorité sur cette répartition
+ * (project_outcomes_closing / _pausing), reprise ici pour la couleur.
+ */
+export const PROJECT_OUTCOME: Entry<ProjectOutcome> = {
+  sans_reponse: { label: "Sans réponse", tone: "danger" },
+  sans_suite: { label: "Sans suite", tone: "danger" },
+  concurrence: { label: "Autre BET choisi", tone: "danger" },
+  refuse_par_nous: { label: "Refusé de notre côté", tone: "danger" },
+  transfere: { label: "Transféré à un confrère", tone: "neutral" },
+  stand_by: { label: "Stand by client", tone: "warning" },
+  bloque_tiers: { label: "Bloqué par un tiers", tone: "warning" },
+};
+
+/** Une affaire suspendue reviendra ; une affaire close est terminée. */
+export const PAUSING_OUTCOMES: ProjectOutcome[] = ["stand_by", "bloque_tiers"];
+
+export function isPaused(outcome: ProjectOutcome | null): boolean {
+  return outcome !== null && PAUSING_OUTCOMES.includes(outcome);
+}
 
 export const QUOTE_KIND: Entry<QuoteKind> = {
   etude: { label: "Étude", tone: "neutral" },

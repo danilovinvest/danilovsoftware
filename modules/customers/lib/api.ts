@@ -14,6 +14,7 @@ import type {
   ProjectPayload,
   Quote,
   QuotePayload,
+  StagePayload,
 } from "./types";
 
 /** Toutes les requêtes du module passent par ici : un seul endroit à relire. */
@@ -116,4 +117,23 @@ export function createInteraction(customerId: string, payload: InteractionPayloa
 
 export function deleteInteraction(id: string) {
   return apiFetch<void>(`/v1/interactions/${id}`, { method: "DELETE" });
+}
+
+/** Change l'avancement d'une affaire sans réécrire le reste de sa fiche. */
+export function setProjectStage(id: string, payload: StagePayload) {
+  return apiFetch<Project>(`/v1/projects/${id}/stage`, {
+    method: "PATCH",
+    body: payload,
+  });
+}
+
+/**
+ * Horodate une relance. La date est posée par le serveur : le bouton n'envoie
+ * rien d'autre qu'un commentaire optionnel.
+ */
+export function logReminder(projectId: string, summary?: string) {
+  return apiFetch<Interaction>(`/v1/projects/${projectId}/relance`, {
+    method: "POST",
+    body: summary ? { summary } : undefined,
+  });
 }

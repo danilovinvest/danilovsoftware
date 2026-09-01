@@ -11,12 +11,30 @@ export type CustomerKind =
   | "syndic"
   | "architecte"
   | "autre";
-export type ProjectStatus =
-  | "a_qualifier"
-  | "en_cours"
-  | "termine"
+/** Étape du pipeline, ordonnée : une affaire n'en occupe qu'une à la fois. */
+export type ProjectStage =
+  | "demande_recue"
+  | "qualification"
+  | "rdv_planifie"
+  | "etude_a_produire"
+  | "proposition_envoyee"
+  | "devis_envoye"
+  | "gagne"
+  | "realise";
+
+/**
+ * Raison pour laquelle une affaire n'avance plus. Nulle tant qu'elle avance.
+ * Certaines issues la closent, d'autres la suspendent — l'API le dit dans
+ * project_outcomes_closing / project_outcomes_pausing.
+ */
+export type ProjectOutcome =
+  | "sans_reponse"
   | "sans_suite"
-  | "annule";
+  | "concurrence"
+  | "refuse_par_nous"
+  | "transfere"
+  | "stand_by"
+  | "bloque_tiers";
 export type QuoteKind = "etude" | "sondages" | "travaux" | "attestation" | "autre";
 export type QuoteStatus =
   | "a_faire"
@@ -36,6 +54,20 @@ export type InteractionKind =
   | "note";
 
 /** Ligne du tableau : les agrégats sont calculés par l'API. */
+/** Vue compacte d'une affaire, servie avec la ligne du client dans la liste. */
+export type ProjectSummary = {
+  id: string;
+  label: string;
+  stage: ProjectStage;
+  outcome: ProjectOutcome | null;
+  outcome_note: string;
+  site_city: string;
+  started_at: string | null;
+  quote_count: number;
+  total_amount_ttc: string;
+  last_reminder_at: string | null;
+};
+
 export type CustomerListItem = {
   id: string;
   reference: string;
@@ -56,6 +88,8 @@ export type CustomerListItem = {
   last_interaction_at: string | null;
   created_at: string;
   updated_at: string;
+  /** Affaires du client : le tableau les déplie en sous-lignes. */
+  projects: ProjectSummary[];
 };
 
 export type Customer = {
@@ -97,7 +131,9 @@ export type Project = {
   id: string;
   customer_id: string;
   label: string;
-  status: ProjectStatus;
+  stage: ProjectStage;
+  outcome: ProjectOutcome | null;
+  outcome_note: string;
   site_address: string;
   site_postal_code: string;
   site_city: string;
@@ -106,6 +142,7 @@ export type Project = {
   closed_at: string | null;
   quote_count: number;
   total_amount_ttc: string;
+  last_reminder_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -191,8 +228,20 @@ export type ContactPayload = Omit<
 
 export type ProjectPayload = Omit<
   Project,
-  "id" | "customer_id" | "created_at" | "updated_at" | "quote_count" | "total_amount_ttc"
+  | "id"
+  | "customer_id"
+  | "created_at"
+  | "updated_at"
+  | "quote_count"
+  | "total_amount_ttc"
+  | "last_reminder_at"
 >;
+
+export type StagePayload = {
+  stage: ProjectStage;
+  outcome: ProjectOutcome | null;
+  outcome_note: string;
+};
 
 export type QuotePayload = Omit<
   Quote,
