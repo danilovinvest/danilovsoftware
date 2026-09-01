@@ -8,13 +8,9 @@ import { MetricCards } from "@/shared/ui/metric-cards";
 import { useBilling } from "../hooks/use-billing";
 import { ENTITY_BY_ID } from "../lib/entities";
 import { PERIODS, formatSiren } from "../lib/labels";
-import { AgedPanel } from "./aged-panel";
 import { EntitySwitcher } from "./entity-switcher";
-import { FlowsPanel } from "./flows-panel";
 import { InvoiceTable } from "./invoice-table";
-import { RevenuePanel } from "./revenue-panel";
 import { StructurePanel } from "./structure-panel";
-import { VatPanel } from "./vat-panel";
 
 /** La société d'exploitation dont le CRM suit les clients. */
 const DEFAULT_ENTITY = "ompt-structure";
@@ -29,8 +25,10 @@ const DEFAULT_ENTITY = "ompt-structure";
  * facturation qui additionnerait tout cela sans distinguer l'émetteur serait
  * fausse dès la première déclaration de TVA.
  *
- * D'où le sélecteur de société en tête, et la distinction permanente entre le
- * cumul des cinq et le chiffre consolidé.
+ * D'où le sélecteur de société en tête. La lecture financière du groupe —
+ * encours, TVA, répartition, refacturations internes — vit à côté, dans
+ * « Flux de trésorerie » : ce sont deux questions différentes, et les mêler
+ * obligeait à faire défiler un journal de factures pour atteindre un total.
  */
 export function BillingView() {
   // La lecture du groupe entier — consolidation, flux internes, TVA, structure
@@ -99,24 +97,7 @@ export function BillingView() {
 
       <InvoiceTable invoices={data.invoices} showEntity={entityId === null} />
 
-      <div className="grid items-start gap-4 lg:grid-cols-2">
-        <AgedPanel buckets={data.aged} />
-        {canSeeGroup ? <VatPanel rows={data.vat} /> : null}
-      </div>
-
-      {canSeeGroup && (
-        <>
-          <div className="grid items-start gap-4 lg:grid-cols-2">
-            <RevenuePanel
-              rows={data.revenue}
-              totalBilled={data.total_billed}
-              consolidated={data.consolidated}
-            />
-            <FlowsPanel flows={data.flows} />
-          </div>
-          <StructurePanel />
-        </>
-      )}
+      {canSeeGroup && <StructurePanel />}
     </div>
   );
 }

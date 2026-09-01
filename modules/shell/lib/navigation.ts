@@ -61,9 +61,18 @@ export const NAVIGATION: NavItem[] = [
     label: "Facturation",
     icon: ReceiptEuroIcon,
     // Faute d'une permission « invoices:read » côté API, la facturation suit
-    // celle des devis. La vue consolidée du groupe est en revanche réservée à
-    // la direction, dans le module lui-même.
+    // celle des devis. La lecture financière du groupe reste, elle, derrière
+    // « users:read » — un chargé d'affaires a besoin de savoir si son client a
+    // payé, pas de la TVA des cinq sociétés.
     permission: "quotes:read",
+    items: [
+      { href: "/billing", label: "Factures" },
+      {
+        href: "/billing/tresorerie",
+        label: "Flux de trésorerie",
+        permission: "users:read",
+      },
+    ],
   },
   {
     href: "/users",

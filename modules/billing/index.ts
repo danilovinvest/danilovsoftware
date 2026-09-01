@@ -3,5 +3,6 @@
  * que d'ici.
  */
 export { BillingView } from "./components/billing-view";
+export { TreasuryView } from "./components/treasury-view";
 export { ENTITIES, type Entity } from "./lib/entities";
 export * from "./lib/types";
