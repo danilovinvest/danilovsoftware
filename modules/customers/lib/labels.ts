@@ -1,4 +1,3 @@
-import type { BadgeTone } from "@/shared/ui/badge";
 import type {
   CustomerKind,
   CustomerSource,
@@ -16,10 +15,13 @@ import type {
  * ne touche jamais la base.
  */
 
-type Entry<T extends string> = Record<T, { label: string; tone: BadgeTone }>;
+/** Tonalité d'une pastille de statut, résolue en classes par <EnumBadge>. */
+export type Tone = "neutral" | "info" | "success" | "warning" | "danger";
+
+type Entry<T extends string> = Record<T, { label: string; tone: Tone }>;
 
 export const CUSTOMER_STATUS: Entry<CustomerStatus> = {
-  prospect: { label: "Prospect", tone: "accent" },
+  prospect: { label: "Prospect", tone: "info" },
   client: { label: "Client", tone: "success" },
   perdu: { label: "Perdu", tone: "danger" },
   archive: { label: "Archivé", tone: "neutral" },
@@ -43,7 +45,7 @@ export const CUSTOMER_KIND: Entry<CustomerKind> = {
 
 export const PROJECT_STATUS: Entry<ProjectStatus> = {
   a_qualifier: { label: "À qualifier", tone: "neutral" },
-  en_cours: { label: "En cours", tone: "accent" },
+  en_cours: { label: "En cours", tone: "info" },
   termine: { label: "Terminé", tone: "success" },
   sans_suite: { label: "Sans suite", tone: "warning" },
   annule: { label: "Annulé", tone: "danger" },
@@ -59,7 +61,7 @@ export const QUOTE_KIND: Entry<QuoteKind> = {
 
 export const QUOTE_STATUS: Entry<QuoteStatus> = {
   a_faire: { label: "À faire", tone: "warning" },
-  envoye: { label: "Envoyé", tone: "accent" },
+  envoye: { label: "Envoyé", tone: "info" },
   accepte: { label: "Accepté", tone: "success" },
   realise: { label: "Réalisé", tone: "success" },
   refuse: { label: "Refusé", tone: "danger" },
@@ -76,9 +78,9 @@ export const INTERACTION_KIND: Entry<InteractionKind> = {
   appel: { label: "Appel", tone: "neutral" },
   email: { label: "E-mail", tone: "neutral" },
   relance: { label: "Relance", tone: "warning" },
-  rdv: { label: "Rendez-vous", tone: "accent" },
+  rdv: { label: "Rendez-vous", tone: "info" },
   rapport: { label: "Rapport", tone: "success" },
-  devis: { label: "Devis", tone: "accent" },
+  devis: { label: "Devis", tone: "info" },
   note: { label: "Note", tone: "neutral" },
 };
 

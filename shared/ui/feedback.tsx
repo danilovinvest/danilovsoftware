@@ -1,14 +1,12 @@
-import { cn } from "@/shared/lib/cn";
+import { AlertCircleIcon, Loader2Icon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export function Spinner({ className }: { className?: string }) {
   return (
-    <span
+    <Loader2Icon
       role="status"
       aria-label="Chargement"
-      className={cn(
-        "inline-block size-4 animate-spin rounded-full border-2 border-current border-t-transparent",
-        className,
-      )}
+      className={cn("size-4 animate-spin", className)}
     />
   );
 }
@@ -24,9 +22,9 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center gap-2 px-6 py-12 text-center">
-      <p className="text-sm font-medium text-foreground">{title}</p>
+      <p className="text-sm font-medium">{title}</p>
       {description && (
-        <p className="max-w-sm text-xs text-muted-foreground">{description}</p>
+        <p className="text-muted-foreground max-w-sm text-xs">{description}</p>
       )}
       {action && <div className="mt-2">{action}</div>}
     </div>
@@ -44,18 +42,14 @@ export function ErrorNotice({
     <p
       role="alert"
       className={cn(
-        "rounded-lg border border-danger/30 bg-danger-soft px-3 py-2 text-xs text-danger",
+        "text-destructive bg-destructive/10 flex items-center gap-2 rounded-lg px-3 py-2 text-xs",
         className,
       )}
     >
+      <AlertCircleIcon className="size-3.5 shrink-0" />
       {message}
     </p>
   );
 }
 
-/** Bloc de chargement neutre, aux dimensions du contenu attendu. */
-export function Skeleton({ className }: { className?: string }) {
-  return (
-    <div className={cn("animate-pulse rounded bg-surface-muted", className)} />
-  );
-}
+export { Skeleton } from "@/components/ui/skeleton";
