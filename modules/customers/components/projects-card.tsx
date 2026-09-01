@@ -32,18 +32,29 @@ import { formatAmount, formatDate } from "@/shared/lib/format";
 import * as api from "../lib/api";
 import {
   PAYMENT_STATUS,
-  PROJECT_STATUS,
+  PROJECT_OUTCOME,
+  PROJECT_STAGE,
   QUOTE_KIND,
   QUOTE_STATUS,
   toOptions,
 } from "../lib/labels";
 import { useAction } from "../hooks/use-customers";
 import { EnumBadge } from "./enum-badge";
-import type { Project, ProjectPayload, Quote, QuotePayload } from "../lib/types";
+import { RelanceButton } from "./relance-button";
+import type {
+  Project,
+  ProjectOutcome,
+  ProjectPayload,
+  ProjectStage,
+  Quote,
+  QuotePayload,
+} from "../lib/types";
 
 const EMPTY_PROJECT: ProjectPayload = {
   label: "",
-  status: "a_qualifier",
+  stage: "demande_recue",
+  outcome: null,
+  outcome_note: "",
   site_address: "",
   site_postal_code: "",
   site_city: "",
@@ -95,6 +106,10 @@ export function ProjectsCard({
   );
   const removeQuote = useAction((id: string) => api.deleteQuote(id));
   const removeProject = useAction((id: string) => api.deleteProject(id));
+  const changeStage = useAction(
+    (id: string, stage: ProjectStage, outcome: ProjectOutcome | null, note: string) =>
+      api.setProjectStage(id, { stage, outcome, outcome_note: note }),
+  );
 
   async function submitProject(event: React.FormEvent) {
     event.preventDefault();
@@ -145,12 +160,16 @@ export function ProjectsCard({
                   <div className="min-w-0">
                     <p className="flex flex-wrap items-center gap-2 text-sm font-medium">
                       {item.label}
-                      <EnumBadge value={item.status} entries={PROJECT_STATUS} />
+                      <EnumBadge value={item.stage} entries={PROJECT_STAGE} />
+                      {item.outcome && (
+                        <EnumBadge value={item.outcome} entries={PROJECT_OUTCOME} />
+                      )}
                     </p>
                     <p className="text-muted-foreground text-xs">
                       {[item.site_address, item.site_postal_code, item.site_city]
                         .filter(Boolean)
                         .join(", ") || "Adresse de chantier non renseignée"}
+                      {item.outcome_note && ` — ${item.outcome_note}`}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -185,6 +204,49 @@ export function ProjectsCard({
                     )}
                   </div>
                 </div>
+
+                {canWrite && (
+                  <div className="mt-3 flex flex-wrap items-end gap-3">
+                    <SelectField
+                      label="Étape"
+                      wrapperClassName="w-52"
+                      options={toOptions(PROJECT_STAGE)}
+                      value={item.stage}
+                      onValueChange={async (value) => {
+                        await changeStage.run(
+                          item.id,
+                          value as ProjectStage,
+                          item.outcome,
+                          item.outcome_note,
+                        );
+                        onChanged();
+                      }}
+                    />
+                    <SelectField
+                      label="Issue"
+                      wrapperClassName="w-52"
+                      placeholder="L'affaire avance"
+                      emptyLabel="L'affaire avance"
+                      options={toOptions(PROJECT_OUTCOME)}
+                      value={item.outcome ?? ""}
+                      onValueChange={async (value) => {
+                        await changeStage.run(
+                          item.id,
+                          item.stage,
+                          (value || null) as ProjectOutcome | null,
+                          value ? item.outcome_note : "",
+                        );
+                        onChanged();
+                      }}
+                    />
+                    <RelanceButton
+                      projectId={item.id}
+                      lastReminderAt={item.last_reminder_at}
+                      onDone={onChanged}
+                      className="pb-2"
+                    />
+                  </div>
+                )}
 
                 {projectQuotes.length > 0 && (
                   <div className="mt-3 overflow-x-auto rounded-lg border">
@@ -283,11 +345,11 @@ export function ProjectsCard({
               onChange={(event) => setProject({ ...project, label: event.target.value })}
             />
             <SelectField
-              label="Statut"
-              options={toOptions(PROJECT_STATUS)}
-              value={project.status}
+              label="Étape"
+              options={toOptions(PROJECT_STAGE)}
+              value={project.stage}
               onValueChange={(value) =>
-                setProject({ ...project, status: value as ProjectPayload["status"] })
+                setProject({ ...project, stage: value as ProjectStage })
               }
             />
             <TextField
