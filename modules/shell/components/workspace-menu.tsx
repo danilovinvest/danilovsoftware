@@ -1,9 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ChevronsUpDownIcon, LogOutIcon, ShieldCheckIcon } from "lucide-react";
-import { useAuth } from "@/modules/auth";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ChevronDownIcon, LogOutIcon, ShieldCheckIcon } from "lucide-react";
+import { ROLE_LABELS, useAuth } from "@/modules/auth";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,19 +15,27 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from "@/components/ui/sidebar";
 import { initials } from "@/shared/lib/format";
 
-export function NavUser() {
+/**
+ * Le sélecteur d'espace de travail, en haut de la barre latérale.
+ *
+ * Twenty ne met pas le compte connecté en pied de barre : l'identité de
+ * l'espace et celle de l'utilisateur partagent un seul menu, tout en haut.
+ * C'est ce menu qui porte la déconnexion.
+ */
+export function WorkspaceMenu() {
   const { account, logout } = useAuth();
-  const { isMobile } = useSidebar();
   const router = useRouter();
 
+  // Le shell est monté sous RequireAuth ; ce garde-fou couvre l'instant de
+  // reconstruction de session, pas un cas nominal.
   if (!account) return null;
 
-  const name = [account.first_name, account.last_name].filter(Boolean).join(" ");
-  const display = name || account.email;
+  const name =
+    [account.first_name, account.last_name].filter(Boolean).join(" ") ||
+    account.email;
 
   return (
     <SidebarMenu>
@@ -36,39 +43,36 @@ export function NavUser() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
-              size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              className="h-8 gap-2 px-1.5 font-medium text-foreground data-[state=open]:bg-sidebar-accent"
+              tooltip="Danilov"
             >
-              <Avatar className="size-8 rounded-lg">
-                <AvatarFallback className="rounded-lg bg-sidebar-accent text-sidebar-accent-foreground text-xs font-semibold">
-                  {initials(display)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{display}</span>
-                <span className="text-muted-foreground truncate text-xs">
-                  {account.role_name}
-                </span>
-              </div>
-              <ChevronsUpDownIcon className="ml-auto size-4" />
+              <span
+                aria-hidden
+                className="bg-sidebar-primary text-sidebar-primary-foreground flex size-5 shrink-0 items-center justify-center rounded-[4px] text-[11px] font-semibold"
+              >
+                D
+              </span>
+              <span className="truncate">Danilov</span>
+              <ChevronDownIcon className="text-muted-foreground ml-auto size-3.5!" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
 
           <DropdownMenuContent
-            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-            side={isMobile ? "bottom" : "right"}
-            align="end"
+            className="w-64 rounded-lg"
+            side="bottom"
+            align="start"
             sideOffset={4}
           >
             <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar className="size-8 rounded-lg">
-                  <AvatarFallback className="rounded-lg text-xs font-semibold">
-                    {initials(display)}
-                  </AvatarFallback>
-                </Avatar>
+              <div className="flex items-center gap-2 px-1 py-1.5 text-left">
+                <span
+                  aria-hidden
+                  className="bg-muted text-foreground flex size-8 shrink-0 items-center justify-center rounded-[4px] text-xs font-semibold"
+                >
+                  {initials(name)}
+                </span>
                 <div className="grid flex-1 leading-tight">
-                  <span className="truncate font-medium">{display}</span>
+                  <span className="truncate text-sm font-medium">{name}</span>
                   <span className="text-muted-foreground truncate text-xs">
                     {account.email}
                   </span>
@@ -79,7 +83,8 @@ export function NavUser() {
             <DropdownMenuSeparator />
             <DropdownMenuItem disabled>
               <ShieldCheckIcon />
-              {account.role_name} · {account.permissions.length} permissions
+              {ROLE_LABELS[account.role]} · {account.permissions.length}{" "}
+              permissions
             </DropdownMenuItem>
 
             <DropdownMenuSeparator />

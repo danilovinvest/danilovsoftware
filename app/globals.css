@@ -12,65 +12,195 @@
  */
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * ---------------------------------------------------------------------------
+ * Échelle brute, reprise du design system de Twenty (twentyhq/twenty).
+ * ---------------------------------------------------------------------------
+ *
+ * `--t-*` est la couche « physique » : des teintes, sans intention. La couche
+ * sémantique (--background, --border, --success…) est déclarée plus bas et
+ * n'utilise que ces variables. Reteinter le CRM = changer les `--t-*` ; les
+ * composants ne bougent pas.
+ *
+ * Twenty exprime tout en `color(display-p3 …)`. Les valeurs sont donc données
+ * deux fois, comme le fait Radix lui-même : hex sRGB d'abord, P3 ensuite sous
+ * `@supports` + `color-gamut: p3`. Un navigateur sans P3 garde des couleurs
+ * correctes au lieu d'hériter du noir.
+ *
+ * Nuances de gris : Twenty utilise un gris *neutre* pur (r = g = b). Pour ces
+ * valeurs-là, P3 et sRGB coïncident exactement — le hex n'est pas une
+ * approximation. Les teintes colorées viennent de @radix-ui/colors (indigo,
+ * green, red, orange), là où le hex est bien un repli.
+ */
+:root {
+  /* Twenty — GRAY_SCALE_LIGHT */
+  --t-gray-1: #ffffff;
+  --t-gray-2: #fcfcfc;
+  --t-gray-3: #f9f9f9;
+  --t-gray-4: #f1f1f1;
+  --t-gray-5: #ebebeb;
+  --t-gray-6: #d6d6d6;
+  --t-gray-7: #cccccc;
+  --t-gray-8: #b3b3b3;
+  --t-gray-9: #999999;
+  --t-gray-10: #838383;
+  --t-gray-11: #666666;
+  --t-gray-12: #333333;
+
+  /* Radix indigo — l'accent de Twenty (accent.*, border.color.blue). */
+  --t-blue-2: #f7f9ff;
+  --t-blue-3: #edf2fe;
+  --t-blue-5: #d2deff;
+  --t-blue-7: #abbdf9;
+  --t-blue-8: #8da4ef;
+  --t-blue-9: #3e63dd;
+  --t-blue-11: #3a5bc7;
+
+  /* Radix green / red / orange — les tonalités de tag. */
+  --t-green-3: #e6f6eb;
+  --t-green-9: #30a46c;
+  --t-green-11: #218358;
+
+  --t-red-3: #feebec;
+  --t-red-5: #ffcdce;
+  --t-red-9: #e5484d;
+  --t-red-11: #ce2c31;
+
+  --t-orange-3: #ffefd6;
+  --t-orange-9: #f76b15;
+  --t-orange-11: #cc4e00;
+
+  /* Deux teintes de plus, réservées aux graphiques. */
+  --t-purple-9: #8e4ec6;
+  --t-turquoise-9: #12a594;
+
+  /* Twenty — BOX_SHADOW_LIGHT, exprimé sur du noir alpha. */
+  --t-shadow-light: 0 2px 4px 0 rgb(0 0 0 / 0.039), 0 0 4px 0 rgb(0 0 0 / 0.078);
+  --t-shadow-strong: 2px 4px 16px 0 rgb(0 0 0 / 0.161),
+    0 2px 4px 0 rgb(0 0 0 / 0.078);
+}
+
+@supports (color: color(display-p3 1 1 1)) {
+  @media (color-gamut: p3) {
+    :root {
+      --t-blue-2: color(display-p3 0.971 0.977 0.998);
+      --t-blue-3: color(display-p3 0.933 0.948 0.992);
+      --t-blue-5: color(display-p3 0.831 0.87 1);
+      --t-blue-7: color(display-p3 0.685 0.74 0.957);
+      --t-blue-8: color(display-p3 0.569 0.639 0.916);
+      --t-blue-9: color(display-p3 0.276 0.384 0.837);
+      --t-blue-11: color(display-p3 0.256 0.354 0.755);
+
+      --t-green-3: color(display-p3 0.913 0.964 0.925);
+      --t-green-9: color(display-p3 0.332 0.634 0.442);
+      --t-green-11: color(display-p3 0.19 0.5 0.32);
+
+      --t-red-3: color(display-p3 0.985 0.925 0.925);
+      --t-red-5: color(display-p3 0.984 0.812 0.811);
+      --t-red-9: color(display-p3 0.83 0.329 0.324);
+      --t-red-11: color(display-p3 0.744 0.234 0.222);
+
+      --t-orange-3: color(display-p3 0.989 0.938 0.85);
+      --t-orange-9: color(display-p3 0.9 0.45 0.2);
+      --t-orange-11: color(display-p3 0.76 0.34 0);
+
+      --t-purple-9: color(display-p3 0.523 0.318 0.751);
+      --t-turquoise-9: color(display-p3 0.297 0.637 0.581);
+    }
+  }
+}
+
+/*
+ * ---------------------------------------------------------------------------
+ * Couche sémantique : les variables que lisent shadcn et les modules.
+ * ---------------------------------------------------------------------------
+ */
 :root {
   color-scheme: light;
 
-  --radius: 0.625rem;
+  /*
+   * Twenty n'a pas UN rayon mais une échelle non proportionnelle
+   * (2 / 4 / 8 / 16). Elle est déclarée telle quelle dans @theme plutôt que
+   * dérivée d'un multiplicateur.
+   */
+  --radius: 4px;
 
-  /* Surfaces et texte (échelle neutre de shadcn). */
-  --background: oklch(0.985 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.505 0 0);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-
-  /* Bleu de marque : couleur d'action et de sélection. */
-  --primary: oklch(0.546 0.163 256.5);
-  --primary-foreground: oklch(0.99 0 0);
-  --ring: oklch(0.546 0.163 256.5);
-
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --accent: oklch(0.955 0.022 256.5);
-  --accent-foreground: oklch(0.42 0.14 256.5);
-  --destructive: oklch(0.55 0.19 27);
+  /* Surfaces et texte — background.* et font.color.* de Twenty. */
+  --background: var(--t-gray-1);
+  --foreground: var(--t-gray-12);
+  --card: var(--t-gray-1);
+  --card-foreground: var(--t-gray-12);
+  --popover: var(--t-gray-1);
+  --popover-foreground: var(--t-gray-12);
+  --muted: var(--t-gray-3);
+  --muted-foreground: var(--t-gray-11);
+  --border: var(--t-gray-5);
+  --input: var(--t-gray-5);
 
   /*
-   * Couleurs de statut du CRM (prospect / client / perdu…). Chaque teinte a un
-   * fond « soft » associé : les pastilles ne recalculent jamais d'opacité.
+   * Twenty ne remplit pas ses boutons d'action en bleu : le bleu sert à
+   * l'attention (focus, sélection, liens), la couleur pleine est le gris
+   * inversé (background.primaryInverted). D'où --primary sombre et --brand à
+   * côté pour ce qui doit rester bleu.
    */
-  --success: oklch(0.5 0.115 155);
-  --success-soft: oklch(0.955 0.032 155);
-  --warning: oklch(0.55 0.125 62);
-  --warning-soft: oklch(0.962 0.038 75);
-  --info: oklch(0.5 0.145 256.5);
-  --info-soft: oklch(0.955 0.026 256.5);
-  --danger: oklch(0.53 0.185 27);
-  --danger-soft: oklch(0.958 0.028 27);
-  --neutral: oklch(0.45 0 0);
-  --neutral-soft: oklch(0.955 0 0);
+  --primary: var(--t-gray-12);
+  --primary-foreground: var(--t-gray-1);
+  --brand: var(--t-blue-9);
+  --selected: var(--t-blue-3);
 
-  /* Barre latérale. */
-  --sidebar: oklch(1 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.546 0.163 256.5);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.955 0.022 256.5);
-  --sidebar-accent-foreground: oklch(0.42 0.14 256.5);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.546 0.163 256.5);
+  --secondary: var(--t-gray-3);
+  --secondary-foreground: var(--t-gray-12);
 
-  /* Graphiques (dégradé du bleu de marque vers le neutre). */
-  --chart-1: oklch(0.546 0.163 256.5);
-  --chart-2: oklch(0.65 0.12 220);
-  --chart-3: oklch(0.5 0.115 155);
-  --chart-4: oklch(0.55 0.125 62);
-  --chart-5: oklch(0.55 0 0);
+  /*
+   * Le survol de Twenty est gris, jamais teinté : c'est ce qui donne à
+   * l'interface son calme. --accent n'est donc pas une couleur d'accent au
+   * sens shadcn, c'est l'état de survol.
+   */
+  --accent: var(--t-gray-4);
+  --accent-foreground: var(--t-gray-12);
+  --destructive: var(--t-red-11);
+  --ring: var(--t-blue-7);
+
+  /*
+   * Tonalités du CRM (statut de fiche, de devis, de règlement). Twenty
+   * construit ses tags avec deux crans d'une même teinte : `color3` en fond,
+   * `color11` en texte — d'où la paire `-soft` / plein.
+   *
+   * Seule entorse : le neutre prend gray4 et non gray3. Le gray3 de Twenty
+   * (#f9f9f9) disparaît sur les cartes blanches du CRM, où les tags neutres
+   * portent les types de prestation et doivent rester lisibles.
+   */
+  --success: var(--t-green-11);
+  --success-soft: var(--t-green-3);
+  --warning: var(--t-orange-11);
+  --warning-soft: var(--t-orange-3);
+  --info: var(--t-blue-11);
+  --info-soft: var(--t-blue-3);
+  --danger: var(--t-red-11);
+  --danger-soft: var(--t-red-3);
+  --neutral: var(--t-gray-11);
+  --neutral-soft: var(--t-gray-4);
+
+  /*
+   * Barre latérale : gray2, à peine détaché du blanc du panneau. Chez Twenty
+   * la séparation ne vient pas d'un contraste de fond mais du liseré et du
+   * décrochement du panneau principal.
+   */
+  --sidebar: var(--t-gray-2);
+  --sidebar-foreground: var(--t-gray-11);
+  --sidebar-primary: var(--t-gray-12);
+  --sidebar-primary-foreground: var(--t-gray-1);
+  --sidebar-accent: var(--t-gray-4);
+  --sidebar-accent-foreground: var(--t-gray-12);
+  --sidebar-border: var(--t-gray-5);
+  --sidebar-ring: var(--t-blue-7);
+
+  /* Graphiques — MAIN_COLORS_LIGHT (cran 9 de chaque teinte). */
+  --chart-1: var(--t-blue-9);
+  --chart-2: var(--t-turquoise-9);
+  --chart-3: var(--t-green-9);
+  --chart-4: var(--t-orange-9);
+  --chart-5: var(--t-purple-9);
 }
 
 @theme inline {
@@ -92,6 +222,9 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  --color-brand: var(--brand);
+  --color-selected: var(--selected);
 
   --color-success: var(--success);
   --color-success-soft: var(--success-soft);
@@ -119,17 +252,48 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-geist-sans);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-heading: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  /*
+   * FONT_COMMON de Twenty : l'interface travaille en 13,6 px (`xs`), pas en
+   * 14. `text-sm` étant la taille par défaut de shadcn, c'est elle qu'on
+   * ramène sur ce cran — la densité vient de là autant que des hauteurs.
+   */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.85rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.23rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.54rem;
+  --text-xl--line-height: 2rem;
+  --text-2xl: 1.85rem;
+  --text-2xl--line-height: 2.25rem;
+
+  /*
+   * BORDER_COMMON.radius : 2 / 4 / 8 / 16. Les composants shadcn tapent dans
+   * `rounded-lg` (boutons, champs) et `rounded-xl` (cartes, panneaux) : ce
+   * sont ces deux crans-là qui font le plus pour la silhouette.
+   */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 4px;
+  --radius-xl: 8px;
+  --radius-2xl: 8px;
+  --radius-3xl: 16px;
+  --radius-4xl: 16px;
+
+  /* BOX_SHADOW_LIGHT : des ombres presque plates, très diffuses. */
+  --shadow-2xs: 0 1px 2px 0 rgb(0 0 0 / 0.039);
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.039);
+  --shadow-sm: var(--t-shadow-light);
+  --shadow-md: var(--t-shadow-light);
+  --shadow-lg: var(--t-shadow-strong);
+  --shadow-xl: var(--t-shadow-strong);
 }
 
 @layer base {
@@ -139,6 +303,11 @@
 
   body {
     @apply bg-background text-foreground font-sans;
+    /* Inter : chiffres et ponctuation calés comme chez Twenty. */
+    font-feature-settings:
+      "cv11",
+      "ss01";
+    font-variation-settings: "opsz" 32;
   }
 
   /* Les montants et compteurs restent alignés d'une ligne à l'autre. */
