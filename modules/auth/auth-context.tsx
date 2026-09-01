@@ -99,6 +99,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Au chargement, la session est reconstruite depuis le cookie httpOnly :
   // rien n'est conservé côté navigateur entre deux visites.
   useEffect(() => {
+    // `renew` est asynchrone : il n'écrit l'état qu'après la réponse du serveur.
+    // La règle ne peut pas le prouver et signale l'appel ; lire une session
+    // depuis un cookie httpOnly est précisément une synchronisation avec un
+    // système externe, ce que l'effet est fait pour porter.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void renew();
     return clearTimer;
   }, [renew, clearTimer]);
