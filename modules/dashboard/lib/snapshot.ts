@@ -1,5 +1,4 @@
 import { STAGE_ORDER } from "@/modules/customers";
-import type { ProjectStage } from "@/modules/customers";
 import type { Metric } from "@/shared/ui/metric-cards";
 import {
   EXPORT_DATE,
@@ -411,6 +410,3 @@ export function buildSnapshot(period: Period, at: Date = new Date()): DashboardS
     activity,
   };
 }
-
-/** Stage utilisé quand une fiche n'a aucun devis — impossible ici, mais typé. */
-export const DEFAULT_STAGE: ProjectStage = "devis_envoye";

@@ -33,13 +33,6 @@ export const PERIODS: Array<{ value: Period; label: string }> = [
   { value: "12m", label: "12 mois" },
 ];
 
-/** Statut brut de l'export, affiché tel quel à côté de l'étape déduite. */
-export const SOURCE_STATUS: Record<string, string> = {
-  etude: "etude",
-  accepte: "accepte",
-  facture: "facture",
-};
-
 /** Tonalité d'un score 0-100, dans le sens « plus c'est haut, plus ça presse ». */
 export function scoreTone(score: number): Tone {
   if (score >= 70) return "danger";
