@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { ChevronDownIcon, LogOutIcon, ShieldCheckIcon } from "lucide-react";
-import { ROLE_LABELS, useAuth } from "@/modules/auth";
+import { useAuth } from "@/modules/auth";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -83,7 +83,7 @@ export function WorkspaceMenu() {
             <DropdownMenuSeparator />
             <DropdownMenuItem disabled>
               <ShieldCheckIcon />
-              {ROLE_LABELS[account.role]} · {account.permissions.length}{" "}
+              {account.role_name} · {account.permissions.length}{" "}
               permissions
             </DropdownMenuItem>
 

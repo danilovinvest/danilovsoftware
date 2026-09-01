@@ -135,6 +135,8 @@
   --muted: var(--t-gray-3);
   --muted-foreground: var(--t-gray-11);
   --border: var(--t-gray-5);
+  /* border.color.light de Twenty : le liseré discret des zones secondaires. */
+  --border-subtle: var(--t-gray-4);
   --input: var(--t-gray-5);
 
   /*
@@ -220,6 +222,7 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
   --color-input: var(--input);
   --color-ring: var(--ring);
 
