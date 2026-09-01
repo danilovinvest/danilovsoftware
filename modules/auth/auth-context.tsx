@@ -9,8 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { API_URL } from "@/shared/lib/env";
-import { setAccessToken } from "@/shared/api/client";
+import { refreshSession, setAccessToken } from "@/shared/api/client";
 import * as authApi from "./lib/api";
 import type { Account, Permission, SessionResponse } from "./lib/types";
 
@@ -28,20 +27,6 @@ const AuthContext = createContext<AuthState | null>(null);
 
 /** Marge avant expiration : on renouvelle sans jamais laisser le jeton périmer. */
 const REFRESH_MARGIN_MS = 60_000;
-
-/** Échange le cookie httpOnly contre une nouvelle session, ou null s'il n'est plus valide. */
-async function requestSession(): Promise<SessionResponse | null> {
-  try {
-    const response = await fetch(`${API_URL}/v1/auth/refresh`, {
-      method: "POST",
-      credentials: "include",
-    });
-    if (!response.ok) return null;
-    return (await response.json()) as SessionResponse;
-  } catch {
-    return null;
-  }
-}
 
 /**
  * L'état de session est une seule valeur : « pas encore résolue » puis
@@ -87,7 +72,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [clearTimer]);
 
   const renew = useCallback(async () => {
-    const session = await requestSession();
+    // Passe par le client partagé : c'est lui qui déduplique les appels
+    // concurrents à /v1/auth/refresh.
+    const session = await refreshSession<SessionResponse>();
     if (session) applySession(session);
     else forget();
   }, [applySession, forget]);

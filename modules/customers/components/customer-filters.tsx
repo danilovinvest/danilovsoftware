@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "@/shared/ui/button";
-import { SelectField, TextField } from "@/shared/ui/field";
-import { cn } from "@/shared/lib/cn";
+import { SearchIcon, XIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { SelectField } from "@/shared/ui/form";
+import { cn } from "@/lib/utils";
 import {
   CUSTOMER_SOURCE,
   CUSTOMER_STATUS,
@@ -11,7 +13,7 @@ import {
   toOptions,
 } from "../lib/labels";
 import { useDebounced } from "../hooks/use-customers";
-import type { CustomerFilters, CustomerStatus } from "../lib/types";
+import type { CustomerFilters, CustomerSource, CustomerStatus } from "../lib/types";
 
 const STATUS_TABS: Array<{ value: CustomerStatus | "all"; label: string }> = [
   { value: "all", label: "Toutes" },
@@ -63,58 +65,55 @@ export function CustomerFiltersBar({
               className={cn(
                 "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
                 selected
-                  ? "bg-accent-soft text-accent"
-                  : "text-muted-foreground hover:bg-surface-muted",
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground hover:bg-muted",
               )}
             >
               {tab.label}
-              {count !== undefined && (
-                <span className="ml-1.5 opacity-60">{count}</span>
-              )}
+              {count !== undefined && <span className="ml-1.5 opacity-60">{count}</span>}
             </button>
           );
         })}
       </nav>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <TextField
-          label="Recherche"
-          placeholder="Nom, e-mail, téléphone, référence…"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-        />
-        <TextField
-          label="Ville"
-          placeholder="Cannes, Nice…"
+        <div className="relative">
+          <SearchIcon className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2" />
+          <Input
+            aria-label="Rechercher une fiche"
+            placeholder="Nom, e-mail, téléphone, référence…"
+            className="pl-8"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+        </div>
+        <Input
+          aria-label="Filtrer par ville"
+          placeholder="Ville : Cannes, Nice…"
           value={filters.city ?? ""}
           onChange={(event) => onChange({ city: event.target.value || undefined })}
         />
         <SelectField
-          label="Source"
-          placeholder="Toutes"
           options={toOptions(CUSTOMER_SOURCE)}
+          emptyLabel="Toutes les sources"
+          placeholder="Source"
           value={filters.source?.[0] ?? ""}
-          onChange={(event) =>
-            onChange({
-              source: event.target.value
-                ? [event.target.value as NonNullable<CustomerFilters["source"]>[number]]
-                : undefined,
-            })
+          onValueChange={(value) =>
+            onChange({ source: value ? [value as CustomerSource] : undefined })
           }
         />
         <SelectField
-          label="Trier par"
           options={SORT_OPTIONS}
+          placeholder="Trier par"
           value={filters.sort ?? "recent"}
-          onChange={(event) =>
-            onChange({ sort: event.target.value as CustomerFilters["sort"] })
-          }
+          onValueChange={(value) => onChange({ sort: value as CustomerFilters["sort"] })}
         />
       </div>
 
       {hasActiveFilters && (
         <div>
           <Button variant="ghost" size="sm" onClick={onReset}>
+            <XIcon />
             Réinitialiser les filtres
           </Button>
         </div>

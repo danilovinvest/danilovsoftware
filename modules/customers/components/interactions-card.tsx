@@ -1,17 +1,29 @@
 "use client";
 
 import { useState } from "react";
+import { Trash2Icon } from "lucide-react";
 import { usePermission } from "@/modules/auth";
-import { Button } from "@/shared/ui/button";
-import { Card, CardBody, CardHeader } from "@/shared/ui/card";
-import { SelectField, TextAreaField, TextField } from "@/shared/ui/field";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
 import { EmptyState, ErrorNotice } from "@/shared/ui/feedback";
 import { formatDateTime } from "@/shared/lib/format";
 import * as api from "../lib/api";
 import { INTERACTION_KIND, toOptions } from "../lib/labels";
 import { useAction } from "../hooks/use-customers";
 import { EnumBadge } from "./enum-badge";
-import type { Interaction, InteractionKind, InteractionPayload, Project } from "../lib/types";
+import type {
+  Interaction,
+  InteractionKind,
+  InteractionPayload,
+  Project,
+} from "../lib/types";
 
 function emptyInteraction(): InteractionPayload {
   return {
@@ -56,14 +68,16 @@ export function InteractionsCard({
   }
 
   return (
-    <Card>
-      <CardHeader
-        title="Historique des échanges"
-        description="Appels, relances, rendez-vous et rapports, dans l'ordre chronologique."
-      />
+    <Card className="gap-0 py-0">
+      <CardHeader className="border-b py-4">
+        <CardTitle className="text-sm">Historique des échanges</CardTitle>
+        <CardDescription className="text-xs">
+          Appels, relances, rendez-vous et rapports, dans l&apos;ordre chronologique.
+        </CardDescription>
+      </CardHeader>
 
       {canWrite && (
-        <CardBody className="border-b border-border-subtle bg-surface-muted/40">
+        <CardContent className="bg-muted/40 border-b py-4">
           <form onSubmit={submit} className="grid gap-3 sm:grid-cols-4">
             {create.error && (
               <div className="sm:col-span-4">
@@ -74,23 +88,26 @@ export function InteractionsCard({
               label="Type"
               options={toOptions(INTERACTION_KIND)}
               value={values.kind}
-              onChange={(event) =>
-                setValues({ ...values, kind: event.target.value as InteractionKind })
+              onValueChange={(value) =>
+                setValues({ ...values, kind: value as InteractionKind })
               }
             />
             <TextField
               label="Date"
               type="datetime-local"
               value={values.occurred_at}
-              onChange={(event) => setValues({ ...values, occurred_at: event.target.value })}
+              onChange={(event) =>
+                setValues({ ...values, occurred_at: event.target.value })
+              }
             />
             <SelectField
               label="Projet lié"
               placeholder="Aucun"
+              emptyLabel="Aucun"
               options={projects.map((p) => ({ value: p.id, label: p.label }))}
               value={values.project_id ?? ""}
-              onChange={(event) =>
-                setValues({ ...values, project_id: event.target.value || null })
+              onValueChange={(value) =>
+                setValues({ ...values, project_id: value || null })
               }
             />
             <TextField
@@ -103,52 +120,54 @@ export function InteractionsCard({
             />
             <TextAreaField
               label="Détails"
+              wrapperClassName="sm:col-span-3"
               className="min-h-16"
               placeholder="Sans réponse, rappeler lundi."
               value={values.details}
               onChange={(event) => setValues({ ...values, details: event.target.value })}
             />
-            <div className="flex items-end sm:col-span-4">
-              <Button type="submit" size="sm" loading={create.pending}>
+            <div className="flex items-end">
+              <Button type="submit" disabled={create.pending}>
                 Ajouter l&apos;échange
               </Button>
             </div>
           </form>
-        </CardBody>
+        </CardContent>
       )}
 
       {interactions.length === 0 ? (
         <EmptyState title="Aucun échange enregistré" />
       ) : (
-        <ol className="divide-y divide-border-subtle">
+        <ol className="divide-y">
           {interactions.map((item) => (
             <li key={item.id} className="flex items-start justify-between gap-4 px-5 py-3">
               <div className="min-w-0">
-                <p className="flex flex-wrap items-center gap-2 text-sm text-foreground">
+                <p className="flex flex-wrap items-center gap-2 text-sm">
                   <EnumBadge value={item.kind} entries={INTERACTION_KIND} />
                   <span className="font-medium">{item.summary}</span>
                 </p>
                 {item.details && (
-                  <p className="mt-1 text-xs whitespace-pre-line text-muted-foreground">
+                  <p className="text-muted-foreground mt-1 text-xs whitespace-pre-line">
                     {item.details}
                   </p>
                 )}
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="text-muted-foreground mt-1 text-xs">
                   {formatDateTime(item.occurred_at)}
                   {item.author_name && ` · ${item.author_name}`}
                 </p>
               </div>
               {canWrite && (
                 <Button
-                  size="sm"
+                  size="icon-sm"
                   variant="ghost"
-                  loading={remove.pending}
+                  aria-label="Supprimer l'échange"
+                  disabled={remove.pending}
                   onClick={async () => {
                     await remove.run(item.id);
                     onChanged();
                   }}
                 >
-                  Supprimer
+                  <Trash2Icon />
                 </Button>
               )}
             </li>

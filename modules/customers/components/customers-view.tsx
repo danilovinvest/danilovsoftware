@@ -2,15 +2,22 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
+import { PlusIcon } from "lucide-react";
 import { usePermission } from "@/modules/auth";
-import { Button, buttonClass } from "@/shared/ui/button";
-import { Card } from "@/shared/ui/card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState, ErrorNotice } from "@/shared/ui/feedback";
 import { CUSTOMER_STATUS } from "../lib/labels";
-import { useCustomerFilters, useCustomers, useCustomerStats } from "../hooks/use-customers";
+import {
+  useCustomerFilters,
+  useCustomers,
+  useCustomerStats,
+} from "../hooks/use-customers";
 import { CustomerFiltersBar } from "./customer-filters";
 import { CustomerTable } from "./customer-table";
 import { Pagination } from "./pagination";
+
+const STATUS_ORDER = ["prospect", "client", "perdu", "archive"] as const;
 
 /** Écran principal du module : compteurs, filtres, tableau et pagination. */
 export function CustomersView() {
@@ -29,33 +36,38 @@ export function CustomersView() {
     <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Fiches client</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h1 className="text-xl font-semibold">Fiches client</h1>
+          <p className="text-muted-foreground mt-1 text-sm">
             Prospects et clients, leurs projets, devis et échanges.
           </p>
         </div>
         {canCreate && (
-          <Link href="/customers/nouveau" className={buttonClass()}>
-            Nouvelle fiche
-          </Link>
+          <Button asChild size="lg">
+            <Link href="/customers/nouveau">
+              <PlusIcon />
+              Nouvelle fiche
+            </Link>
+          </Button>
         )}
       </header>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {(["prospect", "client", "perdu", "archive"] as const).map((status) => (
-          <Card key={status} className="px-4 py-3">
-            <p className="text-xs text-muted-foreground">
-              {CUSTOMER_STATUS[status].label}
-            </p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
-              {counts[status] ?? 0}
-            </p>
+        {STATUS_ORDER.map((status) => (
+          <Card key={status}>
+            <CardContent>
+              <p className="text-muted-foreground text-xs">
+                {CUSTOMER_STATUS[status].label}
+              </p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums">
+                {counts[status] ?? 0}
+              </p>
+            </CardContent>
           </Card>
         ))}
       </div>
 
-      <Card>
-        <div className="px-5 py-4">
+      <Card className="gap-0 overflow-hidden py-0">
+        <div className="p-5">
           <CustomerFiltersBar
             filters={filters}
             onChange={update}
@@ -79,16 +91,13 @@ export function CustomersView() {
             }
             action={
               active ? (
-                <Button variant="secondary" size="sm" onClick={reset}>
+                <Button variant="outline" size="sm" onClick={reset}>
                   Réinitialiser
                 </Button>
               ) : canCreate ? (
-                <Link
-                  href="/customers/nouveau"
-                  className="text-xs font-medium text-accent hover:underline"
-                >
-                  Créer une fiche
-                </Link>
+                <Button asChild size="sm">
+                  <Link href="/customers/nouveau">Créer une fiche</Link>
+                </Button>
               ) : null
             }
           />

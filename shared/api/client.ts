@@ -7,7 +7,10 @@ import { ApiError } from "./errors";
  * la page à partir du cookie de refresh (httpOnly).
  */
 let accessToken: string | null = null;
-let refreshPromise: Promise<string | null> | null = null;
+let refreshPromise: Promise<MinimalSession | null> | null = null;
+
+/** Ce que le client a besoin de connaître d'une session ; l'appelant en sait plus. */
+type MinimalSession = { access_token: string };
 
 export function setAccessToken(token: string | null) {
   accessToken = token;
@@ -18,28 +21,33 @@ export function getAccessToken() {
 }
 
 /**
- * Renouvelle le jeton d'accès. Les appels concurrents partagent la même
- * promesse : dix requêtes qui échouent en même temps ne déclenchent qu'un seul
- * refresh, sinon la rotation des refresh tokens invaliderait la session.
+ * Renouvelle la session à partir du cookie httpOnly.
+ *
+ * C'est le SEUL endroit du front qui appelle /v1/auth/refresh : les appels
+ * concurrents partagent la même promesse. L'API fait tourner le refresh token
+ * à chaque appel et révoque toutes les sessions si un jeton déjà consommé est
+ * rejoué — deux refresh en parallèle déconnecteraient donc l'utilisateur.
  */
-export function refreshAccessToken(): Promise<string | null> {
-  if (!refreshPromise) {
-    refreshPromise = fetch(`${API_URL}/v1/auth/refresh`, {
-      method: "POST",
-      credentials: "include",
+export function refreshSession<T extends MinimalSession>(): Promise<T | null> {
+  refreshPromise ??= fetch(`${API_URL}/v1/auth/refresh`, {
+    method: "POST",
+    credentials: "include",
+  })
+    .then(async (response) => {
+      if (!response.ok) {
+        accessToken = null;
+        return null;
+      }
+      const session = (await response.json()) as MinimalSession;
+      accessToken = session.access_token;
+      return session;
     })
-      .then(async (response) => {
-        if (!response.ok) return null;
-        const data = (await response.json()) as { access_token: string };
-        accessToken = data.access_token;
-        return accessToken;
-      })
-      .catch(() => null)
-      .finally(() => {
-        refreshPromise = null;
-      });
-  }
-  return refreshPromise;
+    .catch(() => null)
+    .finally(() => {
+      refreshPromise = null;
+    });
+
+  return refreshPromise as Promise<T | null>;
 }
 
 type RequestOptions = {
@@ -83,7 +91,7 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   }
 
   if (response.status === 401 && retryOnUnauthorized) {
-    const renewed = await refreshAccessToken();
+    const renewed = await refreshSession();
     if (renewed) {
       return apiFetch<T>(path, { ...options, retryOnUnauthorized: false });
     }

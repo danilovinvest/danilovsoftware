@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { LockIcon } from "lucide-react";
 import { Spinner } from "@/shared/ui/feedback";
 import { useAuth } from "../auth-context";
 import type { Permission } from "../lib/types";
@@ -29,7 +30,7 @@ export function RequireAuth({
 
   if (loading || !account) {
     return (
-      <div className="flex min-h-64 items-center justify-center text-muted-foreground">
+      <div className="text-muted-foreground flex min-h-64 items-center justify-center">
         <Spinner />
       </div>
     );
@@ -37,9 +38,10 @@ export function RequireAuth({
 
   if (permission && !can(permission)) {
     return (
-      <div className="rounded-xl border border-border-subtle bg-surface px-6 py-12 text-center">
-        <p className="text-sm font-medium text-foreground">Accès refusé</p>
-        <p className="mt-1 text-xs text-muted-foreground">
+      <div className="bg-card flex flex-col items-center gap-2 rounded-xl border px-6 py-12 text-center">
+        <LockIcon className="text-muted-foreground size-5" />
+        <p className="text-sm font-medium">Accès refusé</p>
+        <p className="text-muted-foreground text-xs">
           Votre rôle ne donne pas accès à cette section.
         </p>
       </div>

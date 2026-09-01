@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { ArchiveIcon, ArrowLeftIcon, PencilIcon } from "lucide-react";
 import { usePermission } from "@/modules/auth";
-import { Button } from "@/shared/ui/button";
-import { Card, CardBody, CardHeader } from "@/shared/ui/card";
-import { ErrorNotice, Skeleton } from "@/shared/ui/feedback";
+import { useSetPageTitle } from "@/modules/shell";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ErrorNotice } from "@/shared/ui/feedback";
 import { formatDate, formatPhone } from "@/shared/lib/format";
 import { CUSTOMER_KIND, CUSTOMER_SOURCE, CUSTOMER_STATUS } from "../lib/labels";
 import { useCustomer } from "../hooks/use-customer";
@@ -22,6 +25,10 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
   const router = useRouter();
   const { customer, loading, error, reload } = useCustomer(customerId);
   const [editing, setEditing] = useState(false);
+
+  // Alimente le fil d'Ariane de l'en-tête, qui ne peut pas déduire le nom
+  // depuis l'URL.
+  useSetPageTitle(customer?.display_name ?? null);
 
   const canWrite = usePermission("customers:write");
   const canDelete = usePermission("customers:delete");
@@ -58,34 +65,37 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <Link href="/customers" className="text-xs text-muted-foreground hover:text-accent">
-          ← Retour aux fiches
+      <Button asChild variant="ghost" size="sm" className="w-fit -ml-2">
+        <Link href="/customers">
+          <ArrowLeftIcon />
+          Retour aux fiches
         </Link>
-      </div>
+      </Button>
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl font-semibold text-foreground">{customer.display_name}</h1>
+            <h1 className="text-xl font-semibold">{customer.display_name}</h1>
             <EnumBadge value={customer.status} entries={CUSTOMER_STATUS} />
             <EnumBadge value={customer.kind} entries={CUSTOMER_KIND} />
           </div>
-          <p className="mt-1 font-mono text-xs text-muted-foreground">
+          <p className="text-muted-foreground mt-1 font-mono text-xs">
             {customer.reference}
             {customer.company_name && ` · ${customer.company_name}`}
           </p>
         </div>
         <div className="flex gap-2">
           {canWrite && (
-            <Button variant="secondary" onClick={() => setEditing(true)}>
+            <Button variant="outline" size="lg" onClick={() => setEditing(true)}>
+              <PencilIcon />
               Modifier
             </Button>
           )}
           {canDelete && (
             <Button
-              variant="danger"
-              loading={remove.pending}
+              variant="destructive"
+              size="lg"
+              disabled={remove.pending}
               onClick={async () => {
                 if (!confirm("Archiver cette fiche ? Elle n'apparaîtra plus dans la liste.")) {
                   return;
@@ -93,6 +103,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
                 if (await remove.run()) router.push("/customers");
               }}
             >
+              <ArchiveIcon />
               Archiver
             </Button>
           )}
@@ -118,12 +129,14 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
         </div>
 
         <div className="flex flex-col gap-6">
-          <Card>
-            <CardHeader title="Coordonnées" />
-            <CardBody className="flex flex-col gap-3 text-sm">
+          <Card className="gap-0 py-0">
+            <CardHeader className="border-b py-4">
+              <CardTitle className="text-sm">Coordonnées</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3 py-4 text-sm">
               <Row label="E-mail">
                 {customer.email ? (
-                  <a className="text-accent hover:underline" href={`mailto:${customer.email}`}>
+                  <a className="text-primary hover:underline" href={`mailto:${customer.email}`}>
                     {customer.email}
                   </a>
                 ) : (
@@ -132,7 +145,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
               </Row>
               <Row label="Téléphone">
                 {customer.phone ? (
-                  <a className="text-accent hover:underline" href={`tel:${customer.phone}`}>
+                  <a className="text-primary hover:underline" href={`tel:${customer.phone}`}>
                     {formatPhone(customer.phone)}
                   </a>
                 ) : (
@@ -149,7 +162,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
               </Row>
               <Row label="Demande reçue le">{formatDate(customer.requested_at)}</Row>
               <Row label="Responsable">{customer.owner_name || "Non assigné"}</Row>
-            </CardBody>
+            </CardContent>
           </Card>
 
           <ContactsCard
@@ -159,13 +172,15 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
           />
 
           {customer.notes && (
-            <Card>
-              <CardHeader title="Notes" />
-              <CardBody>
-                <p className="text-sm whitespace-pre-line text-muted-foreground">
+            <Card className="gap-0 py-0">
+              <CardHeader className="border-b py-4">
+                <CardTitle className="text-sm">Notes</CardTitle>
+              </CardHeader>
+              <CardContent className="py-4">
+                <p className="text-muted-foreground text-sm whitespace-pre-line">
                   {customer.notes}
                 </p>
-              </CardBody>
+              </CardContent>
             </Card>
           )}
         </div>
@@ -177,7 +192,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-4">
-      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="text-muted-foreground text-xs">{label}</span>
       <span className="text-right text-sm">{children}</span>
     </div>
   );

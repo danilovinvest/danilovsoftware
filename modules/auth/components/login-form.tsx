@@ -2,9 +2,10 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { CompassIcon } from "lucide-react";
 import { errorMessage } from "@/shared/api/errors";
-import { Button } from "@/shared/ui/button";
-import { TextField } from "@/shared/ui/field";
+import { Button } from "@/components/ui/button";
+import { TextField } from "@/shared/ui/form";
 import { ErrorNotice } from "@/shared/ui/feedback";
 import { useAuth } from "../auth-context";
 
@@ -33,11 +34,14 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex w-full max-w-sm flex-col gap-4">
-      <div>
-        <h1 className="text-lg font-semibold text-foreground">Connexion</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Accédez au CRM avec votre compte.
+    <form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">
+      <div className="flex flex-col gap-2">
+        <div className="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded-lg">
+          <CompassIcon className="size-4" />
+        </div>
+        <h1 className="mt-2 text-lg font-semibold">Danilov CRM</h1>
+        <p className="text-muted-foreground text-sm">
+          Connectez-vous pour accéder aux fiches client.
         </p>
       </div>
 
@@ -60,7 +64,7 @@ export function LoginForm() {
         onChange={(event) => setPassword(event.target.value)}
       />
 
-      <Button type="submit" loading={pending}>
+      <Button type="submit" size="lg" disabled={pending}>
         Se connecter
       </Button>
     </form>

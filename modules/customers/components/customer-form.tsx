@@ -2,12 +2,23 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Button } from "@/shared/ui/button";
-import { Card, CardBody, CardHeader } from "@/shared/ui/card";
-import { SelectField, TextAreaField, TextField } from "@/shared/ui/field";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
 import { ErrorNotice } from "@/shared/ui/feedback";
 import * as api from "../lib/api";
-import { CUSTOMER_KIND, CUSTOMER_SOURCE, CUSTOMER_STATUS, toOptions } from "../lib/labels";
+import {
+  CUSTOMER_KIND,
+  CUSTOMER_SOURCE,
+  CUSTOMER_STATUS,
+  toOptions,
+} from "../lib/labels";
 import { useAction } from "../hooks/use-customers";
 import type { Customer, CustomerPayload } from "../lib/types";
 
@@ -86,8 +97,11 @@ export function CustomerForm({
       )}
 
       <Card>
-        <CardHeader title="Identité" description="Qui est le client et d'où vient la demande." />
-        <CardBody className="grid gap-4 sm:grid-cols-2">
+        <CardHeader>
+          <CardTitle>Identité</CardTitle>
+          <CardDescription>Qui est le client et d&apos;où vient la demande.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2">
           <TextField
             label="Nom affiché"
             required
@@ -107,7 +121,7 @@ export function CustomerForm({
             options={toOptions(CUSTOMER_KIND)}
             value={values.kind}
             error={save.fields.kind}
-            onChange={(event) => set("kind", event.target.value as CustomerPayload["kind"])}
+            onValueChange={(value) => set("kind", value as CustomerPayload["kind"])}
           />
           <SelectField
             label="Statut"
@@ -115,14 +129,14 @@ export function CustomerForm({
             options={toOptions(CUSTOMER_STATUS)}
             value={values.status}
             error={save.fields.status}
-            onChange={(event) => set("status", event.target.value as CustomerPayload["status"])}
+            onValueChange={(value) => set("status", value as CustomerPayload["status"])}
           />
           <SelectField
             label="Source"
             options={toOptions(CUSTOMER_SOURCE)}
             value={values.source}
             error={save.fields.source}
-            onChange={(event) => set("source", event.target.value as CustomerPayload["source"])}
+            onValueChange={(value) => set("source", value as CustomerPayload["source"])}
           />
           <TextField
             label="Date de la demande"
@@ -131,12 +145,14 @@ export function CustomerForm({
             error={save.fields.requested_at}
             onChange={(event) => set("requested_at", event.target.value || null)}
           />
-        </CardBody>
+        </CardContent>
       </Card>
 
       <Card>
-        <CardHeader title="Coordonnées" />
-        <CardBody className="grid gap-4 sm:grid-cols-2">
+        <CardHeader>
+          <CardTitle>Coordonnées</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2">
           <TextField
             label="E-mail"
             type="email"
@@ -152,7 +168,7 @@ export function CustomerForm({
           />
           <TextField
             label="Adresse"
-            className="sm:col-span-2"
+            wrapperClassName="sm:col-span-2"
             value={values.address_line}
             onChange={(event) => set("address_line", event.target.value)}
           />
@@ -166,27 +182,32 @@ export function CustomerForm({
             value={values.city}
             onChange={(event) => set("city", event.target.value)}
           />
-        </CardBody>
+        </CardContent>
       </Card>
 
       <Card>
-        <CardHeader title="Notes" description="Contexte libre : contraintes, historique, remarques." />
-        <CardBody>
+        <CardHeader>
+          <CardTitle>Notes</CardTitle>
+          <CardDescription>
+            Contexte libre : contraintes, historique, remarques.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
           <TextAreaField
             value={values.notes}
             onChange={(event) => set("notes", event.target.value)}
             placeholder="Ex. rapport + proposition envoyés, en attente de retour."
           />
-        </CardBody>
+        </CardContent>
       </Card>
 
       <div className="flex justify-end gap-2">
         {onCancel && (
-          <Button type="button" variant="secondary" onClick={onCancel}>
+          <Button type="button" variant="outline" size="lg" onClick={onCancel}>
             Annuler
           </Button>
         )}
-        <Button type="submit" loading={save.pending}>
+        <Button type="submit" size="lg" disabled={save.pending}>
           {customer ? "Enregistrer" : "Créer la fiche"}
         </Button>
       </div>
