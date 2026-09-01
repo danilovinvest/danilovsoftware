@@ -45,7 +45,7 @@ export function TaskRow({
           "mt-0.5 grid size-5 shrink-0 place-items-center rounded-md border transition-colors",
           done
             ? "bg-success border-success text-white"
-            : "border-border-strong hover:border-primary",
+            : "border-input hover:border-primary",
           !canWrite && "cursor-not-allowed opacity-50",
         )}
       >

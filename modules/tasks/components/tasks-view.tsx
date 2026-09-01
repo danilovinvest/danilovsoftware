@@ -12,7 +12,7 @@ import { DUE_FILTERS, STATUS_ORDER, TASK_STATUS } from "../lib/labels";
 import { useTasks, useTaskStats } from "../hooks/use-tasks";
 import { TaskDialog } from "./task-dialog";
 import { TaskRow } from "./task-row";
-import type { DueFilter, Task, TaskFilters, TaskStatus } from "../lib/types";
+import type { DueFilter, Task, TaskFilters } from "../lib/types";
 
 /** Écran principal : ce que j'ai à faire, ce qui est en retard, tout le reste. */
 export function TasksView() {

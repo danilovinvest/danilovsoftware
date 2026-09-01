@@ -1,4 +1,9 @@
-import { FileTextIcon, UsersIcon, type LucideIcon } from "lucide-react";
+import {
+  CheckSquareIcon,
+  FileTextIcon,
+  UsersIcon,
+  type LucideIcon,
+} from "lucide-react";
 import type { Permission } from "@/modules/auth";
 
 /**
