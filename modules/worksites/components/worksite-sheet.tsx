@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { EnumBadge } from "@/modules/customers";
 import { activityName, entityOfActivity } from "@/modules/group";
 import { euros, eurosShort, formatDate } from "@/shared/lib/format";
-import { TONE_TEXT } from "@/shared/ui/panel";
+import { TONE_SOFT, TONE_TEXT } from "@/shared/ui/panel";
 import {
   BLOCKED_REASON,
   COST_KIND,
@@ -69,8 +69,7 @@ function Body({ worksite }: { worksite: Worksite }) {
           <span
             className={cn(
               "rounded-[4px] px-1.5 py-0.5 text-[11px]",
-              `bg-${status.tone}-soft`,
-              TONE_TEXT[status.tone],
+              TONE_SOFT[status.tone],
             )}
           >
             {status.label}

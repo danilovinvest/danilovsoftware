@@ -2,6 +2,7 @@ import {
   CalendarIcon,
   CheckSquareIcon,
   FileTextIcon,
+  HardHatIcon,
   LayoutDashboardIcon,
   ReceiptEuroIcon,
   UsersIcon,
@@ -50,6 +51,14 @@ export const NAVIGATION: NavItem[] = [
         permission: "imports:run",
       },
     ],
+  },
+  {
+    href: "/chantiers",
+    label: "Chantiers",
+    icon: HardHatIcon,
+    // Tout ce qui suit la signature : exécution, coûts, réception. Même
+    // permission que les fiches — c'est la suite de la même affaire.
+    permission: "customers:read",
   },
   {
     href: "/tasks",

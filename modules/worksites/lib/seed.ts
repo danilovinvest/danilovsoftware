@@ -155,7 +155,6 @@ export const SEED_WORKSITES: SeedWorksite[] = [
     balance: { ttc: 41184, invoiced: 136, due: 106, paid: 103 },
     pvSent: 137,
     pvSigned: 130,
-    reviewAsked: 128,
     quotes: [
       { ref: "DE2025-0118", label: "Étude de reprise en sous-œuvre", activity: "etudes", ht: 14400, vat: 20, signed: 200 },
       { ref: "DE2026-T009", label: "Travaux tranche 1", activity: "gros-oeuvre", ht: 62400, vat: 10, signed: 190 },
@@ -237,7 +236,7 @@ export const SEED_WORKSITES: SeedWorksite[] = [
       { kind: "sous_traitance", label: "Électricité et raccordements", supplier: "Elec Riviera", ht: 6800 },
     ],
     deposit: { ttc: 20544, invoiced: 60, due: 45, paid: 44 },
-    balance: { ttc: 30816, invoiced: 8, due: -22 },
+    balance: { ttc: 30816 },
     pvSent: 9,
     pvSigned: 4,
     quotes: [
@@ -285,7 +284,7 @@ export const SEED_WORKSITES: SeedWorksite[] = [
     activity: "gros-oeuvre",
     signed: 34,
     starts: 21,
-    ends: -18,
+    ends: 6,
     ht: 100195,
     vat: 20,
     costs: [
@@ -414,7 +413,7 @@ export const SEED_WORKSITES: SeedWorksite[] = [
     activity: "gros-oeuvre",
     signed: 44,
     starts: 30,
-    ends: -4,
+    ends: 9,
     blocked: "tiers",
     ht: 57200,
     vat: 10,

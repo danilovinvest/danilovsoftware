@@ -38,12 +38,17 @@ export function WorksitePlanning({
   const totalDays = (WEEKS_BEFORE + WEEKS_AFTER) * 7;
   const weeks = Array.from({ length: WEEKS_BEFORE + WEEKS_AFTER }, (_, index) => index);
 
-  const dated = worksites
-    .filter((worksite) => worksite.starts_at !== null && worksite.ends_at !== null)
-    .sort((a, b) => (a.starts_at ?? "").localeCompare(b.starts_at ?? ""));
-
   const offset = (value: string) =>
     (new Date(value).getTime() - origin.getTime()) / DAY;
+
+  // Les chantiers entièrement hors fenêtre sont écartés : une ligne sans barre
+  // n'apprend rien et repousse vers le bas ceux qui comptent.
+  const dated = worksites
+    .filter((worksite) => {
+      if (worksite.starts_at === null || worksite.ends_at === null) return false;
+      return offset(worksite.ends_at) > 0 && offset(worksite.starts_at) < totalDays;
+    })
+    .sort((a, b) => (a.starts_at ?? "").localeCompare(b.starts_at ?? ""));
 
   const todayLeft = (offset(now.toISOString()) / totalDays) * 100;
 
@@ -84,7 +89,6 @@ export function WorksitePlanning({
           {dated.map((worksite) => {
             const from = Math.max(0, offset(worksite.starts_at ?? ""));
             const to = Math.min(totalDays, offset(worksite.ends_at ?? ""));
-            const visible = to > 0 && from < totalDays;
             const entry = WORKSITE_STATUS[worksite.status];
 
             return (
@@ -114,8 +118,7 @@ export function WorksitePlanning({
                       aria-hidden
                     />
                   ))}
-                  {visible && (
-                    <button
+                  <button
                       type="button"
                       onClick={() => onSelect(worksite)}
                       title={`${worksite.label} — ${entry.label}`}
@@ -129,9 +132,8 @@ export function WorksitePlanning({
                         worksite.days_late > 0 && "ring-danger ring-1",
                       )}
                     >
-                      <span className="block truncate">{worksite.label}</span>
-                    </button>
-                  )}
+                    <span className="block truncate">{worksite.label}</span>
+                  </button>
                 </div>
               </div>
             );
