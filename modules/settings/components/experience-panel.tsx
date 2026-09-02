@@ -4,6 +4,7 @@ import { CheckIcon, PanelRightIcon, SquareIcon } from "lucide-react";
 import { SelectField } from "@/shared/ui/form";
 import { cn } from "@/lib/utils";
 import { SCALE_OPTIONS, type ThemeChoice } from "../lib/preferences";
+import { PALETTES, type Palette } from "../lib/palettes";
 import { setPreferences, usePreferences } from "./preferences-provider";
 import {
   SettingsPage,
@@ -19,6 +20,7 @@ export function ExperiencePanel() {
       description="L'apparence et les formats, réglés poste par poste."
     >
       <AppearanceSection />
+      <PaletteSection />
       <InterfaceSection />
       <NavigationSection />
       <FormatsSection />
@@ -66,6 +68,105 @@ function AppearanceSection() {
         ))}
       </div>
     </SettingsSection>
+  );
+}
+
+/**
+ * Galerie des palettes.
+ *
+ * Chaque vignette est coupée en deux — clair à gauche, sombre à droite —
+ * parce qu'une palette existe dans les deux modes : la montrer dans un seul
+ * obligerait à basculer le thème pour juger. Les couleurs sont posées en style
+ * en ligne, prises du registre : une vignette doit peindre SA palette, pas
+ * celle qui est active.
+ */
+function PaletteSection() {
+  const { palette } = usePreferences();
+
+  return (
+    <SettingsSection
+      title="Palette"
+      description="La teinte d'accent et la température des surfaces. Les couleurs de statut — vert pour accepté, rouge pour refusé — ne bougent pas d'une palette à l'autre."
+    >
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        {PALETTES.map((option) => {
+          const selected = palette === option.id;
+          return (
+            <button
+              key={option.id}
+              type="button"
+              aria-pressed={selected}
+              onClick={() => setPreferences({ palette: option.id })}
+              className="group flex flex-col gap-1.5 text-left"
+            >
+              <span
+                className={cn(
+                  "relative block overflow-hidden rounded-lg border-2 transition-colors",
+                  selected
+                    ? "border-brand"
+                    : "border-border group-hover:border-neutral",
+                )}
+              >
+                <span className="flex h-14 w-full">
+                  <PaletteHalf palette={option} mode="light" />
+                  <PaletteHalf palette={option} mode="dark" />
+                </span>
+                {selected && (
+                  <span className="bg-brand absolute right-1 bottom-1 flex size-4 items-center justify-center rounded-full text-white">
+                    <CheckIcon className="size-3" />
+                  </span>
+                )}
+              </span>
+              <span
+                className={cn(
+                  "text-xs",
+                  selected ? "text-foreground font-medium" : "text-muted-foreground",
+                )}
+              >
+                {option.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </SettingsSection>
+  );
+}
+
+function PaletteHalf({
+  palette,
+  mode,
+}: {
+  palette: Palette;
+  mode: "light" | "dark";
+}) {
+  const surface = palette.surface[mode];
+  const accent = palette.accent[mode];
+
+  return (
+    <span
+      className="flex h-full w-1/2 items-center gap-1 px-1.5"
+      style={{ backgroundColor: surface.base }}
+    >
+      <span
+        className="h-full w-1.5 shrink-0"
+        style={{ backgroundColor: surface.raised }}
+      />
+      <span className="flex flex-1 flex-col gap-1">
+        <span
+          className="block h-1.5 w-full rounded-full"
+          style={{ backgroundColor: accent }}
+        />
+        <span
+          className="block h-1.5 w-3/4 rounded-full"
+          style={{ backgroundColor: surface.raised }}
+        />
+        <span
+          className="block h-1.5 w-1/2 rounded-full"
+          style={{ backgroundColor: surface.raised }}
+        />
+      </span>
+    </span>
   );
 }
 
