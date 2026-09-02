@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!--
+    Favicon : la même marque que dans l'application, un profilé métallique en
+    section. La couleur est figée ici — un fichier statique ne lit pas les
+    variables du thème — et reprend `--brand` en clair (Radix indigo 9).
+  -->
+  <rect width="32" height="32" rx="7" fill="#3e63dd"/>
+  <g fill="#ffffff">
+    <rect x="7" y="7.5" width="18" height="4" rx="1.4"/>
+    <rect x="14" y="11.5" width="4" height="9"/>
+    <rect x="7" y="20.5" width="18" height="4" rx="1.4"/>
+  </g>
+</svg>

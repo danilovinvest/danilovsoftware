@@ -16,8 +16,16 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Danilov CRM",
-  description: "Suivi des prospects, clients, projets et devis.",
+  // Un gabarit plutôt qu'un suffixe recopié dans chaque page : l'onglet lit
+  // « Chantiers · Danilov CRM », et une page qui oublie son titre retombe sur
+  // le nom du produit au lieu d'afficher celui de la précédente.
+  title: {
+    default: "Danilov CRM",
+    template: "%s · Danilov CRM",
+  },
+  description:
+    "Suivi des prospects, des chantiers, des devis et de la facturation du groupe Danilov.",
+  applicationName: "Danilov CRM",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

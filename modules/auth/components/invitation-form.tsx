@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CompassIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LogoTile } from "@/shared/ui/logo";
 import { ApiError } from "@/shared/api/errors";
 import { ErrorNotice, Spinner } from "@/shared/ui/feedback";
 import { TextField } from "@/shared/ui/form";
@@ -107,9 +107,7 @@ export function InvitationForm({ token }: { token: string }) {
   return (
     <form onSubmit={submit} className="flex w-full flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <div className="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded-lg">
-          <CompassIcon className="size-4" />
-        </div>
+        <LogoTile />
         <div>
           <h1 className="text-base font-semibold">Rejoindre Danilov CRM</h1>
           <p className="text-muted-foreground mt-0.5 text-sm">

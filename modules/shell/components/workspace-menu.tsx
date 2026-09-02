@@ -27,6 +27,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { GradientAvatar } from "@/shared/ui/gradient-avatar";
+import { LogoTile } from "@/shared/ui/logo";
 import { initials } from "@/shared/lib/format";
 import { WORKSPACE } from "@/shared/lib/workspace";
 import { cn } from "@/lib/utils";
@@ -67,12 +68,7 @@ export function WorkspaceMenu() {
               className="text-foreground data-[state=open]:bg-sidebar-accent h-8 gap-2 px-1.5 font-medium"
               tooltip={WORKSPACE.name}
             >
-              <span
-                aria-hidden
-                className="bg-sidebar-primary text-sidebar-primary-foreground flex size-5 shrink-0 items-center justify-center rounded-[4px] text-[11px] font-semibold"
-              >
-                {WORKSPACE.initial}
-              </span>
+              <LogoTile className="size-5 rounded-[4px]" markClassName="size-3.5" />
               <span className="truncate">{WORKSPACE.name}</span>
               <ChevronDownIcon className="text-muted-foreground ml-auto size-3.5!" />
             </SidebarMenuButton>

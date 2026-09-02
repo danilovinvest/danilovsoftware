@@ -5,7 +5,7 @@ import { RequireAuth } from "@/modules/auth";
 import { CustomerWizard } from "@/modules/customers";
 import { Button } from "@/components/ui/button";
 
-export const metadata: Metadata = { title: "Nouvelle fiche — Danilov CRM" };
+export const metadata: Metadata = { title: "Nouvelle fiche" };
 
 export default function NewCustomerPage() {
   return (

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { RequireAuth } from "@/modules/auth";
 import { TreasuryView } from "@/modules/billing";
 
-export const metadata: Metadata = { title: "Flux de trésorerie — Danilov CRM" };
+export const metadata: Metadata = { title: "Flux de trésorerie" };
 
 export default function TreasuryPage() {
   return (

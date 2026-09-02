@@ -1,5 +1,8 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { LoginForm } from "@/modules/auth";
+
+export const metadata: Metadata = { title: "Connexion" };
 
 export default function LoginPage() {
   return (

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { InvitationForm } from "@/modules/auth";
 
-export const metadata: Metadata = { title: "Invitation — Danilov CRM" };
+export const metadata: Metadata = { title: "Invitation" };
 
 /**
  * Page publique, hors du groupe `(crm)` : l'invité n'a pas encore de compte,
