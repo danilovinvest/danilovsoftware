@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon, KeyboardIcon, PlusIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -96,6 +97,62 @@ export function CalendarView() {
     }
   }
 
+  /*
+   * Raccourcis clavier, dans l'esprit de Google Agenda.
+   *
+   * Ils sont désarmés dès qu'on saisit du texte ou qu'une fenêtre est
+   * ouverte : taper « n » dans le titre d'un événement ne doit pas en ouvrir
+   * un second. Les modificateurs sont également exclus — ⌘S appartient au
+   * navigateur, pas à nous.
+   */
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (formOpen || selected) return;
+
+      const target = event.target as HTMLElement | null;
+      if (
+        target?.closest("input, textarea, select, [contenteditable='true']") ||
+        target?.closest("[role='dialog']")
+      ) {
+        return;
+      }
+
+      switch (event.key) {
+        case "t":
+          calendar.goToday();
+          break;
+        case "ArrowLeft":
+          calendar.goPrev();
+          break;
+        case "ArrowRight":
+          calendar.goNext();
+          break;
+        case "m":
+          calendar.setView("mois");
+          break;
+        case "s":
+          calendar.setView("semaine");
+          break;
+        case "a":
+          calendar.setView("agenda");
+          break;
+        case "n":
+        case "c":
+          if (canWrite && calendar.ready) {
+            event.preventDefault();
+            openCreation(calendar.cursor, calendar.cursor, false);
+          }
+          break;
+        default:
+          return;
+      }
+    }
+
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }); // sans tableau de dépendances : la fermeture doit voir l'état courant.
+
   /** Déplacement d'un jour à l'autre dans la grille mensuelle : l'heure et la
    * durée sont conservées, seule la date change. */
   function moveToDay(occurrence: Occurrence, day: Date) {
@@ -163,6 +220,8 @@ Rendez-vous, visites de chantier et absences de l&apos;équipe.
                 {calendar.label}
               </p>
             </div>
+
+            <ShortcutsHelp />
 
             <div className="bg-muted flex rounded-[4px] p-0.5">
               {VIEWS.map((entry) => (
@@ -258,5 +317,51 @@ Rendez-vous, visites de chantier et absences de l&apos;équipe.
         range={creating}
       />
     </div>
+  );
+}
+
+/** Les raccourcis, à portée de clic. Les apprendre par hasard n'arrive pas ;
+ * les cacher derrière une combinaison qu'il faut déjà connaître non plus. */
+function ShortcutsHelp() {
+  const shortcuts: Array<[string, string]> = [
+    ["T", "Aujourd'hui"],
+    ["← →", "Période précédente / suivante"],
+    ["M", "Vue mois"],
+    ["S", "Vue semaine"],
+    ["A", "Vue agenda"],
+    ["N", "Nouvel événement"],
+  ];
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7"
+          aria-label="Raccourcis clavier"
+        >
+          <KeyboardIcon className="size-4" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-64 p-3">
+        <p className="mb-2 text-xs font-medium">Raccourcis</p>
+        <ul className="flex flex-col gap-1.5">
+          {shortcuts.map(([keys, label]) => (
+            <li key={keys} className="flex items-center justify-between gap-3 text-xs">
+              <span className="text-muted-foreground">{label}</span>
+              <kbd className="bg-muted rounded-[3px] px-1.5 py-0.5 font-mono text-[10px]">
+                {keys}
+              </kbd>
+            </li>
+          ))}
+        </ul>
+        <p className="text-muted-foreground/70 mt-3 border-t pt-2 text-[11px] leading-relaxed">
+          Glissez sur plusieurs jours pour créer un événement qui les couvre, ou
+          sur des heures pour tracer un créneau. Un bloc se déplace en le
+          saisissant, se rallonge par son bord inférieur.
+        </p>
+      </PopoverContent>
+    </Popover>
   );
 }
