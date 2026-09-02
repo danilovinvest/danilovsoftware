@@ -116,3 +116,38 @@ export type CalendarStyle = {
 };
 
 export type CalendarView = "mois" | "semaine" | "agenda";
+
+/**
+ * Une exécution de la synchronisation, telle que le journal la garde.
+ *
+ * `finished_at` nul veut dire « en cours », et c'est la seule chose qui fasse
+ * dire au badge qu'une copie tourne. Le déduire d'une horloge — « la dernière
+ * date de moins d'une minute, donc ça travaille » — mentirait dès qu'une
+ * exécution dure plus longtemps que prévu.
+ */
+export type SyncRun = {
+  id: number;
+  email: string;
+  started_at: string;
+  finished_at: string | null;
+  /** « automatique », « manuelle » ou « raccordement ». */
+  origin: string;
+  calendars: number;
+  created: number;
+  updated: number;
+  deleted: number;
+  error: string;
+  details: SyncDetail[];
+};
+
+/** Le compte d'un agenda dans une exécution. */
+export type SyncDetail = {
+  calendar: string;
+  summary: string;
+  /** « complète » ou « incrémentale ». */
+  mode: string;
+  created: number;
+  updated: number;
+  deleted: number;
+  error?: string;
+};

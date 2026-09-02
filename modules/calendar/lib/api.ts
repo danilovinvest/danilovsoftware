@@ -1,5 +1,5 @@
 import { apiFetch } from "@/shared/api/client";
-import type { CalendarListEntry, GoogleAccount, GoogleEvent } from "./types";
+import type { CalendarListEntry, GoogleAccount, GoogleEvent, SyncRun } from "./types";
 
 /**
  * Appels du module calendrier.
@@ -26,6 +26,12 @@ export function listAccounts(signal?: AbortSignal) {
     "/v1/calendar/accounts",
     { signal },
   );
+}
+
+export function listSyncRuns(limit: number, signal?: AbortSignal) {
+  return apiFetch<{ items: SyncRun[] }>(`/v1/calendar/sync/runs?limit=${limit}`, {
+    signal,
+  });
 }
 
 /* --- Raccordement ---------------------------------------------------------- */

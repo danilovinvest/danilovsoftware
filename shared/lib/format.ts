@@ -56,6 +56,42 @@ export function formatRelative(value: string | null | undefined): string {
   return relative.format(diffDays, "day");
 }
 
+/**
+ * « il y a 40 s », « il y a 3 min », « il y a 2 h ».
+ *
+ * `formatRelative` s'arrête au jour, ce qui suffit à une date de création mais
+ * pas à une synchronisation qui tourne toutes les cinq minutes : elle
+ * afficherait « aujourd'hui » pendant vingt-quatre heures.
+ *
+ * L'instant de référence est passé en argument plutôt que lu de l'horloge :
+ * une fonction appelée au rendu doit rendre la même chose pour les mêmes
+ * entrées, et c'est l'appelant qui décide à quel rythme le « maintenant »
+ * avance.
+ */
+export function formatAgo(value: string | null | undefined, now: number): string {
+  if (!value) return "—";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+
+  const seconds = Math.max(0, Math.round((now - parsed.getTime()) / 1000));
+  if (seconds < 10) return "à l'instant";
+  if (seconds < 60) return `il y a ${seconds} s`;
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `il y a ${minutes} min`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `il y a ${hours} h`;
+  return formatRelative(value);
+}
+
+/** Durée d'une opération : « 1,2 s », « 340 ms », « 2 min 05 ». */
+export function formatElapsed(ms: number): string {
+  if (ms < 1000) return `${Math.round(ms)} ms`;
+  if (ms < 60_000) return `${(ms / 1000).toFixed(1).replace(".", ",")} s`;
+  const minutes = Math.floor(ms / 60_000);
+  const seconds = Math.round((ms % 60_000) / 1000);
+  return `${minutes} min ${String(seconds).padStart(2, "0")}`;
+}
+
 /** Regroupe un numéro français par paires : 0662464867 → 06 62 46 48 67. */
 export function formatPhone(value: string): string {
   const digits = value.replace(/[^\d+]/g, "");
