@@ -18,6 +18,7 @@ export type Permission =
   | "tasks:write"
   | "tasks:delete"
   | "calendar:read"
+  | "calendar:write"
   | "imports:run"
   | "system:admin";
 

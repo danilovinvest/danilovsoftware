@@ -169,9 +169,9 @@ export function AgendaPanel() {
                   <p className="truncate text-sm font-medium">{account.email}</p>
                   <p className="text-muted-foreground/70 text-[11px]">
                     Raccordé le {formatDate(account.connected_at)} ·{" "}
-                    {account.scope.includes("readonly")
-                      ? "lecture seule"
-                      : account.scope}
+                    {account.can_write
+                      ? "lecture et écriture des événements"
+                      : "lecture seule"}
                   </p>
                 </div>
 
@@ -204,6 +204,27 @@ export function AgendaPanel() {
                 </Button>
               </div>
             ))}
+
+            {accounts.some((account) => !account.can_write) && (
+              <p className="text-warning bg-warning-soft/50 flex items-start gap-2 rounded-lg px-3 py-2 text-xs">
+                <TriangleAlertIcon className="mt-px size-3.5 shrink-0" />
+                <span className="flex-1">
+                  Ce compte a été raccordé quand le CRM ne savait que lire.
+                  Créer ou modifier un rendez-vous demande une nouvelle
+                  autorisation de Google — reconnectez-le. La copie déjà faite
+                  n&apos;est pas perdue.
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 shrink-0"
+                  onClick={connect}
+                  disabled={pending || !configured}
+                >
+                  Reconnecter
+                </Button>
+              </p>
+            )}
 
             {accounts.some((account) => account.last_error) && (
               <p className="text-danger bg-danger-soft/40 flex items-start gap-1.5 rounded-lg px-3 py-2 text-xs">
@@ -263,12 +284,16 @@ export function AgendaPanel() {
 
       <SettingsSection
         title="Ce que le CRM lit, et ce qu'il ne fait pas"
-        description="La portée demandée à Google est calendar.readonly."
+        description="Deux portées, aussi étroites que possible : calendar.readonly pour lister les agendas, calendar.events pour les rendez-vous."
       >
         <SettingsRows>
           <SettingsRow label="Lu">
             Titres, descriptions, lieux, dates, invités et leurs réponses, liens
             de visioconférence
+          </SettingsRow>
+          <SettingsRow label="Invités">
+            Conservés mais non modifiables ici : les changer enverrait de vraies
+            invitations
           </SettingsRow>
           <SettingsRow label="Fenêtre">
             Un an en arrière, deux ans en avant
@@ -276,10 +301,13 @@ export function AgendaPanel() {
           <SettingsRow label="Fréquence">
             Toutes les cinq minutes, et seulement ce qui a changé
           </SettingsRow>
-          <SettingsRow label="Écriture">
+          <SettingsRow label="Écrit">
+            Les événements : créer, modifier, supprimer — depuis le calendrier
+          </SettingsRow>
+          <SettingsRow label="Hors de portée">
             <span className="inline-flex items-center gap-1">
               <CheckIcon className="text-success size-3.5" />
-              Impossible — le jeton ne le permet pas
+              Créer, renommer ou supprimer un agenda, changer ses partages
             </span>
           </SettingsRow>
         </SettingsRows>

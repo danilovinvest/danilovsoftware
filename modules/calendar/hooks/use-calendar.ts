@@ -32,6 +32,7 @@ export function useCalendar() {
   const [cursor, setCursor] = useState(today);
   const [view, setView] = useState<CalendarView>("mois");
   const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set<string>());
+  const [token, setToken] = useState(0);
 
   // Le mois du curseur, débordé d'une semaine de chaque côté : une grille
   // mensuelle montre déjà les derniers jours du mois précédent, et la vue
@@ -41,7 +42,7 @@ export function useCalendar() {
     return { from: addDays(first, -14), to: addDays(first, 60) };
   }, [cursor]);
 
-  const key = `${span.from.toISOString()}|${span.to.toISOString()}`;
+  const key = `${span.from.toISOString()}|${span.to.toISOString()}|${token}`;
   const [resolved, setResolved] = useState<
     Resolved<{ events: GoogleEvent[]; calendars: CalendarListEntry[] }>
   >({ key: "", data: null, error: null });
@@ -115,6 +116,10 @@ export function useCalendar() {
     [loadedCalendars, occurrences, inRange, hidden],
   );
 
+  // Après une écriture : l'API a déjà rangé la ressource rendue par Google
+  // dans la copie locale, il suffit de la redemander.
+  const reload = useCallback(() => setToken((value) => value + 1), []);
+
   const toggleCalendar = useCallback((id: string) => {
     setHidden((current) => {
       const next = new Set(current);
@@ -165,7 +170,10 @@ export function useCalendar() {
     label,
     range,
     calendars,
+    /** Les agendas bruts, pour le formulaire : il lui faut `access_role`. */
+    rawCalendars: loadedCalendars,
     toggleCalendar,
+    reload,
     occurrences: visible,
     /** Nombre total d'occurrences chargées, agendas masqués compris. */
     loaded: occurrences.length,

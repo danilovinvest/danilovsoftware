@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { usePermission } from "@/modules/auth";
 import { EmptyState } from "@/shared/ui/feedback";
 import { useCalendar } from "../hooks/use-calendar";
 import { VIEWS } from "../lib/labels";
@@ -13,6 +14,7 @@ import type { Occurrence } from "../lib/types";
 import { AgendaList } from "./agenda-list";
 import { CalendarSidebar } from "./calendar-sidebar";
 import { EventDialog } from "./event-dialog";
+import { EventForm } from "./event-form";
 import { MonthGrid } from "./month-grid";
 import { WeekGrid } from "./week-grid";
 
@@ -31,8 +33,28 @@ import { WeekGrid } from "./week-grid";
  */
 export function CalendarView() {
   const calendar = useCalendar();
+  const canWrite = usePermission("calendar:write");
   const [selected, setSelected] = useState<Occurrence | null>(null);
   const [now] = useState(() => new Date());
+  // `editing` porte l'événement à modifier, `creating` le jour pré-rempli.
+  // Deux états distincts plutôt qu'un seul nullable : « créer le 3 septembre »
+  // et « modifier ce rendez-vous » ne se confondent pas.
+  const [editing, setEditing] = useState<Occurrence | null>(null);
+  const [creating, setCreating] = useState<Date | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+
+  function openCreation(at: Date) {
+    setEditing(null);
+    setCreating(at);
+    setFormOpen(true);
+  }
+
+  function openEdition(occurrence: Occurrence) {
+    setSelected(null);
+    setCreating(null);
+    setEditing(occurrence);
+    setFormOpen(true);
+  }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
@@ -40,9 +62,16 @@ export function CalendarView() {
         <div>
           <h1 className="text-base font-semibold">Calendrier</h1>
           <p className="text-muted-foreground mt-0.5 text-sm">
-            Copie en lecture seule de l&apos;agenda Google de l&apos;entreprise.
+            L&apos;agenda Google de l&apos;entreprise, dans le CRM.
           </p>
         </div>
+
+        {canWrite && calendar.connected && (
+          <Button size="sm" onClick={() => openCreation(calendar.today)}>
+            <PlusIcon />
+            Nouvel événement
+          </Button>
+        )}
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
@@ -127,6 +156,7 @@ export function CalendarView() {
                 occurrences={calendar.occurrences}
                 onSelect={setSelected}
                 onOpenDay={calendar.openDay}
+                onCreate={canWrite ? openCreation : undefined}
               />
             )}
             {!calendar.error && calendar.connected && calendar.view === "semaine" && (
@@ -136,6 +166,7 @@ export function CalendarView() {
                 now={now}
                 occurrences={calendar.occurrences}
                 onSelect={setSelected}
+                onCreate={canWrite ? openCreation : undefined}
               />
             )}
             {!calendar.error && calendar.connected && calendar.view === "agenda" && (
@@ -150,7 +181,20 @@ export function CalendarView() {
         </Card>
       </div>
 
-      <EventDialog occurrence={selected} onClose={() => setSelected(null)} />
+      <EventDialog
+        occurrence={selected}
+        onClose={() => setSelected(null)}
+        onEdit={canWrite ? openEdition : undefined}
+      />
+
+      <EventForm
+        open={formOpen}
+        onClose={() => setFormOpen(false)}
+        onSaved={calendar.reload}
+        calendars={calendar.rawCalendars}
+        event={editing?.event ?? null}
+        day={creating}
+      />
     </div>
   );
 }

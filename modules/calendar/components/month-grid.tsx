@@ -71,12 +71,15 @@ export function MonthGrid({
   occurrences,
   onSelect,
   onOpenDay,
+  onCreate,
 }: {
   cursor: Date;
   today: Date;
   occurrences: Occurrence[];
   onSelect: (occurrence: Occurrence) => void;
   onOpenDay: (day: Date) => void;
+  /** Absent quand le compte n'a pas le droit d'écrire dans l'agenda. */
+  onCreate?: (day: Date) => void;
 }) {
   const days = monthMatrix(cursor);
   const weeks = Array.from({ length: 6 }, (_, index) => days.slice(index * 7, index * 7 + 7));
@@ -131,10 +134,18 @@ export function MonthGrid({
                 return (
                   <div
                     key={day.toISOString()}
+                    // Cliquer le vide d'une case crée un événement ce jour-là.
+                    // Le test sur la cible est ce qui distingue « le vide » du
+                    // reste : sans lui, ouvrir une pastille ouvrirait aussi le
+                    // formulaire de création derrière elle.
+                    onClick={(clicked) => {
+                      if (clicked.target === clicked.currentTarget) onCreate?.(day);
+                    }}
                     className={cn(
                       "flex min-w-0 flex-col gap-px overflow-hidden border-r px-0.5 pt-1 pb-1 last:border-r-0",
                       outside && "bg-muted/40",
                       !outside && day.getDay() % 6 === 0 && "bg-muted/20",
+                      onCreate && "hover:bg-accent/30 cursor-pointer transition-colors",
                     )}
                   >
                     <button

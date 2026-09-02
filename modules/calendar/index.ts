@@ -16,6 +16,9 @@ export * from "./lib/types";
 // n'a pas à connaître les chemins d'API du calendrier.
 export {
   authorizeUrl,
+  createEvent,
+  deleteEvent,
+  updateEvent,
   disconnectAccount,
   listAccounts,
   listCalendars,

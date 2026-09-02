@@ -3,11 +3,13 @@
 import {
   CalendarIcon,
   MapPinIcon,
+  PencilIcon,
   RepeatIcon,
   UserIcon,
   UsersIcon,
   VideoIcon,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -38,9 +40,12 @@ import type { Occurrence } from "../lib/types";
 export function EventDialog({
   occurrence,
   onClose,
+  onEdit,
 }: {
   occurrence: Occurrence | null;
   onClose: () => void;
+  /** Absent quand le compte n'a pas le droit d'écrire dans l'agenda. */
+  onEdit?: (occurrence: Occurrence) => void;
 }) {
   const event = occurrence?.event;
   const style = occurrence?.style ?? null;
@@ -146,9 +151,22 @@ export function EventDialog({
                 </div>
               )}
 
-              <p className="text-muted-foreground/60 border-t pt-3 font-mono text-[10px] break-all">
-                {event.id} · calendarId {event.calendarId}
-              </p>
+              <div className="flex items-center justify-between gap-3 border-t pt-3">
+                <p className="text-muted-foreground/60 min-w-0 truncate font-mono text-[10px]">
+                  {event.id}
+                </p>
+                {onEdit && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 shrink-0"
+                    onClick={() => onEdit(occurrence)}
+                  >
+                    <PencilIcon className="size-3.5" />
+                    Modifier
+                  </Button>
+                )}
+              </div>
             </div>
           </>
         )}

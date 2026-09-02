@@ -84,6 +84,8 @@ export type GoogleAccount = {
   id: string;
   email: string;
   scope: string;
+  /** Faux si le compte a été raccordé avant l'écriture : il faut le reconnecter. */
+  can_write: boolean;
   connected_at: string;
   last_sync_at: string | null;
   /** Vide quand tout va bien ; sinon la raison, telle que Google l'a dite. */
@@ -150,4 +152,18 @@ export type SyncDetail = {
   updated: number;
   deleted: number;
   error?: string;
+};
+
+/** Ce qu'un formulaire décide d'un rendez-vous. Les invités restent gérés dans
+ * Google : les ajouter d'ici enverrait de vraies invitations à de vrais
+ * clients, ce qui ne se décide pas dans un formulaire à quatre champs. */
+export type EventInput = {
+  calendar_id: string;
+  summary: string;
+  description: string;
+  location: string;
+  all_day: boolean;
+  /** ISO 8601 pour un horaire, AAAA-MM-JJ pour une journée entière. */
+  start: string;
+  end: string;
 };

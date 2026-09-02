@@ -86,12 +86,15 @@ export function WeekGrid({
   now,
   occurrences,
   onSelect,
+  onCreate,
 }: {
   cursor: Date;
   today: Date;
   now: Date;
   occurrences: Occurrence[];
   onSelect: (occurrence: Occurrence) => void;
+  /** Absent quand le compte n'a pas le droit d'écrire dans l'agenda. */
+  onCreate?: (at: Date) => void;
 }) {
   const start = startOfWeek(cursor);
   const days = Array.from({ length: 7 }, (_, index) => addDays(start, index));
@@ -202,7 +205,18 @@ export function WeekGrid({
                 )}
               >
                 {hours.map((hour) => (
-                  <div key={hour} className="flex-1 border-b last:border-b-0" />
+                  <div
+                    key={hour}
+                    onClick={() => {
+                      const at = new Date(day);
+                      at.setHours(hour, 0, 0, 0);
+                      onCreate?.(at);
+                    }}
+                    className={cn(
+                      "flex-1 border-b last:border-b-0",
+                      onCreate && "hover:bg-accent/30 cursor-pointer transition-colors",
+                    )}
+                  />
                 ))}
 
                 {hasToday && isSameDay(day, today) && (

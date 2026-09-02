@@ -1,5 +1,11 @@
 import { apiFetch } from "@/shared/api/client";
-import type { CalendarListEntry, GoogleAccount, GoogleEvent, SyncRun } from "./types";
+import type {
+  CalendarListEntry,
+  EventInput,
+  GoogleAccount,
+  GoogleEvent,
+  SyncRun,
+} from "./types";
 
 /**
  * Appels du module calendrier.
@@ -32,6 +38,36 @@ export function listSyncRuns(limit: number, signal?: AbortSignal) {
   return apiFetch<{ items: SyncRun[] }>(`/v1/calendar/sync/runs?limit=${limit}`, {
     signal,
   });
+}
+
+/* --- Écriture --------------------------------------------------------------
+ *
+ * Tout passe par Google. Un événement créé ici en est un vrai : il apparaît
+ * dans Agenda, sur les téléphones, dans les notifications. L'API rend la
+ * ressource telle que Google l'a enregistrée, déjà rangée dans la copie locale
+ * — l'écran n'attend donc pas la synchronisation suivante pour la voir.
+ */
+
+export function createEvent(input: EventInput) {
+  return apiFetch<{ event: GoogleEvent }>("/v1/calendar/events", {
+    method: "POST",
+    body: input,
+  });
+}
+
+export function updateEvent(id: string, input: EventInput) {
+  return apiFetch<{ event: GoogleEvent }>(`/v1/calendar/events/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: input,
+  });
+}
+
+export function deleteEvent(id: string, calendarId: string) {
+  const query = new URLSearchParams({ calendar_id: calendarId });
+  return apiFetch<void>(
+    `/v1/calendar/events/${encodeURIComponent(id)}?${query}`,
+    { method: "DELETE" },
+  );
 }
 
 /* --- Raccordement ---------------------------------------------------------- */
