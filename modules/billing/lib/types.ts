@@ -1,4 +1,4 @@
-import type { Entity } from "./entities";
+import type { Entity } from "@/modules/group";
 
 /**
  * Types du module facturation.

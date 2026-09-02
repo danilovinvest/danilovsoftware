@@ -1,5 +1,5 @@
 /**
- * Les cinq sociétés du groupe.
+ * Les sociétés du groupe.
  *
  * Ces fiches ne sont **pas** inventées : elles viennent du registre national
  * des entreprises, via l'API publique `recherche-entreprises.api.gouv.fr`
@@ -123,6 +123,29 @@ export const ENTITIES: Entity[] = [
     parent_id: "danilov-invest",
     ownership: 100,
     source: "https://annuaire-entreprises.data.gouv.fr/entreprise/941045460",
+  },
+  {
+    id: "ompt-nice",
+    name: "OMPT NICE",
+    trade_name: "",
+    siren: "107866642",
+    siret: "10786664200013",
+    vat: "FR81107866642",
+    legal_form: "SARL",
+    naf: "43.99C",
+    naf_label: "Travaux de maçonnerie générale et gros œuvre",
+    address: "Immeuble Nouvel'R, 143 boulevard René Cassin, 06200 Nice",
+    created_at: "2026-07-20",
+    role: "exploitation",
+    // Le classeur « CYCLE CHANTIER » la compte parmi les dossiers du groupe,
+    // avec sa CIBTP et sa prévoyance PRO BTP — signe d'ouvriers salariés. Ses
+    // quatre gérants au registre ne sont pas ceux des autres sociétés : le lien
+    // capitalistique n'est pas public, d'où l'absence de quote-part.
+    activity: "Travaux — antenne de Nice",
+    capital: null,
+    parent_id: "danilov-invest",
+    ownership: null,
+    source: "https://annuaire-entreprises.data.gouv.fr/entreprise/107866642",
   },
   {
     id: "danilov-fonciere",

@@ -1,4 +1,4 @@
-import { ENTITIES } from "./entities";
+import { ENTITIES } from "@/modules/group";
 import { SEED_INVOICES, SEED_VAT_REGIME, type SeedInvoice } from "./seed";
 import type {
   AgedBucket,

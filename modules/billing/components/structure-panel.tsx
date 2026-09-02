@@ -2,7 +2,7 @@ import { ExternalLinkIcon, NetworkIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { euros, formatDate } from "@/shared/lib/format";
 import { Panel, TONE_SOFT } from "@/shared/ui/panel";
-import { DORMANT_ENTITIES, ENTITIES, type Entity } from "../lib/entities";
+import { DORMANT_ENTITIES, ENTITIES, type Entity } from "@/modules/group";
 import { ENTITY_ROLE, formatSiren, formatVat } from "../lib/labels";
 
 /**

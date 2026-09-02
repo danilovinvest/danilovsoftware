@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { EmptyState } from "@/shared/ui/feedback";
 import { euros, eurosShort, formatDate, plural } from "@/shared/lib/format";
 import { Panel, TONE_SOFT } from "@/shared/ui/panel";
-import { entityName } from "../lib/entities";
+import { entityName } from "@/modules/group";
 import { INVOICE_KIND, INVOICE_STATUS, STATUS_ORDER } from "../lib/labels";
 import type { Invoice, InvoiceStatus } from "../lib/types";
 

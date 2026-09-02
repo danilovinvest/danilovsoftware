@@ -6,7 +6,7 @@ import { usePermission } from "@/modules/auth";
 import { plural } from "@/shared/lib/format";
 import { MetricCards } from "@/shared/ui/metric-cards";
 import { useBilling } from "../hooks/use-billing";
-import { ENTITY_BY_ID } from "../lib/entities";
+import { ENTITY_BY_ID } from "@/modules/group";
 import { PERIODS, formatSiren } from "../lib/labels";
 import { EntitySwitcher } from "./entity-switcher";
 import { InvoiceTable } from "./invoice-table";

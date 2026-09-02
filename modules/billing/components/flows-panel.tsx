@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { euros, plural } from "@/shared/lib/format";
 import { EmptyState } from "@/shared/ui/feedback";
 import { Panel, TONE_SOFT } from "@/shared/ui/panel";
-import { entityName } from "../lib/entities";
+import { entityName } from "@/modules/group";
 import { FLOW_KIND } from "../lib/labels";
 import type { IntraFlow } from "../lib/types";
 

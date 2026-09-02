@@ -96,10 +96,16 @@ export const SEED_INVOICES: SeedInvoice[] = [
  * Régime de TVA déclaré par société. Le réel régime dépend du chiffre
  * d'affaires et d'options que le registre ne publie pas : c'est une hypothèse.
  */
+/**
+ * Régime de TVA par société. Ce n'est plus une hypothèse : l'onglet finances du
+ * classeur « CYCLE CHANTIER » les donne, société par société — mensuelle le 21
+ * pour GROUPE, STRUCTURE et NICE, trimestrielle pour DANILOV INVEST.
+ */
 export const SEED_VAT_REGIME: Record<string, "mensuel" | "trimestriel"> = {
   "danilov-invest": "trimestriel",
   "ompt-structure": "mensuel",
   "ompt-groupe": "mensuel",
+  "ompt-nice": "mensuel",
   "avenue-de-grasse": "trimestriel",
   "danilov-fonciere": "trimestriel",
 };

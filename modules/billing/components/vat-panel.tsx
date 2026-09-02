@@ -1,7 +1,7 @@
 import { PercentIcon } from "lucide-react";
 import { euros, formatDate } from "@/shared/lib/format";
 import { Panel } from "@/shared/ui/panel";
-import { entityName } from "../lib/entities";
+import { entityName } from "@/modules/group";
 import type { VatRow } from "../lib/types";
 
 /**

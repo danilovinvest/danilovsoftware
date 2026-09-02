@@ -5,7 +5,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { Tone } from "@/modules/customers";
-import type { EntityRole } from "./entities";
+import type { EntityRole } from "@/modules/group";
 import type { FlowKind, InvoiceKind, InvoiceStatus, Period } from "./types";
 
 type Entry<T extends string> = Record<T, { label: string; tone: Tone }>;

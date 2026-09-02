@@ -2,7 +2,7 @@
 
 import { LayersIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ENTITIES } from "../lib/entities";
+import { ENTITIES } from "@/modules/group";
 import { ENTITY_ROLE } from "../lib/labels";
 
 /**
