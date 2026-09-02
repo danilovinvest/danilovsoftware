@@ -47,6 +47,14 @@ export function AgendaPanel() {
   // minutes, dont cet écran n'a aucun moyen d'être averti autrement.
   const journal = useSyncRuns(60);
 
+  // Une copie qui s'achève change les compteurs d'événements de chaque agenda.
+  // On les redemande à la fin de chaque exécution plutôt qu'à chaque sondage :
+  // c'est la seule chose qui puisse les avoir fait bouger.
+  const lastRunId = journal.last?.id ?? null;
+  useEffect(() => {
+    if (lastRunId !== null) reload();
+  }, [lastRunId, reload]);
+
   async function connect() {
     setPending(true);
     setError(null);
@@ -63,7 +71,9 @@ export function AgendaPanel() {
     setError(null);
     try {
       await syncNow();
-      reload();
+      // Le serveur a accepté, il n'a pas fini. On rafraîchit le journal tout
+      // de suite pour que le badge bascule sur « en cours » sans attendre le
+      // prochain sondage, et c'est lui qui racontera la suite.
       journal.reload();
     } catch (cause) {
       setError(errorMessage(cause));

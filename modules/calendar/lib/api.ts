@@ -50,8 +50,13 @@ export async function authorizeUrl() {
   return url;
 }
 
+/**
+ * Demande une copie et rend la main : le serveur répond 202, la copie continue
+ * derrière. Fermer l'onglet ne l'interrompt plus — c'est tout l'intérêt.
+ * L'avancement se lit dans le journal, que le badge interroge déjà.
+ */
 export function syncNow() {
-  return apiFetch<{ items: CalendarListEntry[] }>("/v1/calendar/sync", { method: "POST" });
+  return apiFetch<{ started: boolean }>("/v1/calendar/sync", { method: "POST" });
 }
 
 export function setCalendarSelected(id: string, accountId: string, selected: boolean) {

@@ -1,9 +1,13 @@
 "use client";
 
-import { CheckIcon, RefreshCwIcon, TriangleAlertIcon } from "lucide-react";
+import { useState } from "react";
+import { CheckIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatDayShort, formatTime, paletteAt } from "../lib/labels";
+import { useSyncRuns } from "../hooks/use-sync-runs";
+import { paletteAt } from "../lib/labels";
 import type { CalendarListEntry } from "../lib/types";
+import { SyncBadge } from "./sync-badge";
+import { SyncLogDialog } from "./sync-log-dialog";
 
 type Entry = CalendarListEntry & { hidden: boolean; count: number; index: number };
 
@@ -28,32 +32,23 @@ export function CalendarSidebar({
   loaded: number;
   syncedAt: Date | null;
 }) {
+  const journal = useSyncRuns(60);
+  const [journalOpen, setJournalOpen] = useState(false);
+
   return (
     <aside className="flex w-full flex-col gap-4 lg:w-60">
-      <div className="bg-card rounded-xl border p-3">
-        {syncedAt ? (
-          <>
-            <p className="flex items-center gap-1.5 text-xs font-medium">
-              <RefreshCwIcon className="text-success size-3.5" />
-              Synchronisé
-            </p>
-            <p className="text-muted-foreground/70 mt-1 text-[11px]">
-              {loaded} événement{loaded > 1 ? "s" : ""} chargé
-              {loaded > 1 ? "s" : ""} · dernière copie {describeSync(syncedAt)}
-            </p>
-          </>
-        ) : (
-          <>
-            <p className="flex items-center gap-1.5 text-xs font-medium">
-              <TriangleAlertIcon className="text-warning size-3.5" />
-              Jamais synchronisé
-            </p>
-            <p className="text-muted-foreground/70 mt-1 text-[11px]">
-              Raccordez le compte Google de l&apos;entreprise depuis
-              Réglages → Agenda.
-            </p>
-          </>
-        )}
+      <div className="bg-card flex flex-col items-start gap-2 rounded-xl border p-3">
+        <SyncBadge
+          running={journal.running}
+          last={journal.last}
+          now={journal.now}
+          onClick={() => setJournalOpen(true)}
+        />
+        <p className="text-muted-foreground/70 text-[11px]">
+          {syncedAt === null
+            ? "Raccordez le compte Google de l'entreprise depuis Réglages → Agenda."
+            : `${loaded} événement${loaded > 1 ? "s" : ""} sur la période affichée`}
+        </p>
       </div>
 
       {calendars.length > 0 && (
@@ -104,13 +99,8 @@ export function CalendarSidebar({
         déplacer un rendez-vous se fait dans Google Agenda, et la copie suit
         quelques minutes plus tard.
       </p>
+
+      <SyncLogDialog open={journalOpen} onClose={() => setJournalOpen(false)} />
     </aside>
   );
-}
-
-/** « à 14:32 » le jour même, « le 28 août » au-delà — une heure seule, la
- * veille, se lit comme si elle était d'aujourd'hui. */
-function describeSync(date: Date): string {
-  const sameDay = new Date().toDateString() === date.toDateString();
-  return sameDay ? `à ${formatTime(date)}` : `le ${formatDayShort(date)}`;
 }
