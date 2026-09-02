@@ -6,6 +6,7 @@ import {
   LayoutDashboardIcon,
   MegaphoneIcon,
   ReceiptEuroIcon,
+  ZapIcon,
   type LucideIcon,
 } from "lucide-react";
 import type { Permission } from "@/modules/auth";
@@ -97,5 +98,14 @@ export const NAVIGATION: NavItem[] = [
     // Les réalisations viennent des chantiers livrés : qui peut lire les
     // fiches peut les valoriser.
     permission: "customers:read",
+  },
+  {
+    href: "/automations",
+    label: "Automatisations",
+    icon: ZapIcon,
+    // Regarder une automatisation et son journal se distingue de la concevoir :
+    // dessiner un graphe, c'est décider que le CRM écrira tout seul à des
+    // numéros. L'écriture est vérifiée par l'API, route par route.
+    permission: "automations:read",
   },
 ];

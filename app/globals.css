@@ -459,3 +459,30 @@
     font-variant-numeric: tabular-nums;
   }
 }
+
+/*
+ * React Flow suit le thème du CRM.
+ *
+ * La bibliothèque peint ses commandes et sa trame avec ses propres variables,
+ * calées sur un fond clair : en thème sombre, les boutons de zoom
+ * disparaissaient, blancs sur blanc. On rebranche ses variables sur notre
+ * couche sémantique plutôt que d'importer sa feuille sombre, qui ignorerait
+ * notre échelle et réintroduirait des valeurs littérales.
+ */
+.react-flow {
+  --xy-background-pattern-color: var(--border);
+  --xy-controls-button-background-color: var(--card);
+  --xy-controls-button-background-color-hover: var(--accent);
+  --xy-controls-button-color: var(--muted-foreground);
+  --xy-controls-button-color-hover: var(--foreground);
+  --xy-controls-button-border-color: var(--border);
+  --xy-attribution-background-color: transparent;
+  --xy-edge-stroke-selected: var(--brand);
+  --xy-handle-background-color: var(--muted-foreground);
+  --xy-handle-border-color: var(--card);
+}
+
+.react-flow__attribution a {
+  color: var(--muted-foreground);
+  opacity: 0.4;
+}
