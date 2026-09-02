@@ -5,7 +5,13 @@ import { listSessions, type DeviceSession } from "@/modules/auth";
 import type { Paginated } from "@/shared/api/client";
 import { errorMessage } from "@/shared/api/errors";
 import * as api from "../lib/api";
-import type { Invitation, PermissionEntry, Role, WorkspaceUser } from "../lib/types";
+import type {
+  Invitation,
+  McpToken,
+  PermissionEntry,
+  Role,
+  WorkspaceUser,
+} from "../lib/types";
 
 type Resolved<T> = { key: string; data: T | null; error: string | null };
 
@@ -200,6 +206,46 @@ export function useSessions() {
 
   return {
     sessions: resolved.data ?? [],
+    loading: resolved.key !== key,
+    error: resolved.error,
+    reload,
+  };
+}
+
+/**
+ * Connecteurs MCP du compte courant.
+ *
+ * Même forme que les autres : la réponse est rangée avec la question qui l'a
+ * produite, « en cours » s'en déduit. Rechargeable, parce que créer ou révoquer
+ * une adresse doit se voir tout de suite.
+ */
+export function useMcpTokens() {
+  const [token, setToken] = useState(0);
+  const key = `mcp:${token}`;
+  const [resolved, setResolved] = useState<Resolved<McpToken[]>>({
+    key: "",
+    data: null,
+    error: null,
+  });
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    api
+      .listMcpTokens(controller.signal)
+      .then((data) => setResolved({ key, data: data.items, error: null }))
+      .catch((cause) => {
+        if (controller.signal.aborted) return;
+        setResolved({ key, data: null, error: errorMessage(cause) });
+      });
+
+    return () => controller.abort();
+  }, [key]);
+
+  const reload = useCallback(() => setToken((value) => value + 1), []);
+
+  return {
+    tokens: resolved.data ?? [],
     loading: resolved.key !== key,
     error: resolved.error,
     reload,

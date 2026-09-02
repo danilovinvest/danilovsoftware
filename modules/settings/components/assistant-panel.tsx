@@ -1,14 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { CheckIcon, CopyIcon, PlusIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { errorMessage } from "@/shared/api/errors";
 import { EmptyState, ErrorNotice, Skeleton, Spinner } from "@/shared/ui/feedback";
 import { formatDate, formatRelative } from "@/shared/lib/format";
-import { createMcpToken, listMcpTokens, mcpConnectorUrl, revokeMcpToken } from "../lib/api";
-import type { McpToken } from "../lib/types";
+import { createMcpToken, mcpConnectorUrl, revokeMcpToken } from "../lib/api";
+import { useMcpTokens } from "../hooks/use-settings";
 import { SettingsPage, SettingsRows, SettingsRow, SettingsSection } from "./settings-page";
 
 /**
@@ -23,25 +23,12 @@ import { SettingsPage, SettingsRows, SettingsRow, SettingsSection } from "./sett
  * chacun crée le sien plutôt que d'en partager un.
  */
 export function AssistantPanel() {
-  const [tokens, setTokens] = useState<McpToken[] | null>(null);
+  const { tokens, loading, error: loadError, reload } = useMcpTokens();
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [pending, setPending] = useState(false);
   const [secret, setSecret] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-
-  const reload = useCallback(async () => {
-    try {
-      setTokens((await listMcpTokens()).items);
-    } catch (cause) {
-      setError(errorMessage(cause));
-      setTokens([]);
-    }
-  }, []);
-
-  useEffect(() => {
-    void reload();
-  }, [reload]);
 
   async function create() {
     setPending(true);
@@ -51,7 +38,7 @@ export function AssistantPanel() {
       const created = await createMcpToken(name.trim() || "Assistant");
       setSecret(mcpConnectorUrl(created.secret));
       setName("");
-      await reload();
+      reload();
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
@@ -63,7 +50,7 @@ export function AssistantPanel() {
     setError(null);
     try {
       await revokeMcpToken(id);
-      await reload();
+      reload();
     } catch (cause) {
       setError(errorMessage(cause));
     }
@@ -84,7 +71,7 @@ export function AssistantPanel() {
       title="Assistant"
       description="Brancher ChatGPT, Claude ou tout autre assistant sur le CRM."
     >
-      {error && <ErrorNotice message={error} />}
+      {(error || loadError) && <ErrorNotice message={error ?? loadError ?? ""} />}
 
       <SettingsSection
         title="Ce que l'assistant peut faire"
@@ -154,7 +141,7 @@ export function AssistantPanel() {
           </Button>
         </div>
 
-        {tokens === null ? (
+        {loading ? (
           <Skeleton className="h-16 w-full" />
         ) : tokens.length === 0 ? (
           <div className="rounded-lg border">
@@ -166,10 +153,20 @@ export function AssistantPanel() {
         ) : (
           <SettingsRows>
             {tokens.map((token) => (
-              <SettingsRow
-                key={token.id}
-                label={token.name || "Assistant"}
-                action={
+              <SettingsRow key={token.id} label={token.name || "Assistant"}>
+                <span className="flex items-center gap-2">
+                  <span className="text-xs">
+                    {token.expired ? (
+                      <span className="text-danger">Expirée</span>
+                    ) : (
+                      <>
+                        jusqu&apos;au {formatDate(token.expires_at)} · dernier usage{" "}
+                        {token.last_used_at
+                          ? formatRelative(token.last_used_at)
+                          : "jamais"}
+                      </>
+                    )}
+                  </span>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -179,16 +176,7 @@ export function AssistantPanel() {
                   >
                     <XIcon className="size-3.5" />
                   </Button>
-                }
-              >
-                {token.expired ? (
-                  <span className="text-danger">Expirée</span>
-                ) : (
-                  <>
-                    Valide jusqu&apos;au {formatDate(token.expires_at)} · dernier usage{" "}
-                    {token.last_used_at ? formatRelative(token.last_used_at) : "jamais"}
-                  </>
-                )}
+                </span>
               </SettingsRow>
             ))}
           </SettingsRows>
