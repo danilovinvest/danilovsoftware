@@ -6,8 +6,8 @@ import { ArrowLeftIcon, ArrowRightIcon, CheckIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ErrorNotice } from "@/shared/ui/feedback";
+import { SummaryLine, WizardSteps } from "@/shared/ui/wizard";
 import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
-import { cn } from "@/lib/utils";
 import { formatDate } from "@/shared/lib/format";
 import * as api from "../lib/api";
 import {
@@ -106,7 +106,7 @@ export function CustomerWizard() {
 
   return (
     <div className="flex w-full flex-col gap-6">
-      <Steps current={step} />
+      <WizardSteps steps={STEPS} current={step} />
 
       <Card>
         <CardContent className="flex flex-col gap-5 py-6">
@@ -273,45 +273,6 @@ export function CustomerWizard() {
   );
 }
 
-function Steps({ current }: { current: number }) {
-  return (
-    <ol className="flex items-center gap-2">
-      {STEPS.map((step, index) => {
-        const done = index < current;
-        const active = index === current;
-        return (
-          <li key={step.title} className="flex flex-1 items-center gap-2">
-            <span
-              className={cn(
-                "grid size-7 shrink-0 place-items-center rounded-full text-xs font-semibold",
-                done && "bg-success-soft text-success",
-                active && "bg-primary text-primary-foreground",
-                !done && !active && "bg-muted text-muted-foreground",
-              )}
-            >
-              {done ? <CheckIcon className="size-3.5" /> : index + 1}
-            </span>
-            <span
-              className={cn(
-                "hidden text-sm sm:block",
-                active ? "font-medium" : "text-muted-foreground",
-              )}
-            >
-              {step.title}
-            </span>
-            {index < STEPS.length - 1 && (
-              <span
-                className={cn("h-px flex-1", done ? "bg-success" : "bg-border")}
-                aria-hidden
-              />
-            )}
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
-
 function Summary({
   customer,
   project,
@@ -325,12 +286,12 @@ function Summary({
 
   return (
     <dl className="divide-y text-sm">
-      <Line label="Client" value={customer.display_name} />
-      <Line label="Type" value={CUSTOMER_KIND[customer.kind].label} />
-      <Line label="Source" value={CUSTOMER_SOURCE[customer.source].label} />
-      <Line label="Coordonnées" value={contact || "aucune"} />
-      <Line label="Demande reçue le" value={formatDate(customer.requested_at)} />
-      <Line
+      <SummaryLine label="Client" value={customer.display_name} />
+      <SummaryLine label="Type" value={CUSTOMER_KIND[customer.kind].label} />
+      <SummaryLine label="Source" value={CUSTOMER_SOURCE[customer.source].label} />
+      <SummaryLine label="Coordonnées" value={contact || "aucune"} />
+      <SummaryLine label="Demande reçue le" value={formatDate(customer.requested_at)} />
+      <SummaryLine
         label="Affaire"
         value={
           project.label.trim() === ""
@@ -338,16 +299,7 @@ function Summary({
             : `${project.label} — ${PROJECT_STAGE[project.stage].label}`
         }
       />
-      {customer.notes && <Line label="Notes" value={customer.notes} />}
+      {customer.notes && <SummaryLine label="Notes" value={customer.notes} />}
     </dl>
-  );
-}
-
-function Line({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-start justify-between gap-6 py-2.5">
-      <dt className="text-muted-foreground text-xs">{label}</dt>
-      <dd className="text-right whitespace-pre-line">{value}</dd>
-    </div>
   );
 }

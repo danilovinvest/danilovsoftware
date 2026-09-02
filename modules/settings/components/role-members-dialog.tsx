@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { LockIcon, UserPlusIcon } from "lucide-react";
+import { LockIcon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -13,20 +13,23 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/modules/auth";
 import { errorMessage } from "@/shared/api/errors";
-import { EmptyState, ErrorNotice, Spinner } from "@/shared/ui/feedback";
+import { ErrorNotice, Spinner } from "@/shared/ui/feedback";
 import { GradientAvatar } from "@/shared/ui/gradient-avatar";
-import { SelectField } from "@/shared/ui/form";
 import { initials } from "@/shared/lib/format";
 import { setUserRole } from "../lib/api";
 import type { Role, WorkspaceUser } from "../lib/types";
 
+/** Rôle vers lequel un compte retombe quand on le retire d'un autre. */
+const BASE_ROLE = "user";
+
 /**
- * Les comptes qui portent un rôle, et les mouvements possibles.
+ * Qui porte ce rôle, avec un bouton par ligne.
  *
  * Un compte porte **toujours exactement un rôle** : `users.role_id` n'est pas
- * nullable. « Retirer quelqu'un d'un rôle » n'existe donc pas — on lui en donne
- * un autre. L'écran le dit et propose le choix, plutôt qu'un bouton « Retirer »
- * qui cacherait une décision.
+ * nullable. « Retirer » ne veut donc pas dire « plus de rôle » mais « repasser
+ * au rôle de base », et le bouton le dit en toutes lettres plutôt que de le
+ * cacher derrière une liste déroulante. Un clic, une action, un libellé qui
+ * annonce ce qui va se passer.
  */
 export function RoleMembersDialog({
   role,
@@ -46,7 +49,6 @@ export function RoleMembersDialog({
   const { account } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<string | null>(null);
-  const [toAdd, setToAdd] = useState("");
 
   const actorRank = useMemo(
     () => roles.find((entry) => entry.slug === account?.role)?.rank ?? 0,
@@ -56,17 +58,26 @@ export function RoleMembersDialog({
     () => (slug: string) => roles.find((entry) => entry.slug === slug)?.rank ?? 0,
     [roles],
   );
+  const baseRole = roles.find((entry) => entry.slug === BASE_ROLE);
 
   /** Même règle que l'API : rang strictement supérieur, et jamais soi-même. */
   const canManage = (user: WorkspaceUser) =>
-    user.id !== account?.id && actorRank > rankOf(user.role);
+    user.id !== account?.id &&
+    actorRank > rankOf(user.role) &&
+    role.rank <= actorRank;
 
-  const holders = users.filter((user) => user.role === role.slug);
-  const candidates = users.filter((user) => user.role !== role.slug && canManage(user));
+  // Les porteurs d'abord : c'est la réponse à la question qu'on s'est posée en
+  // ouvrant la fenêtre.
+  const sorted = useMemo(() => {
+    const name = (user: WorkspaceUser) =>
+      [user.first_name, user.last_name].filter(Boolean).join(" ") || user.email;
+    return [...users].sort((a, b) => {
+      const holds = Number(b.role === role.slug) - Number(a.role === role.slug);
+      return holds || name(a).localeCompare(name(b));
+    });
+  }, [users, role.slug]);
 
-  const assignable = roles
-    .filter((entry) => entry.rank <= actorRank)
-    .map((entry) => ({ value: entry.slug, label: entry.name }));
+  const holders = sorted.filter((user) => user.role === role.slug).length;
 
   async function move(user: WorkspaceUser, slug: string) {
     setPending(user.id);
@@ -83,12 +94,15 @@ export function RoleMembersDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-lg">
+      <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-base">Membres — {role.name}</DialogTitle>
           <DialogDescription>
-            Un compte porte toujours exactement un rôle : le sortir d&apos;ici,
-            c&apos;est lui en donner un autre.
+            {holders === 0
+              ? "Aucun compte ne porte ce rôle."
+              : `${holders} compte${holders > 1 ? "s" : ""} porte${holders > 1 ? "nt" : ""} ce rôle.`}{" "}
+            Retirer quelqu&apos;un le renvoie vers «&nbsp;
+            {baseRole?.name ?? "Chargé d'affaires"}&nbsp;».
           </DialogDescription>
         </DialogHeader>
 
@@ -99,20 +113,15 @@ export function RoleMembersDialog({
             <div className="text-muted-foreground flex min-h-24 items-center justify-center">
               <Spinner />
             </div>
-          ) : holders.length === 0 ? (
-            <div className="rounded-lg border">
-              <EmptyState
-                title="Aucun compte ne porte ce rôle"
-                description="Ajoutez-en un ci-dessous."
-              />
-            </div>
           ) : (
             <div className="overflow-hidden rounded-lg border">
-              {holders.map((user) => {
+              {sorted.map((user) => {
                 const name =
                   [user.first_name, user.last_name].filter(Boolean).join(" ") ||
                   user.email;
+                const holds = user.role === role.slug;
                 const editable = canManage(user);
+                const isBase = role.slug === BASE_ROLE;
 
                 return (
                   <div
@@ -130,22 +139,13 @@ export function RoleMembersDialog({
                         )}
                       </p>
                       <p className="text-muted-foreground truncate text-[11px]">
-                        {user.email}
+                        {holds ? user.email : user.role_name}
                       </p>
                     </div>
 
-                    {editable ? (
-                      <div className="w-44 shrink-0">
-                        <SelectField
-                          options={assignable}
-                          value={user.role}
-                          disabled={pending === user.id}
-                          onValueChange={(slug) => {
-                            if (slug !== user.role) void move(user, slug);
-                          }}
-                        />
-                      </div>
-                    ) : (
+                    {pending === user.id ? (
+                      <Spinner className="text-muted-foreground" />
+                    ) : !editable ? (
                       <span
                         className="text-muted-foreground flex shrink-0 items-center gap-1 text-[11px]"
                         title={
@@ -155,49 +155,37 @@ export function RoleMembersDialog({
                         }
                       >
                         <LockIcon className="size-3" />
-                        non modifiable
+                        {holds ? "porte ce rôle" : ""}
                       </span>
+                    ) : holds && isBase ? (
+                      <span className="text-muted-foreground shrink-0 text-[11px]">
+                        rôle de base
+                      </span>
+                    ) : holds ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 shrink-0"
+                        onClick={() => move(user, BASE_ROLE)}
+                        title={`Repassera « ${baseRole?.name ?? BASE_ROLE} »`}
+                      >
+                        Retirer
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 shrink-0"
+                        onClick={() => move(user, role.slug)}
+                      >
+                        Donner ce rôle
+                      </Button>
                     )}
                   </div>
                 );
               })}
             </div>
           )}
-        </div>
-
-        <div className="flex items-end gap-2 border-t pt-3">
-          <div className="min-w-0 flex-1">
-            <SelectField
-              label="Attribuer ce rôle à"
-              options={candidates.map((user) => ({
-                value: user.id,
-                label:
-                  [user.first_name, user.last_name].filter(Boolean).join(" ") ||
-                  user.email,
-              }))}
-              value={toAdd}
-              emptyLabel="Choisir un compte"
-              placeholder={
-                candidates.length === 0 ? "Aucun compte disponible" : "Choisir un compte"
-              }
-              disabled={candidates.length === 0}
-              onValueChange={setToAdd}
-            />
-          </div>
-          <Button
-            type="button"
-            disabled={toAdd === "" || pending !== null}
-            onClick={() => {
-              const user = candidates.find((entry) => entry.id === toAdd);
-              if (user) {
-                void move(user, role.slug);
-                setToAdd("");
-              }
-            }}
-          >
-            <UserPlusIcon />
-            Ajouter
-          </Button>
         </div>
 
         <p className="text-muted-foreground/80 text-[11px]">
