@@ -1,8 +1,8 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { calendarById, isSameDay, isSameMonth, monthMatrix, startOfDay } from "../lib/events";
-import { CALENDAR_STYLE, WEEKDAYS, formatTime } from "../lib/labels";
+import { isSameDay, isSameMonth, monthMatrix, startOfDay } from "../lib/events";
+import { WEEKDAYS, formatTime } from "../lib/labels";
 import type { Occurrence } from "../lib/types";
 
 /**
@@ -165,8 +165,7 @@ export function MonthGrid({
               {/* Les barres multi-jours, au-dessus des cases. */}
               <div className="pointer-events-none absolute inset-x-0 top-7">
                 {banners.map((banner) => {
-                  const calendar = calendarById(banner.occurrence.event.calendarId);
-                  const style = calendar ? CALENDAR_STYLE[calendar.colorKey] : null;
+                  const style = banner.occurrence.style;
                   return (
                     <button
                       key={banner.occurrence.key}
@@ -179,7 +178,7 @@ export function MonthGrid({
                       }}
                       className={cn(
                         "pointer-events-auto absolute h-4.5 truncate px-1.5 text-left text-[11px] leading-[18px] font-medium",
-                        style?.solid,
+                        style.solid,
                         banner.opensLeft ? "rounded-l-[3px]" : "",
                         banner.closesRight ? "rounded-r-[3px]" : "",
                       )}
@@ -206,8 +205,7 @@ export function EventChip({
   occurrence: Occurrence;
   onSelect: (occurrence: Occurrence) => void;
 }) {
-  const calendar = calendarById(occurrence.event.calendarId);
-  const style = calendar ? CALENDAR_STYLE[calendar.colorKey] : null;
+  const style = occurrence.style;
   const tentative = occurrence.event.status === "tentative";
 
   return (
@@ -217,11 +215,11 @@ export function EventChip({
       title={`${formatTime(occurrence.start)} ${occurrence.event.summary}`}
       className={cn(
         "flex w-full min-w-0 items-center gap-1 rounded-[3px] px-1 py-0.5 text-left text-[11px] transition-colors",
-        style?.soft,
+        style.soft,
         tentative && "border border-dashed",
       )}
     >
-      <span className={cn("size-1.5 shrink-0 rounded-full", style?.dot)} />
+      <span className={cn("size-1.5 shrink-0 rounded-full", style.dot)} />
       <span className="text-muted-foreground shrink-0 tabular-nums">
         {formatTime(occurrence.start)}
       </span>

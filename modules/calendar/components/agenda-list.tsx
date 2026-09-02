@@ -2,8 +2,8 @@
 
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/shared/ui/feedback";
-import { addDays, calendarById, isSameDay, occurrencesForDay, startOfDay } from "../lib/events";
-import { CALENDAR_STYLE, formatDayLong, formatRange } from "../lib/labels";
+import { addDays, isSameDay, occurrencesForDay, startOfDay } from "../lib/events";
+import { formatDayLong, formatRange } from "../lib/labels";
 import type { Occurrence } from "../lib/types";
 
 /**
@@ -54,8 +54,7 @@ export function AgendaList({
 
           <ul className="min-w-0 flex-1 divide-y">
             {items.map((occurrence) => {
-              const calendar = calendarById(occurrence.event.calendarId);
-              const style = calendar ? CALENDAR_STYLE[calendar.colorKey] : null;
+              const style = occurrence.style;
               return (
                 <li key={occurrence.key}>
                   <button
@@ -64,7 +63,7 @@ export function AgendaList({
                     className="hover:bg-accent/60 flex w-full items-start gap-3 rounded-[4px] px-2 py-1.5 text-left transition-colors"
                   >
                     <span
-                      className={cn("mt-1.5 size-2 shrink-0 rounded-full", style?.dot)}
+                      className={cn("mt-1.5 size-2 shrink-0 rounded-full", style.dot)}
                     />
                     <span className="text-muted-foreground w-28 shrink-0 text-xs tabular-nums">
                       {formatRange(occurrence.start, occurrence.end, occurrence.allDay)}
@@ -78,16 +77,14 @@ export function AgendaList({
                           </span>
                         )}
                       </span>
-                      {(occurrence.event.location || occurrence.event.crmCustomer) && (
+                      {occurrence.event.location && (
                         <span className="text-muted-foreground block truncate text-[11px]">
-                          {[occurrence.event.location, occurrence.event.crmCustomer]
-                            .filter(Boolean)
-                            .join(" · ")}
+                          {occurrence.event.location}
                         </span>
                       )}
                     </span>
                     <span className="text-muted-foreground/70 hidden shrink-0 text-[11px] sm:block">
-                      {calendar?.summary}
+                      {occurrence.calendarName}
                     </span>
                   </button>
                 </li>

@@ -24,23 +24,33 @@ export type ResponseStatus = "accepted" | "declined" | "tentative" | "needsActio
 
 export type Attendee = {
   email?: string;
-  displayName: string;
+  /** Absent tant que le contact n'a pas de nom dans Google : reste l'adresse. */
+  displayName?: string;
   responseStatus: ResponseStatus;
   organizer?: boolean;
   optional?: boolean;
+  self?: boolean;
+};
+
+/** Organisateur ou créateur. Mêmes lacunes que `Attendee` sur le nom. */
+export type Person = {
+  email?: string;
+  displayName?: string;
+  self?: boolean;
 };
 
 export type GoogleEvent = {
   id: string;
   status: "confirmed" | "tentative" | "cancelled";
-  summary: string;
+  /** Un événement sans titre existe dans Google : il s'affiche « Sans titre ». */
+  summary?: string;
   description?: string;
   location?: string;
   start: EventDateTime;
   end: EventDateTime;
   /** Agenda d'origine — la couleur en découle. */
   calendarId: string;
-  organizer: { email?: string; displayName: string };
+  organizer?: Person;
   attendees?: Attendee[];
   hangoutLink?: string;
   /** Renseigné sur chaque occurrence d'une série. */
@@ -48,10 +58,8 @@ export type GoogleEvent = {
   /** RRULE de la série, portée par l'occurrence pour l'afficher telle quelle. */
   recurrence?: string[];
   eventType?: "default" | "outOfOffice" | "focusTime";
-  /** Fiche client concernée, quand l'événement en vise une. */
-  crmCustomer?: string;
-  created: string;
-  updated: string;
+  created?: string;
+  updated?: string;
 };
 
 /** Entrée de `calendarList` : un agenda auquel le compte Google est abonné. */

@@ -1,9 +1,8 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { addDays, calendarById, isSameDay, startOfDay, startOfWeek } from "../lib/events";
+import { addDays, isSameDay, startOfDay, startOfWeek } from "../lib/events";
 import {
-  CALENDAR_STYLE,
   DAY_END_HOUR,
   DAY_START_HOUR,
   WEEKDAYS,
@@ -128,8 +127,7 @@ export function WeekGrid({
                 className="flex flex-col gap-0.5 border-r p-1 last:border-r-0"
               >
                 {items.map((occurrence) => {
-                  const calendar = calendarById(occurrence.event.calendarId);
-                  const style = calendar ? CALENDAR_STYLE[calendar.colorKey] : null;
+                  const style = occurrence.style;
                   return (
                     <button
                       key={occurrence.key}
@@ -137,7 +135,7 @@ export function WeekGrid({
                       onClick={() => onSelect(occurrence)}
                       className={cn(
                         "truncate rounded-[3px] px-1.5 py-0.5 text-left text-[11px] font-medium",
-                        style?.solid,
+                        style.solid,
                       )}
                     >
                       {occurrence.event.summary}
@@ -194,8 +192,7 @@ export function WeekGrid({
                 )}
 
                 {placed.map(({ occurrence, column, columns }) => {
-                  const calendar = calendarById(occurrence.event.calendarId);
-                  const style = calendar ? CALENDAR_STYLE[calendar.colorKey] : null;
+                  const style = occurrence.style;
                   const top = offsetOf(occurrence.start, day);
                   const height = Math.max(
                     MIN_BLOCK,
@@ -216,8 +213,8 @@ export function WeekGrid({
                       }}
                       className={cn(
                         "absolute overflow-hidden rounded-[3px] border-l-2 px-1.5 py-0.5 text-left",
-                        style?.soft,
-                        style?.rail,
+                        style.soft,
+                        style.rail,
                         occurrence.event.status === "tentative" && "border border-dashed",
                       )}
                       title={occurrence.event.summary}

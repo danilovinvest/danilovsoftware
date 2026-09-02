@@ -1,4 +1,4 @@
-import type { CalendarStyle, CalendarView, ResponseStatus } from "./types";
+import type { Attendee, CalendarStyle, CalendarView, Person, ResponseStatus } from "./types";
 
 /**
  * Habillage du calendrier.
@@ -66,6 +66,23 @@ export const VIEWS: Array<{ value: CalendarView; label: string }> = [
   { value: "semaine", label: "Semaine" },
   { value: "agenda", label: "Agenda" },
 ];
+
+/**
+ * Le nom d'une personne, quoi qu'il manque.
+ *
+ * Google ne remplit `displayName` que si le contact porte un nom dans le compte.
+ * Pour tout le reste — un client externe invité à une réunion — il n'y a que
+ * l'adresse, et une case vide serait pire que l'adresse.
+ */
+export function personName(person: Attendee | Person | undefined): string {
+  if (!person) return "—";
+  return person.displayName || person.email || "—";
+}
+
+/** Un événement peut n'avoir pas de titre dans Google. */
+export function eventTitle(summary: string | undefined): string {
+  return summary?.trim() || "Sans titre";
+}
 
 export const RESPONSE: Record<ResponseStatus, { label: string; tone: string }> = {
   accepted: { label: "A accepté", tone: "text-success" },
