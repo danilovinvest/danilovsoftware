@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { addDays, isSameDay, isSameMonth, monthMatrix, startOfDay } from "../lib/events";
 import { WEEKDAYS, formatTime } from "../lib/labels";
@@ -98,37 +98,44 @@ export function MonthGrid({
    * `moved` distingue le clic du glissement — un clic sur une case vide ouvre
    * un créneau horaire ce jour-là, un glissement une journée entière.
    */
-  const [drag, setDrag] = useState<
+  type Drag =
     | { mode: "select"; from: number; to: number }
-    | { mode: "move"; occurrence: Occurrence; from: number; to: number }
-    | null
-  >(null);
+    | { mode: "move"; occurrence: Occurrence; from: number; to: number };
+
+  const [drag, setDrag] = useState<Drag | null>(null);
+  /* L'état peint, la référence décide : commettre depuis un `setState`
+   * reviendrait à prévenir le parent pendant qu'un enfant se rend. */
+  const dragRef = useRef<Drag | null>(null);
+
+  function apply(next: Drag | null) {
+    dragRef.current = next;
+    setDrag(next);
+  }
 
   useEffect(() => {
     if (!drag) return;
 
     const release = () => {
-      setDrag((current) => {
-        if (!current) return null;
-        if (current.mode === "move") {
-          // Reposé sur sa propre case : c'est un clic, pas un déplacement.
-          // L'ouverture de la fiche s'en charge, inutile d'écrire pour rien.
-          if (current.to !== current.from) onMove?.(current.occurrence, days[current.to]);
-          return null;
-        }
-        const [first, last] = [
-          Math.min(current.from, current.to),
-          Math.max(current.from, current.to),
-        ];
-        if (first === last) {
-          onCreate?.(days[first], days[first], false);
-        } else {
-          // La borne de fin est exclusive, comme partout ailleurs : on passe le
-          // lendemain du dernier jour sélectionné.
-          onCreate?.(days[first], addDays(days[last], 1), true);
-        }
-        return null;
-      });
+      const current = dragRef.current;
+      apply(null);
+      if (!current) return;
+
+      if (current.mode === "move") {
+        // Reposé sur sa propre case : c'est un clic, pas un déplacement.
+        // L'ouverture de la fiche s'en charge, inutile d'écrire pour rien.
+        if (current.to !== current.from) onMove?.(current.occurrence, days[current.to]);
+        return;
+      }
+
+      const first = Math.min(current.from, current.to);
+      const last = Math.max(current.from, current.to);
+      if (first === last) {
+        onCreate?.(days[first], days[first], false);
+      } else {
+        // La borne de fin est exclusive, comme partout ailleurs : on passe le
+        // lendemain du dernier jour sélectionné.
+        onCreate?.(days[first], addDays(days[last], 1), true);
+      }
     };
 
     window.addEventListener("pointerup", release);
@@ -201,17 +208,12 @@ export function MonthGrid({
                     onPointerDown={(event) => {
                       if (!onCreate || event.target !== event.currentTarget) return;
                       event.preventDefault();
-                      setDrag({ mode: "select", from: index, to: index });
+                      apply({ mode: "select", from: index, to: index });
                     }}
-                    onPointerEnter={() =>
-                      setDrag((current) =>
-                        current === null
-                          ? null
-                          : current.mode === "select"
-                            ? { ...current, to: index }
-                            : { ...current, to: index },
-                      )
-                    }
+                    onPointerEnter={() => {
+                      const current = dragRef.current;
+                      if (current) apply({ ...current, to: index });
+                    }}
                     className={cn(
                       "flex min-w-0 flex-col gap-px overflow-hidden border-r px-0.5 pt-1 pb-1 last:border-r-0",
                       outside && "bg-muted/40",
@@ -253,7 +255,7 @@ export function MonthGrid({
                         onSelect={onSelect}
                         onGrab={
                           onMove
-                            ? () => setDrag({ mode: "move", occurrence, from: index, to: index })
+                            ? () => apply({ mode: "move", occurrence, from: index, to: index })
                             : undefined
                         }
                         dragged={

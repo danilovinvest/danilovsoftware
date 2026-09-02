@@ -142,6 +142,21 @@ export function WeekGrid({
 
   const columnRef = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
+  /*
+   * Le geste en cours vit aussi dans une référence.
+   *
+   * L'état sert à peindre ; la référence sert à décider. Lire l'état depuis un
+   * gestionnaire attaché à la fenêtre le donnerait figé à sa valeur de
+   * montage, et le commettre depuis un `setState` reviendrait à prévenir le
+   * parent pendant qu'un enfant se rend — ce que React refuse, à raison.
+   */
+  const dragRef = useRef<Drag | null>(null);
+
+  function apply(next: Drag | null) {
+    dragRef.current = next;
+    setDrag(next);
+  }
+
   const editable = onCreate !== undefined || onMove !== undefined;
 
   /*
@@ -155,49 +170,48 @@ export function WeekGrid({
     if (!drag) return;
 
     const track = (event: PointerEvent) => {
+      const current = dragRef.current;
       const rect = columnRef.current?.getBoundingClientRect();
-      if (!rect) return;
+      if (!current || !rect) return;
       const slot = pointToSlot(rect, event.clientX, event.clientY);
+      const moved =
+        current.moved || slot.minutes !== current.anchor || slot.day !== current.day;
 
-      setDrag((current) => {
-        if (!current) return current;
-        const moved =
-          current.moved || slot.minutes !== current.anchor || slot.day !== current.day;
-
-        if (current.mode === "resize") {
-          return { ...current, moved, to: Math.max(slot.minutes, current.from + STEP_MINUTES) };
-        }
-        if (current.mode === "move") {
-          const length = current.to - current.from;
-          const from = clamp(slot.minutes - current.grab, 0, 24 * 60 - length);
-          return { ...current, moved, day: slot.day, from, to: from + length };
-        }
-        // Tracé : l'ancre tient, l'autre borne suit le curseur, au-dessus
-        // comme au-dessous.
-        return {
-          ...current,
-          moved,
-          from: Math.min(current.anchor, slot.minutes),
-          to: Math.max(current.anchor + STEP_MINUTES, slot.minutes),
-        };
+      if (current.mode === "resize") {
+        apply({ ...current, moved, to: Math.max(slot.minutes, current.from + STEP_MINUTES) });
+        return;
+      }
+      if (current.mode === "move") {
+        const length = current.to - current.from;
+        const from = clamp(slot.minutes - current.grab, 0, 24 * 60 - length);
+        apply({ ...current, moved, day: slot.day, from, to: from + length });
+        return;
+      }
+      // Tracé : l'ancre tient, l'autre borne suit le curseur, au-dessus comme
+      // au-dessous.
+      apply({
+        ...current,
+        moved,
+        from: Math.min(current.anchor, slot.minutes),
+        to: Math.max(current.anchor + STEP_MINUTES, slot.minutes),
       });
     };
 
     const release = () => {
-      setDrag((current) => {
-        if (!current) return null;
-        const day = days[current.day];
-        if (current.mode === "create") {
-          const span = current.moved ? current.to - current.from : DEFAULT_MINUTES;
-          onCreate?.(at(day, current.from), at(day, current.from + span));
-        } else if (current.moved && current.occurrence) {
-          onMove?.(current.occurrence, at(day, current.from), at(day, current.to));
-        } else if (current.occurrence) {
-          // Un clic sur un bloc, sans mouvement : c'est une ouverture de fiche.
-          onSelect(current.occurrence);
-        }
-        return null;
-      });
+      const current = dragRef.current;
+      apply(null);
+      if (!current) return;
+
+      const day = days[current.day];
+      if (current.mode === "create") {
+        const span = current.moved ? current.to - current.from : DEFAULT_MINUTES;
+        onCreate?.(at(day, current.from), at(day, current.from + span));
+      } else if (current.moved && current.occurrence) {
+        onMove?.(current.occurrence, at(day, current.from), at(day, current.to));
+      } else if (current.occurrence) {
+        // Un clic sur un bloc, sans mouvement : c'est une ouverture de fiche.
+        onSelect(current.occurrence);
+      }
     };
 
     window.addEventListener("pointermove", track);
@@ -219,7 +233,7 @@ export function WeekGrid({
     if (occurrence) {
       const from = minutesOfDate(occurrence.start);
       const to = minutesOfDate(occurrence.end);
-      setDrag({
+      apply({
         mode,
         occurrence,
         day: slot.day,
@@ -232,7 +246,7 @@ export function WeekGrid({
       return;
     }
 
-    setDrag({
+    apply({
       mode: "create",
       day: slot.day,
       from: slot.minutes,
