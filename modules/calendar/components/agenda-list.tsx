@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/shared/ui/feedback";
 import { addDays, isSameDay, occurrencesForDay, startOfDay } from "../lib/events";
-import { formatDayLong, formatRange } from "../lib/labels";
+import { eventTitle, formatDayLong, formatRange } from "../lib/labels";
 import type { Occurrence } from "../lib/types";
 
 /**
@@ -70,7 +70,7 @@ export function AgendaList({
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm">
-                        {occurrence.event.summary}
+                        {eventTitle(occurrence.event.summary)}
                         {occurrence.event.status === "tentative" && (
                           <span className="text-warning ml-1.5 text-[11px]">
                             à confirmer

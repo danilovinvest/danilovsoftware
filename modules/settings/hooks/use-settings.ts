@@ -2,6 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { listSessions, type DeviceSession } from "@/modules/auth";
+import {
+  listAccounts,
+  listCalendars,
+  type CalendarListEntry,
+  type GoogleAccount,
+} from "@/modules/calendar";
 import type { Paginated } from "@/shared/api/client";
 import { errorMessage } from "@/shared/api/errors";
 import * as api from "../lib/api";
@@ -246,6 +252,60 @@ export function useMcpTokens() {
 
   return {
     tokens: resolved.data ?? [],
+    loading: resolved.key !== key,
+    error: resolved.error,
+    reload,
+  };
+}
+
+/**
+ * L'agenda Google raccordé, et les agendas qu'il expose.
+ *
+ * Les deux sont demandés ensemble : un compte sans ses agendas ne dit rien
+ * d'utile, et deux chargements séparés afficheraient un écran à moitié vrai le
+ * temps que le second arrive.
+ */
+export function useGoogleCalendar() {
+  const [token, setToken] = useState(0);
+  const key = `agenda:${token}`;
+  const [resolved, setResolved] = useState<
+    Resolved<{
+      accounts: GoogleAccount[];
+      configured: boolean;
+      calendars: CalendarListEntry[];
+    }>
+  >({ key: "", data: null, error: null });
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    Promise.all([listAccounts(controller.signal), listCalendars(controller.signal)])
+      .then(([accounts, calendars]) =>
+        setResolved({
+          key,
+          data: {
+            accounts: accounts.items,
+            configured: accounts.configured,
+            calendars: calendars.items,
+          },
+          error: null,
+        }),
+      )
+      .catch((cause) => {
+        if (controller.signal.aborted) return;
+        setResolved({ key, data: null, error: errorMessage(cause) });
+      });
+
+    return () => controller.abort();
+  }, [key]);
+
+  const reload = useCallback(() => setToken((value) => value + 1), []);
+
+  return {
+    accounts: resolved.data?.accounts ?? [],
+    calendars: resolved.data?.calendars ?? [],
+    /** L'application Google est-elle déclarée sur le serveur ? */
+    configured: resolved.data?.configured ?? false,
     loading: resolved.key !== key,
     error: resolved.error,
     reload,

@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { isSameDay, isSameMonth, monthMatrix, startOfDay } from "../lib/events";
-import { WEEKDAYS, formatTime } from "../lib/labels";
+import { WEEKDAYS, eventTitle, formatTime } from "../lib/labels";
 import type { Occurrence } from "../lib/types";
 
 /**
@@ -182,9 +182,9 @@ export function MonthGrid({
                         banner.opensLeft ? "rounded-l-[3px]" : "",
                         banner.closesRight ? "rounded-r-[3px]" : "",
                       )}
-                      title={banner.occurrence.event.summary}
+                      title={eventTitle(banner.occurrence.event.summary)}
                     >
-                      {banner.opensLeft ? banner.occurrence.event.summary : "…"}
+                      {banner.opensLeft ? eventTitle(banner.occurrence.event.summary) : "…"}
                     </button>
                   );
                 })}
@@ -212,7 +212,7 @@ export function EventChip({
     <button
       type="button"
       onClick={() => onSelect(occurrence)}
-      title={`${formatTime(occurrence.start)} ${occurrence.event.summary}`}
+      title={`${formatTime(occurrence.start)} ${eventTitle(occurrence.event.summary)}`}
       className={cn(
         "flex w-full min-w-0 items-center gap-1 rounded-[3px] px-1 py-0.5 text-left text-[11px] transition-colors",
         style.soft,
@@ -223,7 +223,7 @@ export function EventChip({
       <span className="text-muted-foreground shrink-0 tabular-nums">
         {formatTime(occurrence.start)}
       </span>
-      <span className="truncate">{occurrence.event.summary}</span>
+      <span className="truncate">{eventTitle(occurrence.event.summary)}</span>
     </button>
   );
 }

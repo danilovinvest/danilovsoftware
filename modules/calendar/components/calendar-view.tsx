@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { EmptyState } from "@/shared/ui/feedback";
 import { useCalendar } from "../hooks/use-calendar";
 import { VIEWS } from "../lib/labels";
 import type { Occurrence } from "../lib/types";
@@ -22,15 +24,15 @@ import { WeekGrid } from "./week-grid";
  * partagent le curseur et la sélection d'agendas, si bien que passer de l'une à
  * l'autre ne fait jamais perdre le fil.
  *
- * Le contenu simule une synchronisation Google Agenda : les événements ont la
- * forme exacte de la ressource `events` de l'API, séries récurrentes dépliées
- * comprises. Brancher un vrai compte reviendrait à remplacer un `useMemo` par
- * un `fetch`.
+ * Le contenu est la copie de l'agenda Google de l'entreprise, tenue à jour par
+ * l'API. Les événements sont les ressources `events` de Google, intactes, avec
+ * leurs séries déjà dépliées en occurrences — le CRM n'a aucune RRULE à
+ * interpréter pour peindre une grille.
  */
 export function CalendarView() {
   const calendar = useCalendar();
   const [selected, setSelected] = useState<Occurrence | null>(null);
-  const [syncedAt] = useState(() => new Date());
+  const [now] = useState(() => new Date());
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
@@ -38,8 +40,7 @@ export function CalendarView() {
         <div>
           <h1 className="text-base font-semibold">Calendrier</h1>
           <p className="text-muted-foreground mt-0.5 text-sm">
-            Visites, rendus d&apos;étude, rendez-vous clients et absences de
-            l&apos;équipe.
+            Copie en lecture seule de l&apos;agenda Google de l&apos;entreprise.
           </p>
         </div>
       </header>
@@ -49,7 +50,7 @@ export function CalendarView() {
           calendars={calendar.calendars}
           onToggle={calendar.toggleCalendar}
           loaded={calendar.loaded}
-          syncedAt={syncedAt}
+          syncedAt={calendar.syncedAt}
         />
 
         <Card className="flex min-h-0 min-w-0 flex-1 flex-col gap-0 overflow-hidden py-0">
@@ -102,7 +103,24 @@ export function CalendarView() {
           </div>
 
           <div className="flex min-h-0 flex-1 flex-col">
-            {calendar.view === "mois" && (
+            {calendar.error && (
+              <EmptyState
+                title="Agenda indisponible"
+                description={calendar.error}
+              />
+            )}
+            {!calendar.error && !calendar.loading && !calendar.connected && (
+              <EmptyState
+                title="Aucun agenda raccordé"
+                description="Le CRM recopie l'agenda Google de l'entreprise, en lecture seule. Le raccordement se fait une fois, depuis les réglages."
+                action={
+                  <Button asChild size="sm">
+                    <Link href="/settings/agenda">Raccorder un compte Google</Link>
+                  </Button>
+                }
+              />
+            )}
+            {!calendar.error && calendar.connected && calendar.view === "mois" && (
               <MonthGrid
                 cursor={calendar.cursor}
                 today={calendar.today}
@@ -111,16 +129,16 @@ export function CalendarView() {
                 onOpenDay={calendar.openDay}
               />
             )}
-            {calendar.view === "semaine" && (
+            {!calendar.error && calendar.connected && calendar.view === "semaine" && (
               <WeekGrid
                 cursor={calendar.cursor}
                 today={calendar.today}
-                now={syncedAt}
+                now={now}
                 occurrences={calendar.occurrences}
                 onSelect={setSelected}
               />
             )}
-            {calendar.view === "agenda" && (
+            {!calendar.error && calendar.connected && calendar.view === "agenda" && (
               <AgendaList
                 cursor={calendar.cursor}
                 today={calendar.today}

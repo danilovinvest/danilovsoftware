@@ -6,6 +6,7 @@ import {
   DAY_END_HOUR,
   DAY_START_HOUR,
   WEEKDAYS,
+  eventTitle,
   formatRange,
 } from "../lib/labels";
 import type { Occurrence } from "../lib/types";
@@ -138,7 +139,7 @@ export function WeekGrid({
                         style.solid,
                       )}
                     >
-                      {occurrence.event.summary}
+                      {eventTitle(occurrence.event.summary)}
                     </button>
                   );
                 })}
@@ -217,10 +218,10 @@ export function WeekGrid({
                         style.rail,
                         occurrence.event.status === "tentative" && "border border-dashed",
                       )}
-                      title={occurrence.event.summary}
+                      title={eventTitle(occurrence.event.summary)}
                     >
                       <span className="block truncate text-[11px] font-medium">
-                        {occurrence.event.summary}
+                        {eventTitle(occurrence.event.summary)}
                       </span>
                       {height > 34 && (
                         <span className="text-muted-foreground block truncate text-[10px]">

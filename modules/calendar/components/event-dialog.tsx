@@ -16,14 +16,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { calendarById } from "../lib/events";
 import {
-  CALENDAR_STYLE,
   RESPONSE,
   describeRecurrence,
+  eventTitle,
   formatDayLong,
   formatDuration,
   formatRange,
+  personName,
 } from "../lib/labels";
 import type { Occurrence } from "../lib/types";
 
@@ -43,8 +43,7 @@ export function EventDialog({
   onClose: () => void;
 }) {
   const event = occurrence?.event;
-  const calendar = event ? calendarById(event.calendarId) : undefined;
-  const style = calendar ? CALENDAR_STYLE[calendar.colorKey] : null;
+  const style = occurrence?.style ?? null;
   const recurrence = describeRecurrence(event?.recurrence);
 
   return (
@@ -57,7 +56,7 @@ export function EventDialog({
                 <span
                   className={cn("mt-1.5 size-2.5 shrink-0 rounded-full", style?.dot)}
                 />
-                <span>{event.summary}</span>
+                <span>{eventTitle(event.summary)}</span>
               </DialogTitle>
               <DialogDescription className="pl-4.5">
                 {formatDayLong(occurrence.start)} ·{" "}
@@ -96,20 +95,14 @@ export function EventDialog({
                 </Row>
               )}
 
-              <Row icon={CalendarIcon}>
-                {calendar?.summary}
-                {event.crmCustomer && (
-                  <>
-                    <span className="text-muted-foreground"> · fiche </span>
-                    <span className="font-medium">{event.crmCustomer}</span>
-                  </>
-                )}
-              </Row>
+              <Row icon={CalendarIcon}>{occurrence.calendarName}</Row>
 
-              <Row icon={UserIcon}>
-                <span className="text-muted-foreground">Organisé par </span>
-                {event.organizer.displayName}
-              </Row>
+              {event.organizer && (
+                <Row icon={UserIcon}>
+                  <span className="text-muted-foreground">Organisé par </span>
+                  {personName(event.organizer)}
+                </Row>
+              )}
 
               {event.description && (
                 <p className="text-muted-foreground border-t pt-3 text-xs leading-relaxed">
@@ -130,14 +123,14 @@ export function EventDialog({
                       const response = RESPONSE[attendee.responseStatus];
                       return (
                         <li
-                          key={attendee.displayName}
+                          key={attendee.email ?? attendee.displayName}
                           className="flex items-baseline justify-between gap-3"
                         >
                           <span className="min-w-0">
                             <span className="truncate text-xs">
-                              {attendee.displayName}
+                              {personName(attendee)}
                             </span>
-                            {attendee.email && (
+                            {attendee.email && attendee.displayName && (
                               <span className="text-muted-foreground/70 block truncate text-[11px]">
                                 {attendee.email}
                               </span>

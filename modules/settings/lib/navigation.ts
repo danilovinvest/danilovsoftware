@@ -1,5 +1,6 @@
 import {
   BotIcon,
+  CalendarIcon,
   PaletteIcon,
   ShieldCheckIcon,
   SlidersHorizontalIcon,
@@ -56,6 +57,12 @@ export const SETTINGS_NAVIGATION: SettingsSection[] = [
         label: "Rôles",
         icon: ShieldCheckIcon,
         permission: "roles:read",
+      },
+      {
+        href: "/settings/agenda",
+        label: "Agenda",
+        icon: CalendarIcon,
+        permission: "calendar:read",
       },
     ],
   },
