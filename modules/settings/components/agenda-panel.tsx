@@ -6,14 +6,19 @@ import { CheckIcon, RefreshCwIcon, TriangleAlertIcon, XIcon } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
+  GoogleButton,
+  GoogleMark,
+  SyncBadge,
+  SyncLogDialog,
   authorizeUrl,
   disconnectAccount,
   setCalendarSelected,
   syncNow,
+  useSyncRuns,
 } from "@/modules/calendar";
 import { errorMessage } from "@/shared/api/errors";
-import { formatRelative } from "@/shared/lib/format";
-import { EmptyState, ErrorNotice, Skeleton, Spinner } from "@/shared/ui/feedback";
+import { formatDate, formatRelative } from "@/shared/lib/format";
+import { ErrorNotice, Skeleton, Spinner } from "@/shared/ui/feedback";
 import { useGoogleCalendar } from "../hooks/use-settings";
 import { SettingsPage, SettingsRow, SettingsRows, SettingsSection } from "./settings-page";
 
@@ -35,7 +40,12 @@ export function AgendaPanel() {
     useGoogleCalendar();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [journalOpen, setJournalOpen] = useState(false);
   const outcome = useAuthorizationOutcome();
+  // Le badge sonde le journal en continu : c'est lui qui sait si une copie
+  // tourne, y compris celles que le serveur lance tout seul toutes les cinq
+  // minutes, dont cet écran n'a aucun moyen d'être averti autrement.
+  const journal = useSyncRuns(60);
 
   async function connect() {
     setPending(true);
@@ -54,6 +64,7 @@ export function AgendaPanel() {
     try {
       await syncNow();
       reload();
+      journal.reload();
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
@@ -66,6 +77,7 @@ export function AgendaPanel() {
     try {
       await disconnectAccount(id);
       reload();
+      journal.reload();
     } catch (cause) {
       setError(errorMessage(cause));
     }
@@ -111,60 +123,87 @@ export function AgendaPanel() {
         description="Un seul compte suffit : c'est celui que tout le monde partage."
       >
         {loading ? (
-          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-24 w-full" />
         ) : accounts.length === 0 ? (
-          <div className="rounded-lg border">
-            <EmptyState
-              title="Aucun compte Google"
-              description="Le raccordement ouvre l'écran de consentement de Google. Connectez-vous avec le compte de l'entreprise."
-              action={
-                <Button size="sm" onClick={connect} disabled={pending || !configured}>
-                  {pending ? <Spinner /> : null}
-                  Raccorder un compte Google
-                </Button>
-              }
+          <div className="flex flex-col items-center gap-3 rounded-lg border px-6 py-10 text-center">
+            <span className="bg-muted/50 flex size-11 items-center justify-center rounded-full">
+              <GoogleMark className="size-5" />
+            </span>
+            <div>
+              <p className="text-sm font-medium">Aucun compte Google</p>
+              <p className="text-muted-foreground mt-1 max-w-sm text-xs leading-relaxed">
+                Google va demander l&apos;autorisation de <strong>voir</strong>{" "}
+                vos agendas. C&apos;est la seule permission demandée : le CRM
+                n&apos;obtiendra jamais le droit d&apos;y écrire.
+              </p>
+            </div>
+            <GoogleButton
+              onClick={connect}
+              pending={pending}
+              disabled={!configured}
             />
+            <p className="text-muted-foreground/60 text-[11px]">
+              Connectez-vous avec le compte partagé de l&apos;entreprise, pas
+              avec un compte personnel.
+            </p>
           </div>
         ) : (
-          <SettingsRows>
+          <div className="flex flex-col gap-3 rounded-lg border p-3">
             {accounts.map((account) => (
-              <SettingsRow key={account.id} label={account.email}>
-                <span className="flex items-center gap-3">
-                  <span className="text-xs">
-                    {account.last_error ? (
-                      <span className="text-danger inline-flex items-center gap-1">
-                        <TriangleAlertIcon className="size-3.5" />
-                        {account.last_error}
-                      </span>
-                    ) : account.last_sync_at ? (
-                      <>copie {formatRelative(account.last_sync_at)}</>
-                    ) : (
-                      "jamais copié"
-                    )}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7"
-                    onClick={sync}
-                    disabled={pending}
-                  >
-                    {pending ? <Spinner /> : <RefreshCwIcon className="size-3.5" />}
-                    Synchroniser
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-7"
-                    onClick={() => disconnect(account.id)}
-                    title="Retirer ce compte du CRM"
-                  >
-                    <XIcon className="size-3.5" />
-                  </Button>
+              <div key={account.id} className="flex flex-wrap items-center gap-3">
+                <span className="bg-muted/50 flex size-9 shrink-0 items-center justify-center rounded-full">
+                  <GoogleMark className="size-4" />
                 </span>
-              </SettingsRow>
+
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{account.email}</p>
+                  <p className="text-muted-foreground/70 text-[11px]">
+                    Raccordé le {formatDate(account.connected_at)} ·{" "}
+                    {account.scope.includes("readonly")
+                      ? "lecture seule"
+                      : account.scope}
+                  </p>
+                </div>
+
+                <SyncBadge
+                  running={journal.running}
+                  last={journal.last}
+                  now={journal.now}
+                  onClick={() => setJournalOpen(true)}
+                />
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7"
+                  onClick={sync}
+                  disabled={pending || journal.running}
+                >
+                  {pending ? <Spinner /> : <RefreshCwIcon className="size-3.5" />}
+                  Synchroniser
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7"
+                  onClick={() => disconnect(account.id)}
+                  title="Retirer ce compte du CRM"
+                >
+                  <XIcon className="size-3.5" />
+                </Button>
+              </div>
             ))}
-          </SettingsRows>
+
+            {accounts.some((account) => account.last_error) && (
+              <p className="text-danger bg-danger-soft/40 flex items-start gap-1.5 rounded-lg px-3 py-2 text-xs">
+                <TriangleAlertIcon className="mt-px size-3.5 shrink-0" />
+                <span>
+                  {accounts.find((account) => account.last_error)?.last_error}
+                </span>
+              </p>
+            )}
+          </div>
         )}
 
         <p className="text-muted-foreground text-[11px] leading-relaxed">
@@ -235,6 +274,7 @@ export function AgendaPanel() {
           </SettingsRow>
         </SettingsRows>
       </SettingsSection>
+      <SyncLogDialog open={journalOpen} onClose={() => setJournalOpen(false)} />
     </SettingsPage>
   );
 }
