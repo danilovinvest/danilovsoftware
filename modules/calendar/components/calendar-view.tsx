@@ -52,17 +52,32 @@ export function CalendarView() {
   // « modifier ce rendez-vous » ne se confondent pas.
   const [editing, setEditing] = useState<Occurrence | null>(null);
   const [creating, setCreating] = useState<Range | null>(null);
+  const [template, setTemplate] = useState<Occurrence | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function openCreation(from: Date, to: Date, allDay: boolean) {
     setEditing(null);
+    setTemplate(null);
     setCreating({ from, to, allDay });
+    setFormOpen(true);
+  }
+
+  /** Dupliquer propose le lendemain : recopier un rendez-vous à la même heure
+   * le même jour n'arrive jamais, le décaler d'un jour presque toujours. */
+  function openDuplication(occurrence: Occurrence) {
+    const length = occurrence.end.getTime() - occurrence.start.getTime();
+    const from = new Date(occurrence.start.getTime() + 86_400_000);
+    setSelected(null);
+    setEditing(null);
+    setTemplate(occurrence);
+    setCreating({ from, to: new Date(from.getTime() + length), allDay: occurrence.allDay });
     setFormOpen(true);
   }
 
   function openEdition(occurrence: Occurrence) {
     setSelected(null);
+    setTemplate(null);
     setCreating(null);
     setEditing(occurrence);
     setFormOpen(true);
@@ -306,6 +321,7 @@ Rendez-vous, visites de chantier et absences de l&apos;équipe.
         occurrence={selected}
         onClose={() => setSelected(null)}
         onEdit={canWrite ? openEdition : undefined}
+        onDuplicate={canWrite ? openDuplication : undefined}
       />
 
       <EventForm
@@ -315,6 +331,7 @@ Rendez-vous, visites de chantier et absences de l&apos;équipe.
         calendars={calendar.rawCalendars}
         event={editing?.event ?? null}
         range={creating}
+        template={template?.event ?? null}
       />
     </div>
   );

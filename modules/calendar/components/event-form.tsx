@@ -43,6 +43,8 @@ export function EventForm({
   event,
   /** Bornes tracées à la souris, pré-remplies à la création. */
   range,
+  /** Événement dont on repart pour en créer un nouveau. */
+  template,
 }: {
   open: boolean;
   onClose: () => void;
@@ -50,10 +52,11 @@ export function EventForm({
   calendars: Calendar[];
   event?: CalendarEvent | null;
   range?: Range | null;
+  template?: CalendarEvent | null;
 }) {
   // Le formulaire est remonté à chaque ouverture : la clé change avec la cible,
   // et l'état initial se calcule une fois, dans l'initialiseur du useState.
-  const key = `${open}:${event?.id ?? "nouveau"}:${range?.from.toISOString() ?? ""}:${range?.to.toISOString() ?? ""}`;
+  const key = `${open}:${event?.id ?? template?.id ?? "nouveau"}:${range?.from.toISOString() ?? ""}:${range?.to.toISOString() ?? ""}`;
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="sm:max-w-lg">
@@ -65,6 +68,7 @@ export function EventForm({
             calendars={calendars}
             event={event ?? null}
             range={range ?? null}
+            template={template ?? null}
           />
         )}
       </DialogContent>
@@ -90,14 +94,18 @@ function FormBody({
   calendars,
   event,
   range,
+  template,
 }: {
   onClose: () => void;
   onSaved: () => void;
   calendars: Calendar[];
   event: CalendarEvent | null;
   range: Range | null;
+  template: CalendarEvent | null;
 }) {
-  const [draft, setDraft] = useState<Draft>(() => initial(event, range, calendars));
+  const [draft, setDraft] = useState<Draft>(() =>
+    initial(event, range, calendars, template),
+  );
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -340,6 +348,7 @@ function initial(
   event: CalendarEvent | null,
   range: Range | null,
   calendars: Calendar[],
+  template: CalendarEvent | null = null,
 ): Draft {
   if (event) {
     const from = new Date(event.starts_at);
@@ -375,6 +384,17 @@ function initial(
     };
   }
 
+  // Une duplication reprend le contenu, jamais l'identité : le nouvel
+  // événement est un événement neuf, que la date proposée invite à déplacer.
+  const copy = template
+    ? {
+        calendarId: template.calendar_id,
+        title: `${template.title} (copie)`,
+        location: template.location,
+        description: template.description,
+      }
+    : null;
+
   // Les bornes tracées à la souris arrivent telles quelles : c'est tout
   // l'intérêt du geste, avoir déjà dit quand avant d'ouvrir le formulaire.
   const from = range?.from ?? new Date();
@@ -386,10 +406,10 @@ function initial(
     const last = new Date(to);
     last.setDate(last.getDate() - 1);
     return {
-      calendarId: calendars[0]?.id ?? "",
-      title: "",
-      location: "",
-      description: "",
+      calendarId: copy?.calendarId ?? calendars[0]?.id ?? "",
+      title: copy?.title ?? "",
+      location: copy?.location ?? "",
+      description: copy?.description ?? "",
       allDay: true,
       date: dateValue(from),
       endDate: dateValue(last),
@@ -399,10 +419,10 @@ function initial(
   }
 
   return {
-    calendarId: calendars[0]?.id ?? "",
-    title: "",
-    location: "",
-    description: "",
+    calendarId: copy?.calendarId ?? calendars[0]?.id ?? "",
+    title: copy?.title ?? "",
+    location: copy?.location ?? "",
+    description: copy?.description ?? "",
     allDay: false,
     date: dateValue(from),
     endDate: dateValue(from),

@@ -4,6 +4,7 @@ import {
   CalendarIcon,
   DownloadIcon,
   MapPinIcon,
+  CopyIcon,
   PencilIcon,
   UserIcon,
   UsersIcon,
@@ -39,11 +40,13 @@ export function EventDialog({
   occurrence,
   onClose,
   onEdit,
+  onDuplicate,
 }: {
   occurrence: Occurrence | null;
   onClose: () => void;
-  /** Absent quand le compte n'a pas le droit d'écrire dans l'agenda. */
+  /** Absents quand le compte n'a pas le droit d'écrire dans l'agenda. */
   onEdit?: (occurrence: Occurrence) => void;
+  onDuplicate?: (occurrence: Occurrence) => void;
 }) {
   const event = occurrence?.event;
   const style = occurrence?.style ?? null;
@@ -148,7 +151,18 @@ export function EventDialog({
               )}
 
               {onEdit && (
-                <div className="flex justify-end border-t pt-3">
+                <div className="flex justify-end gap-2 border-t pt-3">
+                  {onDuplicate && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7"
+                      onClick={() => onDuplicate(occurrence)}
+                    >
+                      <CopyIcon className="size-3.5" />
+                      Dupliquer
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="outline"
