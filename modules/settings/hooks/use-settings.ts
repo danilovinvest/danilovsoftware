@@ -5,7 +5,7 @@ import { listSessions, type DeviceSession } from "@/modules/auth";
 import type { Paginated } from "@/shared/api/client";
 import { errorMessage } from "@/shared/api/errors";
 import * as api from "../lib/api";
-import type { Role, WorkspaceUser } from "../lib/types";
+import type { Invitation, Role, WorkspaceUser } from "../lib/types";
 
 type Resolved<T> = { key: string; data: T | null; error: string | null };
 
@@ -22,7 +22,8 @@ type Resolved<T> = { key: string; data: T | null; error: string | null };
  * aller-retour ni anti-rebond à régler.
  */
 export function useWorkspaceUsers() {
-  const key = "users";
+  const [token, setToken] = useState(0);
+  const key = `users:${token}`;
   const [resolved, setResolved] = useState<Resolved<Paginated<WorkspaceUser>>>({
     key: "",
     data: null,
@@ -41,13 +42,57 @@ export function useWorkspaceUsers() {
       });
 
     return () => controller.abort();
-  }, []);
+  }, [key]);
+
+  const reload = useCallback(() => setToken((value) => value + 1), []);
 
   return {
     users: resolved.data?.items ?? [],
     total: resolved.data?.total ?? 0,
     loading: resolved.key !== key,
     error: resolved.error,
+    reload,
+  };
+}
+
+/**
+ * Invitations en attente.
+ *
+ * Rechargeable comme les sessions, et pour la même raison : émettre ou révoquer
+ * un lien doit se voir tout de suite — la liste est la seule preuve que le
+ * bouton a fait quelque chose.
+ */
+export function useInvitations(enabled: boolean) {
+  const [token, setToken] = useState(0);
+  const key = enabled ? `invitations:${token}` : "disabled";
+  const [resolved, setResolved] = useState<Resolved<Invitation[]>>({
+    key: "disabled",
+    data: null,
+    error: null,
+  });
+
+  useEffect(() => {
+    if (!enabled) return;
+    const controller = new AbortController();
+
+    api
+      .listInvitations(controller.signal)
+      .then((data) => setResolved({ key, data: data.items, error: null }))
+      .catch((cause) => {
+        if (controller.signal.aborted) return;
+        setResolved({ key, data: null, error: errorMessage(cause) });
+      });
+
+    return () => controller.abort();
+  }, [key, enabled]);
+
+  const reload = useCallback(() => setToken((value) => value + 1), []);
+
+  return {
+    invitations: resolved.data ?? [],
+    loading: resolved.key !== key,
+    error: resolved.error,
+    reload,
   };
 }
 

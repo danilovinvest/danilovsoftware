@@ -35,3 +35,43 @@ export type PermissionEntry = {
   action: string;
   description: string;
 };
+
+/** Ce qu'un PATCH /v1/users/{id} attend : l'API remplace la fiche entière. */
+export type UserPayload = {
+  email: string;
+  first_name: string;
+  last_name: string;
+  role: string;
+  is_active: boolean;
+};
+
+/**
+ * Une invitation en attente. Le jeton n'y figure pas : il n'est rendu qu'une
+ * fois, à la création, et la base n'en garde que le condensat.
+ */
+export type Invitation = {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  role: string;
+  role_name: string;
+  invited_by: string;
+  expires_at: string;
+  created_at: string;
+  /** Calculé par le serveur : l'horloge d'un poste ne décide pas de l'expiration. */
+  expired: boolean;
+};
+
+export type InvitationPayload = {
+  email: string;
+  first_name: string;
+  last_name: string;
+  role: string;
+};
+
+/** Réponse de la création : l'invitation, et le jeton en clair une seule fois. */
+export type InvitationCreated = {
+  invitation: Invitation;
+  token: string;
+};
