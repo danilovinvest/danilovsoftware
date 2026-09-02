@@ -35,7 +35,7 @@ export function AgendaList({
   }
 
   return (
-    <div className="min-h-[38rem] divide-y">
+    <div className="min-h-0 flex-1 divide-y overflow-y-auto">
       {days.map(({ day, items }) => (
         <div key={day.toISOString()} className="flex gap-4 px-4 py-3">
           <div className="w-40 shrink-0">

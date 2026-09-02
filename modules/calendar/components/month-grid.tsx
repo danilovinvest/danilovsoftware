@@ -82,7 +82,7 @@ export function MonthGrid({
   const weeks = Array.from({ length: 6 }, (_, index) => days.slice(index * 7, index * 7 + 7));
 
   return (
-    <div className="flex min-h-[38rem] flex-1 flex-col">
+    <div className="flex min-h-[34rem] flex-1 flex-col">
       <div className="text-muted-foreground grid grid-cols-7 border-b">
         {WEEKDAYS.map((label) => (
           <div key={label} className="px-2 py-1.5 text-center text-[11px] font-medium">
@@ -100,7 +100,7 @@ export function MonthGrid({
           return (
             <div
               key={week[0].toISOString()}
-              className="relative grid flex-1 grid-cols-7 border-b last:border-b-0"
+              className="relative grid min-h-24 flex-1 grid-cols-7 border-b last:border-b-0"
             >
               {week.map((day) => {
                 const outside = !isSameMonth(day, cursor);

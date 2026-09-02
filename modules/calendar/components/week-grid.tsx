@@ -90,7 +90,7 @@ export function WeekGrid({
   const hasToday = days.some((day) => isSameDay(day, today));
 
   return (
-    <div className="flex min-h-[38rem] flex-1 flex-col">
+    <div className="flex min-h-[34rem] flex-1 flex-col">
       {/* En-tête : jour, date, et la bande des journées entières. */}
       <div className="grid grid-cols-[3.5rem_repeat(7,minmax(0,1fr))] border-b">
         <div className="border-r" />
@@ -150,7 +150,7 @@ export function WeekGrid({
         </div>
       )}
 
-      <div className="relative flex-1 overflow-y-auto">
+      <div className="relative min-h-0 flex-1 overflow-y-auto">
         <div className="grid grid-cols-[3.5rem_repeat(7,minmax(0,1fr))]">
           {/* Colonne des heures. */}
           <div className="border-r">

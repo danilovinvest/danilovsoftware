@@ -33,7 +33,7 @@ export function CalendarView() {
   const [syncedAt] = useState(() => new Date());
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-base font-semibold">Calendrier</h1>
@@ -44,7 +44,7 @@ export function CalendarView() {
         </div>
       </header>
 
-      <div className="flex flex-col gap-4 lg:flex-row">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
         <CalendarSidebar
           calendars={calendar.calendars}
           onToggle={calendar.toggleCalendar}
@@ -52,7 +52,7 @@ export function CalendarView() {
           syncedAt={syncedAt}
         />
 
-        <Card className="flex min-w-0 flex-1 flex-col gap-0 overflow-hidden py-0">
+        <Card className="flex min-h-0 min-w-0 flex-1 flex-col gap-0 overflow-hidden py-0">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2">
             <div className="flex items-center gap-1">
               <Button variant="outline" size="sm" className="h-7" onClick={calendar.goToday}>
@@ -101,32 +101,34 @@ export function CalendarView() {
             </div>
           </div>
 
-          {calendar.view === "mois" && (
-            <MonthGrid
-              cursor={calendar.cursor}
-              today={calendar.today}
-              occurrences={calendar.occurrences}
-              onSelect={setSelected}
-              onOpenDay={calendar.openDay}
-            />
-          )}
-          {calendar.view === "semaine" && (
-            <WeekGrid
-              cursor={calendar.cursor}
-              today={calendar.today}
-              now={syncedAt}
-              occurrences={calendar.occurrences}
-              onSelect={setSelected}
-            />
-          )}
-          {calendar.view === "agenda" && (
-            <AgendaList
-              cursor={calendar.cursor}
-              today={calendar.today}
-              occurrences={calendar.occurrences}
-              onSelect={setSelected}
-            />
-          )}
+          <div className="flex min-h-0 flex-1 flex-col">
+            {calendar.view === "mois" && (
+              <MonthGrid
+                cursor={calendar.cursor}
+                today={calendar.today}
+                occurrences={calendar.occurrences}
+                onSelect={setSelected}
+                onOpenDay={calendar.openDay}
+              />
+            )}
+            {calendar.view === "semaine" && (
+              <WeekGrid
+                cursor={calendar.cursor}
+                today={calendar.today}
+                now={syncedAt}
+                occurrences={calendar.occurrences}
+                onSelect={setSelected}
+              />
+            )}
+            {calendar.view === "agenda" && (
+              <AgendaList
+                cursor={calendar.cursor}
+                today={calendar.today}
+                occurrences={calendar.occurrences}
+                onSelect={setSelected}
+              />
+            )}
+          </div>
         </Card>
       </div>
 
