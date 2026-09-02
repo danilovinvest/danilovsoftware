@@ -35,10 +35,14 @@ const THEMES: Array<{ value: ThemeChoice; label: string }> = [
 ];
 
 function AppearanceSection() {
-  const { theme } = usePreferences();
+  const { theme, palette } = usePreferences();
+  const active = activePalette(palette);
 
   return (
-    <SettingsSection title="Apparence">
+    <SettingsSection
+      title="Apparence"
+      description="Clair, sombre, ou ce que dit le poste."
+    >
       <div className="grid gap-3 sm:grid-cols-3">
         {THEMES.map((option) => (
           <button
@@ -56,19 +60,44 @@ function AppearanceSection() {
                   : "border-border group-hover:border-neutral",
               )}
             >
-              <ThemePreview value={option.value} />
+              {/* Les vignettes montrent la palette active : le mode et la
+                  couleur se choisissent l'un après l'autre, autant que le
+                  premier écran annonce déjà le second. */}
+              <span className="flex h-16 w-full">
+                {option.value === "system" ? (
+                  <>
+                    <PalettePreview palette={active} mode="light" half />
+                    <PalettePreview palette={active} mode="dark" half />
+                  </>
+                ) : (
+                  <PalettePreview palette={active} mode={option.value} />
+                )}
+              </span>
               {theme === option.value && (
                 <span className="bg-brand absolute right-1.5 bottom-1.5 flex size-4 items-center justify-center rounded-full text-white">
                   <CheckIcon className="size-3" />
                 </span>
               )}
             </span>
-            <span className="text-muted-foreground text-xs">{option.label}</span>
+            <span
+              className={cn(
+                "text-xs",
+                theme === option.value
+                  ? "text-foreground font-medium"
+                  : "text-muted-foreground",
+              )}
+            >
+              {option.label}
+            </span>
           </button>
         ))}
       </div>
     </SettingsSection>
   );
+}
+
+function activePalette(id: string): Palette {
+  return PALETTES.find((entry) => entry.id === id) ?? PALETTES[0];
 }
 
 /**
@@ -108,8 +137,8 @@ function PaletteSection() {
                 )}
               >
                 <span className="flex h-14 w-full">
-                  <PaletteHalf palette={option} mode="light" />
-                  <PaletteHalf palette={option} mode="dark" />
+                  <PalettePreview palette={option} mode="light" half />
+                  <PalettePreview palette={option} mode="dark" half />
                 </span>
                 {selected && (
                   <span className="bg-brand absolute right-1 bottom-1 flex size-4 items-center justify-center rounded-full text-white">
@@ -133,24 +162,37 @@ function PaletteSection() {
   );
 }
 
-function PaletteHalf({
+/**
+ * Aperçu d'une palette dans un mode : le liseré de la barre latérale, un trait
+ * d'accent, deux lignes de contenu. Assez pour reconnaître une palette au
+ * premier coup d'œil, et strictement peint avec ses propres couleurs — jamais
+ * avec celles du thème actif.
+ */
+function PalettePreview({
   palette,
   mode,
+  half = false,
 }: {
   palette: Palette;
   mode: "light" | "dark";
+  half?: boolean;
 }) {
   const surface = palette.surface[mode];
   const accent = palette.accent[mode];
 
   return (
     <span
-      className="flex h-full w-1/2 items-center gap-1 px-1.5"
+      className={cn("flex h-full items-center gap-1.5 px-2", half ? "w-1/2" : "w-full")}
       style={{ backgroundColor: surface.base }}
     >
       <span
         className="h-full w-1.5 shrink-0"
-        style={{ backgroundColor: surface.raised }}
+        style={{
+          backgroundColor: surface.raised,
+          // Les deux gris de Twenty sont volontairement très proches : sans ce
+          // filet, la barre latérale disparaîtrait dans la vignette sombre.
+          borderRight: "1px solid rgb(128 128 128 / 0.25)",
+        }}
       />
       <span className="flex flex-1 flex-col gap-1">
         <span
@@ -166,46 +208,6 @@ function PaletteHalf({
           style={{ backgroundColor: surface.raised }}
         />
       </span>
-    </span>
-  );
-}
-
-/**
- * Vignette d'aperçu : une barre latérale et un panneau, comme la vraie
- * fenêtre. Les couleurs sont écrites en dur — l'aperçu doit montrer le thème
- * qu'il propose, pas celui qui est actif.
- */
-function ThemePreview({ value }: { value: ThemeChoice }) {
-  const light = (
-    <span className="flex h-full w-full">
-      <span className="h-full w-1/4 bg-[#f1f1f1]" />
-      <span className="flex h-full flex-1 items-center justify-center bg-white text-[#333]">
-        Aa
-      </span>
-    </span>
-  );
-
-  const dark = (
-    <span className="flex h-full w-full">
-      <span className="h-full w-1/4 bg-[#1b1b1b]" />
-      <span className="flex h-full flex-1 items-center justify-center bg-[#171717] text-[#ebebeb]">
-        Aa
-      </span>
-    </span>
-  );
-
-  return (
-    <span className="flex h-16 w-full text-xs">
-      {value === "system" ? (
-        <>
-          <span className="h-full w-1/2 overflow-hidden">{light}</span>
-          <span className="h-full w-1/2 overflow-hidden">{dark}</span>
-        </>
-      ) : value === "dark" ? (
-        dark
-      ) : (
-        light
-      )}
     </span>
   );
 }
