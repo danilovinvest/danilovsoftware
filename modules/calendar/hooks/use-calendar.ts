@@ -11,7 +11,7 @@ import {
   toOccurrence,
 } from "../lib/events";
 import { formatDayShort, formatMonthYear } from "../lib/labels";
-import type { CalendarListEntry, CalendarView, GoogleEvent, Occurrence } from "../lib/types";
+import type { Calendar, CalendarEvent, CalendarView, Occurrence } from "../lib/types";
 
 type Resolved<T> = { key: string; data: T | null; error: string | null };
 
@@ -44,7 +44,7 @@ export function useCalendar() {
 
   const key = `${span.from.toISOString()}|${span.to.toISOString()}|${token}`;
   const [resolved, setResolved] = useState<
-    Resolved<{ events: GoogleEvent[]; calendars: CalendarListEntry[] }>
+    Resolved<{ events: CalendarEvent[]; calendars: Calendar[] }>
   >({ key: "", data: null, error: null });
 
   useEffect(() => {
@@ -72,8 +72,8 @@ export function useCalendar() {
   const loadedCalendars = useMemo(() => resolved.data?.calendars ?? [], [resolved.data]);
 
   const occurrences = useMemo(
-    () => (resolved.data?.events ?? []).map((event) => toOccurrence(event, loadedCalendars)),
-    [resolved.data, loadedCalendars],
+    () => (resolved.data?.events ?? []).map(toOccurrence),
+    [resolved.data],
   );
 
   // Fenêtre réellement peinte : elle sert au filtrage comme aux compteurs de la
@@ -99,18 +99,17 @@ export function useCalendar() {
   );
 
   const visible = useMemo(
-    () => occurrences.filter((o) => inRange(o) && !hidden.has(o.event.calendarId)),
+    () => occurrences.filter((o) => inRange(o) && !hidden.has(o.event.calendar_id)),
     [occurrences, inRange, hidden],
   );
 
   const calendars = useMemo(
     () =>
-      loadedCalendars.map((calendar, index) => ({
+      loadedCalendars.map((calendar) => ({
         ...calendar,
         hidden: hidden.has(calendar.id),
-        index,
         count: occurrences.filter(
-          (o) => inRange(o) && o.event.calendarId === calendar.id,
+          (o) => inRange(o) && o.event.calendar_id === calendar.id,
         ).length,
       })),
     [loadedCalendars, occurrences, inRange, hidden],
@@ -150,18 +149,6 @@ export function useCalendar() {
     return `30 jours à partir du ${formatDayShort(cursor)}`;
   }, [view, cursor]);
 
-  // La dernière synchronisation la plus ancienne des agendas recopiés : c'est
-  // elle qui dit vraiment depuis quand la copie est à jour.
-  const syncedAt = useMemo(() => {
-    const dates = loadedCalendars
-      .map((calendar) => calendar.synced_at)
-      .filter((value): value is string => value !== null)
-      .map((value) => new Date(value));
-    return dates.length > 0
-      ? new Date(Math.min(...dates.map((date) => date.getTime())))
-      : null;
-  }, [loadedCalendars]);
-
   return {
     today,
     cursor,
@@ -179,8 +166,8 @@ export function useCalendar() {
     loaded: occurrences.length,
     loading: resolved.key !== key,
     error: resolved.error,
-    connected: loadedCalendars.length > 0,
-    syncedAt,
+    /** Y a-t-il au moins un agenda ? Sinon il n'y a rien à peindre. */
+    ready: loadedCalendars.length > 0,
     goPrev: () => step(-1),
     goNext: () => step(1),
     goToday: () => setCursor(today),

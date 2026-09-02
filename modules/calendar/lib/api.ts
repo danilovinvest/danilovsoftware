@@ -1,18 +1,20 @@
 import { apiFetch } from "@/shared/api/client";
 import type {
-  CalendarListEntry,
+  Calendar,
+  CalendarEvent,
   EventInput,
   GoogleAccount,
-  GoogleEvent,
+  ImportReport,
+  MirrorCalendar,
   SyncRun,
 } from "./types";
 
 /**
  * Appels du module calendrier.
  *
- * Tout est en lecture : le CRM recopie l'agenda Google, il n'y écrit jamais.
- * Les seules écritures possibles ici portent sur le raccordement lui-même —
- * quel compte, quels agendas recopiés — et non sur son contenu.
+ * Le CRM est maître de son agenda : tout ce qui suit vit dans sa base. Google
+ * n'apparaît que sous `/mirror` et `/import` — une source qu'on interroge quand
+ * on le demande, plus un dépôt dont on dépend.
  */
 
 export function listEvents(from: Date, to: Date, signal?: AbortSignal) {
@@ -20,11 +22,55 @@ export function listEvents(from: Date, to: Date, signal?: AbortSignal) {
     from: from.toISOString(),
     to: to.toISOString(),
   });
-  return apiFetch<{ items: GoogleEvent[] }>(`/v1/calendar/events?${query}`, { signal });
+  return apiFetch<{ items: CalendarEvent[] }>(`/v1/calendar/events?${query}`, { signal });
 }
 
+export function createEvent(input: EventInput) {
+  return apiFetch<CalendarEvent>("/v1/calendar/events", { method: "POST", body: input });
+}
+
+export function updateEvent(id: string, input: EventInput) {
+  return apiFetch<CalendarEvent>(`/v1/calendar/events/${id}`, {
+    method: "PATCH",
+    body: input,
+  });
+}
+
+export function deleteEvent(id: string) {
+  return apiFetch<void>(`/v1/calendar/events/${id}`, { method: "DELETE" });
+}
+
+/* --- Agendas ---------------------------------------------------------------- */
+
 export function listCalendars(signal?: AbortSignal) {
-  return apiFetch<{ items: CalendarListEntry[] }>("/v1/calendar/calendars", { signal });
+  return apiFetch<{ items: Calendar[] }>("/v1/calendar/calendars", { signal });
+}
+
+export function createCalendar(name: string, color: number) {
+  return apiFetch<Calendar>("/v1/calendar/calendars", {
+    method: "POST",
+    body: { name, color },
+  });
+}
+
+export function updateCalendar(
+  id: string,
+  values: { name: string; color: number; visible: boolean },
+) {
+  return apiFetch<Calendar>(`/v1/calendar/calendars/${id}`, {
+    method: "PATCH",
+    body: values,
+  });
+}
+
+export function deleteCalendar(id: string) {
+  return apiFetch<void>(`/v1/calendar/calendars/${id}`, { method: "DELETE" });
+}
+
+/* --- Le miroir Google ------------------------------------------------------- */
+
+export function listMirror(signal?: AbortSignal) {
+  return apiFetch<{ items: MirrorCalendar[] }>("/v1/calendar/mirror", { signal });
 }
 
 export function listAccounts(signal?: AbortSignal) {
@@ -40,37 +86,16 @@ export function listSyncRuns(limit: number, signal?: AbortSignal) {
   });
 }
 
-/* --- Écriture --------------------------------------------------------------
+/**
+ * Fait passer le miroir dans l'agenda du CRM.
  *
- * Tout passe par Google. Un événement créé ici en est un vrai : il apparaît
- * dans Agenda, sur les téléphones, dans les notifications. L'API rend la
- * ressource telle que Google l'a enregistrée, déjà rangée dans la copie locale
- * — l'écran n'attend donc pas la synchronisation suivante pour la voir.
+ * Il n'ajoute que ce qu'il ne connaît pas : une correction faite ici n'est
+ * jamais écrasée par la version restée chez Google. C'est ce qui le rend
+ * rejouable sans faire de doublon.
  */
-
-export function createEvent(input: EventInput) {
-  return apiFetch<{ event: GoogleEvent }>("/v1/calendar/events", {
-    method: "POST",
-    body: input,
-  });
+export function importFromGoogle() {
+  return apiFetch<ImportReport>("/v1/calendar/import", { method: "POST" });
 }
-
-export function updateEvent(id: string, input: EventInput) {
-  return apiFetch<{ event: GoogleEvent }>(`/v1/calendar/events/${encodeURIComponent(id)}`, {
-    method: "PATCH",
-    body: input,
-  });
-}
-
-export function deleteEvent(id: string, calendarId: string) {
-  const query = new URLSearchParams({ calendar_id: calendarId });
-  return apiFetch<void>(
-    `/v1/calendar/events/${encodeURIComponent(id)}?${query}`,
-    { method: "DELETE" },
-  );
-}
-
-/* --- Raccordement ---------------------------------------------------------- */
 
 /**
  * Rend l'URL de l'écran de consentement Google.
@@ -86,17 +111,12 @@ export async function authorizeUrl() {
   return url;
 }
 
-/**
- * Demande une copie et rend la main : le serveur répond 202, la copie continue
- * derrière. Fermer l'onglet ne l'interrompt plus — c'est tout l'intérêt.
- * L'avancement se lit dans le journal, que le badge interroge déjà.
- */
 export function syncNow() {
   return apiFetch<{ started: boolean }>("/v1/calendar/sync", { method: "POST" });
 }
 
-export function setCalendarSelected(id: string, accountId: string, selected: boolean) {
-  return apiFetch<void>(`/v1/calendar/calendars/${encodeURIComponent(id)}`, {
+export function setMirrorSelected(id: string, accountId: string, selected: boolean) {
+  return apiFetch<void>(`/v1/calendar/mirror/${encodeURIComponent(id)}`, {
     method: "PATCH",
     body: { account_id: accountId, selected },
   });

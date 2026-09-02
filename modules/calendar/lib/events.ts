@@ -1,14 +1,13 @@
 import { paletteAt } from "./labels";
-import type { CalendarListEntry, GoogleEvent, Occurrence } from "./types";
+import type { CalendarEvent, Occurrence } from "./types";
 
 /**
  * Résolution des occurrences.
  *
- * Les séries récurrentes arrivent déjà dépliées : c'est `singleEvents=true`
- * côté Google, demandé par la synchronisation de l'API. Une grille de
- * calendrier n'a donc jamais à interpréter une RRULE pour savoir quoi peindre.
- * Chaque occurrence garde `recurringEventId`, et la fiche d'événement peut dire
- * « tous les lundis ».
+ * Un événement du CRM est une occurrence et une seule : les séries importées de
+ * Google l'ont été déjà dépliées (`singleEvents=true`), chacune devenant une
+ * ligne à part. Aucune grille n'a donc de RRULE à interpréter — et chaque
+ * occurrence se déplace ou s'annule indépendamment des autres.
  */
 
 const DAY = 86_400_000;
@@ -60,28 +59,15 @@ export function monthMatrix(month: Date): Date[] {
  * porter de quoi l'être. Les quatre vues cessent ainsi de dépendre de la liste
  * des agendas.
  */
-export function toOccurrence(
-  event: GoogleEvent,
-  calendars: readonly CalendarListEntry[],
-): Occurrence {
-  const isAllDay = event.start.date !== undefined;
-  const start = isAllDay
-    ? startOfDay(new Date(`${event.start.date}T00:00:00`))
-    : new Date(event.start.dateTime ?? "");
-  const end = isAllDay
-    ? startOfDay(new Date(`${event.end.date}T00:00:00`))
-    : new Date(event.end.dateTime ?? "");
-
-  const index = calendars.findIndex((calendar) => calendar.id === event.calendarId);
-
+export function toOccurrence(event: CalendarEvent): Occurrence {
   return {
-    key: `${event.calendarId}:${event.id}`,
+    key: event.id,
     event,
-    start,
-    end,
-    allDay: isAllDay,
-    calendarName: index >= 0 ? calendars[index].summary : event.calendarId,
-    style: paletteAt(index >= 0 ? index : 0),
+    start: new Date(event.starts_at),
+    end: new Date(event.ends_at),
+    allDay: event.all_day,
+    calendarName: event.calendar_name,
+    style: paletteAt(event.color),
   };
 }
 

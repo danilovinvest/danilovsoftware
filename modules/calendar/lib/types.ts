@@ -1,30 +1,18 @@
 /**
  * Types du module calendrier.
  *
- * Ils reprennent la forme de la ressource `events` de l'API Google Calendar
- * — `start`/`end` en objets qui portent soit `date` (journée entière) soit
- * `dateTime`, `attendees` avec leur `responseStatus`, `recurringEventId` sur
- * les occurrences d'une série. Le pari est tenu : l'API du CRM recopie l'agenda
- * Google et rend ces ressources **intactes**, augmentées du seul `calendarId`,
- * que Google laisse dans l'URL demandée plutôt que dans l'événement.
- *
- * Une seule entorse assumée : `email` est facultatif sur un invité. Un agenda
- * partagé en lecture masque les adresses des participants externes, et il vaut
- * mieux un nom seul qu'une adresse fabriquée.
+ * Le CRM tient désormais ses propres événements ; ces types sont les siens et
+ * non plus ceux de l'API Google. Ce qui vient d'un import garde `imported` à
+ * vrai, avec son organisateur et ses invités recopiés — affichés, jamais
+ * modifiables : ils appartiennent à l'agenda d'origine, et prétendre les éditer
+ * sans pouvoir envoyer d'invitation serait mentir.
  */
-
-/** Une date de calendrier : jour entier (`date`) ou instant précis (`dateTime`). */
-export type EventDateTime = {
-  date?: string;
-  dateTime?: string;
-  timeZone?: string;
-};
 
 export type ResponseStatus = "accepted" | "declined" | "tentative" | "needsAction";
 
+/** Un invité, tel que l'import l'a recopié depuis Google. */
 export type Attendee = {
   email?: string;
-  /** Absent tant que le contact n'a pas de nom dans Google : reste l'adresse. */
   displayName?: string;
   responseStatus: ResponseStatus;
   organizer?: boolean;
@@ -32,78 +20,59 @@ export type Attendee = {
   self?: boolean;
 };
 
-/** Organisateur ou créateur. Mêmes lacunes que `Attendee` sur le nom. */
-export type Person = {
-  email?: string;
-  displayName?: string;
-  self?: boolean;
-};
-
-export type GoogleEvent = {
+export type CalendarEvent = {
   id: string;
-  status: "confirmed" | "tentative" | "cancelled";
-  /** Un événement sans titre existe dans Google : il s'affiche « Sans titre ». */
-  summary?: string;
-  description?: string;
-  location?: string;
-  start: EventDateTime;
-  end: EventDateTime;
-  /** Agenda d'origine — la couleur en découle. */
-  calendarId: string;
-  organizer?: Person;
-  attendees?: Attendee[];
-  hangoutLink?: string;
-  /** Renseigné sur chaque occurrence d'une série. */
-  recurringEventId?: string;
-  /** RRULE de la série, portée par l'occurrence pour l'afficher telle quelle. */
-  recurrence?: string[];
-  eventType?: "default" | "outOfOffice" | "focusTime";
-  created?: string;
-  updated?: string;
-};
-
-/** Entrée de `calendarList` : un agenda auquel le compte Google est abonné. */
-export type CalendarListEntry = {
-  id: string;
-  account_id: string;
-  summary: string;
+  calendar_id: string;
+  calendar_name: string;
+  /** Rang dans la palette du thème, jamais une couleur littérale. */
+  color: number;
+  title: string;
   description: string;
-  time_zone: string;
-  access_role: string;
-  /** Couleur choisie dans Google. Reçue, mais pas peinte — voir `labels.ts`. */
-  background_color: string;
-  primary: boolean;
-  /** Agenda recopié ou non. Choix local, sans effet sur le compte Google. */
-  selected: boolean;
-  event_count: number;
-  synced_at: string | null;
+  location: string;
+  /** Instants ISO 8601. Une journée entière est bornée à minuit local, et sa
+   * fin est **exclusive** : un événement d'un seul jour porte le lendemain. */
+  starts_at: string;
+  ends_at: string;
+  all_day: boolean;
+  imported: boolean;
+  organizer: string;
+  attendees: Attendee[];
+  meet_url: string;
+  updated_at: string;
 };
 
-/** Le compte Google raccordé, et l'état de sa dernière synchronisation. */
-export type GoogleAccount = {
+export type Calendar = {
   id: string;
-  email: string;
-  scope: string;
-  /** Faux si le compte a été raccordé avant l'écriture : il faut le reconnecter. */
-  can_write: boolean;
-  connected_at: string;
-  last_sync_at: string | null;
-  /** Vide quand tout va bien ; sinon la raison, telle que Google l'a dite. */
-  last_error: string;
+  name: string;
+  color: number;
+  visible: boolean;
+  event_count: number;
+  /** Renseigné quand l'agenda vient d'un import Google. */
+  google_calendar_id: string;
+};
+
+export type EventInput = {
+  calendar_id: string;
+  title: string;
+  description: string;
+  location: string;
+  all_day: boolean;
+  /** ISO 8601 pour un horaire, AAAA-MM-JJ pour une journée entière. */
+  start: string;
+  end: string;
 };
 
 /**
  * Une occurrence prête à peindre : les bornes résolues en `Date`, et le
  * découpage jour-entier / horaire déjà tranché. Les composants ne manipulent
- * jamais `EventDateTime` directement.
+ * jamais les chaînes ISO directement.
  */
 export type Occurrence = {
   key: string;
-  event: GoogleEvent;
+  event: CalendarEvent;
   start: Date;
   end: Date;
   allDay: boolean;
-  /** Nom de l'agenda d'origine, et le jeu de classes qui l'habille. */
   calendarName: string;
   style: CalendarStyle;
 };
@@ -119,13 +88,46 @@ export type CalendarStyle = {
 
 export type CalendarView = "mois" | "semaine" | "agenda";
 
+/* --- Le miroir Google, réduit à ce qu'il sert : importer -------------------- */
+
+export type GoogleAccount = {
+  id: string;
+  email: string;
+  scope: string;
+  connected_at: string;
+  last_sync_at: string | null;
+  /** Vide quand tout va bien ; sinon la raison, telle que Google l'a dite. */
+  last_error: string;
+};
+
+/** Un agenda du compte Google, tel que la copie le connaît. */
+export type MirrorCalendar = {
+  id: string;
+  account_id: string;
+  summary: string;
+  description: string;
+  time_zone: string;
+  access_role: string;
+  primary: boolean;
+  /** Recopié dans le miroir, donc importable. */
+  selected: boolean;
+  event_count: number;
+  synced_at: string | null;
+};
+
+export type ImportReport = {
+  calendars: number;
+  added: number;
+  /** Déjà connus, donc laissés tels quels — corrections locales comprises. */
+  skipped: number;
+};
+
 /**
- * Une exécution de la synchronisation, telle que le journal la garde.
+ * Une exécution de la copie du miroir Google.
  *
  * `finished_at` nul veut dire « en cours », et c'est la seule chose qui fasse
- * dire au badge qu'une copie tourne. Le déduire d'une horloge — « la dernière
- * date de moins d'une minute, donc ça travaille » — mentirait dès qu'une
- * exécution dure plus longtemps que prévu.
+ * dire au badge qu'une copie tourne. Le déduire d'une horloge mentirait dès
+ * qu'une exécution dure plus longtemps que prévu.
  */
 export type SyncRun = {
   id: number;
@@ -142,7 +144,6 @@ export type SyncRun = {
   details: SyncDetail[];
 };
 
-/** Le compte d'un agenda dans une exécution. */
 export type SyncDetail = {
   calendar: string;
   summary: string;
@@ -152,18 +153,4 @@ export type SyncDetail = {
   updated: number;
   deleted: number;
   error?: string;
-};
-
-/** Ce qu'un formulaire décide d'un rendez-vous. Les invités restent gérés dans
- * Google : les ajouter d'ici enverrait de vraies invitations à de vrais
- * clients, ce qui ne se décide pas dans un formulaire à quatre champs. */
-export type EventInput = {
-  calendar_id: string;
-  summary: string;
-  description: string;
-  location: string;
-  all_day: boolean;
-  /** ISO 8601 pour un horaire, AAAA-MM-JJ pour une journée entière. */
-  start: string;
-  end: string;
 };
