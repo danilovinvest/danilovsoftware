@@ -9,7 +9,7 @@
  * Il duplique volontairement `applyPreferences` : cette poignée de lignes doit
  * tourner sans module, sans React et sans hydratation. Toute modification de
  * l'une doit être reportée sur l'autre — d'où la forme minimale, réduite à ce
- * que le premier rendu exige (le thème ; l'échelle suit au montage).
+ * que le premier rendu exige (le thème et la palette ; l'échelle suit au montage).
  */
 export const THEME_BOOTSTRAP_SCRIPT = `
 try {
@@ -20,6 +20,9 @@ try {
     (choice === "system" &&
       window.matchMedia("(prefers-color-scheme: dark)").matches);
   if (dark) document.documentElement.classList.add("dark");
+  if (prefs && prefs.palette && prefs.palette !== "azur") {
+    document.documentElement.setAttribute("data-theme", prefs.palette);
+  }
   if (prefs && prefs.scale && prefs.scale !== 100) {
     document.documentElement.style.fontSize = prefs.scale + "%";
   }

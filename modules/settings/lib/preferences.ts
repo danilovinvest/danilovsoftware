@@ -7,15 +7,27 @@
  * d'affaires et l'écran du bureau n'ont pas les mêmes besoins.
  */
 
+import { DEFAULT_PALETTE, isPaletteId } from "./palettes";
+
 export type ThemeChoice = "light" | "dark" | "system";
 
 export type Preferences = {
   theme: ThemeChoice;
+  /**
+   * Palette de couleur. Orthogonale au clair/sombre : chaque palette existe
+   * dans les deux modes, on ne choisit donc pas « Corail sombre » mais
+   * « Corail » puis « Sombre ».
+   */
+  palette: string;
   /** Taille de l'interface en pourcentage : 100 = réglage du navigateur. */
   scale: number;
 };
 
-export const DEFAULT_PREFERENCES: Preferences = { theme: "system", scale: 100 };
+export const DEFAULT_PREFERENCES: Preferences = {
+  theme: "system",
+  palette: DEFAULT_PALETTE,
+  scale: 100,
+};
 
 export const SCALE_OPTIONS = [90, 100, 110, 125] as const;
 
@@ -43,6 +55,9 @@ function read(): Preferences {
         parsed.theme === "light" || parsed.theme === "dark" || parsed.theme === "system"
           ? parsed.theme
           : DEFAULT_PREFERENCES.theme,
+      palette: isPaletteId(parsed.palette)
+        ? parsed.palette
+        : DEFAULT_PREFERENCES.palette,
       scale:
         typeof parsed.scale === "number" && parsed.scale >= 75 && parsed.scale <= 150
           ? parsed.scale
@@ -94,5 +109,14 @@ export function resolveTheme(choice: ThemeChoice): "light" | "dark" {
 export function applyPreferences(preferences: Preferences) {
   const root = document.documentElement;
   root.classList.toggle("dark", resolveTheme(preferences.theme) === "dark");
+
+  // La palette par défaut est celle de :root, sans attribut — l'absence de
+  // `data-theme` est donc une valeur, pas un oubli.
+  if (preferences.palette === DEFAULT_PALETTE) {
+    root.removeAttribute("data-theme");
+  } else {
+    root.setAttribute("data-theme", preferences.palette);
+  }
+
   root.style.fontSize = preferences.scale === 100 ? "" : `${preferences.scale}%`;
 }

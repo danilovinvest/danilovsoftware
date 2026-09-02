@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "./themes.css";
 
 /*
  * Le thème est piloté par une classe, jamais par le média.
@@ -48,7 +49,21 @@
   --t-gray-11: #666666;
   --t-gray-12: #333333;
 
-  /* Radix indigo — l'accent de Twenty (accent.*, border.color.blue). */
+  /*
+   * Accent de la palette — marque, focus, sélection. Séparé de `--t-blue-*`,
+   * qui reste la tonalité « info » : les deux étaient confondus, si bien
+   * qu'une palette chaude aurait teinté les pastilles d'information.
+   * `app/themes.css` ne redéfinit que cette échelle-ci et les gris.
+   */
+  --t-accent-2: #f7f9ff;
+  --t-accent-3: #edf2fe;
+  --t-accent-5: #d2deff;
+  --t-accent-7: #abbdf9;
+  --t-accent-8: #8da4ef;
+  --t-accent-9: #3e63dd;
+  --t-accent-11: #3a5bc7;
+
+  /* Radix indigo — la tonalité « info » du CRM. */
   --t-blue-2: #f7f9ff;
   --t-blue-3: #edf2fe;
   --t-blue-5: #d2deff;
@@ -84,6 +99,14 @@
 @supports (color: color(display-p3 1 1 1)) {
   @media (color-gamut: p3) {
     :root {
+      --t-accent-2: color(display-p3 0.971 0.977 0.998);
+      --t-accent-3: color(display-p3 0.933 0.948 0.992);
+      --t-accent-5: color(display-p3 0.831 0.87 1);
+      --t-accent-7: color(display-p3 0.685 0.74 0.957);
+      --t-accent-8: color(display-p3 0.569 0.639 0.916);
+      --t-accent-9: color(display-p3 0.276 0.384 0.837);
+      --t-accent-11: color(display-p3 0.256 0.354 0.755);
+
       --t-blue-2: color(display-p3 0.971 0.977 0.998);
       --t-blue-3: color(display-p3 0.933 0.948 0.992);
       --t-blue-5: color(display-p3 0.831 0.87 1);
@@ -139,6 +162,14 @@
   --t-gray-11: #b3b3b3;
   --t-gray-12: #ebebeb;
 
+  --t-accent-2: #141726;
+  --t-accent-3: #182449;
+  --t-accent-5: #253974;
+  --t-accent-7: #3a4f97;
+  --t-accent-8: #435db1;
+  --t-accent-9: #3e63dd;
+  --t-accent-11: #9eb1ff;
+
   /* Radix indigo dark */
   --t-blue-2: #141726;
   --t-blue-3: #182449;
@@ -184,6 +215,14 @@
       --t-gray-10: color(display-p3 0.482 0.482 0.482);
       --t-gray-11: color(display-p3 0.702 0.702 0.702);
       --t-gray-12: color(display-p3 0.922 0.922 0.922);
+
+      --t-accent-2: color(display-p3 0.081 0.089 0.144);
+      --t-accent-3: color(display-p3 0.105 0.141 0.275);
+      --t-accent-5: color(display-p3 0.163 0.22 0.439);
+      --t-accent-7: color(display-p3 0.245 0.309 0.575);
+      --t-accent-8: color(display-p3 0.285 0.362 0.674);
+      --t-accent-9: color(display-p3 0.276 0.384 0.837);
+      --t-accent-11: color(display-p3 0.63 0.69 1);
 
       --t-blue-2: color(display-p3 0.081 0.089 0.144);
       --t-blue-3: color(display-p3 0.105 0.141 0.275);
@@ -249,8 +288,8 @@
    */
   --primary: var(--t-gray-12);
   --primary-foreground: var(--t-gray-1);
-  --brand: var(--t-blue-9);
-  --selected: var(--t-blue-3);
+  --brand: var(--t-accent-9);
+  --selected: var(--t-accent-3);
 
   --secondary: var(--t-gray-3);
   --secondary-foreground: var(--t-gray-12);
@@ -263,7 +302,7 @@
   --accent: var(--t-gray-4);
   --accent-foreground: var(--t-gray-12);
   --destructive: var(--t-red-11);
-  --ring: var(--t-blue-7);
+  --ring: var(--t-accent-7);
 
   /*
    * Tonalités du CRM (statut de fiche, de devis, de règlement). Twenty
@@ -292,15 +331,15 @@
    */
   --sidebar: var(--t-gray-2);
   --sidebar-foreground: var(--t-gray-11);
-  --sidebar-primary: var(--t-gray-12);
+  --sidebar-primary: var(--t-accent-9);
   --sidebar-primary-foreground: var(--t-gray-1);
   --sidebar-accent: var(--t-gray-4);
   --sidebar-accent-foreground: var(--t-gray-12);
   --sidebar-border: var(--t-gray-5);
-  --sidebar-ring: var(--t-blue-7);
+  --sidebar-ring: var(--t-accent-7);
 
   /* Graphiques — MAIN_COLORS_LIGHT (cran 9 de chaque teinte). */
-  --chart-1: var(--t-blue-9);
+  --chart-1: var(--t-accent-9);
   --chart-2: var(--t-turquoise-9);
   --chart-3: var(--t-green-9);
   --chart-4: var(--t-orange-9);
