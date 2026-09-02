@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -33,7 +33,7 @@ export function MemberDialog({
   onClose,
   onSaved,
 }: {
-  user: WorkspaceUser | null;
+  user: WorkspaceUser;
   roles: Role[];
   /** Rang du compte connecté, pour borner les rôles proposés. */
   actorRank: number;
@@ -41,28 +41,19 @@ export function MemberDialog({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [form, setForm] = useState({ first_name: "", last_name: "", email: "", role: "" });
-  const [active, setActive] = useState(true);
+  // Le formulaire est initialisé une fois, à l'ouverture. Le panneau monte ce
+  // composant avec une clé portant l'identifiant de la cible : changer de
+  // membre le remonte, plutôt que de le resynchroniser dans un effet.
+  const [form, setForm] = useState({
+    first_name: user.first_name,
+    last_name: user.last_name,
+    email: user.email,
+    role: user.role,
+  });
+  const [active, setActive] = useState(user.is_active);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string>>({});
-
-  // Le formulaire se recharge quand la cible change, pas à chaque rendu :
-  // l'identité de l'utilisateur ouvert est la seule dépendance qui compte.
-  useEffect(() => {
-    if (!user) return;
-    setForm({
-      first_name: user.first_name,
-      last_name: user.last_name,
-      email: user.email,
-      role: user.role,
-    });
-    setActive(user.is_active);
-    setError(null);
-    setFields({});
-  }, [user]);
-
-  if (user === null) return null;
 
   const assignable = roles
     .filter((role) => role.rank <= actorRank)
@@ -78,8 +69,6 @@ export function MemberDialog({
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
-    if (!user) return;
-
     setPending(true);
     setError(null);
     setFields({});

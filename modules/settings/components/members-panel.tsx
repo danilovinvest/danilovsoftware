@@ -304,14 +304,17 @@ export function MembersPanel() {
         </SettingsSection>
       )}
 
-      <MemberDialog
-        user={editing}
-        roles={roles}
-        actorRank={actorRank}
-        isSelf={editing?.id === account?.id}
-        onClose={() => setEditing(null)}
-        onSaved={reload}
-      />
+      {editing && (
+        <MemberDialog
+          key={editing.id}
+          user={editing}
+          roles={roles}
+          actorRank={actorRank}
+          isSelf={editing.id === account?.id}
+          onClose={() => setEditing(null)}
+          onSaved={reload}
+        />
+      )}
 
       {inviting && (
         <InviteDialog
