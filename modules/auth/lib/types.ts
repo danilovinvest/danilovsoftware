@@ -64,3 +64,19 @@ export type DeviceSession = {
   /** Vrai pour l'appareil qui consulte la liste. */
   current: boolean;
 };
+
+/**
+ * Ce qu'un visiteur non authentifié peut lire d'un lien d'invitation.
+ *
+ * L'adresse est masquée (« c•••@exemple.fr ») : elle confirme au destinataire
+ * que le lien lui est destiné sans livrer d'adresse à qui l'aurait intercepté.
+ * Un jeton inconnu, expiré, révoqué ou déjà consommé rend tous la même 404 —
+ * les distinguer révélerait qu'une invitation a existé.
+ */
+export type InvitationPreview = {
+  email_hint: string;
+  first_name: string;
+  last_name: string;
+  role_name: string;
+  expires_at: string;
+};

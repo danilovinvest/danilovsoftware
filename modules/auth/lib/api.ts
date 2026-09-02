@@ -1,5 +1,10 @@
 import { apiFetch } from "@/shared/api/client";
-import type { Account, DeviceSession, SessionResponse } from "./types";
+import type {
+  Account,
+  DeviceSession,
+  InvitationPreview,
+  SessionResponse,
+} from "./types";
 
 export function login(email: string, password: string) {
   return apiFetch<SessionResponse>("/v1/auth/login", {
@@ -42,4 +47,29 @@ export function revokeSession(id: string) {
 /** Ferme toutes les sessions, y compris celle qui appelle. */
 export function logoutAll() {
   return apiFetch<void>("/v1/auth/logout-all", { method: "POST" });
+}
+
+/* --- Invitations ---------------------------------------------------------- */
+
+/** Route publique : elle ne demande aucun jeton d'accès. */
+export function previewInvitation(token: string, signal?: AbortSignal) {
+  return apiFetch<InvitationPreview>(
+    `/v1/auth/invitation/${encodeURIComponent(token)}`,
+    { signal },
+  );
+}
+
+/**
+ * Accepte le lien et ouvre la session dans la foulée : le compte vient d'être
+ * créé et l'invité a choisi son mot de passe, lui demander de se connecter
+ * juste après serait un pas de plus pour rien.
+ */
+export function acceptInvitation(
+  token: string,
+  payload: { first_name: string; last_name: string; password: string },
+) {
+  return apiFetch<SessionResponse>(
+    `/v1/auth/invitation/${encodeURIComponent(token)}/accept`,
+    { method: "POST", body: payload },
+  );
 }

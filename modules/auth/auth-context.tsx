@@ -18,6 +18,11 @@ type AuthState = {
   /** true tant que la session initiale n'a pas été résolue. */
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  /**
+   * Adopte une session déjà obtenue de l'API — aujourd'hui l'acceptation d'une
+   * invitation, qui ouvre une session sans passer par le formulaire.
+   */
+  adoptSession: (session: SessionResponse) => void;
   logout: () => Promise<void>;
   can: (permission: Permission) => boolean;
   refreshAccount: () => Promise<void>;
@@ -102,6 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       login: async (email, password) => {
         applySession(await authApi.login(email, password));
       },
+      adoptSession: applySession,
       logout: async () => {
         try {
           await authApi.logout();
