@@ -16,7 +16,7 @@ import { useAuth } from "@/modules/auth";
 import { ErrorNotice, Skeleton, Spinner } from "@/shared/ui/feedback";
 import { errorMessage } from "@/shared/api/errors";
 import { getRolePermissions, setRolePermissions } from "../lib/api";
-import { resourceLabel, resourceRank } from "../lib/labels";
+import { actionRank, resourceLabel, resourceRank } from "../lib/labels";
 import type { PermissionEntry, Role } from "../lib/types";
 
 /**
@@ -74,9 +74,19 @@ export function RolePermissionsDialog({
     for (const entry of catalog) {
       byResource.set(entry.resource, [...(byResource.get(entry.resource) ?? []), entry]);
     }
-    return [...byResource.entries()].sort(
-      ([a], [b]) => resourceRank(a) - resourceRank(b) || a.localeCompare(b),
-    );
+    return [...byResource.entries()]
+      .map(
+        ([resource, entries]) =>
+          [
+            resource,
+            [...entries].sort(
+              (a, b) =>
+                actionRank(a.action) - actionRank(b.action) ||
+                a.slug.localeCompare(b.slug),
+            ),
+          ] as const,
+      )
+      .sort(([a], [b]) => resourceRank(a) - resourceRank(b) || a.localeCompare(b));
   }, [catalog]);
 
   function toggle(slug: string) {
@@ -113,7 +123,11 @@ export function RolePermissionsDialog({
         <DialogHeader>
           <DialogTitle className="text-base">Permissions — {role.name}</DialogTitle>
           <DialogDescription>
-            {selected ? `${selected.size} permission${selected.size > 1 ? "s" : ""} accordée${selected.size > 1 ? "s" : ""}` : "Chargement…"}
+            {selected === null
+              ? "Chargement…"
+              : selected.size === 0
+                ? "Aucune permission accordée"
+                : `${selected.size} permission${selected.size > 1 ? "s" : ""} accordée${selected.size > 1 ? "s" : ""}`}
             {" · "}
             {role.user_count} compte{role.user_count > 1 ? "s" : ""} concerné
             {role.user_count > 1 ? "s" : ""}

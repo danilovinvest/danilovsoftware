@@ -37,3 +37,17 @@ export function resourceRank(resource: string): number {
   const index = RESOURCE_ORDER.indexOf(resource);
   return index === -1 ? RESOURCE_ORDER.length : index;
 }
+
+/**
+ * Ordre des actions dans un groupe.
+ *
+ * L'API les sert par ordre alphabétique — « supprimer » avant « consulter » —
+ * ce qui met la permission la plus lourde en tête de liste. On rétablit
+ * l'ordre du cycle : lire, écrire, puis détruire.
+ */
+const ACTION_ORDER = ["read", "write", "export", "run", "delete", "admin"];
+
+export function actionRank(action: string): number {
+  const index = ACTION_ORDER.indexOf(action);
+  return index === -1 ? ACTION_ORDER.length : index;
+}

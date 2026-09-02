@@ -92,9 +92,11 @@ export function RoleDialog({
               {role ? "Modifier le rôle" : "Nouveau rôle"}
             </DialogTitle>
             <DialogDescription>
-              {role
-                ? "L'identifiant technique n'est pas modifiable."
-                : "Le rôle est créé sans aucune permission ; vous les cocherez ensuite."}
+              {role === null
+                ? "Le rôle est créé sans aucune permission ; vous les cocherez ensuite."
+                : role.is_system
+                  ? "Rôle livré avec le CRM : son nom et sa description sont libres, son identifiant technique et son existence ne le sont pas."
+                  : "L'identifiant technique n'est pas modifiable."}
             </DialogDescription>
           </DialogHeader>
 

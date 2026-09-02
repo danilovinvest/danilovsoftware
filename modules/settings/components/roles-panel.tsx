@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PencilIcon, PlusIcon, ShieldIcon, Trash2Icon } from "lucide-react";
+import { PencilIcon, PlusIcon, ShieldIcon, Trash2Icon, UsersIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,9 +16,14 @@ import { usePermission } from "@/modules/auth";
 import { errorMessage } from "@/shared/api/errors";
 import { ErrorNotice, Skeleton } from "@/shared/ui/feedback";
 import { deleteRole } from "../lib/api";
-import { usePermissionCatalog, useRoles } from "../hooks/use-settings";
+import {
+  usePermissionCatalog,
+  useRoles,
+  useWorkspaceUsers,
+} from "../hooks/use-settings";
 import type { Role } from "../lib/types";
 import { RoleDialog } from "./role-dialog";
+import { RoleMembersDialog } from "./role-members-dialog";
 import { RolePermissionsDialog } from "./role-permissions-dialog";
 import { SettingsPage, SettingsSection } from "./settings-page";
 
@@ -34,10 +39,15 @@ export function RolesPanel() {
   const canWrite = usePermission("roles:write");
   const { roles, loading, error, reload } = useRoles();
   const catalog = usePermissionCatalog(canWrite);
+  // Les comptes servent au panneau des membres d'un rôle. On les charge ici
+  // pour que la liste des rôles et ce panneau partagent une seule source :
+  // déplacer quelqu'un doit mettre à jour la colonne « Membres » du tableau.
+  const workspace = useWorkspaceUsers();
 
   const [editing, setEditing] = useState<Role | null>(null);
   const [creating, setCreating] = useState(false);
   const [permissionsOf, setPermissionsOf] = useState<Role | null>(null);
+  const [membersOf, setMembersOf] = useState<Role | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [removing, setRemoving] = useState<string | null>(null);
 
@@ -84,7 +94,7 @@ export function RolesPanel() {
                   <TableHead>Rôle</TableHead>
                   <TableHead className="text-right">Membres</TableHead>
                   <TableHead className="text-right">Permissions</TableHead>
-                  {canWrite && <TableHead className="w-28" />}
+                  {canWrite && <TableHead className="w-36" />}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -150,17 +160,26 @@ export function RolesPanel() {
                                   <ShieldIcon className="size-3.5" />
                                 </Button>
                               )}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-7"
+                                onClick={() => setMembersOf(role)}
+                                title={`Membres de ${role.name}`}
+                              >
+                                <UsersIcon className="size-3.5" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-7"
+                                onClick={() => setEditing(role)}
+                                title={`Renommer ${role.name}`}
+                              >
+                                <PencilIcon className="size-3.5" />
+                              </Button>
                               {!role.is_system && (
                                 <>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="size-7"
-                                    onClick={() => setEditing(role)}
-                                    title={`Renommer ${role.name}`}
-                                  >
-                                    <PencilIcon className="size-3.5" />
-                                  </Button>
                                   <Button
                                     variant="ghost"
                                     size="icon"
@@ -205,6 +224,21 @@ export function RolesPanel() {
             setEditing(null);
           }}
           onSaved={reload}
+        />
+      )}
+
+      {membersOf && (
+        <RoleMembersDialog
+          key={membersOf.slug}
+          role={membersOf}
+          roles={roles}
+          users={workspace.users}
+          loading={workspace.loading}
+          onClose={() => setMembersOf(null)}
+          onChanged={() => {
+            workspace.reload();
+            reload();
+          }}
         />
       )}
 

@@ -104,3 +104,17 @@ export function setRolePermissions(slug: string, permissions: string[]) {
     body: { permissions },
   });
 }
+
+/**
+ * Change le rôle d'un compte, et rien d'autre.
+ *
+ * Passer par `updateUser` obligerait à renvoyer la fiche entière — nom, adresse,
+ * statut — et écraserait toute modification concurrente. L'API applique les
+ * mêmes garde-fous : rang de la cible, rang du rôle attribué, dernier dirigeant.
+ */
+export function setUserRole(id: string, role: string) {
+  return apiFetch<WorkspaceUser>(`/v1/users/${id}/role`, {
+    method: "PUT",
+    body: { role },
+  });
+}
