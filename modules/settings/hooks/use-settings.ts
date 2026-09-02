@@ -5,8 +5,10 @@ import { listSessions, type DeviceSession } from "@/modules/auth";
 import {
   listAccounts,
   listCalendars,
-  type CalendarListEntry,
+  listMirror,
+  type Calendar,
   type GoogleAccount,
+  type MirrorCalendar,
 } from "@/modules/calendar";
 import type { Paginated } from "@/shared/api/client";
 import { errorMessage } from "@/shared/api/errors";
@@ -259,11 +261,12 @@ export function useMcpTokens() {
 }
 
 /**
- * L'agenda Google raccordé, et les agendas qu'il expose.
+ * Tout ce que l'écran « Agenda » montre, demandé d'un coup.
  *
- * Les deux sont demandés ensemble : un compte sans ses agendas ne dit rien
- * d'utile, et deux chargements séparés afficheraient un écran à moitié vrai le
- * temps que le second arrive.
+ * Les agendas du CRM, le compte Google raccordé, et ce que son miroir contient.
+ * Trois chargements séparés afficheraient un écran à moitié vrai le temps que
+ * les derniers arrivent, et l'un ne se lit pas sans les autres : « importer »
+ * n'a de sens qu'en voyant à la fois la source et la destination.
  */
 export function useGoogleCalendar() {
   const [token, setToken] = useState(0);
@@ -272,21 +275,27 @@ export function useGoogleCalendar() {
     Resolved<{
       accounts: GoogleAccount[];
       configured: boolean;
-      calendars: CalendarListEntry[];
+      calendars: Calendar[];
+      mirror: MirrorCalendar[];
     }>
   >({ key: "", data: null, error: null });
 
   useEffect(() => {
     const controller = new AbortController();
 
-    Promise.all([listAccounts(controller.signal), listCalendars(controller.signal)])
-      .then(([accounts, calendars]) =>
+    Promise.all([
+      listAccounts(controller.signal),
+      listCalendars(controller.signal),
+      listMirror(controller.signal),
+    ])
+      .then(([accounts, calendars, mirror]) =>
         setResolved({
           key,
           data: {
             accounts: accounts.items,
             configured: accounts.configured,
             calendars: calendars.items,
+            mirror: mirror.items,
           },
           error: null,
         }),
@@ -304,6 +313,7 @@ export function useGoogleCalendar() {
   return {
     accounts: resolved.data?.accounts ?? [],
     calendars: resolved.data?.calendars ?? [],
+    mirror: resolved.data?.mirror ?? [],
     /** L'application Google est-elle déclarée sur le serveur ? */
     configured: resolved.data?.configured ?? false,
     loading: resolved.key !== key,

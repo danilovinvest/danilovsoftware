@@ -18,7 +18,7 @@ import { ErrorNotice, Spinner } from "@/shared/ui/feedback";
 import { DateField, TimeField } from "@/shared/ui/date-time-field";
 import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
 import * as api from "../lib/api";
-import type { CalendarListEntry, GoogleEvent } from "../lib/types";
+import type { Calendar, CalendarEvent } from "../lib/types";
 
 /**
  * Créer ou modifier un rendez-vous.
@@ -47,8 +47,8 @@ export function EventForm({
   open: boolean;
   onClose: () => void;
   onSaved: () => void;
-  calendars: CalendarListEntry[];
-  event?: GoogleEvent | null;
+  calendars: Calendar[];
+  event?: CalendarEvent | null;
   day?: Date | null;
 }) {
   // Le formulaire est remonté à chaque ouverture : la clé change avec la cible,
@@ -74,7 +74,7 @@ export function EventForm({
 
 type Draft = {
   calendarId: string;
-  summary: string;
+  title: string;
   location: string;
   description: string;
   allDay: boolean;
@@ -93,17 +93,11 @@ function FormBody({
 }: {
   onClose: () => void;
   onSaved: () => void;
-  calendars: CalendarListEntry[];
-  event: GoogleEvent | null;
+  calendars: Calendar[];
+  event: CalendarEvent | null;
   day: Date | null;
 }) {
-  // Seuls les agendas dont on est propriétaire ou rédacteur : Google refuserait
-  // les autres, autant ne pas les proposer.
-  const writable = calendars.filter(
-    (calendar) => calendar.access_role === "owner" || calendar.access_role === "writer",
-  );
-
-  const [draft, setDraft] = useState<Draft>(() => initial(event, day, writable));
+  const [draft, setDraft] = useState<Draft>(() => initial(event, day, calendars));
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -116,7 +110,7 @@ function FormBody({
     try {
       const input = {
         calendar_id: draft.calendarId,
-        summary: draft.summary,
+        title: draft.title,
         location: draft.location,
         description: draft.description,
         all_day: draft.allDay,
@@ -138,7 +132,7 @@ function FormBody({
     setPending(true);
     setError(null);
     try {
-      await api.deleteEvent(event.id, event.calendarId);
+      await api.deleteEvent(event.id);
       onSaved();
       onClose();
     } catch (cause) {
@@ -147,30 +141,14 @@ function FormBody({
     }
   }
 
-  // Un événement peut vivre dans un agenda partagé en consultation — les jours
-  // fériés, l'agenda d'un confrère. Google refuserait la modification ; le dire
-  // ici évite un aller-retour et une erreur incompréhensible.
-  const host = event ? calendars.find((c) => c.id === event.calendarId) : null;
-  const locked = event !== null && !writable.some((c) => c.id === event.calendarId);
-
-  if (writable.length === 0 || locked) {
+  if (calendars.length === 0) {
     return (
       <>
         <DialogHeader>
-          <DialogTitle className="text-base">Agenda en lecture seule</DialogTitle>
+          <DialogTitle className="text-base">Aucun agenda</DialogTitle>
           <DialogDescription>
-            {locked ? (
-              <>
-                Cet événement vit dans «&nbsp;{host?.summary ?? event?.calendarId}
-                &nbsp;», un agenda partagé en consultation. Il se modifie chez
-                celui qui le possède.
-              </>
-            ) : (
-              <>
-                Tous les agendas raccordés sont partagés en consultation. Pour
-                écrire, il faut un agenda dont le compte Google est propriétaire.
-              </>
-            )}
+            Créez un agenda dans Réglages → Agenda avant de poser un
+            rendez-vous.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -189,9 +167,9 @@ function FormBody({
           {event ? "Modifier l'événement" : "Nouvel événement"}
         </DialogTitle>
         <DialogDescription>
-          {event
-            ? "La modification part chez Google : elle sera visible partout où l'agenda l'est, y compris sur les téléphones."
-            : "Il sera créé dans Google Agenda, et visible par tous ceux qui partagent le compte."}
+          {event?.imported
+            ? "Cet événement vient d'un import Google. Le corriger ici ne remonte pas chez Google, et un import ultérieur ne défera pas la correction."
+            : "Il vit dans le CRM et n'est visible que de ceux qui y ont accès."}
         </DialogDescription>
       </DialogHeader>
 
@@ -202,25 +180,19 @@ function FormBody({
           label="Titre"
           required
           autoFocus
-          value={draft.summary}
-          onChange={(e) => set("summary", e.target.value)}
+          value={draft.title}
+          onChange={(e) => set("title", e.target.value)}
           placeholder="Visite de chantier — Villa Roquefort"
         />
 
         <SelectField
           label="Agenda"
           required
-          // Figé en modification : déplacer un événement d'un agenda à un autre
-          // n'est pas une mise à jour chez Google mais une opération à part
-          // (`events.move`), et un PATCH qui changerait ce champ serait
-          // silencieusement ignoré — l'écran mentirait sur ce qu'il a fait.
-          disabled={event !== null}
-          hint={event ? "Un événement ne change pas d'agenda depuis le CRM." : undefined}
           value={draft.calendarId}
           onValueChange={(value) => set("calendarId", value)}
-          options={writable.map((calendar) => ({
+          options={calendars.map((calendar) => ({
             value: calendar.id,
-            label: calendar.summary || calendar.id,
+            label: calendar.name,
           }))}
         />
 
@@ -293,12 +265,13 @@ function FormBody({
           className="min-h-16"
         />
 
-        {event && event.attendees && event.attendees.length > 0 && (
+        {event && event.attendees.length > 0 && (
           <p className="text-muted-foreground bg-muted/40 rounded-lg px-3 py-2 text-[11px]">
             {event.attendees.length} invité
-            {event.attendees.length > 1 ? "s" : ""} sur cet événement. Ils sont
-            conservés tels quels — la liste se modifie dans Google Agenda, où
-            l&apos;on voit qui reçoit quelle notification.
+            {event.attendees.length > 1 ? "s" : ""}, recopiés lors de
+            l&apos;import. Ils sont conservés tels quels : le CRM n&apos;envoie
+            aucune invitation, il ne peut donc pas prétendre gérer une liste de
+            convives.
           </p>
         )}
       </div>
@@ -321,7 +294,7 @@ function FormBody({
           <Button variant="outline" onClick={onClose} disabled={pending}>
             Annuler
           </Button>
-          <Button onClick={save} disabled={pending || !draft.summary.trim()}>
+          <Button onClick={save} disabled={pending || !draft.title.trim()}>
             {pending && <Spinner />}
             {event ? "Enregistrer" : "Créer"}
           </Button>
@@ -361,40 +334,36 @@ function timeValue(date: Date) {
 }
 
 function initial(
-  event: GoogleEvent | null,
+  event: CalendarEvent | null,
   day: Date | null,
-  writable: CalendarListEntry[],
+  calendars: Calendar[],
 ): Draft {
-  const fallback = writable[0]?.id ?? "";
-
   if (event) {
-    const allDay = event.start.date !== undefined;
-    if (allDay) {
-      const from = new Date(`${event.start.date}T00:00:00`);
-      // Google borne une journée entière par le lendemain ; l'utilisateur
-      // pense en dernier jour inclus. On retire un jour à l'affichage et on le
-      // rajoute à l'enregistrement.
-      const to = new Date(`${event.end.date}T00:00:00`);
-      to.setDate(to.getDate() - 1);
+    const from = new Date(event.starts_at);
+    const to = new Date(event.ends_at);
+    if (event.all_day) {
+      // La borne de fin est exclusive en base ; l'utilisateur pense en dernier
+      // jour inclus. On retire un jour à l'affichage, on le remet à
+      // l'enregistrement.
+      const last = new Date(to);
+      last.setDate(last.getDate() - 1);
       return {
-        calendarId: event.calendarId,
-        summary: event.summary ?? "",
-        location: event.location ?? "",
-        description: event.description ?? "",
+        calendarId: event.calendar_id,
+        title: event.title,
+        location: event.location,
+        description: event.description,
         allDay: true,
         date: dateValue(from),
-        endDate: dateValue(to),
+        endDate: dateValue(last),
         startTime: "09:00",
         endTime: "10:00",
       };
     }
-    const from = new Date(event.start.dateTime ?? "");
-    const to = new Date(event.end.dateTime ?? "");
     return {
-      calendarId: event.calendarId,
-      summary: event.summary ?? "",
-      location: event.location ?? "",
-      description: event.description ?? "",
+      calendarId: event.calendar_id,
+      title: event.title,
+      location: event.location,
+      description: event.description,
       allDay: false,
       date: dateValue(from),
       endDate: dateValue(from),
@@ -404,12 +373,12 @@ function initial(
   }
 
   const base = day ?? new Date();
-  // Une heure d'un créneau cliqué est déjà utile ; à défaut, la prochaine
-  // heure ronde, qui est ce qu'on veut neuf fois sur dix.
+  // L'heure d'un créneau cliqué est déjà utile ; à défaut, la prochaine heure
+  // ronde, qui est ce qu'on veut neuf fois sur dix.
   const rounded = day && day.getHours() !== 0 ? day.getHours() : new Date().getHours() + 1;
   return {
-    calendarId: fallback,
-    summary: "",
+    calendarId: calendars[0]?.id ?? "",
+    title: "",
     location: "",
     description: "",
     allDay: false,

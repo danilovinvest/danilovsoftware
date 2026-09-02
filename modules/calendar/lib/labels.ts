@@ -1,4 +1,4 @@
-import type { Attendee, CalendarStyle, CalendarView, Person, ResponseStatus } from "./types";
+import type { Attendee, CalendarStyle, CalendarView, ResponseStatus } from "./types";
 
 /**
  * Habillage du calendrier.
@@ -74,14 +74,9 @@ export const VIEWS: Array<{ value: CalendarView; label: string }> = [
  * Pour tout le reste — un client externe invité à une réunion — il n'y a que
  * l'adresse, et une case vide serait pire que l'adresse.
  */
-export function personName(person: Attendee | Person | undefined): string {
+export function personName(person: Attendee | undefined): string {
   if (!person) return "—";
   return person.displayName || person.email || "—";
-}
-
-/** Un événement peut n'avoir pas de titre dans Google. */
-export function eventTitle(summary: string | undefined): string {
-  return summary?.trim() || "Sans titre";
 }
 
 export const RESPONSE: Record<ResponseStatus, { label: string; tone: string }> = {
@@ -145,36 +140,4 @@ export function formatDuration(start: Date, end: Date): string {
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
   return rest === 0 ? `${hours} h` : `${hours} h ${String(rest).padStart(2, "0")}`;
-}
-
-const RRULE_DAYS: Record<string, string> = {
-  MO: "lundi",
-  TU: "mardi",
-  WE: "mercredi",
-  TH: "jeudi",
-  FR: "vendredi",
-  SA: "samedi",
-  SU: "dimanche",
-};
-
-/** Traduit la RRULE en français plutôt que de l'afficher brute. */
-export function describeRecurrence(rules: string[] | undefined): string | null {
-  const rule = rules?.[0];
-  if (!rule) return null;
-
-  const day = /BYDAY=(\d?)([A-Z]{2})/.exec(rule);
-  const label = day ? RRULE_DAYS[day[2]] : null;
-
-  if (rule.includes("FREQ=WEEKLY")) {
-    return label ? `Toutes les semaines, le ${label}` : "Toutes les semaines";
-  }
-  if (rule.includes("FREQ=MONTHLY")) {
-    const nth = day?.[1];
-    if (label && nth) {
-      const ordinal = nth === "1" ? "premier" : `${nth}ᵉ`;
-      return `Tous les mois, le ${ordinal} ${label}`;
-    }
-    return "Tous les mois";
-  }
-  return "Événement récurrent";
 }

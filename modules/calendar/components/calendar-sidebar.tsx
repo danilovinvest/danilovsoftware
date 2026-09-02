@@ -5,11 +5,11 @@ import { CheckIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSyncRuns } from "../hooks/use-sync-runs";
 import { paletteAt } from "../lib/labels";
-import type { CalendarListEntry } from "../lib/types";
+import type { Calendar } from "../lib/types";
 import { SyncBadge } from "./sync-badge";
 import { SyncLogDialog } from "./sync-log-dialog";
 
-type Entry = CalendarListEntry & { hidden: boolean; count: number; index: number };
+type Entry = Calendar & { hidden: boolean; count: number };
 
 /**
  * La colonne des agendas, dans l'esprit de `calendarList` : un abonnement par
@@ -25,12 +25,10 @@ export function CalendarSidebar({
   calendars,
   onToggle,
   loaded,
-  syncedAt,
 }: {
   calendars: Entry[];
   onToggle: (id: string) => void;
   loaded: number;
-  syncedAt: Date | null;
 }) {
   const journal = useSyncRuns(60);
   const [journalOpen, setJournalOpen] = useState(false);
@@ -45,9 +43,7 @@ export function CalendarSidebar({
           onClick={() => setJournalOpen(true)}
         />
         <p className="text-muted-foreground/70 text-[11px]">
-          {syncedAt === null
-            ? "Raccordez le compte Google de l'entreprise depuis Réglages → Agenda."
-            : `${loaded} événement${loaded > 1 ? "s" : ""} sur la période affichée`}
+          {loaded} événement{loaded > 1 ? "s" : ""} sur la période affichée
         </p>
       </div>
 
@@ -57,14 +53,14 @@ export function CalendarSidebar({
             Agendas
           </p>
           {calendars.map((calendar) => {
-            const style = paletteAt(calendar.index);
+            const style = paletteAt(calendar.color);
             return (
               <button
                 key={calendar.id}
                 type="button"
                 onClick={() => onToggle(calendar.id)}
                 aria-pressed={!calendar.hidden}
-                title={calendar.description || calendar.id}
+                title={calendar.name}
                 className="hover:bg-accent flex items-center gap-2 rounded-[4px] px-1.5 py-1.5 text-left transition-colors"
               >
                 <span
@@ -83,7 +79,7 @@ export function CalendarSidebar({
                     calendar.hidden && "text-muted-foreground line-through",
                   )}
                 >
-                  {calendar.summary}
+                  {calendar.name}
                 </span>
                 <span className="text-muted-foreground/70 shrink-0 text-[11px] tabular-nums">
                   {calendar.count}
@@ -95,9 +91,8 @@ export function CalendarSidebar({
       )}
 
       <p className="text-muted-foreground/70 px-1 text-[11px] leading-relaxed">
-        Le CRM lit l&apos;agenda Google, il n&apos;y écrit jamais : créer ou
-        déplacer un rendez-vous se fait dans Google Agenda, et la copie suit
-        quelques minutes plus tard.
+        Les agendas se créent et se renomment dans Réglages&nbsp;→&nbsp;Agenda,
+        où se fait aussi l&apos;import depuis Google.
       </p>
 
       <SyncLogDialog open={journalOpen} onClose={() => setJournalOpen(false)} />

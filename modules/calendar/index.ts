@@ -9,6 +9,7 @@ export { CalendarView } from "./components/calendar-view";
 export { GoogleButton } from "./components/google-button";
 export { GoogleMark } from "./components/google-mark";
 export { SyncBadge } from "./components/sync-badge";
+export { CALENDAR_PALETTE } from "./lib/labels";
 export { SyncLogDialog } from "./components/sync-log-dialog";
 export { useSyncRuns } from "./hooks/use-sync-runs";
 export * from "./lib/types";
@@ -16,12 +17,14 @@ export * from "./lib/types";
 // n'a pas à connaître les chemins d'API du calendrier.
 export {
   authorizeUrl,
-  createEvent,
-  deleteEvent,
-  updateEvent,
-  disconnectAccount,
-  listAccounts,
+  createCalendar,
+  deleteCalendar,
   listCalendars,
-  setCalendarSelected,
+  updateCalendar,
+  disconnectAccount,
+  importFromGoogle,
+  listAccounts,
+  listMirror,
+  setMirrorSelected,
   syncNow,
 } from "./lib/api";

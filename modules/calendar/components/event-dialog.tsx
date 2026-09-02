@@ -2,9 +2,9 @@
 
 import {
   CalendarIcon,
+  DownloadIcon,
   MapPinIcon,
   PencilIcon,
-  RepeatIcon,
   UserIcon,
   UsersIcon,
   VideoIcon,
@@ -20,8 +20,6 @@ import {
 import { cn } from "@/lib/utils";
 import {
   RESPONSE,
-  describeRecurrence,
-  eventTitle,
   formatDayLong,
   formatDuration,
   formatRange,
@@ -32,10 +30,10 @@ import type { Occurrence } from "../lib/types";
 /**
  * La fiche d'un événement.
  *
- * Elle montre ce que l'API renvoie et rien de plus : organisateur, invités avec
- * leur réponse, lieu, lien de visioconférence, règle de récurrence. Les
- * identifiants sont affichés en pied — c'est ce qui permet de retrouver
- * l'événement dans Google quand quelque chose cloche.
+ * Organisateur et invités n'apparaissent que sur ce qui vient d'un import :
+ * ils ont été recopiés depuis Google et restent tels quels. Un événement né
+ * dans le CRM n'en a pas — poser des invités supposerait de leur envoyer une
+ * invitation, ce que le CRM ne fait pas.
  */
 export function EventDialog({
   occurrence,
@@ -49,7 +47,6 @@ export function EventDialog({
 }) {
   const event = occurrence?.event;
   const style = occurrence?.style ?? null;
-  const recurrence = describeRecurrence(event?.recurrence);
 
   return (
     <Dialog open={occurrence !== null} onOpenChange={(open) => !open && onClose()}>
@@ -61,7 +58,7 @@ export function EventDialog({
                 <span
                   className={cn("mt-1.5 size-2.5 shrink-0 rounded-full", style?.dot)}
                 />
-                <span>{eventTitle(event.summary)}</span>
+                <span>{event.title}</span>
               </DialogTitle>
               <DialogDescription className="pl-4.5">
                 {formatDayLong(occurrence.start)} ·{" "}
@@ -69,43 +66,39 @@ export function EventDialog({
                 {!occurrence.allDay && (
                   <> · {formatDuration(occurrence.start, occurrence.end)}</>
                 )}
-                {event.status === "tentative" && (
-                  <span className="text-warning"> · à confirmer</span>
-                )}
               </DialogDescription>
             </DialogHeader>
 
             <div className="flex flex-col gap-3 text-sm">
-              {recurrence && (
-                <Row icon={RepeatIcon}>
-                  {recurrence}
-                  <span className="text-muted-foreground/70 ml-1.5 font-mono text-[11px]">
-                    {event.recurrence?.[0]}
-                  </span>
-                </Row>
-              )}
-
               {event.location && <Row icon={MapPinIcon}>{event.location}</Row>}
 
-              {event.hangoutLink && (
+              {event.meet_url && (
                 <Row icon={VideoIcon}>
                   <a
-                    href={event.hangoutLink}
+                    href={event.meet_url}
                     target="_blank"
                     rel="noreferrer"
                     className="text-info hover:underline"
                   >
-                    Rejoindre avec Google Meet
+                    Rejoindre la visioconférence
                   </a>
                 </Row>
               )}
 
-              <Row icon={CalendarIcon}>{occurrence.calendarName}</Row>
+              <Row icon={CalendarIcon}>
+                {occurrence.calendarName}
+                {event.imported && (
+                  <span className="text-muted-foreground/70 ml-1.5 inline-flex items-center gap-1 text-[11px]">
+                    <DownloadIcon className="size-3" />
+                    importé de Google
+                  </span>
+                )}
+              </Row>
 
               {event.organizer && (
                 <Row icon={UserIcon}>
                   <span className="text-muted-foreground">Organisé par </span>
-                  {personName(event.organizer)}
+                  {event.organizer}
                 </Row>
               )}
 
@@ -115,12 +108,13 @@ export function EventDialog({
                 </p>
               )}
 
-              {event.attendees && event.attendees.length > 0 && (
+              {event.attendees.length > 0 && (
                 <div className="border-t pt-3">
                   <Row icon={UsersIcon}>
                     <span className="text-muted-foreground">
                       {event.attendees.length} participant
-                      {event.attendees.length > 1 ? "s" : ""}
+                      {event.attendees.length > 1 ? "s" : ""} · recopiés de
+                      Google, non modifiables ici
                     </span>
                   </Row>
                   <ul className="mt-2 flex flex-col gap-1.5 pl-6">
@@ -141,9 +135,11 @@ export function EventDialog({
                               </span>
                             )}
                           </span>
-                          <span className={cn("shrink-0 text-[11px]", response.tone)}>
-                            {response.label}
-                          </span>
+                          {response && (
+                            <span className={cn("shrink-0 text-[11px]", response.tone)}>
+                              {response.label}
+                            </span>
+                          )}
                         </li>
                       );
                     })}
@@ -151,22 +147,19 @@ export function EventDialog({
                 </div>
               )}
 
-              <div className="flex items-center justify-between gap-3 border-t pt-3">
-                <p className="text-muted-foreground/60 min-w-0 truncate font-mono text-[10px]">
-                  {event.id}
-                </p>
-                {onEdit && (
+              {onEdit && (
+                <div className="flex justify-end border-t pt-3">
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-7 shrink-0"
+                    className="h-7"
                     onClick={() => onEdit(occurrence)}
                   >
                     <PencilIcon className="size-3.5" />
                     Modifier
                   </Button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </>
         )}

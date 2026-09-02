@@ -2,58 +2,83 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { CheckIcon, RefreshCwIcon, TriangleAlertIcon, XIcon } from "lucide-react";
+import {
+  DownloadIcon,
+  PlusIcon,
+  RefreshCwIcon,
+  TriangleAlertIcon,
+  XIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import {
+  CALENDAR_PALETTE,
   GoogleButton,
   GoogleMark,
   SyncBadge,
   SyncLogDialog,
   authorizeUrl,
+  createCalendar,
+  deleteCalendar,
   disconnectAccount,
-  setCalendarSelected,
+  importFromGoogle,
+  setMirrorSelected,
   syncNow,
+  updateCalendar,
   useSyncRuns,
+  type Calendar,
 } from "@/modules/calendar";
 import { errorMessage } from "@/shared/api/errors";
-import { formatAgo, formatDate } from "@/shared/lib/format";
+import { cn } from "@/lib/utils";
+import { formatAgo, formatDate, plural } from "@/shared/lib/format";
 import { ErrorNotice, Skeleton, Spinner } from "@/shared/ui/feedback";
 import { useGoogleCalendar } from "../hooks/use-settings";
 import { SettingsPage, SettingsRow, SettingsRows, SettingsSection } from "./settings-page";
 
 /**
- * Raccorder l'agenda Google de l'entreprise.
+ * Les agendas du CRM, et l'import depuis Google.
  *
- * Un seul compte, celui que tout le monde partage, raccordé une fois. Le CRM en
- * fait une copie et ne l'écrit jamais : la portée demandée à Google est en
- * lecture seule, si bien qu'aucune erreur d'ici ne peut déplacer un rendez-vous
- * chez un client.
+ * Le CRM est maître de son agenda : ce qu'on crée ici lui appartient, et rien
+ * n'en repart vers Google. Google est une source qu'on interroge quand on le
+ * demande — un bouton, pas un fil permanent.
  *
  * Le résultat du parcours d'autorisation revient en paramètre d'URL — Google
  * renvoie un navigateur, pas un appel d'API. On le lit une fois puis on
- * l'efface de la barre d'adresse : un rechargement de page ne doit pas
- * réafficher un succès vieux d'une heure.
+ * l'efface de la barre d'adresse : un rechargement ne doit pas réafficher un
+ * succès vieux d'une heure.
  */
 export function AgendaPanel() {
-  const { accounts, calendars, configured, loading, error: loadError, reload } =
+  const { accounts, calendars, mirror, configured, loading, error: loadError, reload } =
     useGoogleCalendar();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [journalOpen, setJournalOpen] = useState(false);
+  const [report, setReport] = useState<string | null>(null);
+  const [newName, setNewName] = useState("");
   const outcome = useAuthorizationOutcome();
-  // Le badge sonde le journal en continu : c'est lui qui sait si une copie
-  // tourne, y compris celles que le serveur lance tout seul toutes les cinq
-  // minutes, dont cet écran n'a aucun moyen d'être averti autrement.
   const journal = useSyncRuns(60);
 
-  // Une copie qui s'achève change les compteurs d'événements de chaque agenda.
-  // On les redemande à la fin de chaque exécution plutôt qu'à chaque sondage :
-  // c'est la seule chose qui puisse les avoir fait bouger.
+  // Une copie du miroir qui s'achève peut avoir rapporté de quoi importer.
   const lastRunId = journal.last?.id ?? null;
   useEffect(() => {
     if (lastRunId !== null) reload();
   }, [lastRunId, reload]);
+
+  function guard<T>(action: () => Promise<T>) {
+    return async () => {
+      setPending(true);
+      setError(null);
+      try {
+        await action();
+        reload();
+      } catch (cause) {
+        setError(errorMessage(cause));
+      } finally {
+        setPending(false);
+      }
+    };
+  }
 
   async function connect() {
     setPending(true);
@@ -66,47 +91,20 @@ export function AgendaPanel() {
     }
   }
 
-  async function sync() {
-    setPending(true);
-    setError(null);
-    try {
-      await syncNow();
-      // Le serveur a accepté, il n'a pas fini. On rafraîchit le journal tout
-      // de suite pour que le badge bascule sur « en cours » sans attendre le
-      // prochain sondage, et c'est lui qui racontera la suite.
-      journal.reload();
-    } catch (cause) {
-      setError(errorMessage(cause));
-    } finally {
-      setPending(false);
-    }
-  }
-
-  async function disconnect(id: string) {
-    setError(null);
-    try {
-      await disconnectAccount(id);
-      reload();
-      journal.reload();
-    } catch (cause) {
-      setError(errorMessage(cause));
-    }
-  }
-
-  async function toggle(id: string, accountId: string, selected: boolean) {
-    setError(null);
-    try {
-      await setCalendarSelected(id, accountId, selected);
-      reload();
-    } catch (cause) {
-      setError(errorMessage(cause));
-    }
-  }
+  const runImport = guard(async () => {
+    const result = await importFromGoogle();
+    setReport(
+      result.added === 0
+        ? `Rien de neuf : les ${result.skipped} événements du miroir sont déjà dans le CRM.`
+        : `${plural(result.added, "événement")} importé${result.added > 1 ? "s" : ""}, ` +
+          `${result.skipped} déjà connu${result.skipped > 1 ? "s" : ""} et laissé${result.skipped > 1 ? "s" : ""} tel${result.skipped > 1 ? "s" : ""} quel${result.skipped > 1 ? "s" : ""}.`,
+    );
+  });
 
   return (
     <SettingsPage
       title="Agenda"
-      description="Recopier l'agenda Google de l'entreprise dans le CRM, en lecture seule."
+      description="Les agendas du CRM, et l'import depuis un compte Google."
     >
       {(error || loadError || outcome.error) && (
         <ErrorNotice message={error ?? loadError ?? outcome.error ?? ""} />
@@ -114,26 +112,78 @@ export function AgendaPanel() {
 
       {outcome.connected && (
         <p className="text-success bg-success-soft/40 rounded-lg px-3 py-2 text-xs">
-          {outcome.connected} est raccordé. La première copie est faite ; les
-          suivantes se déclenchent toutes les cinq minutes.
-        </p>
-      )}
-
-      {!configured && !loading && (
-        <p className="text-warning bg-warning-soft/50 rounded-lg px-3 py-2 text-xs">
-          Aucune application Google n&apos;est déclarée sur le serveur. Renseignez
-          <span className="font-mono"> CRM_GOOGLE_CLIENT_ID </span> et
-          <span className="font-mono"> CRM_GOOGLE_CLIENT_SECRET </span>
-          avant de raccorder un compte.
+          {outcome.connected} est raccordé. La copie de ses agendas est en
+          cours ; l&apos;import viendra les verser dans le CRM.
         </p>
       )}
 
       <SettingsSection
-        title="Compte raccordé"
-        description="Un seul compte suffit : c'est celui que tout le monde partage."
+        title="Agendas"
+        description="Ceux du CRM. Chacun a sa couleur dans le calendrier."
       >
         {loading ? (
           <Skeleton className="h-24 w-full" />
+        ) : (
+          <div className="divide-y rounded-lg border">
+            {calendars.map((calendar) => (
+              <CalendarRow
+                key={calendar.id}
+                calendar={calendar}
+                deletable={calendars.length > 1}
+                pending={pending}
+                onSave={(values) => guard(() => updateCalendar(calendar.id, values))()}
+                onDelete={guard(() => deleteCalendar(calendar.id))}
+              />
+            ))}
+          </div>
+        )}
+
+        <div className="flex gap-2">
+          <Input
+            value={newName}
+            onChange={(event) => setNewName(event.target.value)}
+            placeholder="Chantiers"
+            className="flex-1"
+          />
+          <Button
+            type="button"
+            disabled={pending || newName.trim() === ""}
+            onClick={guard(async () => {
+              await createCalendar(newName.trim(), calendars.length % CALENDAR_PALETTE.length);
+              setNewName("");
+            })}
+          >
+            {pending ? <Spinner /> : <PlusIcon />}
+            Créer un agenda
+          </Button>
+        </div>
+
+        <p className="text-muted-foreground text-[11px] leading-relaxed">
+          Supprimer un agenda emporte ses événements. Le dernier ne se supprime
+          pas : il n&apos;y aurait plus où poser un rendez-vous.
+        </p>
+      </SettingsSection>
+
+      <SettingsSection
+        title="Import depuis Google"
+        description="Une source, pas un dépôt : le CRM n'écrit jamais chez Google."
+      >
+        {!configured && !loading && (
+          <p className="text-warning bg-warning-soft/50 rounded-lg px-3 py-2 text-xs">
+            Aucune application Google n&apos;est déclarée sur le serveur.
+            Renseignez <span className="font-mono">CRM_GOOGLE_CLIENT_ID</span> et
+            <span className="font-mono"> CRM_GOOGLE_CLIENT_SECRET</span>.
+          </p>
+        )}
+
+        {report && (
+          <p className="text-success bg-success-soft/40 rounded-lg px-3 py-2 text-xs">
+            {report}
+          </p>
+        )}
+
+        {loading ? (
+          <Skeleton className="h-20 w-full" />
         ) : accounts.length === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-lg border px-6 py-10 text-center">
             <span className="bg-muted/50 flex size-11 items-center justify-center rounded-full">
@@ -142,20 +192,12 @@ export function AgendaPanel() {
             <div>
               <p className="text-sm font-medium">Aucun compte Google</p>
               <p className="text-muted-foreground mt-1 max-w-sm text-xs leading-relaxed">
-                Google va demander l&apos;autorisation de <strong>voir</strong>{" "}
-                vos agendas. C&apos;est la seule permission demandée : le CRM
-                n&apos;obtiendra jamais le droit d&apos;y écrire.
+                Google demandera l&apos;autorisation de <strong>voir</strong> vos
+                agendas — la seule portée demandée. Le CRM n&apos;obtiendra
+                jamais le droit d&apos;y écrire.
               </p>
             </div>
-            <GoogleButton
-              onClick={connect}
-              pending={pending}
-              disabled={!configured}
-            />
-            <p className="text-muted-foreground/60 text-[11px]">
-              Connectez-vous avec le compte partagé de l&apos;entreprise, pas
-              avec un compte personnel.
-            </p>
+            <GoogleButton onClick={connect} pending={pending} disabled={!configured} />
           </div>
         ) : (
           <div className="flex flex-col gap-3 rounded-lg border p-3">
@@ -168,10 +210,7 @@ export function AgendaPanel() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{account.email}</p>
                   <p className="text-muted-foreground/70 text-[11px]">
-                    Raccordé le {formatDate(account.connected_at)} ·{" "}
-                    {account.can_write
-                      ? "lecture et écriture des événements"
-                      : "lecture seule"}
+                    Raccordé le {formatDate(account.connected_at)} · lecture seule
                   </p>
                 </div>
 
@@ -186,18 +225,24 @@ export function AgendaPanel() {
                   variant="outline"
                   size="sm"
                   className="h-7"
-                  onClick={sync}
+                  onClick={guard(syncNow)}
                   disabled={pending || journal.running}
+                  title="Rafraîchir la copie de Google avant d'importer"
                 >
-                  {pending ? <Spinner /> : <RefreshCwIcon className="size-3.5" />}
-                  Synchroniser
+                  <RefreshCwIcon className="size-3.5" />
+                  Rafraîchir
+                </Button>
+
+                <Button size="sm" className="h-7" onClick={runImport} disabled={pending}>
+                  {pending ? <Spinner /> : <DownloadIcon className="size-3.5" />}
+                  Importer
                 </Button>
 
                 <Button
                   variant="ghost"
                   size="icon"
                   className="size-7"
-                  onClick={() => disconnect(account.id)}
+                  onClick={guard(() => disconnectAccount(account.id))}
                   title="Retirer ce compte du CRM"
                 >
                   <XIcon className="size-3.5" />
@@ -205,126 +250,73 @@ export function AgendaPanel() {
               </div>
             ))}
 
-            {accounts.some((account) => !account.can_write) && (
-              <p className="text-warning bg-warning-soft/50 flex items-start gap-2 rounded-lg px-3 py-2 text-xs">
-                <TriangleAlertIcon className="mt-px size-3.5 shrink-0" />
-                <span className="flex-1">
-                  Ce compte a été raccordé quand le CRM ne savait que lire.
-                  Créer ou modifier un rendez-vous demande une nouvelle
-                  autorisation de Google — reconnectez-le. La copie déjà faite
-                  n&apos;est pas perdue.
-                </span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 shrink-0"
-                  onClick={connect}
-                  disabled={pending || !configured}
-                >
-                  Reconnecter
-                </Button>
-              </p>
-            )}
-
             {accounts.some((account) => account.last_error) && (
               <p className="text-danger bg-danger-soft/40 flex items-start gap-1.5 rounded-lg px-3 py-2 text-xs">
                 <TriangleAlertIcon className="mt-px size-3.5 shrink-0" />
-                <span>
-                  {accounts.find((account) => account.last_error)?.last_error}
-                </span>
+                <span>{accounts.find((account) => account.last_error)?.last_error}</span>
               </p>
+            )}
+
+            {mirror.length > 0 && (
+              <div className="flex flex-col gap-1 border-t pt-2">
+                <p className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+                  Agendas du compte Google
+                </p>
+                {mirror.map((source) => (
+                  <div key={source.id} className="flex items-center gap-3 py-0.5">
+                    <span className="min-w-0 flex-1 truncate text-xs">
+                      {source.summary}
+                    </span>
+                    <span className="text-muted-foreground/70 shrink-0 text-[11px]">
+                      {plural(source.event_count, "événement")}
+                      {source.synced_at && <> · {formatAgo(source.synced_at, journal.now)}</>}
+                    </span>
+                    <Switch
+                      checked={source.selected}
+                      onCheckedChange={(selected) =>
+                        guard(() => setMirrorSelected(source.id, source.account_id, selected))()
+                      }
+                      aria-label={`Copier ${source.summary}`}
+                    />
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         )}
 
         <p className="text-muted-foreground text-[11px] leading-relaxed">
-          Retirer le compte efface la copie locale et le jeton d&apos;accès. Rien
-          n&apos;est modifié chez Google : l&apos;agenda reste intact.
+          L&apos;import n&apos;ajoute que ce qu&apos;il ne connaît pas : une
+          correction faite dans le CRM n&apos;est jamais écrasée par la version
+          restée chez Google. Il se rejoue donc sans faire de doublon.
         </p>
       </SettingsSection>
 
-      {calendars.length > 0 && (
-        <SettingsSection
-          title="Agendas recopiés"
-          description="Décocher un agenda arrête sa copie et retire ses événements du CRM."
-        >
-          <SettingsRows>
-            {calendars.map((calendar) => (
-              <SettingsRow
-                key={calendar.id}
-                label={calendar.summary || calendar.id}
-              >
-                <span className="flex items-center gap-3">
-                  <span className="text-muted-foreground text-xs">
-                    {calendar.selected ? (
-                      <>
-                        {calendar.event_count} événement
-                        {calendar.event_count > 1 ? "s" : ""}
-                        {calendar.synced_at && (
-                          <> · {formatAgo(calendar.synced_at, journal.now)}</>
-                        )}
-                      </>
-                    ) : (
-                      "non recopié"
-                    )}
-                  </span>
-                  <Switch
-                    checked={calendar.selected}
-                    onCheckedChange={(next) =>
-                      toggle(calendar.id, calendar.account_id, next)
-                    }
-                    aria-label={`Recopier ${calendar.summary}`}
-                  />
-                </span>
-              </SettingsRow>
-            ))}
-          </SettingsRows>
-        </SettingsSection>
-      )}
-
       <SettingsSection
-        title="Ce que le CRM lit, et ce qu'il ne fait pas"
-        description="Deux portées, aussi étroites que possible : calendar.readonly pour lister les agendas, calendar.events pour les rendez-vous."
+        title="Ce que le CRM fait, et ce qu'il ne fait pas"
+        description="L'agenda est celui du CRM ; Google n'en reçoit rien."
       >
         <SettingsRows>
-          <SettingsRow label="Lu">
-            Titres, descriptions, lieux, dates, invités et leurs réponses, liens
-            de visioconférence
-          </SettingsRow>
-          <SettingsRow label="Invités">
-            Conservés mais non modifiables ici : les changer enverrait de vraies
-            invitations
-          </SettingsRow>
-          <SettingsRow label="Fenêtre">
-            Un an en arrière, deux ans en avant
-          </SettingsRow>
-          <SettingsRow label="Fréquence">
-            Toutes les cinq minutes, et seulement ce qui a changé
-          </SettingsRow>
           <SettingsRow label="Écrit">
-            Les événements : créer, modifier, supprimer — depuis le calendrier
+            Dans sa propre base : créer, modifier, supprimer, sans limite
           </SettingsRow>
-          <SettingsRow label="Hors de portée">
-            <span className="inline-flex items-center gap-1">
-              <CheckIcon className="text-success size-3.5" />
-              Créer, renommer ou supprimer un agenda, changer ses partages
-            </span>
+          <SettingsRow label="Lit chez Google">
+            Titres, descriptions, lieux, dates, invités — à l&apos;import
+          </SettingsRow>
+          <SettingsRow label="N'envoie pas">
+            Ni invitation aux clients, ni rappel sur les téléphones
+          </SettingsRow>
+          <SettingsRow label="Ne remonte pas">
+            Un événement créé ici reste ici ; Google ne le verra pas
           </SettingsRow>
         </SettingsRows>
       </SettingsSection>
+
       <SyncLogDialog open={journalOpen} onClose={() => setJournalOpen(false)} />
     </SettingsPage>
   );
 }
 
-/**
- * Lit le résultat du retour d'autorisation, une seule fois.
- *
- * Les paramètres sont retirés de l'URL aussitôt lus : sans cela, un
- * rechargement ou un partage du lien réafficherait le message. L'effet ne pose
- * pas d'état — il ne fait que réécrire l'historique — d'où la lecture directe
- * des paramètres au rendu.
- */
 function useAuthorizationOutcome() {
   const params = useSearchParams();
   const connected = params.get("connecte");
@@ -336,4 +328,109 @@ function useAuthorizationOutcome() {
   }, [connected, error]);
 
   return { connected, error };
+}
+
+/**
+ * Une ligne d'agenda : nom modifiable, couleur, visibilité, suppression.
+ *
+ * Le nom est un champ et non un libellé : les agendas importés de Google
+ * arrivent avec l'identifiant que Google leur donne — pour l'agenda principal,
+ * c'est l'adresse du compte. « omptgroupe@gmail.com » n'est pas un nom
+ * d'agenda, et rien ne servirait de l'afficher sans pouvoir le corriger.
+ *
+ * L'enregistrement se fait à la sortie du champ, et seulement si le nom a
+ * changé : taper trois lettres n'a pas à provoquer trois écritures.
+ */
+function CalendarRow({
+  calendar,
+  deletable,
+  pending,
+  onSave,
+  onDelete,
+}: {
+  calendar: Calendar;
+  deletable: boolean;
+  pending: boolean;
+  onSave: (values: { name: string; color: number; visible: boolean }) => void;
+  onDelete: () => void;
+}) {
+  const [name, setName] = useState(calendar.name);
+
+  function commit() {
+    const trimmed = name.trim();
+    if (trimmed === "" || trimmed === calendar.name) {
+      setName(calendar.name);
+      return;
+    }
+    onSave({ name: trimmed, color: calendar.color, visible: calendar.visible });
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-3 px-3 py-2">
+      <Input
+        value={name}
+        onChange={(event) => setName(event.target.value)}
+        onBlur={commit}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") event.currentTarget.blur();
+          if (event.key === "Escape") setName(calendar.name);
+        }}
+        aria-label="Nom de l'agenda"
+        className="h-8 min-w-0 flex-1 border-transparent bg-transparent px-2 shadow-none hover:border-input focus-visible:border-input"
+      />
+
+      <span className="text-muted-foreground/70 shrink-0 text-xs">
+        {plural(calendar.event_count, "événement")}
+        {calendar.google_calendar_id && (
+          <span className="ml-1.5 inline-flex items-center gap-1">
+            <DownloadIcon className="size-3" />
+            Google
+          </span>
+        )}
+      </span>
+
+      <span className="flex shrink-0 gap-1">
+        {CALENDAR_PALETTE.map((style, index) => (
+          <button
+            key={index}
+            type="button"
+            aria-label={`Couleur ${index + 1}`}
+            onClick={() =>
+              onSave({ name: calendar.name, color: index, visible: calendar.visible })
+            }
+            className={cn(
+              "size-3.5 rounded-full transition-transform",
+              style.dot,
+              calendar.color === index
+                ? "ring-foreground/40 ring-2 ring-offset-1"
+                : "opacity-50 hover:opacity-100",
+            )}
+          />
+        ))}
+      </span>
+
+      <Switch
+        checked={calendar.visible}
+        onCheckedChange={(visible) =>
+          onSave({ name: calendar.name, color: calendar.color, visible })
+        }
+        aria-label={`Afficher ${calendar.name}`}
+      />
+
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-7 shrink-0"
+        disabled={!deletable || pending}
+        onClick={onDelete}
+        title={
+          deletable
+            ? "Supprimer cet agenda et ses événements"
+            : "Le dernier agenda ne se supprime pas"
+        }
+      >
+        <XIcon className="size-3.5" />
+      </Button>
+    </div>
+  );
 }

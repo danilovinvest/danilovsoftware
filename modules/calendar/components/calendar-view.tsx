@@ -62,11 +62,11 @@ export function CalendarView() {
         <div>
           <h1 className="text-base font-semibold">Calendrier</h1>
           <p className="text-muted-foreground mt-0.5 text-sm">
-            L&apos;agenda Google de l&apos;entreprise, dans le CRM.
+Rendez-vous, visites de chantier et absences de l&apos;équipe.
           </p>
         </div>
 
-        {canWrite && calendar.connected && (
+        {canWrite && calendar.ready && (
           <Button size="sm" onClick={() => openCreation(calendar.today)}>
             <PlusIcon />
             Nouvel événement
@@ -79,7 +79,6 @@ export function CalendarView() {
           calendars={calendar.calendars}
           onToggle={calendar.toggleCalendar}
           loaded={calendar.loaded}
-          syncedAt={calendar.syncedAt}
         />
 
         <Card className="flex min-h-0 min-w-0 flex-1 flex-col gap-0 overflow-hidden py-0">
@@ -138,18 +137,18 @@ export function CalendarView() {
                 description={calendar.error}
               />
             )}
-            {!calendar.error && !calendar.loading && !calendar.connected && (
+            {!calendar.error && !calendar.loading && !calendar.ready && (
               <EmptyState
-                title="Aucun agenda raccordé"
-                description="Le CRM recopie l'agenda Google de l'entreprise, en lecture seule. Le raccordement se fait une fois, depuis les réglages."
+                title="Aucun agenda"
+                description="Créez-en un, ou importez ceux d'un compte Google."
                 action={
                   <Button asChild size="sm">
-                    <Link href="/settings/agenda">Raccorder un compte Google</Link>
+                    <Link href="/settings/agenda">Ouvrir les réglages</Link>
                   </Button>
                 }
               />
             )}
-            {!calendar.error && calendar.connected && calendar.view === "mois" && (
+            {!calendar.error && calendar.ready && calendar.view === "mois" && (
               <MonthGrid
                 cursor={calendar.cursor}
                 today={calendar.today}
@@ -159,7 +158,7 @@ export function CalendarView() {
                 onCreate={canWrite ? openCreation : undefined}
               />
             )}
-            {!calendar.error && calendar.connected && calendar.view === "semaine" && (
+            {!calendar.error && calendar.ready && calendar.view === "semaine" && (
               <WeekGrid
                 cursor={calendar.cursor}
                 today={calendar.today}
@@ -169,7 +168,7 @@ export function CalendarView() {
                 onCreate={canWrite ? openCreation : undefined}
               />
             )}
-            {!calendar.error && calendar.connected && calendar.view === "agenda" && (
+            {!calendar.error && calendar.ready && calendar.view === "agenda" && (
               <AgendaList
                 cursor={calendar.cursor}
                 today={calendar.today}

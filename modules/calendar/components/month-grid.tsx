@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { isSameDay, isSameMonth, monthMatrix, startOfDay } from "../lib/events";
-import { WEEKDAYS, eventTitle, formatTime } from "../lib/labels";
+import { WEEKDAYS, formatTime } from "../lib/labels";
 import type { Occurrence } from "../lib/types";
 
 /**
@@ -212,14 +212,14 @@ export function MonthGrid({
                         banner.opensLeft ? "rounded-l-[3px]" : "",
                         banner.closesRight ? "rounded-r-[3px]" : "",
                       )}
-                      title={eventTitle(banner.occurrence.event.summary)}
+                      title={banner.occurrence.event.title}
                     >
                       {/* Le titre est répété sur chaque semaine traversée. Un
                           « … » solitaire économiserait un peu de peinture et
                           obligerait à remonter d'une ligne pour savoir de quoi
                           il s'agit. */}
                       {!banner.opensLeft && "◂ "}
-                      {eventTitle(banner.occurrence.event.summary)}
+                      {banner.occurrence.event.title}
                     </button>
                   );
                 })}
@@ -248,27 +248,25 @@ export function EventChip({
   onSelect: (occurrence: Occurrence) => void;
 }) {
   const style = occurrence.style;
-  const tentative = occurrence.event.status === "tentative";
 
   return (
     <button
       type="button"
       onClick={() => onSelect(occurrence)}
-      title={`${formatTime(occurrence.start)} ${eventTitle(occurrence.event.summary)}`}
+      title={`${formatTime(occurrence.start)} ${occurrence.event.title}`}
       className="hover:bg-accent flex h-[17px] w-full min-w-0 shrink-0 items-center gap-1 rounded-[3px] px-1 text-left text-[11px] transition-colors"
     >
       <span
         className={cn(
           "size-1.5 shrink-0 rounded-full",
           style.dot,
-          tentative && "ring-background ring-1 ring-inset",
         )}
       />
       <span className="text-muted-foreground shrink-0 tabular-nums">
         {formatTime(occurrence.start)}
       </span>
-      <span className={cn("truncate", tentative && "italic")}>
-        {eventTitle(occurrence.event.summary)}
+      <span className="truncate">
+        {occurrence.event.title}
       </span>
     </button>
   );

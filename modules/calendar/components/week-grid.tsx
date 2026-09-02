@@ -6,7 +6,6 @@ import {
   DAY_END_HOUR,
   DAY_START_HOUR,
   WEEKDAYS,
-  eventTitle,
   formatRange,
 } from "../lib/labels";
 import type { Occurrence } from "../lib/types";
@@ -159,7 +158,7 @@ export function WeekGrid({
                         style.solid,
                       )}
                     >
-                      {eventTitle(occurrence.event.summary)}
+                      {occurrence.event.title}
                     </button>
                   );
                 })}
@@ -252,16 +251,15 @@ export function WeekGrid({
                         "absolute overflow-hidden rounded-[3px] border-l-2 px-1 py-px text-left leading-[13px]",
                         style.soft,
                         style.rail,
-                        occurrence.event.status === "tentative" && "border border-dashed",
                       )}
-                      title={`${formatRange(occurrence.start, occurrence.end, false)} — ${eventTitle(occurrence.event.summary)}`}
+                      title={`${formatRange(occurrence.start, occurrence.end, false)} — ${occurrence.event.title}`}
                     >
                       {/* Ce qui s'affiche suit la place disponible. Un créneau
                           de trente minutes n'a la place que de son titre, et
                           l'heure y serait de toute façon redondante avec la
                           gouttière juste à gauche. */}
                       <span className="block truncate text-[11px] font-medium">
-                        {eventTitle(occurrence.event.summary)}
+                        {occurrence.event.title}
                       </span>
                       {minutes >= 40 && (
                         <span className="text-muted-foreground block truncate text-[10px]">
