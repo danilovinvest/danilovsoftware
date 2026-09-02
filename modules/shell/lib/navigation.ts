@@ -4,8 +4,8 @@ import {
   FileTextIcon,
   HardHatIcon,
   LayoutDashboardIcon,
+  MegaphoneIcon,
   ReceiptEuroIcon,
-  UsersIcon,
   type LucideIcon,
 } from "lucide-react";
 import type { Permission } from "@/modules/auth";
@@ -20,8 +20,6 @@ export type NavItem = {
   label: string;
   icon: LucideIcon;
   permission: Permission;
-  /** Un module encore à construire reste visible mais désactivé. */
-  comingSoon?: boolean;
   /** Sous-entrées dépliables ; chacune peut exiger sa propre permission. */
   items?: Array<{ href: string; label: string; permission?: Permission }>;
 };
@@ -93,10 +91,11 @@ export const NAVIGATION: NavItem[] = [
     ],
   },
   {
-    href: "/users",
-    label: "Utilisateurs",
-    icon: UsersIcon,
-    permission: "users:read",
-    comingSoon: true,
+    href: "/marketing",
+    label: "Marketing",
+    icon: MegaphoneIcon,
+    // Les réalisations viennent des chantiers livrés : qui peut lire les
+    // fiches peut les valoriser.
+    permission: "customers:read",
   },
 ];

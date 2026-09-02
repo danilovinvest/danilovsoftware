@@ -66,26 +66,6 @@ function WorkspaceNav() {
               const active = pathname.startsWith(item.href);
               const Icon = item.icon;
 
-              // Un module encore à construire reste visible pour situer la
-              // suite du produit, mais n'est pas cliquable.
-              if (item.comingSoon) {
-                return (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      tooltip={`${item.label} — à venir`}
-                      className={`${NAV_ITEM_CLASS} cursor-not-allowed opacity-50`}
-                      aria-disabled
-                    >
-                      <Icon />
-                      <span>{item.label}</span>
-                      <span className="text-muted-foreground ml-auto text-[10px]">
-                        bientôt
-                      </span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              }
-
               const subItems = (item.items ?? []).filter(
                 (sub) => !sub.permission || can(sub.permission),
               );

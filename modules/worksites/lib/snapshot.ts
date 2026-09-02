@@ -159,6 +159,19 @@ function monthBucket(now: Date, value: string): number {
   return 11 - distance;
 }
 
+/**
+ * Les chantiers livrés — matière première du module marketing.
+ *
+ * Un chantier terminé est une réalisation : c'est la seule source du CRM qui
+ * sache ce qui a été fait, où, pour qui, avec quelle technique et en combien de
+ * temps. Le marketing n'a rien à ressaisir, il n'a qu'à rédiger.
+ */
+export function finishedWorksites(at: Date = new Date()): Worksite[] {
+  return materialize(at.getTime())
+    .filter((worksite) => worksite.completed_at !== null)
+    .sort((a, b) => (b.completed_at ?? "").localeCompare(a.completed_at ?? ""));
+}
+
 export function buildWorksiteSnapshot(
   entityId: string | null,
   activityId: string | null,
