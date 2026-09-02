@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { isSameDay, isSameMonth, monthMatrix, startOfDay } from "../lib/events";
+import { addDays, isSameDay, isSameMonth, monthMatrix, startOfDay } from "../lib/events";
 import { WEEKDAYS, formatTime } from "../lib/labels";
 import type { Occurrence } from "../lib/types";
 
@@ -72,6 +73,7 @@ export function MonthGrid({
   onSelect,
   onOpenDay,
   onCreate,
+  onMove,
 }: {
   cursor: Date;
   today: Date;
@@ -79,10 +81,68 @@ export function MonthGrid({
   onSelect: (occurrence: Occurrence) => void;
   onOpenDay: (day: Date) => void;
   /** Absent quand le compte n'a pas le droit d'écrire dans l'agenda. */
-  onCreate?: (day: Date) => void;
+  onCreate?: (from: Date, to: Date, allDay: boolean) => void;
+  onMove?: (occurrence: Occurrence, day: Date) => void;
 }) {
   const days = monthMatrix(cursor);
   const weeks = Array.from({ length: 6 }, (_, index) => days.slice(index * 7, index * 7 + 7));
+
+  /*
+   * Glisser sur plusieurs jours crée un événement qui les couvre.
+   *
+   * `from` et `to` sont des index dans la matrice de quarante-deux jours, pas
+   * des dates : la sélection traverse volontiers deux semaines, et raisonner en
+   * index rend « entre les deux » trivial là où comparer des dates obligerait à
+   * normaliser les heures à chaque comparaison.
+   *
+   * `moved` distingue le clic du glissement — un clic sur une case vide ouvre
+   * un créneau horaire ce jour-là, un glissement une journée entière.
+   */
+  const [drag, setDrag] = useState<
+    | { mode: "select"; from: number; to: number }
+    | { mode: "move"; occurrence: Occurrence; from: number; to: number }
+    | null
+  >(null);
+
+  useEffect(() => {
+    if (!drag) return;
+
+    const release = () => {
+      setDrag((current) => {
+        if (!current) return null;
+        if (current.mode === "move") {
+          // Reposé sur sa propre case : c'est un clic, pas un déplacement.
+          // L'ouverture de la fiche s'en charge, inutile d'écrire pour rien.
+          if (current.to !== current.from) onMove?.(current.occurrence, days[current.to]);
+          return null;
+        }
+        const [first, last] = [
+          Math.min(current.from, current.to),
+          Math.max(current.from, current.to),
+        ];
+        if (first === last) {
+          onCreate?.(days[first], days[first], false);
+        } else {
+          // La borne de fin est exclusive, comme partout ailleurs : on passe le
+          // lendemain du dernier jour sélectionné.
+          onCreate?.(days[first], addDays(days[last], 1), true);
+        }
+        return null;
+      });
+    };
+
+    window.addEventListener("pointerup", release);
+    window.addEventListener("pointercancel", release);
+    return () => {
+      window.removeEventListener("pointerup", release);
+      window.removeEventListener("pointercancel", release);
+    };
+  }, [drag !== null, days, onCreate, onMove]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const selection =
+    drag?.mode === "select"
+      ? { first: Math.min(drag.from, drag.to), last: Math.max(drag.from, drag.to) }
+      : null;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -104,7 +164,7 @@ export function MonthGrid({
           dépasse. Sans ce rognage, la journée la plus chargée poussait son
           « +2 autres » par-dessus le numéro du jour de la semaine suivante. */}
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-        {weeks.map((week) => {
+        {weeks.map((week, weekIndex) => {
           const banners = weekBanners(week, occurrences);
           const lanes = banners.reduce((max, banner) => Math.max(max, banner.lane + 1), 0);
           const reserved = lanes * BANNER_HEIGHT;
@@ -114,7 +174,8 @@ export function MonthGrid({
               key={week[0].toISOString()}
               className="relative grid min-h-[6.25rem] flex-1 grid-cols-7 border-b last:border-b-0"
             >
-              {week.map((day) => {
+              {week.map((day, column) => {
+                const index = weekIndex * 7 + column;
                 const outside = !isSameMonth(day, cursor);
                 const timed = occurrences
                   .filter(
@@ -134,18 +195,33 @@ export function MonthGrid({
                 return (
                   <div
                     key={day.toISOString()}
-                    // Cliquer le vide d'une case crée un événement ce jour-là.
-                    // Le test sur la cible est ce qui distingue « le vide » du
-                    // reste : sans lui, ouvrir une pastille ouvrirait aussi le
-                    // formulaire de création derrière elle.
-                    onClick={(clicked) => {
-                      if (clicked.target === clicked.currentTarget) onCreate?.(day);
+                    // Le test sur la cible distingue « le vide » du reste :
+                    // sans lui, saisir une pastille lancerait aussi une
+                    // sélection de jours derrière elle.
+                    onPointerDown={(event) => {
+                      if (!onCreate || event.target !== event.currentTarget) return;
+                      event.preventDefault();
+                      setDrag({ mode: "select", from: index, to: index });
                     }}
+                    onPointerEnter={() =>
+                      setDrag((current) =>
+                        current === null
+                          ? null
+                          : current.mode === "select"
+                            ? { ...current, to: index }
+                            : { ...current, to: index },
+                      )
+                    }
                     className={cn(
                       "flex min-w-0 flex-col gap-px overflow-hidden border-r px-0.5 pt-1 pb-1 last:border-r-0",
                       outside && "bg-muted/40",
                       !outside && day.getDay() % 6 === 0 && "bg-muted/20",
-                      onCreate && "hover:bg-accent/30 cursor-pointer transition-colors",
+                      onCreate && "cursor-cell transition-colors",
+                      selection &&
+                        index >= selection.first &&
+                        index <= selection.last &&
+                        "bg-brand/15",
+                      drag?.mode === "move" && drag.to === index && "bg-brand/15",
                     )}
                   >
                     <button
@@ -175,6 +251,14 @@ export function MonthGrid({
                         key={occurrence.key}
                         occurrence={occurrence}
                         onSelect={onSelect}
+                        onGrab={
+                          onMove
+                            ? () => setDrag({ mode: "move", occurrence, from: index, to: index })
+                            : undefined
+                        }
+                        dragged={
+                          drag?.mode === "move" && drag.occurrence.key === occurrence.key
+                        }
                       />
                     ))}
 
@@ -243,18 +327,33 @@ export function MonthGrid({
 export function EventChip({
   occurrence,
   onSelect,
+  onGrab,
+  dragged = false,
 }: {
   occurrence: Occurrence;
   onSelect: (occurrence: Occurrence) => void;
+  /** Absent quand l'agenda n'est pas modifiable : la pastille reste un bouton. */
+  onGrab?: () => void;
+  dragged?: boolean;
 }) {
   const style = occurrence.style;
 
   return (
     <button
       type="button"
+      onPointerDown={(event) => {
+        if (!onGrab) return;
+        event.stopPropagation();
+        event.preventDefault();
+        onGrab();
+      }}
       onClick={() => onSelect(occurrence)}
       title={`${formatTime(occurrence.start)} ${occurrence.event.title}`}
-      className="hover:bg-accent flex h-[17px] w-full min-w-0 shrink-0 items-center gap-1 rounded-[3px] px-1 text-left text-[11px] transition-colors"
+      className={cn(
+        "hover:bg-accent flex h-[17px] w-full min-w-0 shrink-0 items-center gap-1 rounded-[3px] px-1 text-left text-[11px] transition-colors",
+        onGrab && "cursor-grab active:cursor-grabbing",
+        dragged && "opacity-40",
+      )}
     >
       <span
         className={cn(

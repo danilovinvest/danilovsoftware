@@ -41,19 +41,19 @@ export function EventForm({
   calendars,
   /** Événement à modifier ; absent, on en crée un. */
   event,
-  /** Jour pré-rempli à la création, quand on a cliqué une case du calendrier. */
-  day,
+  /** Bornes tracées à la souris, pré-remplies à la création. */
+  range,
 }: {
   open: boolean;
   onClose: () => void;
   onSaved: () => void;
   calendars: Calendar[];
   event?: CalendarEvent | null;
-  day?: Date | null;
+  range?: Range | null;
 }) {
   // Le formulaire est remonté à chaque ouverture : la clé change avec la cible,
   // et l'état initial se calcule une fois, dans l'initialiseur du useState.
-  const key = `${open}:${event?.id ?? "nouveau"}:${day?.toISOString() ?? ""}`;
+  const key = `${open}:${event?.id ?? "nouveau"}:${range?.from.toISOString() ?? ""}:${range?.to.toISOString() ?? ""}`;
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="sm:max-w-lg">
@@ -64,7 +64,7 @@ export function EventForm({
             onSaved={onSaved}
             calendars={calendars}
             event={event ?? null}
-            day={day ?? null}
+            range={range ?? null}
           />
         )}
       </DialogContent>
@@ -89,15 +89,15 @@ function FormBody({
   onSaved,
   calendars,
   event,
-  day,
+  range,
 }: {
   onClose: () => void;
   onSaved: () => void;
   calendars: Calendar[];
   event: CalendarEvent | null;
-  day: Date | null;
+  range: Range | null;
 }) {
-  const [draft, setDraft] = useState<Draft>(() => initial(event, day, calendars));
+  const [draft, setDraft] = useState<Draft>(() => initial(event, range, calendars));
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -333,9 +333,12 @@ function timeValue(date: Date) {
   return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+/** Bornes tracées à la souris dans une grille. */
+export type Range = { from: Date; to: Date; allDay: boolean };
+
 function initial(
   event: CalendarEvent | null,
-  day: Date | null,
+  range: Range | null,
   calendars: Calendar[],
 ): Draft {
   if (event) {
@@ -372,20 +375,39 @@ function initial(
     };
   }
 
-  const base = day ?? new Date();
-  // L'heure d'un créneau cliqué est déjà utile ; à défaut, la prochaine heure
-  // ronde, qui est ce qu'on veut neuf fois sur dix.
-  const rounded = day && day.getHours() !== 0 ? day.getHours() : new Date().getHours() + 1;
+  // Les bornes tracées à la souris arrivent telles quelles : c'est tout
+  // l'intérêt du geste, avoir déjà dit quand avant d'ouvrir le formulaire.
+  const from = range?.from ?? new Date();
+  const to = range?.to ?? new Date(from.getTime() + 3_600_000);
+
+  if (range?.allDay) {
+    // La borne de fin est exclusive ; l'utilisateur pense en dernier jour
+    // inclus. On retire un jour à l'affichage, on le remet à l'enregistrement.
+    const last = new Date(to);
+    last.setDate(last.getDate() - 1);
+    return {
+      calendarId: calendars[0]?.id ?? "",
+      title: "",
+      location: "",
+      description: "",
+      allDay: true,
+      date: dateValue(from),
+      endDate: dateValue(last),
+      startTime: "09:00",
+      endTime: "10:00",
+    };
+  }
+
   return {
     calendarId: calendars[0]?.id ?? "",
     title: "",
     location: "",
     description: "",
     allDay: false,
-    date: dateValue(base),
-    endDate: dateValue(base),
-    startTime: `${pad(Math.min(rounded, 22))}:00`,
-    endTime: `${pad(Math.min(rounded + 1, 23))}:00`,
+    date: dateValue(from),
+    endDate: dateValue(from),
+    startTime: timeValue(from),
+    endTime: timeValue(to),
   };
 }
 

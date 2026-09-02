@@ -115,9 +115,30 @@ export function useCalendar() {
     [loadedCalendars, occurrences, inRange, hidden],
   );
 
-  // Après une écriture : l'API a déjà rangé la ressource rendue par Google
-  // dans la copie locale, il suffit de la redemander.
   const reload = useCallback(() => setToken((value) => value + 1), []);
+
+  /*
+   * Remplace un événement dans la fenêtre déjà chargée.
+   *
+   * Un glissement rend l'événement mis à jour ; le redemander au serveur ferait
+   * revenir le bloc à sa place ancienne le temps de l'aller-retour, ce qui se
+   * voit et se lit comme un échec. On range la réponse à la place de l'ancienne
+   * ligne, et l'écran ne cille pas.
+   */
+  const replace = useCallback((updated: CalendarEvent) => {
+    setResolved((current) => {
+      if (!current.data) return current;
+      return {
+        ...current,
+        data: {
+          ...current.data,
+          events: current.data.events.map((event) =>
+            event.id === updated.id ? updated : event,
+          ),
+        },
+      };
+    });
+  }, []);
 
   const toggleCalendar = useCallback((id: string) => {
     setHidden((current) => {
@@ -161,6 +182,7 @@ export function useCalendar() {
     rawCalendars: loadedCalendars,
     toggleCalendar,
     reload,
+    replace,
     occurrences: visible,
     /** Nombre total d'occurrences chargées, agendas masqués compris. */
     loaded: occurrences.length,

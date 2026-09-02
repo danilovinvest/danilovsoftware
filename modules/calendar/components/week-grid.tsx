@@ -1,12 +1,23 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { addDays, isSameDay, startOfDay, startOfWeek } from "../lib/events";
+import {
+  DEFAULT_MINUTES,
+  STEP_MINUTES,
+  at,
+  clamp,
+  minutesOfDate,
+  pointToSlot,
+  ratioOfMinutes,
+} from "../lib/geometry";
 import {
   DAY_END_HOUR,
   DAY_START_HOUR,
   WEEKDAYS,
   formatRange,
+  formatTime,
 } from "../lib/labels";
 import type { Occurrence } from "../lib/types";
 
@@ -72,12 +83,34 @@ les blocs suivent, sans que rien n'ait à mesurer quoi que ce soit au montage.
 HOUR_HEIGHT reste le plancher : au-dessous, un créneau d'une demi-heure ne
 porterait plus son titre.
 */
-const SPAN_MINUTES = (DAY_END_HOUR - DAY_START_HOUR) * 60;
-
 function offsetOf(date: Date, day: Date): number {
-  const minutes = (date.getTime() - startOfDay(day).getTime()) / 60_000;
-  return ((minutes - DAY_START_HOUR * 60) / SPAN_MINUTES) * 100;
+  return ratioOfMinutes((date.getTime() - startOfDay(day).getTime()) / 60_000);
 }
+
+/*
+Un glissement, quel que soit ce qu'il fabrique.
+
+Trois gestes partagent la même mécanique : tracer un créneau sur le vide,
+déplacer un rendez-vous, tirer son bord inférieur. Ils ne diffèrent que par ce
+qui bouge — les deux bornes, ou une seule — d'où un seul état et un seul
+`pointermove`.
+
+`moved` distingue le clic du glissement : sans mouvement, un clic doit donner
+une heure pleine et non un quart d'heure de rien du tout.
+*/
+type Drag = {
+  mode: "create" | "move" | "resize";
+  occurrence?: Occurrence;
+  day: number;
+  from: number;
+  to: number;
+  /** Point d'ancrage : la borne qui ne bouge pas pendant le geste. */
+  anchor: number;
+  /** Écart entre le curseur et le début, pour qu'un déplacement ne recale pas
+   * le bloc sous le pointeur. */
+  grab: number;
+  moved: boolean;
+};
 
 export function WeekGrid({
   cursor,
@@ -86,6 +119,7 @@ export function WeekGrid({
   occurrences,
   onSelect,
   onCreate,
+  onMove,
 }: {
   cursor: Date;
   today: Date;
@@ -93,7 +127,8 @@ export function WeekGrid({
   occurrences: Occurrence[];
   onSelect: (occurrence: Occurrence) => void;
   /** Absent quand le compte n'a pas le droit d'écrire dans l'agenda. */
-  onCreate?: (at: Date) => void;
+  onCreate?: (start: Date, end: Date) => void;
+  onMove?: (occurrence: Occurrence, start: Date, end: Date) => void;
 }) {
   const start = startOfWeek(cursor);
   const days = Array.from({ length: 7 }, (_, index) => addDays(start, index));
@@ -105,8 +140,111 @@ export function WeekGrid({
   const allDay = occurrences.filter((o) => o.allDay);
   const hasToday = days.some((day) => isSameDay(day, today));
 
+  const columnRef = useRef<HTMLDivElement>(null);
+  const [drag, setDrag] = useState<Drag | null>(null);
+  const editable = onCreate !== undefined || onMove !== undefined;
+
+  /*
+   * Le suivi se fait sur la fenêtre, pas sur la grille.
+   *
+   * Un curseur sorti de la carte pendant le geste cesserait d'émettre des
+   * événements sur elle, et le bloc resterait figé à mi-course sans que le
+   * relâchement soit jamais vu — un glissement qui ne se termine pas.
+   */
+  useEffect(() => {
+    if (!drag) return;
+
+    const track = (event: PointerEvent) => {
+      const rect = columnRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const slot = pointToSlot(rect, event.clientX, event.clientY);
+
+      setDrag((current) => {
+        if (!current) return current;
+        const moved =
+          current.moved || slot.minutes !== current.anchor || slot.day !== current.day;
+
+        if (current.mode === "resize") {
+          return { ...current, moved, to: Math.max(slot.minutes, current.from + STEP_MINUTES) };
+        }
+        if (current.mode === "move") {
+          const length = current.to - current.from;
+          const from = clamp(slot.minutes - current.grab, 0, 24 * 60 - length);
+          return { ...current, moved, day: slot.day, from, to: from + length };
+        }
+        // Tracé : l'ancre tient, l'autre borne suit le curseur, au-dessus
+        // comme au-dessous.
+        return {
+          ...current,
+          moved,
+          from: Math.min(current.anchor, slot.minutes),
+          to: Math.max(current.anchor + STEP_MINUTES, slot.minutes),
+        };
+      });
+    };
+
+    const release = () => {
+      setDrag((current) => {
+        if (!current) return null;
+        const day = days[current.day];
+        if (current.mode === "create") {
+          const span = current.moved ? current.to - current.from : DEFAULT_MINUTES;
+          onCreate?.(at(day, current.from), at(day, current.from + span));
+        } else if (current.moved && current.occurrence) {
+          onMove?.(current.occurrence, at(day, current.from), at(day, current.to));
+        } else if (current.occurrence) {
+          // Un clic sur un bloc, sans mouvement : c'est une ouverture de fiche.
+          onSelect(current.occurrence);
+        }
+        return null;
+      });
+    };
+
+    window.addEventListener("pointermove", track);
+    window.addEventListener("pointerup", release);
+    window.addEventListener("pointercancel", release);
+    return () => {
+      window.removeEventListener("pointermove", track);
+      window.removeEventListener("pointerup", release);
+      window.removeEventListener("pointercancel", release);
+    };
+  }, [drag !== null, days, onCreate, onMove, onSelect]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function begin(mode: Drag["mode"], event: React.PointerEvent, occurrence?: Occurrence) {
+    const rect = columnRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    event.preventDefault();
+    const slot = pointToSlot(rect, event.clientX, event.clientY);
+
+    if (occurrence) {
+      const from = minutesOfDate(occurrence.start);
+      const to = minutesOfDate(occurrence.end);
+      setDrag({
+        mode,
+        occurrence,
+        day: slot.day,
+        from,
+        to,
+        anchor: mode === "resize" ? from : to,
+        grab: slot.minutes - from,
+        moved: false,
+      });
+      return;
+    }
+
+    setDrag({
+      mode: "create",
+      day: slot.day,
+      from: slot.minutes,
+      to: slot.minutes + STEP_MINUTES,
+      anchor: slot.minutes,
+      grab: 0,
+      moved: false,
+    });
+  }
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className={cn("flex min-h-0 flex-1 flex-col", editable && "select-none")}>
       {/* En-tête : jour, date, et la bande des journées entières. */}
       <div className="grid grid-cols-[2.75rem_repeat(7,minmax(0,1fr))] border-b">
         <div className="border-r" />
@@ -188,7 +326,7 @@ export function WeekGrid({
             ))}
           </div>
 
-          {days.map((day) => {
+          {days.map((day, index) => {
             const from = startOfDay(day).getTime();
             const timed = occurrences.filter(
               (o) => !o.allDay && o.start.getTime() >= from && o.start.getTime() < from + DAY,
@@ -198,25 +336,46 @@ export function WeekGrid({
             return (
               <div
                 key={day.toISOString()}
+                // La première colonne sert de mètre étalon : sa gauche donne
+                // l'origine, sa largeur le pas, sa hauteur la plage horaire.
+                ref={index === 0 ? columnRef : undefined}
+                onPointerDown={(event) => {
+                  // Seul le vide déclenche un tracé ; un bloc a son propre
+                  // gestionnaire, qui ne doit pas être doublé par celui-ci.
+                  if (onCreate && event.target === event.currentTarget) begin("create", event);
+                }}
                 className={cn(
                   "relative flex flex-col border-r last:border-r-0",
                   day.getDay() % 6 === 0 && "bg-muted/20",
+                  onCreate && "cursor-cell",
                 )}
               >
                 {hours.map((hour) => (
                   <div
                     key={hour}
-                    onClick={() => {
-                      const at = new Date(day);
-                      at.setHours(hour, 0, 0, 0);
-                      onCreate?.(at);
-                    }}
+                    onPointerDown={(event) => onCreate && begin("create", event)}
                     className={cn(
                       "flex-1 border-b last:border-b-0",
-                      onCreate && "hover:bg-accent/30 cursor-pointer transition-colors",
+                      onCreate && "hover:bg-accent/20 transition-colors",
                     )}
                   />
                 ))}
+
+                {/* Le créneau en cours de tracé, ou le bloc en déplacement. */}
+                {drag && drag.day === index && (
+                  <div
+                    style={{
+                      top: `${ratioOfMinutes(drag.from)}%`,
+                      height: `${ratioOfMinutes(drag.to) - ratioOfMinutes(drag.from)}%`,
+                    }}
+                    className={cn(
+                      "bg-brand/25 border-brand text-brand pointer-events-none absolute inset-x-0.5 z-20",
+                      "overflow-hidden rounded-[3px] border-l-2 px-1 py-px text-[10px] leading-[13px] font-medium",
+                    )}
+                  >
+                    {formatTime(at(day, drag.from))} – {formatTime(at(day, drag.to))}
+                  </div>
+                )}
 
                 {hasToday && isSameDay(day, today) && (
                   <div
@@ -235,11 +394,25 @@ export function WeekGrid({
                     (occurrence.end.getTime() - occurrence.start.getTime()) / 60_000;
                   const width = 100 / columns;
 
+                  const dragged = drag?.occurrence?.key === occurrence.key;
+
                   return (
-                    <button
+                    <div
                       key={occurrence.key}
-                      type="button"
-                      onClick={() => onSelect(occurrence)}
+                      role="button"
+                      tabIndex={0}
+                      onPointerDown={(event) => {
+                        event.stopPropagation();
+                        if (onMove) begin("move", event, occurrence);
+                      }}
+                      onClick={() => {
+                        // Sans droit d'écriture il n'y a pas de glissement :
+                        // le clic reste le seul moyen d'ouvrir la fiche.
+                        if (!onMove) onSelect(occurrence);
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") onSelect(occurrence);
+                      }}
                       style={{
                         top: `${top}%`,
                         height: `${height}%`,
@@ -251,6 +424,8 @@ export function WeekGrid({
                         "absolute overflow-hidden rounded-[3px] border-l-2 px-1 py-px text-left leading-[13px]",
                         style.soft,
                         style.rail,
+                        onMove && "cursor-grab active:cursor-grabbing",
+                        dragged && "opacity-40",
                       )}
                       title={`${formatRange(occurrence.start, occurrence.end, false)} — ${occurrence.event.title}`}
                     >
@@ -271,7 +446,20 @@ export function WeekGrid({
                           {occurrence.event.location}
                         </span>
                       )}
-                    </button>
+
+                      {/* La poignée de redimensionnement : quatre pixels au bas
+                          du bloc, invisibles jusqu'au survol. Un bord épais
+                          rognerait le texte des créneaux courts. */}
+                      {onMove && (
+                        <span
+                          onPointerDown={(event) => {
+                            event.stopPropagation();
+                            begin("resize", event, occurrence);
+                          }}
+                          className="hover:bg-foreground/20 absolute inset-x-0 bottom-0 h-1.5 cursor-ns-resize rounded-b-[3px]"
+                        />
+                      )}
+                    </div>
                   );
                 })}
               </div>

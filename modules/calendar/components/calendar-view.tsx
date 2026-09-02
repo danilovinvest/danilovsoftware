@@ -7,10 +7,20 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { usePermission } from "@/modules/auth";
-import { EmptyState } from "@/shared/ui/feedback";
+import { errorMessage } from "@/shared/api/errors";
+import { EmptyState, ErrorNotice } from "@/shared/ui/feedback";
+import { updateEvent } from "../lib/api";
 import { useCalendar } from "../hooks/use-calendar";
 import { VIEWS } from "../lib/labels";
 import type { Occurrence } from "../lib/types";
+import type { Range } from "./event-form";
+
+/** AAAA-MM-JJ en heure locale : ce que l'API attend d'une journée entière. */
+function dayValue(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}
 import { AgendaList } from "./agenda-list";
 import { CalendarSidebar } from "./calendar-sidebar";
 import { EventDialog } from "./event-dialog";
@@ -36,16 +46,17 @@ export function CalendarView() {
   const canWrite = usePermission("calendar:write");
   const [selected, setSelected] = useState<Occurrence | null>(null);
   const [now] = useState(() => new Date());
-  // `editing` porte l'événement à modifier, `creating` le jour pré-rempli.
-  // Deux états distincts plutôt qu'un seul nullable : « créer le 3 septembre »
-  // et « modifier ce rendez-vous » ne se confondent pas.
+  // `editing` porte l'événement à modifier, `creating` les bornes tracées.
+  // Deux états distincts plutôt qu'un seul nullable : « créer du 14 au 18 » et
+  // « modifier ce rendez-vous » ne se confondent pas.
   const [editing, setEditing] = useState<Occurrence | null>(null);
-  const [creating, setCreating] = useState<Date | null>(null);
+  const [creating, setCreating] = useState<Range | null>(null);
   const [formOpen, setFormOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function openCreation(at: Date) {
+  function openCreation(from: Date, to: Date, allDay: boolean) {
     setEditing(null);
-    setCreating(at);
+    setCreating({ from, to, allDay });
     setFormOpen(true);
   }
 
@@ -54,6 +65,49 @@ export function CalendarView() {
     setCreating(null);
     setEditing(occurrence);
     setFormOpen(true);
+  }
+
+  /*
+   * Déplacer ou redimensionner écrit tout de suite, sans passer par le
+   * formulaire.
+   *
+   * C'est le propre du geste : on a déjà dit ce qu'on voulait en lâchant le
+   * bloc au bon endroit, une fenêtre de confirmation ne ferait que redemander.
+   * La réponse remplace l'événement dans la liste chargée — sans quoi il
+   * reviendrait à sa place le temps d'un rechargement.
+   */
+  async function move(occurrence: Occurrence, start: Date, end: Date) {
+    setError(null);
+    const event = occurrence.event;
+    try {
+      const updated = await updateEvent(event.id, {
+        calendar_id: event.calendar_id,
+        title: event.title,
+        description: event.description,
+        location: event.location,
+        all_day: event.all_day,
+        start: event.all_day ? dayValue(start) : start.toISOString(),
+        end: event.all_day ? dayValue(end) : end.toISOString(),
+      });
+      calendar.replace(updated);
+    } catch (cause) {
+      setError(errorMessage(cause));
+      calendar.reload();
+    }
+  }
+
+  /** Déplacement d'un jour à l'autre dans la grille mensuelle : l'heure et la
+   * durée sont conservées, seule la date change. */
+  function moveToDay(occurrence: Occurrence, day: Date) {
+    const length = occurrence.end.getTime() - occurrence.start.getTime();
+    const start = new Date(day);
+    start.setHours(
+      occurrence.start.getHours(),
+      occurrence.start.getMinutes(),
+      0,
+      0,
+    );
+    return move(occurrence, start, new Date(start.getTime() + length));
   }
 
   return (
@@ -67,7 +121,7 @@ Rendez-vous, visites de chantier et absences de l&apos;équipe.
         </div>
 
         {canWrite && calendar.ready && (
-          <Button size="sm" onClick={() => openCreation(calendar.today)}>
+          <Button size="sm" onClick={() => openCreation(calendar.today, calendar.today, false)}>
             <PlusIcon />
             Nouvel événement
           </Button>
@@ -131,6 +185,11 @@ Rendez-vous, visites de chantier et absences de l&apos;équipe.
           </div>
 
           <div className="flex min-h-0 flex-1 flex-col">
+            {error && (
+              <div className="px-3 pt-3">
+                <ErrorNotice message={error} />
+              </div>
+            )}
             {calendar.error && (
               <EmptyState
                 title="Agenda indisponible"
@@ -156,6 +215,7 @@ Rendez-vous, visites de chantier et absences de l&apos;équipe.
                 onSelect={setSelected}
                 onOpenDay={calendar.openDay}
                 onCreate={canWrite ? openCreation : undefined}
+                onMove={canWrite ? moveToDay : undefined}
               />
             )}
             {!calendar.error && calendar.ready && calendar.view === "semaine" && (
@@ -165,7 +225,10 @@ Rendez-vous, visites de chantier et absences de l&apos;équipe.
                 now={now}
                 occurrences={calendar.occurrences}
                 onSelect={setSelected}
-                onCreate={canWrite ? openCreation : undefined}
+                onCreate={
+                  canWrite ? (from, to) => openCreation(from, to, false) : undefined
+                }
+                onMove={canWrite ? move : undefined}
               />
             )}
             {!calendar.error && calendar.ready && calendar.view === "agenda" && (
@@ -192,7 +255,7 @@ Rendez-vous, visites de chantier et absences de l&apos;équipe.
         onSaved={calendar.reload}
         calendars={calendar.rawCalendars}
         event={editing?.event ?? null}
-        day={creating}
+        range={creating}
       />
     </div>
   );
