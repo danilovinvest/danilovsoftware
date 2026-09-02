@@ -16,7 +16,7 @@ import type { Occurrence } from "../lib/types";
  */
 
 const DAY = 86_400_000;
-const BANNER_HEIGHT = 20;
+const BANNER_HEIGHT = 18;
 const MAX_CHIPS = 3;
 
 type Banner = {
@@ -82,16 +82,25 @@ export function MonthGrid({
   const weeks = Array.from({ length: 6 }, (_, index) => days.slice(index * 7, index * 7 + 7));
 
   return (
-    <div className="flex min-h-[34rem] flex-1 flex-col">
-      <div className="text-muted-foreground grid grid-cols-7 border-b">
-        {WEEKDAYS.map((label) => (
-          <div key={label} className="px-2 py-1.5 text-center text-[11px] font-medium">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="text-muted-foreground grid shrink-0 grid-cols-7 border-b">
+        {WEEKDAYS.map((label, index) => (
+          <div
+            key={label}
+            className={cn(
+              "px-2 py-1 text-center text-[10px] font-medium tracking-wide uppercase",
+              index >= 5 && "text-muted-foreground/60",
+            )}
+          >
             {label}
           </div>
         ))}
       </div>
 
-      <div className="flex flex-1 flex-col">
+      {/* Six rangées de hauteur égale, mais des cases qui **rognent** ce qui
+          dépasse. Sans ce rognage, la journée la plus chargée poussait son
+          « +2 autres » par-dessus le numéro du jour de la semaine suivante. */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         {weeks.map((week) => {
           const banners = weekBanners(week, occurrences);
           const lanes = banners.reduce((max, banner) => Math.max(max, banner.lane + 1), 0);
@@ -100,7 +109,7 @@ export function MonthGrid({
           return (
             <div
               key={week[0].toISOString()}
-              className="relative grid min-h-24 flex-1 grid-cols-7 border-b last:border-b-0"
+              className="relative grid min-h-[6.25rem] flex-1 grid-cols-7 border-b last:border-b-0"
             >
               {week.map((day) => {
                 const outside = !isSameMonth(day, cursor);
@@ -118,15 +127,16 @@ export function MonthGrid({
                   <div
                     key={day.toISOString()}
                     className={cn(
-                      "flex min-w-0 flex-col gap-0.5 border-r p-1 last:border-r-0",
+                      "flex min-w-0 flex-col gap-px overflow-hidden border-r px-0.5 pt-1 pb-1 last:border-r-0",
                       outside && "bg-muted/40",
+                      !outside && day.getDay() % 6 === 0 && "bg-muted/20",
                     )}
                   >
                     <button
                       type="button"
                       onClick={() => onOpenDay(day)}
                       className={cn(
-                        "mx-auto flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] tabular-nums transition-colors",
+                        "mx-auto flex size-[18px] shrink-0 items-center justify-center rounded-full text-[11px] tabular-nums transition-colors",
                         isSameDay(day, today)
                           ? "bg-brand text-white font-medium"
                           : outside
@@ -152,7 +162,7 @@ export function MonthGrid({
                       <button
                         type="button"
                         onClick={() => onOpenDay(day)}
-                        className="text-muted-foreground hover:text-foreground px-1 text-left text-[11px]"
+                        className="text-muted-foreground hover:text-foreground shrink-0 px-1.5 text-left text-[10px] leading-4"
                       >
                         +{timed.length - shown.length} autre
                         {timed.length - shown.length > 1 ? "s" : ""}
@@ -163,7 +173,7 @@ export function MonthGrid({
               })}
 
               {/* Les barres multi-jours, au-dessus des cases. */}
-              <div className="pointer-events-none absolute inset-x-0 top-7">
+              <div className="pointer-events-none absolute inset-x-0 top-[26px]">
                 {banners.map((banner) => {
                   const style = banner.occurrence.style;
                   return (
@@ -177,14 +187,19 @@ export function MonthGrid({
                         top: banner.lane * BANNER_HEIGHT,
                       }}
                       className={cn(
-                        "pointer-events-auto absolute h-4.5 truncate px-1.5 text-left text-[11px] leading-[18px] font-medium",
+                        "pointer-events-auto absolute h-4 truncate px-1.5 text-left text-[11px] leading-4 font-medium",
                         style.solid,
                         banner.opensLeft ? "rounded-l-[3px]" : "",
                         banner.closesRight ? "rounded-r-[3px]" : "",
                       )}
                       title={eventTitle(banner.occurrence.event.summary)}
                     >
-                      {banner.opensLeft ? eventTitle(banner.occurrence.event.summary) : "…"}
+                      {/* Le titre est répété sur chaque semaine traversée. Un
+                          « … » solitaire économiserait un peu de peinture et
+                          obligerait à remonter d'une ligne pour savoir de quoi
+                          il s'agit. */}
+                      {!banner.opensLeft && "◂ "}
+                      {eventTitle(banner.occurrence.event.summary)}
                     </button>
                   );
                 })}
@@ -197,7 +212,14 @@ export function MonthGrid({
   );
 }
 
-/** Une pastille d'événement horaire : heure, puis intitulé, sur une ligne. */
+/**
+ * Une pastille d'événement horaire.
+ *
+ * Sans fond : la couleur tient dans la puce, comme chez Google. Un aplat teinté
+ * par événement transformait une semaine chargée en patchwork, et surtout il
+ * mangeait la largeur — sur une case de calendrier mensuel, les quelques pixels
+ * de remplissage sont exactement ceux qui manquent au titre pour être lisible.
+ */
 export function EventChip({
   occurrence,
   onSelect,
@@ -213,17 +235,21 @@ export function EventChip({
       type="button"
       onClick={() => onSelect(occurrence)}
       title={`${formatTime(occurrence.start)} ${eventTitle(occurrence.event.summary)}`}
-      className={cn(
-        "flex w-full min-w-0 items-center gap-1 rounded-[3px] px-1 py-0.5 text-left text-[11px] transition-colors",
-        style.soft,
-        tentative && "border border-dashed",
-      )}
+      className="hover:bg-accent flex h-[17px] w-full min-w-0 shrink-0 items-center gap-1 rounded-[3px] px-1 text-left text-[11px] transition-colors"
     >
-      <span className={cn("size-1.5 shrink-0 rounded-full", style.dot)} />
+      <span
+        className={cn(
+          "size-1.5 shrink-0 rounded-full",
+          style.dot,
+          tentative && "ring-background ring-1 ring-inset",
+        )}
+      />
       <span className="text-muted-foreground shrink-0 tabular-nums">
         {formatTime(occurrence.start)}
       </span>
-      <span className="truncate">{eventTitle(occurrence.event.summary)}</span>
+      <span className={cn("truncate", tentative && "italic")}>
+        {eventTitle(occurrence.event.summary)}
+      </span>
     </button>
   );
 }

@@ -22,8 +22,11 @@ import type { Occurrence } from "../lib/types";
  * second serait invisible.
  */
 
-const HOUR_HEIGHT = 52;
-const MIN_BLOCK = 22;
+// Une heure vaut 44 pixels : à 52, la journée de travail ne tenait pas dans la
+// carte et il fallait faire défiler pour voir un rendez-vous de 17 h. À moins,
+// un créneau de trente minutes n'accueille plus son titre.
+const HOUR_HEIGHT = 44;
+const MIN_BLOCK = 18;
 const DAY = 86_400_000;
 
 type Placed = { occurrence: Occurrence; column: number; columns: number };
@@ -60,10 +63,21 @@ function layoutDay(list: Occurrence[]): Placed[] {
   return placed;
 }
 
-/** Position verticale d'un instant, clipée sur la plage horaire affichée. */
+/*
+Position verticale d'un instant, **en pourcentage** de la plage affichée.
+
+En pixels, la grille faisait sa hauteur et laissait le bas de la carte vide :
+treize heures à quarante-quatre pixels ne remplissent pas un grand écran. En
+pourcentage, les rangées d'heures s'étirent pour occuper la place disponible et
+les blocs suivent, sans que rien n'ait à mesurer quoi que ce soit au montage.
+HOUR_HEIGHT reste le plancher : au-dessous, un créneau d'une demi-heure ne
+porterait plus son titre.
+*/
+const SPAN_MINUTES = (DAY_END_HOUR - DAY_START_HOUR) * 60;
+
 function offsetOf(date: Date, day: Date): number {
   const minutes = (date.getTime() - startOfDay(day).getTime()) / 60_000;
-  return ((minutes - DAY_START_HOUR * 60) / 60) * HOUR_HEIGHT;
+  return ((minutes - DAY_START_HOUR * 60) / SPAN_MINUTES) * 100;
 }
 
 export function WeekGrid({
@@ -90,33 +104,36 @@ export function WeekGrid({
   const hasToday = days.some((day) => isSameDay(day, today));
 
   return (
-    <div className="flex min-h-[34rem] flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       {/* En-tête : jour, date, et la bande des journées entières. */}
-      <div className="grid grid-cols-[3.5rem_repeat(7,minmax(0,1fr))] border-b">
+      <div className="grid grid-cols-[2.75rem_repeat(7,minmax(0,1fr))] border-b">
         <div className="border-r" />
         {days.map((day, index) => (
           <div
             key={day.toISOString()}
-            className={cn("border-r px-1 py-1.5 text-center last:border-r-0")}
+            className={cn(
+              "flex items-center justify-center gap-1.5 border-r px-1 py-1 last:border-r-0",
+              index >= 5 && "bg-muted/20",
+            )}
           >
-            <p className="text-muted-foreground text-[11px]">{WEEKDAYS[index]}</p>
-            <p
+            <span className="text-muted-foreground text-[11px]">{WEEKDAYS[index]}</span>
+            <span
               className={cn(
-                "mx-auto mt-0.5 flex size-6 items-center justify-center rounded-full text-sm tabular-nums",
+                "flex size-5 items-center justify-center rounded-full text-[13px] tabular-nums",
                 isSameDay(day, today) && "bg-brand font-medium text-white",
               )}
             >
               {day.getDate()}
-            </p>
+            </span>
           </div>
         ))}
       </div>
 
       {allDay.length > 0 && (
-        <div className="grid grid-cols-[3.5rem_repeat(7,minmax(0,1fr))] border-b">
-          <div className="text-muted-foreground border-r px-1 py-1 text-right text-[10px]">
-            journée
-          </div>
+        <div className="grid grid-cols-[2.75rem_repeat(7,minmax(0,1fr))] border-b">
+          {/* Gouttière muette : « journée » écrit ici ne servait qu'à
+              remplir une colonne dont la position dit déjà tout. */}
+          <div className="border-r" />
           {days.map((day) => {
             const from = startOfDay(day).getTime();
             const items = allDay.filter(
@@ -125,7 +142,7 @@ export function WeekGrid({
             return (
               <div
                 key={day.toISOString()}
-                className="flex flex-col gap-0.5 border-r p-1 last:border-r-0"
+                className="flex flex-col gap-px border-r px-0.5 py-1 last:border-r-0"
               >
                 {items.map((occurrence) => {
                   const style = occurrence.style;
@@ -135,7 +152,7 @@ export function WeekGrid({
                       type="button"
                       onClick={() => onSelect(occurrence)}
                       className={cn(
-                        "truncate rounded-[3px] px-1.5 py-0.5 text-left text-[11px] font-medium",
+                        "h-4 truncate rounded-[3px] px-1.5 text-left text-[11px] leading-4 font-medium",
                         style.solid,
                       )}
                     >
@@ -150,18 +167,21 @@ export function WeekGrid({
       )}
 
       <div className="relative min-h-0 flex-1 overflow-y-auto">
-        <div className="grid grid-cols-[3.5rem_repeat(7,minmax(0,1fr))]">
+        {/* Deux planchers, et le plus haut gagne : la hauteur disponible pour
+            remplir la carte, la hauteur en pixels pour rester lisible quand la
+            fenêtre est basse — auquel cas la grille défile. */}
+        <div
+          className="grid grid-cols-[2.75rem_repeat(7,minmax(0,1fr))]"
+          style={{ minHeight: `max(100%, ${hours.length * HOUR_HEIGHT}px)` }}
+        >
           {/* Colonne des heures. */}
-          <div className="border-r">
+          <div className="flex flex-col border-r">
             {hours.map((hour) => (
               <div
                 key={hour}
-                style={{ height: HOUR_HEIGHT }}
-                className="text-muted-foreground relative pr-1 text-right text-[10px] tabular-nums"
+                className="text-muted-foreground/70 relative flex-1 pr-1.5 text-right text-[10px] tabular-nums"
               >
-                <span className="absolute -top-1.5 right-1">
-                  {String(hour).padStart(2, "0")}:00
-                </span>
+                <span className="absolute -top-1.5 right-1.5">{hour}h</span>
               </div>
             ))}
           </div>
@@ -174,19 +194,21 @@ export function WeekGrid({
             const placed = layoutDay(timed);
 
             return (
-              <div key={day.toISOString()} className="relative border-r last:border-r-0">
+              <div
+                key={day.toISOString()}
+                className={cn(
+                  "relative flex flex-col border-r last:border-r-0",
+                  day.getDay() % 6 === 0 && "bg-muted/20",
+                )}
+              >
                 {hours.map((hour) => (
-                  <div
-                    key={hour}
-                    style={{ height: HOUR_HEIGHT }}
-                    className="border-b last:border-b-0"
-                  />
+                  <div key={hour} className="flex-1 border-b last:border-b-0" />
                 ))}
 
                 {hasToday && isSameDay(day, today) && (
                   <div
                     className="bg-danger pointer-events-none absolute inset-x-0 z-10 h-px"
-                    style={{ top: offsetOf(now, day) }}
+                    style={{ top: `${offsetOf(now, day)}%` }}
                   >
                     <span className="bg-danger absolute -top-1 -left-1 size-2 rounded-full" />
                   </div>
@@ -195,10 +217,9 @@ export function WeekGrid({
                 {placed.map(({ occurrence, column, columns }) => {
                   const style = occurrence.style;
                   const top = offsetOf(occurrence.start, day);
-                  const height = Math.max(
-                    MIN_BLOCK,
-                    offsetOf(occurrence.end, day) - top,
-                  );
+                  const height = offsetOf(occurrence.end, day) - top;
+                  const minutes =
+                    (occurrence.end.getTime() - occurrence.start.getTime()) / 60_000;
                   const width = 100 / columns;
 
                   return (
@@ -207,29 +228,34 @@ export function WeekGrid({
                       type="button"
                       onClick={() => onSelect(occurrence)}
                       style={{
-                        top,
-                        height,
+                        top: `${top}%`,
+                        height: `${height}%`,
+                        minHeight: MIN_BLOCK,
                         left: `calc(${column * width}% + 2px)`,
                         width: `calc(${width}% - 4px)`,
                       }}
                       className={cn(
-                        "absolute overflow-hidden rounded-[3px] border-l-2 px-1.5 py-0.5 text-left",
+                        "absolute overflow-hidden rounded-[3px] border-l-2 px-1 py-px text-left leading-[13px]",
                         style.soft,
                         style.rail,
                         occurrence.event.status === "tentative" && "border border-dashed",
                       )}
-                      title={eventTitle(occurrence.event.summary)}
+                      title={`${formatRange(occurrence.start, occurrence.end, false)} — ${eventTitle(occurrence.event.summary)}`}
                     >
+                      {/* Ce qui s'affiche suit la place disponible. Un créneau
+                          de trente minutes n'a la place que de son titre, et
+                          l'heure y serait de toute façon redondante avec la
+                          gouttière juste à gauche. */}
                       <span className="block truncate text-[11px] font-medium">
                         {eventTitle(occurrence.event.summary)}
                       </span>
-                      {height > 34 && (
+                      {minutes >= 40 && (
                         <span className="text-muted-foreground block truncate text-[10px]">
                           {formatRange(occurrence.start, occurrence.end, false)}
                         </span>
                       )}
-                      {height > 60 && occurrence.event.location && (
-                        <span className="text-muted-foreground block truncate text-[10px]">
+                      {minutes >= 75 && occurrence.event.location && (
+                        <span className="text-muted-foreground/80 block truncate text-[10px]">
                           {occurrence.event.location}
                         </span>
                       )}

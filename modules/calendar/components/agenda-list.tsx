@@ -37,22 +37,22 @@ export function AgendaList({
   return (
     <div className="min-h-0 flex-1 divide-y overflow-y-auto">
       {days.map(({ day, items }) => (
-        <div key={day.toISOString()} className="flex gap-4 px-4 py-3">
-          <div className="w-40 shrink-0">
+        <div key={day.toISOString()} className="flex gap-3 px-3 py-2">
+          <div className="w-40 shrink-0 pt-1">
             <p
               className={cn(
-                "text-sm font-medium first-letter:uppercase",
+                "text-[13px] font-medium first-letter:uppercase",
                 isSameDay(day, today) && "text-brand",
               )}
             >
               {formatDayLong(day)}
             </p>
-            <p className="text-muted-foreground text-[11px]">
+            <p className="text-muted-foreground/70 text-[11px]">
               {items.length} événement{items.length > 1 ? "s" : ""}
             </p>
           </div>
 
-          <ul className="min-w-0 flex-1 divide-y">
+          <ul className="min-w-0 flex-1">
             {items.map((occurrence) => {
               const style = occurrence.style;
               return (
@@ -60,30 +60,30 @@ export function AgendaList({
                   <button
                     type="button"
                     onClick={() => onSelect(occurrence)}
-                    className="hover:bg-accent/60 flex w-full items-start gap-3 rounded-[4px] px-2 py-1.5 text-left transition-colors"
+                    className="hover:bg-accent/60 flex w-full items-baseline gap-2.5 rounded-[4px] px-2 py-1 text-left transition-colors"
                   >
                     <span
-                      className={cn("mt-1.5 size-2 shrink-0 rounded-full", style.dot)}
+                      className={cn("size-1.5 shrink-0 translate-y-[-1px] rounded-full", style.dot)}
                     />
-                    <span className="text-muted-foreground w-28 shrink-0 text-xs tabular-nums">
+                    <span className="text-muted-foreground w-24 shrink-0 text-[11px] tabular-nums">
                       {formatRange(occurrence.start, occurrence.end, occurrence.allDay)}
                     </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm">
-                        {eventTitle(occurrence.event.summary)}
-                        {occurrence.event.status === "tentative" && (
-                          <span className="text-warning ml-1.5 text-[11px]">
-                            à confirmer
-                          </span>
-                        )}
-                      </span>
+                    {/* Titre et lieu sur une seule ligne : le lieu tient en
+                        trois mots et lui donner sa propre ligne doublait la
+                        hauteur d'une liste faite pour être parcourue. */}
+                    <span className="min-w-0 flex-1 truncate text-[13px]">
+                      {eventTitle(occurrence.event.summary)}
                       {occurrence.event.location && (
-                        <span className="text-muted-foreground block truncate text-[11px]">
+                        <span className="text-muted-foreground/70">
+                          {" · "}
                           {occurrence.event.location}
                         </span>
                       )}
+                      {occurrence.event.status === "tentative" && (
+                        <span className="text-warning ml-1.5 text-[11px]">à confirmer</span>
+                      )}
                     </span>
-                    <span className="text-muted-foreground/70 hidden shrink-0 text-[11px] sm:block">
+                    <span className="text-muted-foreground/60 hidden shrink-0 text-[11px] sm:block">
                       {occurrence.calendarName}
                     </span>
                   </button>

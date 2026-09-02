@@ -105,7 +105,6 @@ const dayLong = new Intl.DateTimeFormat("fr-FR", {
   month: "long",
 });
 const dayShort = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });
-const time = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
 export function formatMonthYear(date: Date): string {
   return monthYear.format(date);
@@ -119,14 +118,25 @@ export function formatDayShort(date: Date): string {
   return dayShort.format(date);
 }
 
+/**
+ * L'heure à la française : « 9h », « 14h30 ».
+ *
+ * Ce n'est pas une coquetterie de typographe, c'est de la place. Sur une case
+ * de calendrier mensuel large de cent trente pixels, « 09:00 » prend cinq
+ * caractères là où « 9h » en prend deux — et ce sont exactement ceux qui
+ * manquaient au titre pour ne plus être coupé au troisième mot. C'est en outre
+ * ce qu'écrit n'importe quel agenda de bureau en France.
+ */
 export function formatTime(date: Date): string {
-  return time.format(date);
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  return minutes === 0 ? `${hours}h` : `${hours}h${String(minutes).padStart(2, "0")}`;
 }
 
-/** « 14:00 – 15:30 » ; « Toute la journée » pour un événement sans heure. */
+/** « 9h – 10h30 » ; « Toute la journée » pour un événement sans heure. */
 export function formatRange(start: Date, end: Date, isAllDay: boolean): string {
   if (isAllDay) return "Toute la journée";
-  return `${time.format(start)} – ${time.format(end)}`;
+  return `${formatTime(start)} – ${formatTime(end)}`;
 }
 
 export function formatDuration(start: Date, end: Date): string {
