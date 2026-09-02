@@ -121,7 +121,12 @@ export function MonthGrid({
                       o.start.getTime() < startOfDay(day).getTime() + DAY,
                   )
                   .sort((a, b) => a.start.getTime() - b.start.getTime());
-                const shown = timed.slice(0, MAX_CHIPS);
+                // Chaque barre de plusieurs jours mange la hauteur d'une
+                // pastille : en afficher autant qu'un jour sans barre revenait
+                // à en peindre trois là où deux tiennent, et à rogner la
+                // troisième au milieu.
+                const room = Math.max(1, MAX_CHIPS - lanes);
+                const shown = timed.slice(0, room);
 
                 return (
                   <div
@@ -147,8 +152,12 @@ export function MonthGrid({
                       {day.getDate()}
                     </button>
 
-                    {/* Réserve la place des barres qui traversent la semaine. */}
-                    <div style={{ height: reserved }} aria-hidden />
+                    {/* Réserve la place des barres qui traversent la semaine.
+                        `shrink-0` n'est pas décoratif : la case est une colonne
+                        flex à hauteur bornée, et sans lui cette réserve se fait
+                        écraser dès que la journée est chargée — les pastilles
+                        remontent alors sous la barre, qui les recouvre. */}
+                    <div style={{ height: reserved }} className="shrink-0" aria-hidden />
 
                     {shown.map((occurrence) => (
                       <EventChip
