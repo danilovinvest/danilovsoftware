@@ -15,6 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { errorMessage } from "@/shared/api/errors";
 import { ErrorNotice, Spinner } from "@/shared/ui/feedback";
+import { DateField, TimeField } from "@/shared/ui/date-time-field";
 import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
 import * as api from "../lib/api";
 import type { CalendarListEntry, GoogleEvent } from "../lib/types";
@@ -236,44 +237,44 @@ function FormBody({
 
         {draft.allDay ? (
           <div className="grid grid-cols-2 gap-3">
-            <TextField
-              type="date"
+            <DateField
               label="Du"
-              required
               value={draft.date}
-              onChange={(e) => set("date", e.target.value)}
+              onChange={(value) => set("date", value)}
             />
-            <TextField
-              type="date"
+            <DateField
               label="Au"
-              required
               hint="Dernier jour inclus"
               value={draft.endDate}
-              onChange={(e) => set("endDate", e.target.value)}
+              onChange={(value) => set("endDate", value)}
             />
           </div>
         ) : (
-          <div className="grid grid-cols-[1fr_auto_auto] items-end gap-3">
-            <TextField
-              type="date"
+          <div className="grid grid-cols-[1fr_7rem_9rem] gap-3">
+            <DateField
               label="Date"
-              required
               value={draft.date}
-              onChange={(e) => set("date", e.target.value)}
+              onChange={(value) => set("date", value)}
             />
-            <TextField
-              type="time"
+            <TimeField
               label="Début"
-              required
               value={draft.startTime}
-              onChange={(e) => set("startTime", e.target.value)}
+              onChange={(value) => {
+                // Déplacer le début décale la fin d'autant : on garde la durée
+                // qu'on venait de choisir plutôt que de la voir se retourner.
+                const shift = minutes(value) - minutes(draft.startTime);
+                setDraft((current) => ({
+                  ...current,
+                  startTime: value,
+                  endTime: clock(Math.min(minutes(current.endTime) + shift, 23 * 60 + 45)),
+                }));
+              }}
             />
-            <TextField
-              type="time"
+            <TimeField
               label="Fin"
-              required
+              after={draft.startTime}
               value={draft.endTime}
-              onChange={(e) => set("endTime", e.target.value)}
+              onChange={(value) => set("endTime", value)}
             />
           </div>
         )}
@@ -336,6 +337,16 @@ function FormBody({
  * des chaînes locales. Google veut un instant avec son décalage, ou une date
  * seule. La traduction se fait ici, aux deux bouts, et nulle part ailleurs.
  */
+
+function minutes(value: string): number {
+  const [hours, mins] = value.split(":").map(Number);
+  return (hours || 0) * 60 + (mins || 0);
+}
+
+function clock(total: number): string {
+  const safe = Math.max(0, total);
+  return `${pad(Math.floor(safe / 60) % 24)}:${pad(safe % 60)}`;
+}
 
 function pad(value: number) {
   return String(value).padStart(2, "0");
