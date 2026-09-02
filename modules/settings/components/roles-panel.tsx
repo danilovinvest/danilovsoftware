@@ -23,6 +23,7 @@ import {
 } from "../hooks/use-settings";
 import type { Role } from "../lib/types";
 import { RoleDialog } from "./role-dialog";
+import { RoleWizard } from "./role-wizard";
 import { RoleMembersDialog } from "./role-members-dialog";
 import { RolePermissionsDialog } from "./role-permissions-dialog";
 import { SettingsPage, SettingsSection } from "./settings-page";
@@ -215,14 +216,20 @@ export function RolesPanel() {
         )}
       </SettingsSection>
 
-      {(creating || editing) && (
+      {creating && (
+        <RoleWizard
+          catalog={catalog.permissions}
+          catalogLoading={catalog.loading}
+          onClose={() => setCreating(false)}
+          onCreated={reload}
+        />
+      )}
+
+      {editing && (
         <RoleDialog
-          key={editing?.slug ?? "new"}
+          key={editing.slug}
           role={editing}
-          onClose={() => {
-            setCreating(false);
-            setEditing(null);
-          }}
+          onClose={() => setEditing(null)}
           onSaved={reload}
         />
       )}

@@ -17,15 +17,15 @@ import { createRole, updateRole } from "../lib/api";
 import type { Role } from "../lib/types";
 
 /**
- * Création et renommage d'un rôle.
+ * Renommage d'un rôle.
  *
- * Le slug ne se saisit qu'à la création, et il est ensuite immuable : il voyage
- * dans le jeton d'accès et sert de clé au rang des rôles. Le changer laisserait
- * des jetons valides désignant un rôle qui n'existe plus.
+ * La création passe par `RoleWizard` : elle enchaîne deux décisions de nature
+ * différente. Modifier, non — on sait ce qu'on vient changer, un formulaire
+ * simple suffit.
  *
- * Un rôle naît **sans aucune permission** : l'écran le dit, parce qu'un rôle
- * créé et aussitôt attribué ne donnerait accès à rien et laisserait croire à
- * une panne.
+ * Le slug reste affiché mais figé : il voyage dans le jeton d'accès et sert de
+ * clé au rang des rôles. Le changer laisserait des jetons valides désignant un
+ * rôle qui n'existe plus.
  */
 export function RoleDialog({
   role,

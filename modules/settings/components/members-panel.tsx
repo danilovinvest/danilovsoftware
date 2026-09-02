@@ -21,7 +21,7 @@ import { errorMessage } from "@/shared/api/errors";
 import { revokeInvitation } from "../lib/api";
 import { useInvitations, useRoles, useWorkspaceUsers } from "../hooks/use-settings";
 import type { WorkspaceUser } from "../lib/types";
-import { InviteDialog } from "./invite-dialog";
+import { InviteWizard } from "./invite-wizard";
 import { MemberDialog } from "./member-dialog";
 import { SettingsPage, SettingsSection } from "./settings-page";
 
@@ -317,7 +317,7 @@ export function MembersPanel() {
       )}
 
       {inviting && (
-        <InviteDialog
+        <InviteWizard
           roles={roles}
           actorRank={actorRank}
           onClose={() => setInviting(false)}

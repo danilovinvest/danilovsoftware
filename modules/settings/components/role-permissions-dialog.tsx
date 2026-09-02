@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CheckIcon, LockIcon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -11,13 +10,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { useAuth } from "@/modules/auth";
-import { ErrorNotice, Skeleton, Spinner } from "@/shared/ui/feedback";
+import { ErrorNotice, Spinner } from "@/shared/ui/feedback";
 import { errorMessage } from "@/shared/api/errors";
 import { getRolePermissions, setRolePermissions } from "../lib/api";
-import { actionRank, resourceLabel, resourceRank } from "../lib/labels";
 import type { PermissionEntry, Role } from "../lib/types";
+import { PermissionMatrix } from "./permission-matrix";
 
 /**
  * La matrice des permissions d'un rôle.
@@ -69,26 +67,6 @@ export function RolePermissionsDialog({
     return () => controller.abort();
   }, [role.slug]);
 
-  const groups = useMemo(() => {
-    const byResource = new Map<string, PermissionEntry[]>();
-    for (const entry of catalog) {
-      byResource.set(entry.resource, [...(byResource.get(entry.resource) ?? []), entry]);
-    }
-    return [...byResource.entries()]
-      .map(
-        ([resource, entries]) =>
-          [
-            resource,
-            [...entries].sort(
-              (a, b) =>
-                actionRank(a.action) - actionRank(b.action) ||
-                a.slug.localeCompare(b.slug),
-            ),
-          ] as const,
-      )
-      .sort(([a], [b]) => resourceRank(a) - resourceRank(b) || a.localeCompare(b));
-  }, [catalog]);
-
   function toggle(slug: string) {
     setSelected((current) => {
       if (!current) return current;
@@ -137,67 +115,13 @@ export function RolePermissionsDialog({
         {error && <ErrorNotice message={error} />}
 
         <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">
-          {loading ? (
-            <div className="flex flex-col gap-2">
-              {Array.from({ length: 4 }, (_, index) => (
-                <Skeleton key={index} className="h-14 w-full" />
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col gap-4">
-              {groups.map(([resource, entries]) => (
-                <div key={resource} className="flex flex-col gap-1">
-                  <p className="text-muted-foreground px-1 text-[11px] font-medium tracking-wide uppercase">
-                    {resourceLabel(resource)}
-                  </p>
-                  <div className="overflow-hidden rounded-lg border">
-                    {entries.map((entry) => {
-                      const granted = selected.has(entry.slug);
-                      const locked = !held.has(entry.slug);
-
-                      return (
-                        <button
-                          key={entry.slug}
-                          type="button"
-                          disabled={locked}
-                          onClick={() => toggle(entry.slug)}
-                          title={
-                            locked
-                              ? "Vous ne détenez pas cette permission : vous ne pouvez pas l'accorder."
-                              : undefined
-                          }
-                          className={cn(
-                            "flex w-full items-start gap-2.5 border-b px-3 py-2 text-left transition-colors last:border-b-0",
-                            locked ? "cursor-not-allowed opacity-50" : "hover:bg-accent/60",
-                          )}
-                        >
-                          <span
-                            className={cn(
-                              "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-[3px] border",
-                              granted
-                                ? "bg-brand border-transparent text-white"
-                                : "border-input",
-                            )}
-                          >
-                            {granted && <CheckIcon className="size-3" strokeWidth={3} />}
-                          </span>
-                          <span className="min-w-0 flex-1">
-                            <span className="block text-xs">{entry.description}</span>
-                            <span className="text-muted-foreground/70 block font-mono text-[11px]">
-                              {entry.slug}
-                            </span>
-                          </span>
-                          {locked && (
-                            <LockIcon className="text-muted-foreground mt-0.5 size-3 shrink-0" />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <PermissionMatrix
+            catalog={catalog}
+            held={held}
+            selected={selected ?? new Set<string>()}
+            loading={loading}
+            onToggle={toggle}
+          />
         </div>
 
         {isOwnRole && (
