@@ -75,3 +75,10 @@ export type InvitationCreated = {
   invitation: Invitation;
   token: string;
 };
+
+/** Création et renommage d'un rôle. Le slug n'est lu qu'à la création. */
+export type RolePayload = {
+  slug?: string;
+  name: string;
+  description: string;
+};

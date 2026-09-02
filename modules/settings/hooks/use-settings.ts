@@ -5,7 +5,7 @@ import { listSessions, type DeviceSession } from "@/modules/auth";
 import type { Paginated } from "@/shared/api/client";
 import { errorMessage } from "@/shared/api/errors";
 import * as api from "../lib/api";
-import type { Invitation, Role, WorkspaceUser } from "../lib/types";
+import type { Invitation, PermissionEntry, Role, WorkspaceUser } from "../lib/types";
 
 type Resolved<T> = { key: string; data: T | null; error: string | null };
 
@@ -97,7 +97,8 @@ export function useInvitations(enabled: boolean) {
 }
 
 export function useRoles() {
-  const key = "roles";
+  const [token, setToken] = useState(0);
+  const key = `roles:${token}`;
   const [resolved, setResolved] = useState<Resolved<Role[]>>({
     key: "",
     data: null,
@@ -116,10 +117,49 @@ export function useRoles() {
       });
 
     return () => controller.abort();
-  }, []);
+  }, [key]);
+
+  const reload = useCallback(() => setToken((value) => value + 1), []);
 
   return {
     roles: resolved.data ?? [],
+    loading: resolved.key !== key,
+    error: resolved.error,
+    reload,
+  };
+}
+
+/**
+ * Catalogue des permissions existantes.
+ *
+ * Il vient du serveur et n'est jamais recopié côté front : ajouter une
+ * permission à l'API la fait apparaître dans la matrice sans toucher au front.
+ */
+export function usePermissionCatalog(enabled: boolean) {
+  const key = enabled ? "permissions" : "disabled";
+  const [resolved, setResolved] = useState<Resolved<PermissionEntry[]>>({
+    key: "disabled",
+    data: null,
+    error: null,
+  });
+
+  useEffect(() => {
+    if (!enabled) return;
+    const controller = new AbortController();
+
+    api
+      .listPermissions(controller.signal)
+      .then((data) => setResolved({ key, data: data.items, error: null }))
+      .catch((cause) => {
+        if (controller.signal.aborted) return;
+        setResolved({ key, data: null, error: errorMessage(cause) });
+      });
+
+    return () => controller.abort();
+  }, [key, enabled]);
+
+  return {
+    permissions: resolved.data ?? [],
     loading: resolved.key !== key,
     error: resolved.error,
   };

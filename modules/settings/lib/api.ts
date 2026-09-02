@@ -5,6 +5,7 @@ import type {
   InvitationPayload,
   PermissionEntry,
   Role,
+  RolePayload,
   UserPayload,
   WorkspaceUser,
 } from "./types";
@@ -68,4 +69,38 @@ export function revokeInvitation(id: string) {
 export function invitationUrl(token: string): string {
   const origin = typeof window === "undefined" ? "" : window.location.origin;
   return `${origin}/invitation/${token}`;
+}
+
+/* --- Rôles ---------------------------------------------------------------- */
+
+/**
+ * Un rôle créé ici naît sans aucune permission : l'API refuse d'en hériter
+ * quoi que ce soit du créateur. On le crée, puis on coche.
+ */
+export function createRole(payload: RolePayload) {
+  return apiFetch<Role>("/v1/roles", { method: "POST", body: payload });
+}
+
+/** Seuls le nom et la description changent : le slug est immuable côté API. */
+export function updateRole(slug: string, payload: RolePayload) {
+  return apiFetch<Role>(`/v1/roles/${slug}`, { method: "PATCH", body: payload });
+}
+
+export function deleteRole(slug: string) {
+  return apiFetch<void>(`/v1/roles/${slug}`, { method: "DELETE" });
+}
+
+export function getRolePermissions(slug: string, signal?: AbortSignal) {
+  return apiFetch<{ items: string[] }>(`/v1/roles/${slug}/permissions`, { signal });
+}
+
+/**
+ * Remplace l'intégralité des permissions du rôle — l'API ne connaît pas les
+ * ajouts partiels, elle purge et réécrit en une transaction.
+ */
+export function setRolePermissions(slug: string, permissions: string[]) {
+  return apiFetch<{ items: string[] }>(`/v1/roles/${slug}/permissions`, {
+    method: "PUT",
+    body: { permissions },
+  });
 }
