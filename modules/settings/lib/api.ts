@@ -1,6 +1,9 @@
 import { apiFetch, type Paginated } from "@/shared/api/client";
+import { API_URL } from "@/shared/lib/env";
 import type {
   Invitation,
+  McpToken,
+  McpTokenCreated,
   InvitationCreated,
   InvitationPayload,
   PermissionEntry,
@@ -117,4 +120,33 @@ export function setUserRole(id: string, role: string) {
     method: "PUT",
     body: { role },
   });
+}
+
+/* --- Connecteur MCP -------------------------------------------------------- */
+
+export function listMcpTokens(signal?: AbortSignal) {
+  return apiFetch<{ items: McpToken[] }>("/v1/mcp/tokens", { signal });
+}
+
+export function createMcpToken(name: string) {
+  return apiFetch<McpTokenCreated>("/v1/mcp/tokens", { method: "POST", body: { name } });
+}
+
+export function revokeMcpToken(id: string) {
+  return apiFetch<void>(`/v1/mcp/tokens/${id}`, { method: "DELETE" });
+}
+
+/**
+ * L'URL à coller dans l'assistant.
+ *
+ * Le secret est le dernier segment du chemin : ChatGPT ne sait présenter ni
+ * clé d'API ni en-tête personnalisé pour un connecteur, seulement une URL — ou
+ * un vrai parcours OAuth, qui viendra ensuite.
+ *
+ * Elle pointe vers l'API et non vers le front : c'est le serveur Go qui parle
+ * MCP. Les deux partagent le domaine en production ; en développement le front
+ * tourne sur un autre port, d'où la lecture de `NEXT_PUBLIC_API_URL`.
+ */
+export function mcpConnectorUrl(secret: string): string {
+  return `${API_URL}/mcp/${secret}`;
 }

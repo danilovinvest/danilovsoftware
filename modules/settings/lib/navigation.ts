@@ -1,4 +1,5 @@
 import {
+  BotIcon,
   PaletteIcon,
   ShieldCheckIcon,
   SlidersHorizontalIcon,
@@ -33,6 +34,7 @@ export const SETTINGS_NAVIGATION: SettingsSection[] = [
     items: [
       { href: "/settings", label: "Profil", icon: UserIcon },
       { href: "/settings/experience", label: "Expérience", icon: PaletteIcon },
+      { href: "/settings/assistant", label: "Assistant", icon: BotIcon },
     ],
   },
   {

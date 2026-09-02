@@ -82,3 +82,27 @@ export type RolePayload = {
   name: string;
   description: string;
 };
+
+/**
+ * Un jeton de connecteur MCP.
+ *
+ * Le secret n'y figure pas : il n'est rendu qu'une fois, à la création, et la
+ * base n'en garde que le condensat — comme pour les invitations et les jetons
+ * de rafraîchissement.
+ */
+export type McpToken = {
+  id: string;
+  name: string;
+  /** Le prototype est en lecture seule : toujours faux pour l'instant. */
+  can_write: boolean;
+  last_used_at: string | null;
+  expires_at: string;
+  created_at: string;
+  expired: boolean;
+};
+
+export type McpTokenCreated = {
+  token: McpToken;
+  /** Le secret en clair, une seule fois. */
+  secret: string;
+};
