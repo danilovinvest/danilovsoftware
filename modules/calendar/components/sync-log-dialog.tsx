@@ -168,10 +168,13 @@ function ActivityStrip({ runs }: { runs: SyncRun[] }) {
   if (runs.length === 0) return null;
 
   return (
-    <div className="bg-muted/30 flex h-12 items-end gap-px overflow-hidden rounded-lg px-2 py-1.5">
+    <div className="bg-muted/30 flex h-12 items-end justify-end gap-0.5 overflow-hidden rounded-lg px-2 py-1.5">
       {[...runs].reverse().map((run) => {
         const changes = run.created + run.updated + run.deleted;
-        const height = 3 + Math.min(changes, 20) * 1.6;
+        // Un socle de six pixels même à zéro : une exécution qui n'a rien
+        // trouvé doit rester visible, sinon un trou dans la bande se lit comme
+        // une panne alors que c'est un agenda calme.
+        const height = 6 + Math.min(changes, 20) * 1.5;
         return (
           <span
             key={run.id}
@@ -180,14 +183,14 @@ function ActivityStrip({ runs }: { runs: SyncRun[] }) {
             }`}
             style={{ height }}
             className={cn(
-              "min-w-[3px] flex-1 rounded-sm",
+              "w-full max-w-2.5 min-w-[3px] flex-1 rounded-sm",
               run.finished_at === null
                 ? "bg-info animate-pulse"
                 : run.error
                   ? "bg-danger"
                   : changes > 0
                     ? "bg-success"
-                    : "bg-muted-foreground/25",
+                    : "bg-muted-foreground/30",
             )}
           />
         );

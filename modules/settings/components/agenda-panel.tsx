@@ -17,7 +17,7 @@ import {
   useSyncRuns,
 } from "@/modules/calendar";
 import { errorMessage } from "@/shared/api/errors";
-import { formatDate, formatRelative } from "@/shared/lib/format";
+import { formatAgo, formatDate } from "@/shared/lib/format";
 import { ErrorNotice, Skeleton, Spinner } from "@/shared/ui/feedback";
 import { useGoogleCalendar } from "../hooks/use-settings";
 import { SettingsPage, SettingsRow, SettingsRows, SettingsSection } from "./settings-page";
@@ -230,7 +230,7 @@ export function AgendaPanel() {
                         {calendar.event_count} événement
                         {calendar.event_count > 1 ? "s" : ""}
                         {calendar.synced_at && (
-                          <> · {formatRelative(calendar.synced_at)}</>
+                          <> · {formatAgo(calendar.synced_at, journal.now)}</>
                         )}
                       </>
                     ) : (
