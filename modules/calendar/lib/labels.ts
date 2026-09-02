@@ -1,56 +1,65 @@
-import type { CalendarView, ColorKey, ResponseStatus } from "./types";
+import type { CalendarStyle, CalendarView, ResponseStatus } from "./types";
 
 /**
  * Habillage du calendrier.
  *
- * Les cinq agendas prennent les cinq teintes de graphique du thème
- * (`--chart-1` à `--chart-5`), qui sont précisément faites pour cela : elles
- * sont distinctes entre elles et redéfinies dans le bloc sombre. Aucune couleur
- * littérale n'entre ici, sans quoi le thème sombre cesserait de fonctionner.
+ * Les agendas prennent les cinq teintes de graphique du thème (`--chart-1` à
+ * `--chart-5`), qui sont précisément faites pour cela : distinctes entre elles,
+ * et redéfinies dans le bloc sombre. Aucune couleur littérale n'entre ici, sans
+ * quoi le thème sombre cesserait de fonctionner.
+ *
+ * Google donne pourtant sa propre couleur pour chaque agenda, et on ne s'en
+ * sert pas : ce sont des pastels choisis sur fond blanc, dont plusieurs
+ * deviennent illisibles en thème sombre. La couleur est donc attribuée par
+ * **rang dans la liste** — stable d'une session à l'autre, puisque les agendas
+ * arrivent triés, et toujours lisible.
  *
  * Les classes sont écrites en toutes lettres et non composées à la volée :
  * Tailwind ne voit pas `bg-chart-${n}`.
  */
-export const CALENDAR_STYLE: Record<
-  ColorKey,
-  { dot: string; soft: string; text: string; solid: string; rail: string }
-> = {
-  chantier: {
+export const CALENDAR_PALETTE: CalendarStyle[] = [
+  {
     dot: "bg-chart-1",
     soft: "bg-chart-1/10 hover:bg-chart-1/20",
     text: "text-chart-1",
     solid: "bg-chart-1 text-white",
     rail: "border-l-chart-1",
   },
-  etude: {
+  {
     dot: "bg-chart-4",
     soft: "bg-chart-4/10 hover:bg-chart-4/20",
     text: "text-chart-4",
     solid: "bg-chart-4 text-white",
     rail: "border-l-chart-4",
   },
-  client: {
+  {
     dot: "bg-chart-3",
     soft: "bg-chart-3/10 hover:bg-chart-3/20",
     text: "text-chart-3",
     solid: "bg-chart-3 text-white",
     rail: "border-l-chart-3",
   },
-  interne: {
+  {
     dot: "bg-chart-5",
     soft: "bg-chart-5/10 hover:bg-chart-5/20",
     text: "text-chart-5",
     solid: "bg-chart-5 text-white",
     rail: "border-l-chart-5",
   },
-  absence: {
+  {
     dot: "bg-chart-2",
     soft: "bg-chart-2/10 hover:bg-chart-2/20",
     text: "text-chart-2",
     solid: "bg-chart-2 text-white",
     rail: "border-l-chart-2",
   },
-};
+];
+
+/** Au-delà de cinq agendas les teintes se répètent — mieux vaut deux agendas
+ * de même couleur qu'une sixième teinte inventée hors du thème. */
+export function paletteAt(index: number): CalendarStyle {
+  return CALENDAR_PALETTE[index % CALENDAR_PALETTE.length];
+}
 
 export const VIEWS: Array<{ value: CalendarView; label: string }> = [
   { value: "mois", label: "Mois" },

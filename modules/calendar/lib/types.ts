@@ -4,9 +4,9 @@
  * Ils reprennent la forme de la ressource `events` de l'API Google Calendar
  * — `start`/`end` en objets qui portent soit `date` (journée entière) soit
  * `dateTime`, `attendees` avec leur `responseStatus`, `recurringEventId` sur
- * les occurrences d'une série. Ce n'est pas une coquetterie : le jour où le
- * CRM branchera un vrai compte Google, la réponse de l'API se déversera ici
- * sans transformation, et seul le chargement changera.
+ * les occurrences d'une série. Le pari est tenu : l'API du CRM recopie l'agenda
+ * Google et rend ces ressources **intactes**, augmentées du seul `calendarId`,
+ * que Google laisse dans l'URL demandée plutôt que dans l'événement.
  *
  * Une seule entorse assumée : `email` est facultatif sur un invité. Un agenda
  * partagé en lecture masque les adresses des participants externes, et il vaut
@@ -54,19 +54,33 @@ export type GoogleEvent = {
   updated: string;
 };
 
-/** Entrée de `calendarList` : un agenda auquel le compte est abonné. */
+/** Entrée de `calendarList` : un agenda auquel le compte Google est abonné. */
 export type CalendarListEntry = {
   id: string;
+  account_id: string;
   summary: string;
   description: string;
-  /** Clé de couleur résolue en classes par `lib/labels.ts`. */
-  colorKey: ColorKey;
-  primary?: boolean;
-  accessRole: "owner" | "writer" | "reader";
-  timeZone: string;
+  time_zone: string;
+  access_role: string;
+  /** Couleur choisie dans Google. Reçue, mais pas peinte — voir `labels.ts`. */
+  background_color: string;
+  primary: boolean;
+  /** Agenda recopié ou non. Choix local, sans effet sur le compte Google. */
+  selected: boolean;
+  event_count: number;
+  synced_at: string | null;
 };
 
-export type ColorKey = "chantier" | "etude" | "interne" | "client" | "absence";
+/** Le compte Google raccordé, et l'état de sa dernière synchronisation. */
+export type GoogleAccount = {
+  id: string;
+  email: string;
+  scope: string;
+  connected_at: string;
+  last_sync_at: string | null;
+  /** Vide quand tout va bien ; sinon la raison, telle que Google l'a dite. */
+  last_error: string;
+};
 
 /**
  * Une occurrence prête à peindre : les bornes résolues en `Date`, et le
@@ -79,6 +93,18 @@ export type Occurrence = {
   start: Date;
   end: Date;
   allDay: boolean;
+  /** Nom de l'agenda d'origine, et le jeu de classes qui l'habille. */
+  calendarName: string;
+  style: CalendarStyle;
+};
+
+/** Les classes d'un agenda. Résolues une fois, portées par l'occurrence. */
+export type CalendarStyle = {
+  dot: string;
+  soft: string;
+  text: string;
+  solid: string;
+  rail: string;
 };
 
 export type CalendarView = "mois" | "semaine" | "agenda";
