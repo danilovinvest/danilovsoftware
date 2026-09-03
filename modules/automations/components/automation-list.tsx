@@ -12,7 +12,7 @@ import { EmptyState, ErrorNotice, Skeleton, Spinner } from "@/shared/ui/feedback
 import { cn } from "@/lib/utils";
 import { useAutomations } from "../hooks/use-automations";
 import * as api from "../lib/api";
-import { describeCron } from "../lib/cards";
+import { describeCron } from "../lib/cron";
 
 /**
  * La liste des automatisations.

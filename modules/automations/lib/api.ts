@@ -14,6 +14,21 @@ export function listAutomations(signal?: AbortSignal) {
  * vide tant que personne n'a écrit au bot, et l'écran le dit plutôt que de
  * laisser croire à une panne.
  */
+/**
+ * Valide une expression et rend ses prochaines occurrences.
+ *
+ * C'est le serveur qui répond, avec l'analyseur de la boucle de déclenchement
+ * et dans le fuseau demandé : l'aperçu dit donc exactement ce qui se passera,
+ * y compris l'erreur de fuseau qu'on ne remarquerait qu'en juillet.
+ */
+export function previewCron(expression: string, timeZone: string, signal?: AbortSignal) {
+  const query = new URLSearchParams({ expression, time_zone: timeZone });
+  return apiFetch<{ valid: boolean; error?: string; next: string[] }>(
+    `/v1/automations/cron?${query}`,
+    { signal },
+  );
+}
+
 export function telegramInfo(signal?: AbortSignal) {
   return apiFetch<TelegramInfo>("/v1/automations/telegram", { signal });
 }

@@ -9,7 +9,8 @@ import { Switch } from "@/components/ui/switch";
 import { errorMessage } from "@/shared/api/errors";
 import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
 import { telegramInfo } from "../lib/api";
-import { CRON_PRESETS, VARIABLES, cardOf, describeCron } from "../lib/cards";
+import { VARIABLES, cardOf } from "../lib/cards";
+import { ScheduleFields } from "./schedule-fields";
 import type {
   AutomationNode,
   DigestConfig,
@@ -76,28 +77,12 @@ export function CardInspector({
       </div>
 
       {node.type === "schedule" && (
-        <>
-          <SelectField
-            label="Rythme"
-            value={CRON_PRESETS.some((p) => p.value === cron) ? cron : ""}
-            onValueChange={onCron}
-            emptyLabel="Expression sur mesure"
-            options={CRON_PRESETS}
-          />
-          <TextField
-            label="Expression cron"
-            value={cron}
-            onChange={(event) => onCron(event.target.value)}
-            hint={describeCron(cron) === cron ? "Cinq champs : min h jour mois jour-semaine" : describeCron(cron)}
-            className="font-mono text-xs"
-          />
-          <TextField
-            label="Fuseau horaire"
-            value={timeZone}
-            onChange={(event) => onTimeZone(event.target.value)}
-            hint="« 18h » ne veut rien dire sans dire où."
-          />
-        </>
+        <ScheduleFields
+          cron={cron}
+          timeZone={timeZone}
+          onCron={onCron}
+          onTimeZone={onTimeZone}
+        />
       )}
 
       {node.type === "calendar_digest" && (

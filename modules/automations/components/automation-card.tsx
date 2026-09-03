@@ -2,7 +2,8 @@
 
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { cn } from "@/lib/utils";
-import { cardOf, describeCron, FAMILY_LABEL } from "../lib/cards";
+import { cardOf, FAMILY_LABEL } from "../lib/cards";
+import { describeCron } from "../lib/cron";
 import type { DigestConfig, NodeConfig, NodeType, TelegramConfig } from "../lib/types";
 
 /**
