@@ -97,6 +97,7 @@ export const VARIABLES: Array<{ name: string; description: string; perEvent?: bo
   { name: "lieu", description: "L'adresse, telle qu'écrite dans l'agenda", perEvent: true },
   { name: "carte", description: "Le lien Google Maps de l'adresse", perEvent: true },
   { name: "telephone", description: "Le numéro trouvé dans la description", perEvent: true },
+  { name: "telephone_lien", description: "L'adresse tel: du même numéro", perEvent: true },
   { name: "description", description: "La note de l'événement, abrégée", perEvent: true },
   { name: "agenda", description: "Le nom de l'agenda d'origine", perEvent: true },
 ];

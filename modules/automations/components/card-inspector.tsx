@@ -300,8 +300,8 @@ function TelegramFields({
         ]}
         hint={
           config.parse_mode === "HTML"
-            ? "L'adresse devient un lien vers Google Maps. Les titres sont échappés : un chevron ne fera pas échouer l'envoi."
-            : "L'adresse et le lien de carte s'écrivent en clair, sur deux lignes."
+            ? "L'adresse ouvre Google Maps, le numéro ouvre le téléphone. Les titres sont échappés : un chevron ne fera pas échouer l'envoi."
+            : "Aucun lien possible : l'adresse de carte s'écrit en clair, sur sa propre ligne."
         }
       />
 
