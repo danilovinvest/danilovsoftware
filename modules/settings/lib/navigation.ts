@@ -1,6 +1,7 @@
 import {
   BotIcon,
   CalendarIcon,
+  MailIcon,
   PaletteIcon,
   ShieldCheckIcon,
   SlidersHorizontalIcon,
@@ -63,6 +64,12 @@ export const SETTINGS_NAVIGATION: SettingsSection[] = [
         label: "Agenda",
         icon: CalendarIcon,
         permission: "calendar:read",
+      },
+      {
+        href: "/settings/messagerie",
+        label: "Messagerie",
+        icon: MailIcon,
+        permission: "mail:read",
       },
     ],
   },

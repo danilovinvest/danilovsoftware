@@ -19,6 +19,8 @@ export type Permission =
   | "tasks:delete"
   | "calendar:read"
   | "calendar:write"
+  | "mail:read"
+  | "mail:write"
   | "automations:read"
   | "automations:write"
   | "imports:run"

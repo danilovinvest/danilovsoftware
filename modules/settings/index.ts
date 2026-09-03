@@ -16,6 +16,14 @@ export { MembersPanel } from "./components/members-panel";
 export { RolesPanel } from "./components/roles-panel";
 export { AssistantPanel } from "./components/assistant-panel";
 export { AgendaPanel } from "./components/agenda-panel";
+// Les primitives de mise en page des réglages : les modules qui ont leur propre
+// écran de réglages les réutilisent plutôt que de refaire une carte à côté.
+export {
+  SettingsPage,
+  SettingsRow,
+  SettingsRows,
+  SettingsSection,
+} from "./components/settings-page";
 export { SETTINGS_NAVIGATION, settingsLabel } from "./lib/navigation";
 export type { PermissionEntry, Role, WorkspaceUser } from "./lib/types";
 export type { Preferences, ThemeChoice } from "./lib/preferences";

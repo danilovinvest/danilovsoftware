@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { usePermission } from "@/modules/auth";
 import { useSetPageTitle } from "@/modules/shell";
+import { CustomerMail } from "@/modules/mail";
 import { CustomerTasksPanel } from "@/modules/tasks";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -42,6 +43,9 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
 
   const canWrite = usePermission("customers:write");
   const canDelete = usePermission("customers:delete");
+  // Lire les échanges d'un client est plus intrusif que lire sa fiche : la
+  // permission est distincte, et l'onglet disparaît avec elle.
+  const canReadMail = usePermission("mail:read");
   const remove = useAction(() => api.deleteCustomer(customerId));
 
   if (loading && !customer) {
@@ -154,6 +158,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
             </span>
           </TabsTrigger>
           <TabsTrigger value="taches">Tâches</TabsTrigger>
+          {canReadMail && <TabsTrigger value="courriels">Courriels</TabsTrigger>}
           <TabsTrigger value="details">Détails</TabsTrigger>
         </TabsList>
 
@@ -174,6 +179,12 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
             onChanged={reload}
           />
         </TabsContent>
+
+        {canReadMail && (
+          <TabsContent value="courriels" className="mt-4">
+            <CustomerMail customerId={customer.id} />
+          </TabsContent>
+        )}
 
         <TabsContent value="taches" className="mt-4">
           <CustomerTasksPanel customerId={customer.id} />
