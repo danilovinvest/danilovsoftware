@@ -79,8 +79,24 @@ export const FAMILY_LABEL: Record<CardFamily, string> = {
  * Affichées dans l'inspecteur : sans elles, `{{resume}}` est un secret que
  * seul le code connaît.
  */
-export const VARIABLES: Array<{ name: string; description: string }> = [
-  { name: "resume", description: "La journée mise en mots, une ligne par rendez-vous" },
+/**
+ * Les variables citables dans un message.
+ *
+ * Les premières valent toujours ; les suivantes n'ont de sens qu'en envoi
+ * découpé, où le gabarit est rendu une fois par rendez-vous. En message unique
+ * elles resteraient écrites telles quelles — c'est voulu : on voit dans le
+ * message ce qui n'a pas été compris, plutôt que de recevoir un texte troué.
+ */
+export const VARIABLES: Array<{ name: string; description: string; perEvent?: boolean }> = [
+  { name: "resume", description: "La journée entière, un bloc par rendez-vous" },
   { name: "date", description: "« jeudi 3 septembre »" },
   { name: "nombre", description: "Le nombre de rendez-vous" },
+  { name: "ligne", description: "Le rendez-vous mis en forme", perEvent: true },
+  { name: "heure", description: "« 10h », « 14h30 »", perEvent: true },
+  { name: "titre", description: "L'intitulé du rendez-vous", perEvent: true },
+  { name: "lieu", description: "L'adresse, telle qu'écrite dans l'agenda", perEvent: true },
+  { name: "carte", description: "Le lien Google Maps de l'adresse", perEvent: true },
+  { name: "telephone", description: "Le numéro trouvé dans la description", perEvent: true },
+  { name: "description", description: "La note de l'événement, abrégée", perEvent: true },
+  { name: "agenda", description: "Le nom de l'agenda d'origine", perEvent: true },
 ];

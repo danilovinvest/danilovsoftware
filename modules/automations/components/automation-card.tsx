@@ -96,8 +96,9 @@ function summarise(data: CardData): string {
     case "telegram": {
       const config = data.config as unknown as TelegramConfig;
       if (!config.chat_id?.trim()) return "Aucune conversation choisie";
-      const shape = config.parse_mode === "HTML" ? "mis en forme" : "texte";
-      return `Message ${shape} vers ${config.chat_id}${config.silent ? " · silencieux" : ""}`;
+      const shape = config.split ? "Un message par rendez-vous" : "Un message par jour";
+      const form = config.parse_mode === "HTML" ? "mis en forme" : "texte";
+      return `${shape}, ${form} · ${config.chat_id}${config.silent ? " · silencieux" : ""}`;
     }
   }
 }

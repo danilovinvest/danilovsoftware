@@ -204,10 +204,66 @@ function TelegramFields({
         onPick={(chat_id) => set({ chat_id })}
       />
 
+      <div className="flex flex-col gap-1.5">
+        <Label className="text-muted-foreground text-xs font-medium">Découpage</Label>
+        <div className="bg-muted grid grid-cols-2 gap-0.5 rounded-[6px] p-0.5">
+          {[
+            { value: false, label: "Un seul message" },
+            { value: true, label: "Un par rendez-vous" },
+          ].map((choice) => (
+            <button
+              key={String(choice.value)}
+              type="button"
+              aria-pressed={(config.split ?? false) === choice.value}
+              onClick={() =>
+                set({
+                  split: choice.value,
+                  // Le gabarit par défaut n'est pas le même : « {{resume}} »
+                  // répété une fois par rendez-vous enverrait la journée
+                  // entière autant de fois qu'il y a de lignes.
+                  message: choice.value ? "{{ligne}}" : "{{resume}}",
+                })
+              }
+              className={cn(
+                "rounded-[4px] px-2 py-1 text-[11px] transition-colors",
+                (config.split ?? false) === choice.value
+                  ? "bg-background text-foreground font-medium shadow-2xs"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {choice.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-muted-foreground/70 text-[11px] leading-relaxed">
+          {config.split
+            ? "Trois rendez-vous font trois messages : chacun se transfère et se répond séparément. Plafonné à vingt-cinq par envoi."
+            : "La journée entière dans un message, un bloc par rendez-vous."}
+        </p>
+      </div>
+
+      {config.split && (
+        <div className="flex items-center gap-2">
+          <Switch
+            id="entete"
+            checked={config.header ?? true}
+            onCheckedChange={(header) => set({ header })}
+          />
+          <Label htmlFor="entete" className="text-sm font-normal">
+            Annoncer le jour dans un premier message
+          </Label>
+        </div>
+      )}
+
       <TextAreaField
         label="Message"
         value={config.message ?? ""}
         onChange={(event) => set({ message: event.target.value })}
+        hint={
+          config.split
+            ? "Rendu une fois par rendez-vous."
+            : "Rendu une fois pour toute la journée."
+        }
         className="min-h-24 font-mono text-xs"
       />
 
@@ -215,7 +271,7 @@ function TelegramFields({
         <Label className="text-muted-foreground text-xs font-medium">
           Variables disponibles
         </Label>
-        {VARIABLES.map((variable) => (
+        {VARIABLES.filter((v) => !v.perEvent || config.split).map((variable) => (
           <button
             key={variable.name}
             type="button"
@@ -244,8 +300,8 @@ function TelegramFields({
         ]}
         hint={
           config.parse_mode === "HTML"
-            ? "Les titres de rendez-vous sont échappés : un chevron ne fera pas échouer l'envoi."
-            : undefined
+            ? "L'adresse devient un lien vers Google Maps. Les titres sont échappés : un chevron ne fera pas échouer l'envoi."
+            : "L'adresse et le lien de carte s'écrivent en clair, sur deux lignes."
         }
       />
 

@@ -81,8 +81,10 @@ export function AutomationList() {
               config: {
                 chat_id: "",
                 message: "{{resume}}",
-                parse_mode: "texte",
+                parse_mode: "HTML",
                 silent: false,
+                split: false,
+                header: true,
               },
             },
           ],

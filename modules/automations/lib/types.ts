@@ -85,6 +85,10 @@ export type TelegramConfig = {
   parse_mode: "texte" | "HTML";
   /** Le message arrive, le téléphone ne sonne pas. */
   silent: boolean;
+  /** Un message par rendez-vous plutôt qu'un seul pour la journée. */
+  split: boolean;
+  /** En découpé : un premier message qui annonce le jour et le nombre. */
+  header: boolean;
 };
 
 /** Le bot, et les conversations qui lui ont écrit récemment. */
