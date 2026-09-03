@@ -23,7 +23,7 @@ import { describeCron } from "../lib/cards";
  * lesquelles ni dans quel ordre.
  */
 export function AutomationList() {
-  const { automations, whatsappReady, loading, error, reload } = useAutomations();
+  const { automations, telegramReady, loading, error, reload } = useAutomations();
   const canWrite = usePermission("automations:write");
   const router = useRouter();
   const [pending, setPending] = useState(false);
@@ -35,7 +35,7 @@ export function AutomationList() {
     try {
       const created = await api.createAutomation({
         name: "Récapitulatif du soir",
-        description: "Le programme du lendemain, envoyé sur WhatsApp",
+        description: "Le programme du lendemain, envoyé sur Telegram",
         cron: "0 18 * * *",
         time_zone: "Europe/Paris",
         graph: {
@@ -49,14 +49,13 @@ export function AutomationList() {
             },
             {
               id: "envoi",
-              type: "whatsapp",
+              type: "telegram",
               position: { x: 640, y: 140 },
               config: {
-                to: "",
-                mode: "texte",
+                chat_id: "",
                 message: "{{resume}}",
-                template: "",
-                language: "fr",
+                parse_mode: "texte",
+                silent: false,
               },
             },
           ],
@@ -93,13 +92,12 @@ export function AutomationList() {
 
       {(failure || error) && <ErrorNotice message={failure ?? error ?? ""} />}
 
-      {!whatsappReady && !loading && (
+      {!telegramReady && !loading && (
         <p className="text-warning bg-warning-soft/50 flex items-start gap-2 rounded-lg px-3 py-2 text-xs leading-relaxed">
           <TriangleAlertIcon className="mt-px size-3.5 shrink-0" />
           <span>
-            WhatsApp n&apos;est pas configuré sur le serveur
-            (<span className="font-mono">CRM_WHATSAPP_TOKEN</span> et
-            <span className="font-mono"> CRM_WHATSAPP_PHONE_ID</span>). Les
+            Aucun bot Telegram déclaré sur le serveur
+            (<span className="font-mono">CRM_TELEGRAM_BOT_TOKEN</span>). Les
             automatisations se dessinent et s&apos;enregistrent, mais aucun
             message ne partira.
           </span>
@@ -112,7 +110,7 @@ export function AutomationList() {
         <div className="rounded-xl border">
           <EmptyState
             title="Aucune automatisation"
-            description="La première envoie sur WhatsApp le programme du lendemain, tous les soirs à 18h."
+            description="La première envoie sur Telegram le programme du lendemain, tous les soirs à 18h."
             action={
               canWrite ? (
                 <Button size="sm" onClick={create} disabled={pending}>

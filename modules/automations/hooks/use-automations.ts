@@ -19,7 +19,7 @@ export function useAutomations() {
   const [token, setToken] = useState(0);
   const key = `automations:${token}`;
   const [resolved, setResolved] = useState<
-    Resolved<{ items: Automation[]; whatsappReady: boolean }>
+    Resolved<{ items: Automation[]; telegramReady: boolean }>
   >({ key: "", data: null, error: null });
 
   useEffect(() => {
@@ -29,7 +29,7 @@ export function useAutomations() {
       .then((data) =>
         setResolved({
           key,
-          data: { items: data.items, whatsappReady: data.whatsapp_ready },
+          data: { items: data.items, telegramReady: data.telegram_ready },
           error: null,
         }),
       )
@@ -42,7 +42,7 @@ export function useAutomations() {
 
   return {
     automations: resolved.data?.items ?? [],
-    whatsappReady: resolved.data?.whatsappReady ?? false,
+    telegramReady: resolved.data?.telegramReady ?? false,
     loading: resolved.key !== key,
     error: resolved.error,
     reload: useCallback(() => setToken((value) => value + 1), []),

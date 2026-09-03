@@ -72,7 +72,7 @@ function RunRow({ run }: { run: Run }) {
   const elapsed = run.finished_at
     ? new Date(run.finished_at).getTime() - new Date(run.started_at).getTime()
     : null;
-  const sent = run.error === "" && run.steps.some((step) => step.type === "whatsapp" && step.ok);
+  const sent = run.error === "" && run.steps.some((step) => step.type === "telegram" && step.ok);
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>

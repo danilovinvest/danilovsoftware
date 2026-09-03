@@ -1,16 +1,21 @@
 "use client";
 
-import { Trash2Icon } from "lucide-react";
+import { useEffect, useState } from "react";
+import { RefreshCwIcon, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
+import { errorMessage } from "@/shared/api/errors";
 import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
+import { telegramInfo } from "../lib/api";
 import { CRON_PRESETS, VARIABLES, cardOf, describeCron } from "../lib/cards";
 import type {
   AutomationNode,
   DigestConfig,
   NodeConfig,
-  WhatsAppConfig,
+  TelegramConfig,
+  TelegramInfo,
 } from "../lib/types";
 
 /**
@@ -103,8 +108,8 @@ export function CardInspector({
         />
       )}
 
-      {node.type === "whatsapp" && (
-        <WhatsAppFields config={node.config as unknown as WhatsAppConfig} set={set} />
+      {node.type === "telegram" && (
+        <TelegramFields config={node.config as unknown as TelegramConfig} set={set} />
       )}
 
       {node.type !== "schedule" && (
@@ -200,62 +205,19 @@ function DigestFields({
   );
 }
 
-function WhatsAppFields({
+function TelegramFields({
   config,
   set,
 }: {
-  config: WhatsAppConfig;
-  set: (patch: Partial<WhatsAppConfig>) => void;
+  config: TelegramConfig;
+  set: (patch: Partial<TelegramConfig>) => void;
 }) {
   return (
     <>
-      <TextField
-        label="Numéro de destination"
-        required
-        value={config.to ?? ""}
-        onChange={(event) => set({ to: event.target.value })}
-        placeholder="06 62 46 48 67"
-        hint="Format libre : l'indicatif est ajouté à l'envoi."
+      <ChatPicker
+        value={config.chat_id ?? ""}
+        onPick={(chat_id) => set({ chat_id })}
       />
-
-      <SelectField
-        label="Type d'envoi"
-        value={config.mode ?? "texte"}
-        onValueChange={(value) => set({ mode: value as WhatsAppConfig["mode"] })}
-        options={[
-          { value: "texte", label: "Texte libre" },
-          { value: "modele", label: "Modèle approuvé" },
-        ]}
-      />
-
-      {config.mode === "modele" ? (
-        <>
-          <TextField
-            label="Nom du modèle"
-            required
-            value={config.template ?? ""}
-            onChange={(event) => set({ template: event.target.value })}
-            placeholder="recap_agenda"
-          />
-          <TextField
-            label="Langue du modèle"
-            value={config.language ?? "fr"}
-            onChange={(event) => set({ language: event.target.value })}
-          />
-          <p className="text-muted-foreground bg-muted/40 rounded-lg px-3 py-2 text-[11px] leading-relaxed">
-            Le message ci-dessous devient le <strong>premier paramètre</strong> du
-            modèle. Meta refusant les sauts de ligne dans un paramètre, ils sont
-            remplacés par des séparateurs à l&apos;envoi.
-          </p>
-        </>
-      ) : (
-        <p className="text-warning bg-warning-soft/50 rounded-lg px-3 py-2 text-[11px] leading-relaxed">
-          Le texte libre n&apos;est accepté que dans les 24 h suivant un message
-          du destinataire. Pour un envoi programmé, il faut un modèle approuvé
-          par Meta — sinon l&apos;automatisation marchera à l&apos;essai et
-          échouera le lendemain à 18 h.
-        </p>
-      )}
 
       <TextAreaField
         label="Message"
@@ -286,6 +248,140 @@ function WhatsAppFields({
           </button>
         ))}
       </div>
+
+      <SelectField
+        label="Mise en forme"
+        value={config.parse_mode ?? "texte"}
+        onValueChange={(value) => set({ parse_mode: value as TelegramConfig["parse_mode"] })}
+        options={[
+          { value: "texte", label: "Texte simple" },
+          { value: "HTML", label: "HTML — <b>gras</b>, <i>italique</i>" },
+        ]}
+        hint={
+          config.parse_mode === "HTML"
+            ? "Les titres de rendez-vous sont échappés : un chevron ne fera pas échouer l'envoi."
+            : undefined
+        }
+      />
+
+      <div className="flex items-center gap-2">
+        <Switch
+          id="silent"
+          checked={config.silent ?? false}
+          onCheckedChange={(silent) => set({ silent })}
+        />
+        <Label htmlFor="silent" className="text-sm font-normal">
+          Envoi silencieux
+        </Label>
+      </div>
     </>
+  );
+}
+
+/**
+ * Le choix du destinataire.
+ *
+ * Un bot Telegram n'écrit qu'à un `chat_id`, et ce nombre n'apparaît nulle part
+ * dans l'application. Le faire chercher dans une documentation d'API serait la
+ * marche la plus haute de toute l'installation — pour un identifiant que le bot
+ * connaît déjà. On l'interroge donc, et on propose ce qu'il a vu passer.
+ *
+ * Le champ reste saisissable : un identifiant de groupe connu se colle
+ * directement, sans devoir écrire au bot pour le faire apparaître.
+ */
+function ChatPicker({
+  value,
+  onPick,
+}: {
+  value: string;
+  onPick: (id: string) => void;
+}) {
+  const [token, setToken] = useState(0);
+  const [info, setInfo] = useState<TelegramInfo | null>(null);
+  const [failure, setFailure] = useState<string | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    telegramInfo(controller.signal)
+      .then(setInfo)
+      .catch((cause) => {
+        if (controller.signal.aborted) return;
+        setFailure(errorMessage(cause));
+      });
+    return () => controller.abort();
+  }, [token]);
+
+  const chats = info?.chats ?? [];
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between">
+        <Label className="text-muted-foreground text-xs font-medium">
+          Conversation <span className="text-destructive">*</span>
+        </Label>
+        <button
+          type="button"
+          onClick={() => setToken((current) => current + 1)}
+          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-[11px]"
+        >
+          <RefreshCwIcon className="size-3" />
+          Actualiser
+        </button>
+      </div>
+
+      <TextField
+        value={value}
+        onChange={(event) => onPick(event.target.value)}
+        placeholder="123456789"
+        className="font-mono text-xs"
+      />
+
+      {info?.configured === false ? (
+        <p className="text-warning bg-warning-soft/50 rounded-lg px-3 py-2 text-[11px] leading-relaxed">
+          Aucun bot déclaré sur le serveur
+          (<span className="font-mono">CRM_TELEGRAM_BOT_TOKEN</span>).
+        </p>
+      ) : (failure ?? info?.error) ? (
+        <p className="text-danger bg-danger-soft/40 rounded-lg px-3 py-2 text-[11px] leading-relaxed">
+          {failure ?? info?.error}
+        </p>
+      ) : chats.length > 0 ? (
+        <div className="flex flex-col gap-0.5 rounded-lg border p-1">
+          {chats.map((chat) => (
+            <button
+              key={chat.id}
+              type="button"
+              onClick={() => onPick(chat.id)}
+              className={cn(
+                "flex items-baseline gap-2 rounded-[4px] px-1.5 py-1 text-left text-xs transition-colors",
+                chat.id === value ? "bg-accent" : "hover:bg-accent/60",
+              )}
+            >
+              <span className="min-w-0 flex-1 truncate">{chat.title}</span>
+              <span className="text-muted-foreground/60 shrink-0 text-[10px]">
+                {chat.kind}
+              </span>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <p className="text-muted-foreground bg-muted/40 rounded-lg px-3 py-2 text-[11px] leading-relaxed">
+          {info?.bot?.username ? (
+            <>
+              Écrivez «&nbsp;bonjour&nbsp;» à{" "}
+              <span className="font-medium">@{info.bot.username}</span> sur
+              Telegram, puis actualisez : la conversation apparaîtra ici.
+            </>
+          ) : (
+            "Chargement du bot…"
+          )}
+        </p>
+      )}
+
+      <p className="text-muted-foreground/70 text-[11px] leading-relaxed">
+        Telegram ne garde que vingt-quatre heures de messages : la liste est
+        vide tant que personne n&apos;a écrit au bot.
+      </p>
+    </div>
   );
 }
