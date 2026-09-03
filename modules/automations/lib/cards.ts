@@ -1,7 +1,7 @@
 import {
   CalendarClockIcon,
   ClockIcon,
-  MessageCircleIcon,
+  SendIcon,
   type LucideIcon,
 } from "lucide-react";
 import type { NodeConfig, NodeType } from "./types";
@@ -48,18 +48,17 @@ export const CARDS: CardKind[] = [
     defaults: { offset_days: 1, calendar_ids: [], empty_text: "" },
   },
   {
-    type: "whatsapp",
-    label: "Envoi WhatsApp",
-    hint: "Envoie le message à un numéro.",
+    type: "telegram",
+    label: "Envoi Telegram",
+    hint: "Envoie le message dans une conversation du bot.",
     family: "action",
-    icon: MessageCircleIcon,
-    tone: { chip: "bg-warning-soft text-warning", ring: "border-warning/40" },
+    icon: SendIcon,
+    tone: { chip: "bg-info-soft text-info", ring: "border-info/40" },
     defaults: {
-      to: "",
-      mode: "texte",
+      chat_id: "",
       message: "{{resume}}",
-      template: "",
-      language: "fr",
+      parse_mode: "texte",
+      silent: false,
     },
   },
 ];

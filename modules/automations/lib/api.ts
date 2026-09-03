@@ -1,10 +1,21 @@
 import { apiFetch } from "@/shared/api/client";
-import type { Automation, AutomationInput, Run } from "./types";
+import type { Automation, AutomationInput, Run, TelegramInfo } from "./types";
 
 export function listAutomations(signal?: AbortSignal) {
-  return apiFetch<{ items: Automation[]; whatsapp_ready: boolean }>("/v1/automations", {
+  return apiFetch<{ items: Automation[]; telegram_ready: boolean }>("/v1/automations", {
     signal,
   });
+}
+
+/**
+ * Le bot et les conversations qui lui ont écrit.
+ *
+ * Telegram ne garde ses mises à jour que vingt-quatre heures : la liste est
+ * vide tant que personne n'a écrit au bot, et l'écran le dit plutôt que de
+ * laisser croire à une panne.
+ */
+export function telegramInfo(signal?: AbortSignal) {
+  return apiFetch<TelegramInfo>("/v1/automations/telegram", { signal });
 }
 
 export function getAutomation(id: string, signal?: AbortSignal) {

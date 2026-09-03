@@ -3,7 +3,7 @@
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { cn } from "@/lib/utils";
 import { cardOf, describeCron, FAMILY_LABEL } from "../lib/cards";
-import type { DigestConfig, NodeConfig, NodeType, WhatsAppConfig } from "../lib/types";
+import type { DigestConfig, NodeConfig, NodeType, TelegramConfig } from "../lib/types";
 
 /**
  * Une carte de la toile.
@@ -92,12 +92,11 @@ function summarise(data: CardData): string {
       return `${when} · ${scope}`;
     }
 
-    case "whatsapp": {
-      const config = data.config as unknown as WhatsAppConfig;
-      const to = config.to?.trim() ? config.to : "aucun numéro";
-      return config.mode === "modele"
-        ? `Modèle « ${config.template || "?"} » vers ${to}`
-        : `Message libre vers ${to}`;
+    case "telegram": {
+      const config = data.config as unknown as TelegramConfig;
+      if (!config.chat_id?.trim()) return "Aucune conversation choisie";
+      const shape = config.parse_mode === "HTML" ? "mis en forme" : "texte";
+      return `Message ${shape} vers ${config.chat_id}${config.silent ? " · silencieux" : ""}`;
     }
   }
 }

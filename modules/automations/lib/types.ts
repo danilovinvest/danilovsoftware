@@ -7,7 +7,7 @@
  * obligerait à redessiner à chaque ouverture.
  */
 
-export type NodeType = "schedule" | "calendar_digest" | "whatsapp";
+export type NodeType = "schedule" | "calendar_digest" | "telegram";
 
 export type NodeConfig = Record<string, unknown>;
 
@@ -77,11 +77,20 @@ export type DigestConfig = {
   empty_text: string;
 };
 
-export type WhatsAppConfig = {
-  to: string;
-  /** « texte » dans une conversation ouverte, « modele » pour un envoi froid. */
-  mode: "texte" | "modele";
+export type TelegramConfig = {
+  /** Identifiant de conversation. Un nombre, négatif pour un groupe. */
+  chat_id: string;
   message: string;
-  template: string;
-  language: string;
+  /** « texte » ou « HTML ». */
+  parse_mode: "texte" | "HTML";
+  /** Le message arrive, le téléphone ne sonne pas. */
+  silent: boolean;
+};
+
+/** Le bot, et les conversations qui lui ont écrit récemment. */
+export type TelegramInfo = {
+  configured: boolean;
+  bot?: { username: string; first_name: string };
+  chats?: Array<{ id: string; title: string; kind: string }>;
+  error?: string;
 };
