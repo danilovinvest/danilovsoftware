@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeftIcon, PlayIcon, SaveIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeftIcon, PlayIcon, SaveIcon, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { errorMessage } from "@/shared/api/errors";
-import { formatDateTime } from "@/shared/lib/format";
+import { formatDateTime, plural } from "@/shared/lib/format";
 import { ErrorNotice, Skeleton, Spinner } from "@/shared/ui/feedback";
 import { useAutomation, useRuns } from "../hooks/use-automations";
 import * as api from "../lib/api";
@@ -62,6 +63,8 @@ function EditorBody({
   const [notice, setNotice] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const router = useRouter();
 
   const journal = useRuns(automation.id, 20);
   // La dernière exécution désigne la carte qui a fauté : la toile la cerne de
@@ -95,6 +98,32 @@ function EditorBody({
       setActive(automation.active);
     } finally {
       setSaving(false);
+    }
+  }
+
+  /*
+   * La confirmation nomme ce qu'on supprime, et dit ce qui part avec.
+   *
+   * Une automatisation emporte son journal — les exécutions passées, ce qui a
+   * été envoyé et à qui. C'est la seule trace de ce que le CRM a écrit aux
+   * gens, et « Supprimer ? » tout court ne le laisserait pas deviner.
+   */
+  async function remove() {
+    const runs = journal.runs.length;
+    const trace =
+      runs > 0
+        ? `\n\nSon journal part avec elle : ${plural(runs, "exécution")} consignée${runs > 1 ? "s" : ""}.`
+        : "";
+    if (!confirm(`Supprimer l'automatisation « ${name} » ?${trace}`)) return;
+
+    setRemoving(true);
+    setError(null);
+    try {
+      await api.deleteAutomation(automation.id);
+      router.push("/automations");
+    } catch (cause) {
+      setError(errorMessage(cause));
+      setRemoving(false);
     }
   }
 
@@ -152,6 +181,18 @@ function EditorBody({
           <Button size="sm" onClick={() => save()} disabled={saving}>
             {saving ? <Spinner /> : <SaveIcon className="size-3.5" />}
             Enregistrer
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-danger hover:text-danger size-8"
+            onClick={remove}
+            disabled={removing}
+            aria-label="Supprimer l'automatisation"
+            title="Supprimer cette automatisation"
+          >
+            {removing ? <Spinner /> : <Trash2Icon className="size-4" />}
           </Button>
         </div>
       </header>

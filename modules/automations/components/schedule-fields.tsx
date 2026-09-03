@@ -196,27 +196,34 @@ type PreviewState =
   | { status: "prêt"; next: string[] };
 
 function usePreview(cron: string, timeZone: string): PreviewState {
-  const [state, setState] = useState<PreviewState>({ status: "attente" });
+  const empty = cron.trim() === "";
+  const key = `${cron}|${timeZone}`;
+  // Même forme que partout ailleurs : la réponse est rangée avec la question
+  // qui l'a produite. « En cours de vérification » s'en déduit, au lieu d'être
+  // posé dans l'effet — et une réponse lente ne peut pas écraser la plus
+  // récente pendant qu'on tape.
+  const [resolved, setResolved] = useState<{ key: string; state: PreviewState }>({
+    key: "",
+    state: { status: "attente" },
+  });
 
   useEffect(() => {
-    if (cron.trim() === "") {
-      setState({ status: "erreur", message: "Expression vide." });
-      return;
-    }
+    if (empty) return;
 
     const controller = new AbortController();
     const timer = setTimeout(() => {
       previewCron(cron, timeZone, controller.signal)
         .then((data) =>
-          setState(
-            data.valid
+          setResolved({
+            key,
+            state: data.valid
               ? { status: "prêt", next: data.next }
               : { status: "erreur", message: data.error ?? "Expression invalide." },
-          ),
+          }),
         )
         .catch((cause) => {
           if (controller.signal.aborted) return;
-          setState({ status: "erreur", message: errorMessage(cause) });
+          setResolved({ key, state: { status: "erreur", message: errorMessage(cause) } });
         });
     }, 350);
 
@@ -224,9 +231,12 @@ function usePreview(cron: string, timeZone: string): PreviewState {
       controller.abort();
       clearTimeout(timer);
     };
-  }, [cron, timeZone]);
+  }, [key, cron, timeZone, empty]);
 
-  return state;
+  if (empty) {
+    return { status: "erreur", message: "Expression vide : rien ne se déclenchera." };
+  }
+  return resolved.key === key ? resolved.state : { status: "attente" };
 }
 
 const occurrence = new Intl.DateTimeFormat("fr-FR", {

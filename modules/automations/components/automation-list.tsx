@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { PlusIcon, TriangleAlertIcon, ZapIcon } from "lucide-react";
+import { PlusIcon, Trash2Icon, TriangleAlertIcon, ZapIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePermission } from "@/modules/auth";
 import { errorMessage } from "@/shared/api/errors";
@@ -27,7 +27,34 @@ export function AutomationList() {
   const canWrite = usePermission("automations:write");
   const router = useRouter();
   const [pending, setPending] = useState(false);
+  const [removing, setRemoving] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
+
+  /*
+   * La confirmation nomme ce qu'on supprime, et dit ce qui part avec.
+   *
+   * Une automatisation emporte son journal — les exécutions passées, ce qui a
+   * été envoyé et à qui. C'est la seule trace de ce que le CRM a écrit aux
+   * gens, et « Supprimer ? » tout court ne le laisserait pas deviner.
+   */
+  async function remove(id: string, name: string, runs: number) {
+    const trace =
+      runs > 0
+        ? `\n\nSon journal part avec elle : ${plural(runs, "exécution")} consignée${runs > 1 ? "s" : ""}.`
+        : "";
+    if (!confirm(`Supprimer l'automatisation « ${name} » ?${trace}`)) return;
+
+    setRemoving(id);
+    setFailure(null);
+    try {
+      await api.deleteAutomation(id);
+      reload();
+    } catch (cause) {
+      setFailure(errorMessage(cause));
+    } finally {
+      setRemoving(null);
+    }
+  }
 
   async function create() {
     setPending(true);
@@ -124,37 +151,63 @@ export function AutomationList() {
       ) : (
         <div className="divide-y rounded-xl border">
           {automations.map((automation) => (
-            <Link
+            <div
               key={automation.id}
-              href={`/automations/${automation.id}`}
-              className="hover:bg-accent/50 flex flex-wrap items-center gap-3 px-4 py-3 transition-colors"
+              className="hover:bg-accent/50 flex items-center gap-1 pr-2 transition-colors"
             >
-              <span
-                className={cn(
-                  "size-2 shrink-0 rounded-full",
-                  automation.active ? "bg-success" : "bg-muted-foreground/30",
-                )}
-              />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-medium">{automation.name}</span>
-                <span className="text-muted-foreground/70 block truncate text-[11px]">
-                  {describeCron(automation.cron)} · {automation.time_zone} ·{" "}
-                  {plural(automation.graph.nodes.length, "carte")}
+              <Link
+                href={`/automations/${automation.id}`}
+                className="flex min-w-0 flex-1 flex-wrap items-center gap-3 px-4 py-3"
+              >
+                <span
+                  className={cn(
+                    "size-2 shrink-0 rounded-full",
+                    automation.active ? "bg-success" : "bg-muted-foreground/30",
+                  )}
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium">
+                    {automation.name}
+                  </span>
+                  <span className="text-muted-foreground/70 block truncate text-[11px]">
+                    {describeCron(automation.cron)} · {automation.time_zone} ·{" "}
+                    {plural(automation.graph.nodes.length, "carte")}
+                  </span>
                 </span>
-              </span>
-              <span className="text-muted-foreground shrink-0 text-right text-[11px]">
-                {automation.active && automation.next_run_at ? (
-                  <>prochaine le {formatDateTime(automation.next_run_at)}</>
-                ) : (
-                  "en pause"
-                )}
-                <span className="text-muted-foreground/60 block">
-                  {automation.last_run_at
-                    ? `dernière ${formatRelative(automation.last_run_at)}`
-                    : "jamais exécutée"}
+                <span className="text-muted-foreground shrink-0 text-right text-[11px]">
+                  {automation.active && automation.next_run_at ? (
+                    <>prochaine le {formatDateTime(automation.next_run_at)}</>
+                  ) : (
+                    "en pause"
+                  )}
+                  <span className="text-muted-foreground/60 block">
+                    {automation.last_run_at
+                      ? `dernière ${formatRelative(automation.last_run_at)}`
+                      : "jamais exécutée"}
+                  </span>
                 </span>
-              </span>
-            </Link>
+              </Link>
+
+              {canWrite && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-8 shrink-0"
+                  disabled={removing === automation.id}
+                  onClick={() =>
+                    remove(automation.id, automation.name, automation.run_count)
+                  }
+                  aria-label={`Supprimer ${automation.name}`}
+                  title="Supprimer cette automatisation"
+                >
+                  {removing === automation.id ? (
+                    <Spinner />
+                  ) : (
+                    <Trash2Icon className="size-3.5" />
+                  )}
+                </Button>
+              )}
+            </div>
           ))}
         </div>
       )}

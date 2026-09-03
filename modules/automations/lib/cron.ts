@@ -57,8 +57,18 @@ export function readCron(expression: string): Schedule {
   if (parts.length !== 5) return { ...DEFAULT, rhythm: "expression" };
 
   const [minute, hour, dom, month, dow] = parts;
+  // Les bornes sont vérifiées ici parce que l'éditeur *traduit* : « tous les
+  // jours à 25h » serait une phrase parfaitement lisible et parfaitement
+  // fausse. Hors bornes, on rend la main à l'aperçu du serveur, qui dira
+  // pourquoi l'expression est refusée.
   const simple = /^\d{1,2}$/;
-  if (!simple.test(minute) || !simple.test(hour) || month !== "*") {
+  if (
+    !simple.test(minute) ||
+    !simple.test(hour) ||
+    Number(minute) > 59 ||
+    Number(hour) > 23 ||
+    month !== "*"
+  ) {
     return { ...DEFAULT, rhythm: "expression" };
   }
 
