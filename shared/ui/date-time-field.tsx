@@ -53,6 +53,31 @@ const longDate = new Intl.DateTimeFormat("fr-FR", {
   month: "long",
 });
 
+/*
+La forme courte, celle qui tient dans un champ.
+
+« vendredi 4 septembre à 09:00 » fait deux cent dix pixels ; la moitié d'une
+boîte de dialogue en fait deux cent cinquante, moins l'icône, le remplissage et
+la croix. Le libellé débordait. « ven. 4 sept. · 9h » dit la même chose en
+moitié moins, et la forme longue reste dans l'infobulle.
+
+Le jour de la semaine est gardé, abrégé : sur une échéance, « ven. » situe
+immédiatement, là où « 4 sept. » demande de compter.
+*/
+const shortDate = new Intl.DateTimeFormat("fr-FR", {
+  weekday: "short",
+  day: "numeric",
+  month: "short",
+});
+
+/** L'heure à la française — « 9h », « 14h30 » — comme dans le calendrier. */
+function frenchHour(date: Date): string {
+  const minutes = date.getMinutes();
+  return minutes === 0
+    ? `${date.getHours()}h`
+    : `${date.getHours()}h${String(minutes).padStart(2, "0")}`;
+}
+
 const longDateYear = new Intl.DateTimeFormat("fr-FR", {
   weekday: "long",
   day: "numeric",
@@ -122,8 +147,8 @@ export function DateField({
               !selected && "text-muted-foreground",
             )}
           >
-            <CalendarIcon className="opacity-60" />
-            <span className="truncate first-letter:uppercase">
+            <CalendarIcon className="shrink-0 opacity-60" />
+            <span className="min-w-0 flex-1 truncate text-left first-letter:uppercase">
               {selected
                 ? (thisYear ? longDate : longDateYear).format(selected)
                 : "Choisir une date"}
@@ -205,21 +230,26 @@ export function DateTimeField({
             type="button"
             variant="outline"
             aria-invalid={error ? true : undefined}
+            title={
+              selected ? `${longDate.format(selected)} à ${timeInputValue(selected)}` : undefined
+            }
             className={cn(
               "h-8 w-full justify-start px-2.5 font-normal",
               !selected && "text-muted-foreground",
             )}
           >
-            <CalendarIcon className="opacity-60" />
-            {selected
-              ? `${longDate.format(selected)} à ${timeInputValue(selected)}`
-              : placeholder}
+            <CalendarIcon className="shrink-0 opacity-60" />
+            <span className="min-w-0 flex-1 truncate text-left">
+              {selected
+                ? `${shortDate.format(selected)} · ${frenchHour(selected)}`
+                : placeholder}
+            </span>
             {selected && (
               <span
                 role="button"
                 tabIndex={-1}
                 aria-label="Retirer l'échéance"
-                className="hover:text-foreground text-muted-foreground ml-auto"
+                className="hover:text-foreground text-muted-foreground shrink-0"
                 onClick={(event) => {
                   event.stopPropagation();
                   onChange(null);

@@ -133,19 +133,19 @@ export function TaskCard({
         <div className="mt-2.5 flex items-center justify-between gap-2">
           <span
             title={due.title}
-            className={cn("flex items-center gap-1 text-xs", DUE_TEXT[due.tone])}
+            className={cn("flex min-w-0 items-center gap-1 text-xs", DUE_TEXT[due.tone])}
           >
             {due.tone === "overdue" ? (
-              <AlertTriangleIcon className="size-3.5" />
+              <AlertTriangleIcon className="size-3.5 shrink-0" />
             ) : done ? (
-              <CheckIcon className="size-3.5" />
+              <CheckIcon className="size-3.5 shrink-0" />
             ) : (
-              <CalendarClockIcon className="size-3.5" />
+              <CalendarClockIcon className="size-3.5 shrink-0" />
             )}
-            {due.label}
+            <span className="truncate">{due.label}</span>
           </span>
 
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             {/* Une tâche qui traîne sans échéance mérite qu'on le voie. */}
             {!task.due_at && !done && (
               <span

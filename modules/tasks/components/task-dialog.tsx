@@ -96,7 +96,15 @@ export function TaskDialog({
           )}
         </DialogHeader>
 
-        <form id="task-form" onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
+        {/* Une date a besoin de plus de place qu'un statut : « jeu. 10 sept. ·
+            9h » ne tient pas dans la moitié d'une boîte de dialogue, « À
+            faire » y flotte. D'où deux colonnes inégales plutôt que deux
+            moitiés. */}
+        <form
+          id="task-form"
+          onSubmit={submit}
+          className="grid gap-4 sm:grid-cols-[minmax(0,7rem)_minmax(0,1fr)]"
+        >
           {error && !Object.keys(fields).length && (
             <div className="sm:col-span-2">
               <ErrorNotice message={error} />
