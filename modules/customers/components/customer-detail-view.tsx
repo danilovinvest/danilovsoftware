@@ -24,6 +24,7 @@ import { useCustomer } from "../hooks/use-customer";
 import { useAction } from "../hooks/use-customers";
 import * as api from "../lib/api";
 import { CustomerForm } from "./customer-form";
+import { CustomerHeadline } from "./customer-headline";
 import { DetailsPanel } from "./details-panel";
 import { EnumBadge } from "./enum-badge";
 import { InteractionsPanel } from "./interactions-panel";
@@ -116,6 +117,8 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
             )}
             {customer.city && <span>{customer.city}</span>}
           </div>
+
+          <CustomerHeadline customer={customer} className="mt-3" />
         </div>
 
         <div className="flex gap-2">
@@ -164,9 +167,10 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
 
         <TabsContent value="affaires" className="mt-4">
           <ProjectsPanel
-            customerId={customer.id}
+            customer={customer}
             projects={customer.projects}
             quotes={customer.quotes}
+            interactions={customer.interactions}
             onChanged={reload}
           />
         </TabsContent>
