@@ -248,7 +248,11 @@ function MessageRow({
           </div>
 
           <div className="truncate text-sm">{message.subject || "(sans objet)"}</div>
-          <div className="text-muted-foreground truncate text-xs">{message.snippet}</div>
+          {/* Un message sans corps voit son extrait retomber sur le sujet :
+              l'afficher deux fois ne dirait rien de plus. */}
+          {message.snippet && message.snippet !== message.subject && (
+            <div className="text-muted-foreground truncate text-xs">{message.snippet}</div>
+          )}
 
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
             {message.matched && message.customer_name && (
@@ -353,7 +357,12 @@ function Reader({
 
       <div className="min-w-0 p-4">
         {message.body ? (
-          <pre className="text-sm break-words whitespace-pre-wrap">{message.body}</pre>
+          // Un courrier se lit dans la police du texte, pas dans celle du code.
+          // `whitespace-pre-wrap` garde les paragraphes que le serveur a
+          // conservés en dépliant le HTML.
+          <div className="max-w-3xl text-sm leading-relaxed break-words whitespace-pre-wrap">
+            {message.body}
+          </div>
         ) : (
           <p className="text-muted-foreground text-sm">
             Ce message n&apos;a pas de texte — une pièce jointe seule, ou un accusé de
