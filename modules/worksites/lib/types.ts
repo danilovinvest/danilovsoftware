@@ -112,6 +112,14 @@ export type Worksite = {
   completed_at: string | null;
   /** Jours de retard sur la fin prévue. Calculé par le serveur. */
   days_late: number;
+  /**
+   * Jours écoulés depuis la signature.
+   *
+   * Calculé ici et non dans la carte : c'est la même raison que `days_late` —
+   * l'ancienneté se lit sur l'instant de l'instantané, pas sur une horloge
+   * relue à chaque rendu.
+   */
+  days_since_signature: number;
 
   amount_ht: number;
   costs: Cost[];

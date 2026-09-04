@@ -130,6 +130,9 @@ function materialize(now: number): Worksite[] {
       ends_at: endsAt,
       completed_at: completed,
       days_late: lateDays,
+      // Le décalage du seed est déjà un nombre de jours : le relire d'une date
+      // qu'on vient de fabriquer ferait un aller-retour pour rien.
+      days_since_signature: Math.max(0, seed.signed),
       amount_ht: seed.ht,
       costs,
       cost_total: costTotal,

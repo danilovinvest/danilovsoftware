@@ -3,12 +3,14 @@
 import {
   AlertTriangleIcon,
   BanknoteIcon,
+  CalendarPlusIcon,
   FileSignatureIcon,
   MapPinIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { activityName } from "@/modules/group";
-import { eurosShort } from "@/shared/lib/format";
+import { PLANNING_GRACE_DAYS } from "@/modules/customers";
+import { agoLabel, eurosShort } from "@/shared/lib/format";
 import { BLOCKED_REASON, STATUS_RAIL, marginTone } from "../lib/labels";
 import { TONE_TEXT } from "@/shared/ui/panel";
 import type { Worksite } from "../lib/types";
@@ -82,6 +84,25 @@ export function WorksiteCard({
         <p className="text-danger inline-flex items-center gap-1 text-[11px] font-medium">
           <AlertTriangleIcon className="size-3" />
           {worksite.days_late} jours de retard
+        </p>
+      )}
+
+      {/*
+        Un chantier signé sans date ne réclame rien : personne ne s'en plaint,
+        et il glisse. La carte compte donc les jours depuis la signature, et
+        passe en alerte au même seuil que la fiche client.
+      */}
+      {worksite.status === "a_planifier" && (
+        <p
+          className={cn(
+            "inline-flex items-center gap-1 text-[11px]",
+            worksite.days_since_signature > PLANNING_GRACE_DAYS
+              ? "text-danger font-medium"
+              : "text-warning",
+          )}
+        >
+          <CalendarPlusIcon className="size-3" />
+          signé {agoLabel(worksite.days_since_signature)}, sans date
         </p>
       )}
 
