@@ -42,7 +42,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             marge et le rayon ; le liseré se rajoute ici, sinon deux gris aussi
             proches (gray1 et gray2) ne se distingueraient pas.
           */}
-          <SidebarInset className="md:peer-data-[variant=inset]:border">
+          {/*
+            `min-w-0` sur la zone principale : c'est un élément de conteneur
+            flex, donc sa largeur minimale vaut son contenu par défaut. Un
+            tableau plus large que l'écran l'élargissait, et c'est la page
+            entière qui défilait latéralement au lieu du seul tableau.
+          */}
+          <SidebarInset className="min-w-0 md:peer-data-[variant=inset]:border">
             <header className="flex h-10 shrink-0 items-center gap-1 border-b px-2">
               <SidebarTrigger className="text-muted-foreground size-7" />
               <ShellBreadcrumb />

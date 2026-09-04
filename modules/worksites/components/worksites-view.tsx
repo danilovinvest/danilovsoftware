@@ -71,7 +71,7 @@ export function WorksitesView() {
 
       <MetricCards metrics={data.metrics} />
 
-      <div className="grid items-start gap-4 lg:grid-cols-2 xl:grid-cols-4">
+      <div className="grid items-start gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
         <AlertPanel
           title="Signés sans date"
           description="Devis signé, aucune date de démarrage"

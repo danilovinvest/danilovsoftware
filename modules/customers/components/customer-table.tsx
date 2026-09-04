@@ -60,7 +60,7 @@ export function CustomerTable({
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="w-full min-w-0 overflow-x-auto">
       {/* En-têtes de colonne à la Twenty : une ligne basse, en gris
           tertiaire, qui ne rivalise pas avec le contenu. */}
       <Table className="min-w-280 [&_thead_th]:text-muted-foreground [&_thead_th]:h-8 [&_thead_th]:text-xs [&_thead_th]:font-medium">

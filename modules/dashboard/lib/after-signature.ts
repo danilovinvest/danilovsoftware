@@ -45,6 +45,20 @@ function fingerprint(key: string): number {
   for (let index = 0; index < key.length; index += 1) {
     hash = ((hash << 5) + hash + key.charCodeAt(index)) | 0;
   }
+  /*
+  Le brassage final n'est pas décoratif.
+
+  Les références se suivent — DE2026-0131, 0132, 0133 — et djb2 seul leur donne
+  des empreintes voisines : le reste modulo cent les rangeait presque toutes
+  dans le même seau, et trois des quatre listes restaient vides. Ces trois
+  décalages-multiplications sont l'étape d'avalanche de MurmurHash3 : un bit
+  d'entrée qui change en retourne la moitié en sortie.
+  */
+  hash ^= hash >>> 16;
+  hash = Math.imul(hash, 0x21f0aaad);
+  hash ^= hash >>> 15;
+  hash = Math.imul(hash, 0x735a2d97);
+  hash ^= hash >>> 15;
   return Math.abs(hash);
 }
 

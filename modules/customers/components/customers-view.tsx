@@ -104,7 +104,13 @@ export function CustomersView() {
         ))}
       </div>
 
-      <Card className="gap-0 overflow-hidden py-0">
+      {/*
+        `min-w-0` n'est pas décoratif : un enfant de conteneur flex a par défaut
+        `min-width: auto`, donc il s'élargit pour contenir le tableau au lieu de
+        le laisser défiler. Sans cette classe, c'est la page entière qui prend
+        cent trente pixels de trop et défile latéralement.
+      */}
+      <Card className="min-w-0 gap-0 overflow-hidden py-0">
         <div className="p-4">
           <CustomerFiltersBar
             filters={filters}

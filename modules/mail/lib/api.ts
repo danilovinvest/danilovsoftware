@@ -1,6 +1,15 @@
 import { apiFetch } from "@/shared/api/client";
 import { API_URL } from "@/shared/lib/env";
-import type { MailAccount, MailAttachment, MailMessage, MailRun, UnknownSender } from "./types";
+import type {
+  BrowseMessage,
+  MailAccount,
+  MailAttachment,
+  MailMessage,
+  MailPage,
+  MailRun,
+  MailScope,
+  UnknownSender,
+} from "./types";
 
 export function listAccounts(signal?: AbortSignal) {
   return apiFetch<{ items: MailAccount[]; syncing: boolean }>("/v1/mail/accounts", { signal });
@@ -15,6 +24,37 @@ export function listUnknownSenders(minimum = 2, limit = 50, signal?: AbortSignal
     `/v1/mail/unknown?minimum=${minimum}&limit=${limit}`,
     { signal },
   );
+}
+
+/** Parcourir la boîte entière, et non plus seulement le courrier d'une fiche. */
+export function browseMail(
+  params: { search?: string; scope?: MailScope; from?: string; page?: number },
+  signal?: AbortSignal,
+) {
+  const query = new URLSearchParams();
+  if (params.search) query.set("search", params.search);
+  if (params.scope && params.scope !== "tous") query.set("scope", params.scope);
+  if (params.from) query.set("from", params.from);
+  query.set("page", String(params.page ?? 1));
+  query.set("per_page", "50");
+  return apiFetch<MailPage>(`/v1/mail/messages?${query}`, { signal });
+}
+
+/**
+ * Un message et son corps.
+ *
+ * Le serveur rapatrie le corps s'il n'est pas encore en base : l'appel peut
+ * donc prendre une seconde la première fois, le temps d'une connexion IMAP.
+ */
+export function getMessage(id: string, signal?: AbortSignal) {
+  return apiFetch<BrowseMessage>(`/v1/mail/messages/${id}`, { signal });
+}
+
+export function setCopyAll(accountId: string, copyAll: boolean) {
+  return apiFetch<void>(`/v1/mail/accounts/${accountId}`, {
+    method: "PATCH",
+    body: { copy_all: copyAll },
+  });
 }
 
 export function listCustomerMail(customerId: string, signal?: AbortSignal) {

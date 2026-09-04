@@ -298,6 +298,22 @@ export function readCycle(
     },
   ];
 
+  /*
+  Les dates ne peuvent pas reculer.
+
+  L'import du fichier de suivi laisse des affaires dont le devis porte une date
+  antérieure au rendez-vous : les colonnes d'origine n'étaient pas tenues dans
+  l'ordre. Afficher « RDV 18 juin » puis « Signé 12 juin » ferait douter de
+  toute la frise. Une date qui recule est donc masquée — le cran reste franchi,
+  on avoue seulement qu'on ne sait pas quand.
+  */
+  let floor: string | null = null;
+  for (const entry of raw) {
+    if (!entry.done || entry.at === null) continue;
+    if (floor !== null && entry.at < floor) entry.at = null;
+    else floor = entry.at;
+  }
+
   const firstOpen = raw.findIndex((entry) => !entry.done);
   const paused = project.outcome !== null && isPaused(project.outcome);
   const closed = project.outcome !== null && !paused;
@@ -344,6 +360,13 @@ function describe(
     default:
       return `${name} — à venir`;
   }
+}
+
+/** « aujourd'hui », « hier », « il y a 12 j » — jamais « il y a 0 j ». */
+function agoWords(days: number): string {
+  if (days <= 0) return "aujourd'hui";
+  if (days === 1) return "hier";
+  return `il y a ${days} j`;
 }
 
 function formatDay(iso: string): string {
@@ -542,8 +565,8 @@ export function nextAction(
       step: "negociation",
       title: days > FRESH_DAYS ? `${days} jours sans réponse` : "En attente de réponse",
       detail: relaunched
-        ? `Relancé il y a ${days} j. ${revisions(quotes).length > 1 ? "Devis révisé." : ""}`.trim()
-        : `Devis envoyé il y a ${days} j, jamais relancé.`,
+        ? `Relancé ${agoWords(days)}.${revisions(quotes).length > 1 ? " Devis révisé." : ""}`
+        : `Devis envoyé ${agoWords(days)}, jamais relancé.`,
       tone: waitingTone(days),
       alert: days > FRESH_DAYS,
       actions: [

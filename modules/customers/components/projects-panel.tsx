@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronRightIcon, FilePlusIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { usePermission } from "@/modules/auth";
+import { createTask } from "@/modules/tasks";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -451,7 +452,28 @@ function ProjectBlock({
           open={outcome !== null}
           onOpenChange={(next) => !next && setOutcome(null)}
           onSaved={onChanged}
-          onScheduleResume={(date) => onOverride({ resume_at: `${date}T09:00:00.000Z` })}
+          onScheduleResume={async (date, _outcome, note) => {
+            onOverride({ resume_at: `${date}T09:00:00.000Z` });
+            /*
+            Une affaire reportée n'est réveillée par rien.
+
+            La date de reprise devient donc une vraie tâche, échue ce jour-là et
+            rattachée à l'affaire. C'est le seul mécanisme du CRM qui sache
+            revenir vers quelqu'un à une date, et le réécrire ici en aurait fait
+            un second — qui aurait divergé du premier.
+            */
+            await createTask({
+              title: `Reprendre « ${project.label} »`,
+              body: note ? `Reportée : ${note}` : "Affaire reportée, à revoir.",
+              status: "a_faire",
+              due_at: new Date(`${date}T09:00:00`).toISOString(),
+              assignee_id: null,
+              targets: [{ project_id: project.id }],
+            }).catch(() => {
+              // Le report lui-même est déjà enregistré : échouer ici ne doit
+              // pas défaire ce que l'utilisateur vient de valider.
+            });
+          }}
         />
       )}
       {logging && (

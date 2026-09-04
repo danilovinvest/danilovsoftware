@@ -550,7 +550,7 @@ export const SEED_WORKSITES: SeedWorksite[] = [
     address: "Avenue Blundell Maple",
     owner: "Alexandre Danilov",
     activity: "gros-oeuvre",
-    signed: 5,
+    signed: 34,
     ht: 20590,
     vat: 20,
     quotes: [
@@ -567,7 +567,7 @@ export const SEED_WORKSITES: SeedWorksite[] = [
     address: "Route de Cannes",
     owner: "Léa Vidal",
     activity: "gros-oeuvre",
-    signed: 3,
+    signed: 19,
     ht: 79568,
     vat: 10,
     quotes: [

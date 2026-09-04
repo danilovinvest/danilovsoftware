@@ -20,6 +20,12 @@ export type MailAccount = {
   last_error: string;
   message_count: number;
   matched_count: number;
+  /**
+   * Vrai quand les copies suivantes prennent le corps de **tous** les messages.
+   * Faux par défaut : une boîte partagée contient aussi la banque, l'URSSAF et
+   * la vie privée du dirigeant.
+   */
+  copy_all: boolean;
 };
 
 export type MailMessage = {
@@ -41,6 +47,31 @@ export type MailAttachment = {
   mime_type: string;
   size_bytes: number;
 };
+
+/**
+ * Un message tel que le parcours de la boîte le rend.
+ *
+ * `has_body` dit si le corps est déjà en base. Faux ne veut pas dire « pas de
+ * contenu » : cela veut dire qu'il n'a pas encore été demandé au serveur, et
+ * l'ouverture du message s'en charge.
+ */
+export type BrowseMessage = MailMessage & {
+  customer_id: string;
+  customer_name: string;
+  matched: boolean;
+  has_body: boolean;
+};
+
+export type MailPage = {
+  items: BrowseMessage[];
+  total: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
+};
+
+/** Ce sur quoi la liste porte. */
+export type MailScope = "tous" | "rapproches" | "sans_fiche" | "avec_corps";
 
 /** Un correspondant régulier qui n'a pas de fiche. On ne connaît de lui que son
  * adresse, son nom d'affichage et sa fréquence : son courrier n'est pas en base. */
