@@ -49,9 +49,26 @@ function Body({ worksite }: { worksite: Worksite }) {
   const entity = entityOfActivity(worksite.activity_id);
   const status = WORKSITE_STATUS[worksite.status];
 
+  /*
+  La frise complète, de la signature à l'avis client.
+
+  Les quatre premiers jalons sont ceux d'avant-démarrage — acompte facturé,
+  acompte encaissé, date, matériaux. Ils manquaient : la frise commençait à
+  « Démarré », c'est-à-dire après l'endroit où les chantiers coincent
+  réellement. Un chantier signé qui n'a ni acompte ni date n'a aucune raison de
+  démarrer, et rien ne le disait ici.
+  */
+  const started = worksite.status !== "a_planifier" && worksite.status !== "planifie";
+
   const milestones = [
     { label: "Signé", at: worksite.signed_at },
-    { label: "Démarré", at: worksite.starts_at },
+    { label: "Acompte facturé", at: worksite.deposit?.invoiced_at ?? null },
+    { label: "Acompte encaissé", at: worksite.deposit?.paid_at ?? null },
+    // Réserver une date et démarrer sont deux choses : une date posée pour dans
+    // six semaines n'est pas un chantier commencé. Le statut, lui, sait déjà
+    // faire la différence — il se déduit des dates.
+    { label: "Date réservée", at: worksite.starts_at },
+    { label: "Démarré", at: started ? worksite.starts_at : null },
     { label: "Terminé", at: worksite.completed_at },
     { label: "PV signé", at: worksite.pv_signed_at },
     { label: "Solde encaissé", at: worksite.balance?.paid_at ?? null },

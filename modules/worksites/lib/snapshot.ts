@@ -1,4 +1,5 @@
 import { ACTIVITY_BY_ID } from "@/modules/group";
+import { PLANNING_GRACE_DAYS } from "@/modules/customers";
 import type { Metric } from "@/shared/ui/metric-cards";
 import { SEED_WORKSITES, type SeedWorksite } from "./seed";
 import type {

@@ -3,6 +3,7 @@
 import {
   AlarmClockIcon,
   BanknoteIcon,
+  CalendarPlusIcon,
   FileSignatureIcon,
   FlaskConicalIcon,
   StarIcon,
@@ -71,6 +72,15 @@ export function WorksitesView() {
       <MetricCards metrics={data.metrics} />
 
       <div className="grid items-start gap-4 lg:grid-cols-2 xl:grid-cols-4">
+        <AlertPanel
+          title="Signés sans date"
+          description="Devis signé, aucune date de démarrage"
+          icon={CalendarPlusIcon}
+          tone="danger"
+          rows={data.unplanned}
+          onOpen={board.open}
+          money
+        />
         <AlertPanel
           title="En retard"
           description="Fin prévue dépassée"
