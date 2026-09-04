@@ -233,10 +233,18 @@ export function readCycle(
   const firstContact = mine.length > 0 ? oldest(mine) : null;
 
   // --- Ce qui est franchi, et quand -------------------------------------
-  // `created_at` manque sur une ligne de liste : la date de démarrage prend le
-  // relais, et à défaut le cran est franchi sans date plutôt qu'ignoré.
-  const anchor = project.created_at ?? project.started_at;
-  const contactAt = firstContact?.occurred_at ?? (stage !== "demande_recue" ? anchor : null);
+  /*
+  Franchi et daté sont deux questions distinctes.
+
+  Une ligne de liste n'a pas de `created_at`, et l'import Excel laisse des
+  affaires sans date de démarrage. Lier les deux ferait croire qu'aucun contact
+  n'a eu lieu sur une affaire dont le devis est pourtant parti — c'est ce que
+  l'écran affichait. L'étape enregistrée décide donc de ce qui est franchi ; la
+  date n'est qu'un ornement, absente quand on ne la connaît pas.
+  */
+  const anchor = earliest(project.created_at, project.started_at);
+  const contactDone = mine.length > 0 || stage !== "demande_recue";
+  const contactAt = earliest(firstContact?.occurred_at, contactDone ? anchor : undefined);
 
   const rdvDone =
     (rdv !== null && rdv.occurred_at <= new Date(now).toISOString()) ||
@@ -257,9 +265,9 @@ export function readCycle(
 
   // --- Chaque cran, dans l'ordre -----------------------------------------
   const raw: Array<{ step: CycleStep; done: boolean; at: string | null; since: string | null }> = [
-    { step: "contact", done: contactAt !== null, at: contactAt, since: contactAt },
-    { step: "rdv", done: rdvDone, at: rdvAt, since: rdvAt },
-    { step: "devis", done: devisDone, at: devisAt, since: devisAt },
+    { step: "contact", done: contactDone, at: contactAt, since: contactAt ?? anchor },
+    { step: "rdv", done: rdvDone, at: rdvAt, since: rdvAt ?? contactAt ?? anchor },
+    { step: "devis", done: devisDone, at: devisAt, since: devisAt ?? rdvAt ?? anchor },
     {
       step: "negociation",
       done: signeDone,
@@ -267,9 +275,9 @@ export function readCycle(
       // L'attente de la négociation court depuis la dernière relance, pas
       // depuis l'envoi : relancer remet le compteur à zéro, sans quoi le
       // chiffre resterait rouge alors qu'on vient d'agir.
-      since: project.last_reminder_at ?? devisAt,
+      since: project.last_reminder_at ?? devisAt ?? project.started_at ?? anchor,
     },
-    { step: "signe", done: signeDone, at: signeAt, since: signeAt },
+    { step: "signe", done: signeDone, at: signeAt, since: signeAt ?? devisAt },
     {
       step: "acompte",
       done: acompteDone,
@@ -350,6 +358,19 @@ function lastInteraction(interactions: Interaction[], kind: string): Interaction
 
 function oldest(interactions: Interaction[]): Interaction {
   return interactions.reduce((best, i) => (i.occurred_at < best.occurred_at ? i : best));
+}
+
+/**
+ * La plus ancienne des dates connues, ou rien.
+ *
+ * Le contact précède tout le reste : le dater d'après le premier échange
+ * enregistré donnerait une frise où le rendez-vous a lieu avant le premier
+ * appel, parce qu'une relance reprise d'un fichier de suivi peut être la seule
+ * interaction en base.
+ */
+function earliest(...dates: Array<string | null | undefined>): string | null {
+  const known = dates.filter((date): date is string => Boolean(date));
+  return known.length > 0 ? known.reduce((a, b) => (a < b ? a : b)) : null;
 }
 
 const STAGE_RANK: ProjectStage[] = [
