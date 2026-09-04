@@ -16,9 +16,11 @@ import type {
   Period,
   RelanceRow,
   StageBucket,
+  WaitingRow,
   TopClient,
   VatBucket,
 } from "./types";
+import { afterSignature, type AfterStage } from "./after-signature";
 
 /**
  * Fabrique du tableau de bord à partir de l'export de devis.
@@ -265,6 +267,41 @@ export function buildSnapshot(period: Period, at: Date = new Date()): DashboardS
 
   const relances: RelanceRow[] = relanceAll.slice(0, 12);
 
+  // ---- Les quatre attentes d'après-signature ------------------------------
+  //
+  // Elles ne figurent pas dans l'export : leur état est dérivé de la référence
+  // du devis, de façon stable, pour que l'écran ne redistribue pas ses alertes
+  // à chaque rechargement. Voir `after-signature.ts`.
+
+  const waiting = quotes
+    .filter((q) => isSigned(q.project))
+    .map((q) => ({
+      quote: q,
+      state: afterSignature(q.project.quote.ref, q.days),
+    }));
+
+  const bucketOf = (stage: AfterStage): WaitingRow[] =>
+    waiting
+      .filter((entry) => entry.state.stage === stage)
+      .map(({ quote, state }) => ({
+        key: quote.id,
+        customer_id: quote.customer.id,
+        customer: quote.customer.name,
+        label: quote.project.label,
+        reference: quote.project.quote.ref,
+        amount: quote.amount,
+        days: state.days,
+        alert: state.alert,
+      }))
+      // Ce qui alerte d'abord, puis ce qui attend depuis le plus longtemps :
+      // c'est l'ordre dans lequel on veut traiter, pas l'ordre alphabétique.
+      .sort((a, b) => Number(b.alert) - Number(a.alert) || b.days - a.days);
+
+  const depositToInvoice = bucketOf("acompte_a_facturer");
+  const depositAwaited = bucketOf("acompte_attendu");
+  const withoutDate = bucketOf("sans_date");
+  const materials = bucketOf("materiaux");
+
   // ---- Répartition par étape ----------------------------------------------
 
   const pipeline: StageBucket[] = STAGE_ORDER.map((stage) => {
@@ -406,6 +443,10 @@ export function buildSnapshot(period: Period, at: Date = new Date()): DashboardS
     relances,
     relances_total: relanceAll.length,
     hot,
+    deposit_to_invoice: depositToInvoice,
+    deposit_awaited: depositAwaited,
+    without_date: withoutDate,
+    materials,
     pipeline,
     digest,
     vat,

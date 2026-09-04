@@ -131,6 +131,26 @@ export type DigestRow = {
   urgency: number;
 };
 
+/**
+ * Une affaire signée qui attend quelque chose.
+ *
+ * Les quatre listes qu'alimente ce type — acompte à facturer, acompte attendu,
+ * chantier sans date, matériaux à commander — sont les quatre endroits où
+ * l'argent se bloque entre la signature et le démarrage. L'export de devis n'en
+ * savait rien ; c'est pourtant là que se joue la trésorerie.
+ */
+export type WaitingRow = {
+  key: string;
+  customer_id: string;
+  customer: string;
+  label: string;
+  reference: string;
+  amount: number;
+  /** Jours passés dans cette attente. */
+  days: number;
+  alert: boolean;
+};
+
 export type DashboardSnapshot = {
   generated_at: string;
   /** Date de l'export dont tout est tiré. */
@@ -142,6 +162,14 @@ export type DashboardSnapshot = {
   /** Nombre total de devis en fenêtre de relance, avant plafonnement. */
   relances_total: number;
   hot: HotRow[];
+  /** Signés dont la facture d'acompte n'est pas partie. */
+  deposit_to_invoice: WaitingRow[];
+  /** Acompte facturé, jamais encaissé. */
+  deposit_awaited: WaitingRow[];
+  /** Acompte encaissé, aucune date de chantier. */
+  without_date: WaitingRow[];
+  /** Date posée, matériaux non commandés. */
+  materials: WaitingRow[];
   pipeline: StageBucket[];
   digest: DigestRow[];
   vat: VatBucket[];
