@@ -11,5 +11,12 @@ export { EnumBadge } from "./components/enum-badge";
 // sans pour autant dépendre des composants du module.
 export { listCustomers } from "./lib/api";
 export * from "./lib/labels";
+// Le cycle d'une affaire est une notion transverse : le tableau de bord et les
+// chantiers la lisent aussi. Elle vit ici parce que c'est l'affaire qui la
+// porte, et une seule définition évite que « à relancer » ne veuille pas dire
+// la même chose d'un écran à l'autre.
+export * from "./lib/cycle";
+export { EMPTY_JALONS, JALON_ORDER, readJalons, type Jalons } from "./lib/jalons";
+export { ProjectCycle } from "./components/project-cycle";
 export * from "./lib/types";
 export { ImportView } from "./import";
