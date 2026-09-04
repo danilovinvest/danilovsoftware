@@ -32,7 +32,7 @@ const STATUS_ORDER = ["prospect", "client", "perdu", "archive"] as const;
 /** Écran principal du module : compteurs, filtres, tableau et pagination. */
 export function CustomersView() {
   const { filters, update, reset, active } = useCustomerFilters();
-  const { data, loading, error, reload } = useCustomers(filters);
+  const { data, loading, error } = useCustomers(filters);
   const stats = useCustomerStats();
   const canCreate = usePermission("customers:write");
 
@@ -182,7 +182,7 @@ export function CustomersView() {
           />
         ) : (
           <>
-            <CustomerTable items={visible} loading={loading} onChanged={reload} />
+            <CustomerTable items={visible} loading={loading} />
             <Pagination
               page={data?.page ?? 1}
               totalPages={data?.total_pages ?? 1}

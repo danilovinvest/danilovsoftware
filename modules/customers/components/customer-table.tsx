@@ -41,11 +41,9 @@ const COLUMNS = 8;
 export function CustomerTable({
   items,
   loading,
-  onChanged: _onChanged,
 }: {
   items: CustomerListItem[];
   loading: boolean;
-  onChanged: () => void;
 }) {
   // Les affaires arrivent déjà avec la ligne du client : déplier ne déclenche
   // aucune requête.
