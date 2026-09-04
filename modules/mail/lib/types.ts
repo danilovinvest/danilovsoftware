@@ -20,6 +20,8 @@ export type MailAccount = {
   last_error: string;
   message_count: number;
   matched_count: number;
+  /** Combien de messages ont leur contenu en base. */
+  body_count: number;
   /**
    * Vrai quand les copies suivantes prennent le corps de **tous** les messages.
    * Faux par défaut : une boîte partagée contient aussi la banque, l'URSSAF et
@@ -92,5 +94,7 @@ export type MailRun = {
   fetched: number;
   matched: number;
   attachments: number;
+  /** Corps rattrapés sur des messages déjà copiés. */
+  bodies: number;
   error: string;
 };

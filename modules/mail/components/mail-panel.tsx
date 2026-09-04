@@ -188,6 +188,13 @@ export function MailPanel() {
                   contiendra, pas une préférence d'affichage. D'où l'étiquette
                   qui dit ce qu'elle change, et le défaut à « non ».
                 */}
+                {/*
+                  L'interrupteur seul ne suffisait pas, et c'était le défaut :
+                  la reprise IMAP est incrémentale, donc l'activer n'agissait
+                  que sur le courrier à venir. La copie rattrape désormais les
+                  messages déjà en base, deux mille par exécution — d'où le
+                  compteur, sans lequel on ne verrait rien avancer.
+                */}
                 <label className="text-muted-foreground flex items-center gap-2 text-xs">
                   <Switch
                     checked={account.copy_all}
@@ -196,7 +203,17 @@ export function MailPanel() {
                       guard(() => api.setCopyAll(account.id, value))()
                     }
                   />
-                  Copier tous les corps
+                  <span>
+                    Copier tous les corps
+                    {account.copy_all && (
+                      <span className="text-muted-foreground/70 block">
+                        {account.body_count.toLocaleString("fr-FR")} sur{" "}
+                        {account.message_count.toLocaleString("fr-FR")}
+                        {account.body_count < account.message_count &&
+                          " · relancez la copie pour continuer"}
+                      </span>
+                    )}
+                  </span>
                 </label>
 
                 <Button
@@ -286,6 +303,12 @@ export function MailPanel() {
                   ) : (
                     <span className="text-muted-foreground">
                       {run.fetched} lus · <span className="text-success">{run.matched} rapprochés</span>
+                      {run.bodies > 0 && (
+                        <>
+                          {" · "}
+                          <span className="text-info">{run.bodies} contenus rattrapés</span>
+                        </>
+                      )}
                       {run.attachments > 0 && (
                         <>
                           {" · "}
