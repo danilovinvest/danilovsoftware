@@ -364,7 +364,7 @@ function Reader({
 
       {message.attachment_count > 0 && (
         <div className="border-t p-4">
-          <Attachments messageId={message.id} count={message.attachment_count} />
+          <Attachments messageId={message.id} />
         </div>
       )}
     </div>

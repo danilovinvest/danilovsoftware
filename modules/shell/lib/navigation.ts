@@ -4,6 +4,7 @@ import {
   FileTextIcon,
   HardHatIcon,
   LayoutDashboardIcon,
+  MailIcon,
   MegaphoneIcon,
   ReceiptEuroIcon,
   ZapIcon,
@@ -58,6 +59,15 @@ export const NAVIGATION: NavItem[] = [
     // Tout ce qui suit la signature : exécution, coûts, réception. Même
     // permission que les fiches — c'est la suite de la même affaire.
     permission: "customers:read",
+  },
+  {
+    href: "/mail",
+    label: "Messagerie",
+    icon: MailIcon,
+    // La boîte de l'entreprise. Sa propre permission : lire les échanges d'un
+    // client est plus intrusif que lire sa fiche, et devoir retirer l'un sans
+    // l'autre est un besoin réel.
+    permission: "mail:read",
   },
   {
     href: "/tasks",
