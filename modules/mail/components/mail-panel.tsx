@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { errorMessage } from "@/shared/api/errors";
 import { formatAgo, formatDate, formatDateTime, plural } from "@/shared/lib/format";
@@ -77,8 +78,9 @@ export function MailPanel() {
             Le corps et les pièces jointes, quand une adresse déjà connue du CRM
             y figure
           </SettingsRow>
-          <SettingsRow label="Jamais">
-            Le contenu d&apos;un message dont aucun correspondant n&apos;a de fiche
+          <SettingsRow label="À l&apos;ouverture d&apos;un message">
+            Son contenu est récupéré du serveur et conservé — sur les neuf mille
+            messages de la boîte, seuls ceux que vous lisez entrent en base
           </SettingsRow>
           <SettingsRow label="Écriture">
             Aucune : le CRM lit la boîte, il n&apos;envoie rien
@@ -180,6 +182,22 @@ export function MailPanel() {
                       ? `Copié ${formatAgo(account.last_sync_at, now)}`
                       : "Jamais copié"}
                 </span>
+
+                {/*
+                  La copie intégrale est une décision sur ce que la base
+                  contiendra, pas une préférence d'affichage. D'où l'étiquette
+                  qui dit ce qu'elle change, et le défaut à « non ».
+                */}
+                <label className="text-muted-foreground flex items-center gap-2 text-xs">
+                  <Switch
+                    checked={account.copy_all}
+                    disabled={pending || running}
+                    onCheckedChange={(value) =>
+                      guard(() => api.setCopyAll(account.id, value))()
+                    }
+                  />
+                  Copier tous les corps
+                </label>
 
                 <Button
                   variant="outline"
