@@ -7,6 +7,7 @@ import {
   MailIcon,
   MegaphoneIcon,
   ReceiptEuroIcon,
+  WrenchIcon,
   ZapIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -108,6 +109,15 @@ export const NAVIGATION: NavItem[] = [
     // Les réalisations viennent des chantiers livrés : qui peut lire les
     // fiches peut les valoriser.
     permission: "customers:read",
+  },
+  {
+    href: "/developpeur",
+    label: "Développeur",
+    icon: WrenchIcon,
+    // Les outils de reprise : lire les sources brutes avant d'en tirer des
+    // fiches. Réservé à l'administration — ce n'est pas un écran de travail
+    // quotidien, et il montre l'arborescence entière de l'entreprise.
+    permission: "system:admin",
   },
   {
     href: "/automations",

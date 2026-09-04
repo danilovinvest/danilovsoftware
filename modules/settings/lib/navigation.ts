@@ -1,6 +1,7 @@
 import {
   BotIcon,
   CalendarIcon,
+  CloudIcon,
   MailIcon,
   PaletteIcon,
   ShieldCheckIcon,
@@ -70,6 +71,14 @@ export const SETTINGS_NAVIGATION: SettingsSection[] = [
         label: "Messagerie",
         icon: MailIcon,
         permission: "mail:read",
+      },
+      {
+        href: "/settings/fichiers",
+        label: "Fichiers",
+        icon: CloudIcon,
+        // Même permission que les fiches : l'arborescence OneDrive dit qui sont
+        // les clients, c'est la même information.
+        permission: "customers:read",
       },
     ],
   },
