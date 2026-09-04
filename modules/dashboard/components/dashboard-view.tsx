@@ -1,7 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRightIcon, TableIcon } from "lucide-react";
+import {
+  ArrowRightIcon,
+  BanknoteIcon,
+  CalendarPlusIcon,
+  FileTextIcon,
+  PackageIcon,
+  TableIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/modules/auth";
@@ -16,6 +23,7 @@ import { PipelinePanel } from "./pipeline-panel";
 import { RelancePanel } from "./relance-panel";
 import { TopClientsPanel } from "./top-clients-panel";
 import { VatPanel } from "./vat-panel";
+import { WaitingPanel } from "./waiting-panel";
 
 /**
  * Le tableau de bord, ordonné par ce qu'on en attend le matin.
@@ -32,6 +40,14 @@ export function DashboardView() {
 
   const firstName = account?.first_name?.trim();
 
+  // Ce qui est signé mais n'avance pas : la moitié du problème que l'écran
+  // ignorait, et celle qui coûte le plus cher puisque l'argent est déjà engagé.
+  const blocked =
+    data.deposit_to_invoice.length +
+    data.deposit_awaited.length +
+    data.without_date.length +
+    data.materials.length;
+
   return (
     <div className="flex flex-col gap-5">
       <header className="flex flex-wrap items-end justify-between gap-4">
@@ -41,7 +57,7 @@ export function DashboardView() {
           </h1>
           <p className="text-muted-foreground mt-0.5 text-sm">
             {data.relances_total > 0
-              ? `${data.relances_total} devis attendent une réponse dans la fenêtre utile, ${data.hot.length} viennent de partir.`
+              ? `${data.relances_total} devis attendent une réponse, ${blocked} affaires signées attendent autre chose.`
               : "Aucun devis en attente dans la fenêtre de relance."}
           </p>
         </div>
@@ -113,6 +129,48 @@ export function DashboardView() {
         />
         <HotPanel rows={data.hot} />
       </div>
+
+      {/*
+        Les quatre attentes d'après-signature, dans l'ordre du cycle. Elles
+        viennent juste après les relances parce qu'elles portent sur de l'argent
+        déjà gagné : un devis sans réponse peut ne jamais se signer, un acompte
+        non encaissé est un dû qu'on oublie de réclamer.
+      */}
+      <section className="flex flex-col gap-3">
+        <h2 className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+          Signé, mais bloqué
+        </h2>
+        <div className="grid items-start gap-4 lg:grid-cols-2 xl:grid-cols-4">
+          <WaitingPanel
+            title="Acompte à facturer"
+            hint="Tout ce qui est signé a été facturé."
+            icon={FileTextIcon}
+            tone="warning"
+            rows={data.deposit_to_invoice}
+          />
+          <WaitingPanel
+            title="Acompte attendu"
+            hint="Aucun acompte en souffrance."
+            icon={BanknoteIcon}
+            tone="danger"
+            rows={data.deposit_awaited}
+          />
+          <WaitingPanel
+            title="Sans date de chantier"
+            hint="Tous les chantiers payés ont leur date."
+            icon={CalendarPlusIcon}
+            tone="danger"
+            rows={data.without_date}
+          />
+          <WaitingPanel
+            title="Matériaux à commander"
+            hint="Rien à commander pour l'instant."
+            icon={PackageIcon}
+            tone="warning"
+            rows={data.materials}
+          />
+        </div>
+      </section>
 
       <div className="grid items-start gap-4 lg:grid-cols-2">
         <PipelinePanel buckets={data.pipeline} />

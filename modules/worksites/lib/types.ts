@@ -157,6 +157,15 @@ export type WorksiteSnapshot = {
   metrics: import("@/shared/ui/metric-cards").Metric[];
   worksites: Worksite[];
   board: StatusBucket[];
+  /**
+   * Signés sans date de démarrage.
+   *
+   * En tête des quatre listes, et devant « en retard » : un chantier en retard
+   * a au moins commencé. Un chantier signé qui n'a pas de date ne commencera
+   * pas tout seul, et personne ne le réclamera — c'est le seul de ces quatre
+   * cas où l'oubli est silencieux.
+   */
+  unplanned: Alert[];
   late: Alert[];
   pv_pending: Alert[];
   balance_to_invoice: Alert[];

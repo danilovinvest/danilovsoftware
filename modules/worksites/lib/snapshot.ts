@@ -288,6 +288,23 @@ export function buildWorksiteSnapshot(
     days,
   });
 
+  // Signés, sans date : la grâce est celle du cycle commercial, pour que le
+  // seuil soit le même sur la fiche client et ici.
+  const unplanned = scoped
+    .filter((w) => w.status === "a_planifier")
+    .map((w) => {
+      const days = daysSince(now, w.signed_at);
+      return alert(
+        w,
+        days > PLANNING_GRACE_DAYS
+          ? `Signé il y a ${days} jours, toujours sans date`
+          : `Signé il y a ${days} jours, date à poser`,
+        days,
+        w.amount_ht,
+      );
+    })
+    .sort((a, b) => b.days - a.days);
+
   const late = lateList
     .map((w) =>
       alert(
@@ -364,6 +381,7 @@ export function buildWorksiteSnapshot(
       ),
     board,
     late,
+    unplanned,
     pv_pending: pvPending,
     balance_to_invoice: balanceToInvoice,
     review_to_request: reviewToRequest,
