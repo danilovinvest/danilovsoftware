@@ -15,6 +15,29 @@ export type DriveAccount = {
   connected_at: string;
   /** Vide quand tout va bien ; sinon la raison, telle que Microsoft l'a dite. */
   last_error: string;
+  /** Vrai quand la copie tourne toutes les cinq minutes. */
+  sync_enabled: boolean;
+  last_sync_at: string | null;
+  /** La racine surveillée. Le reste du disque est ignoré. */
+  sync_root: string;
+};
+
+/**
+ * Une copie, telle que le journal la garde.
+ *
+ * Elle ne compte pas des fichiers mais des **dossiers réconciliés** : un dossier
+ * touché est relu en entier, et ce qu'il contient dit où en est l'affaire.
+ */
+export type DriveRun = {
+  id: number;
+  started_at: string;
+  finished_at: string | null;
+  origin: string;
+  folders: number;
+  customers: number;
+  projects: number;
+  quotes: number;
+  error: string;
 };
 
 export type DriveItem = {

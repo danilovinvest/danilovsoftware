@@ -113,9 +113,9 @@ function EntraGuide() {
       body: (
         <>
           Choisir <strong>« Comptes dans un annuaire organisationnel quelconque et
-          comptes Microsoft personnels »</strong>. Le compte de l&apos;entreprise peut
-          être de l&apos;un ou l&apos;autre type ; ce choix couvre les deux sans avoir à
-          trancher.
+          comptes Microsoft personnels »</strong>. C&apos;est le seul choix qui accepte
+          un compte Microsoft personnel — celui que l&apos;entreprise partage — tout en
+          restant valable si le compte devient un compte 365 plus tard.
         </>
       ),
     },
@@ -146,11 +146,16 @@ function EntraGuide() {
       title: "Permissions",
       body: (
         <>
-          API autorisées → Microsoft Graph → Permissions déléguées :{" "}
+          API autorisées → Microsoft Graph → Permissions <strong>déléguées</strong> :{" "}
           <code className="font-mono text-xs">Files.Read.All</code>,{" "}
           <code className="font-mono text-xs">offline_access</code>,{" "}
-          <code className="font-mono text-xs">User.Read</code>. Puis « Accorder le
-          consentement administrateur » si le compte est un compte d&apos;entreprise.
+          <code className="font-mono text-xs">User.Read</code>.
+          <span className="mt-1 block">
+            Sur un compte personnel, le bouton « Accorder le consentement
+            administrateur » ne sert à rien : il n&apos;y a pas d&apos;administrateur
+            de locataire. C&apos;est vous qui consentirez sur l&apos;écran Microsoft, au
+            moment du raccordement.
+          </span>
           <span className="text-warning mt-1 block">
             Aucune permission en écriture. Pas de <code className="font-mono">
             Files.ReadWrite</code>, jamais.
@@ -180,7 +185,9 @@ function EntraGuide() {
       <div className="border-b px-4 py-3">
         <h3 className="text-sm font-medium">Déclarer l&apos;application dans Entra</h3>
         <p className="text-muted-foreground mt-0.5 text-xs">
-          Six étapes, une seule fois. Contrairement à Gmail, la lecture de fichiers
+          Six étapes, une seule fois. La procédure est la même pour un compte
+          Microsoft personnel et pour un compte 365 ; seule l&apos;étape 5 diffère, et
+          elle est plus courte. Contrairement à Gmail, la lecture de fichiers
           n&apos;impose ni audit annuel ni cabinet agréé.
         </p>
       </div>

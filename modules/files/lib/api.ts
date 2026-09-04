@@ -1,5 +1,5 @@
 import { apiFetch } from "@/shared/api/client";
-import type { DriveAccount, DriveListing } from "./types";
+import type { DriveAccount, DriveListing, DriveRun } from "./types";
 
 export function listAccounts(signal?: AbortSignal) {
   return apiFetch<{ items: DriveAccount[]; configured: boolean }>("/v1/files/accounts", {
@@ -10,6 +10,24 @@ export function listAccounts(signal?: AbortSignal) {
 /** L'adresse du consentement Microsoft. Le navigateur y est envoyé, pas appelé. */
 export function authorizeUrl() {
   return apiFetch<{ url: string }>("/v1/files/authorize");
+}
+
+export function listRuns(limit = 20, signal?: AbortSignal) {
+  return apiFetch<{ items: DriveRun[]; syncing: boolean }>(`/v1/files/runs?limit=${limit}`, {
+    signal,
+  });
+}
+
+/** Lance une copie. Le serveur répond tout de suite et travaille détaché. */
+export function syncNow() {
+  return apiFetch<{ started: boolean }>("/v1/files/sync", { method: "POST" });
+}
+
+export function setSyncEnabled(id: string, enabled: boolean) {
+  return apiFetch<void>(`/v1/files/accounts/${id}`, {
+    method: "PATCH",
+    body: { sync_enabled: enabled },
+  });
 }
 
 export function disconnect(id: string) {

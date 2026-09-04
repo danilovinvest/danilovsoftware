@@ -2,13 +2,20 @@
 
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { CloudIcon, ExternalLinkIcon, ShieldCheckIcon, XIcon } from "lucide-react";
+import {
+  CloudIcon,
+  ExternalLinkIcon,
+  RefreshCwIcon,
+  ShieldCheckIcon,
+  XIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { errorMessage } from "@/shared/api/errors";
 import { formatDateTime } from "@/shared/lib/format";
-import { ErrorNotice, Skeleton } from "@/shared/ui/feedback";
+import { ErrorNotice, Skeleton, Spinner } from "@/shared/ui/feedback";
+import { Switch } from "@/components/ui/switch";
 import { SettingsPage, SettingsRow, SettingsRows, SettingsSection } from "@/modules/settings";
-import { useDrive } from "../hooks/use-drive";
+import { useDrive, useDriveRuns } from "../hooks/use-drive";
 import * as api from "../lib/api";
 
 /**
@@ -24,6 +31,7 @@ import * as api from "../lib/api";
 export function FilesPanel() {
   const params = useSearchParams();
   const { accounts, configured, loading, error, reload } = useDrive();
+  const { runs, syncing, reload: reloadRuns } = useDriveRuns();
   const [pending, setPending] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -37,6 +45,7 @@ export function FilesPanel() {
     try {
       await action();
       reload();
+      reloadRuns();
     } catch (cause) {
       setActionError(errorMessage(cause));
     } finally {
@@ -134,6 +143,46 @@ export function FilesPanel() {
                 )}
               </div>
 
+              {/*
+                La copie ne s'allume pas d'office. Elle crée des fiches et fait
+                avancer des affaires : c'est une décision, pas un réglage
+                d'affichage, et elle se prend en connaissance de cause.
+              */}
+              <label className="text-muted-foreground flex items-center gap-2 text-xs">
+                <Switch
+                  checked={account.sync_enabled}
+                  disabled={pending}
+                  onCheckedChange={(value) =>
+                    guard(() => api.setSyncEnabled(account.id, value))
+                  }
+                />
+                <span>
+                  Copie automatique
+                  {account.sync_enabled && (
+                    <span className="text-muted-foreground/70 block">
+                      toutes les 5 minutes · {account.sync_root}
+                    </span>
+                  )}
+                </span>
+              </label>
+
+              {syncing && (
+                <span className="text-info inline-flex items-center gap-1.5 text-xs">
+                  <Spinner className="size-3" />
+                  copie en cours
+                </span>
+              )}
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7"
+                disabled={pending || syncing}
+                onClick={() => guard(api.syncNow)}
+              >
+                <RefreshCwIcon className="size-3.5" />
+                Copier
+              </Button>
               <Button variant="outline" size="sm" className="h-7" asChild>
                 <a href="/developpeur">
                   <ExternalLinkIcon className="size-3.5" />
@@ -154,6 +203,42 @@ export function FilesPanel() {
           ))
         )}
       </SettingsSection>
+
+      {runs.length > 0 && (
+        <SettingsSection
+          title="Journal des copies"
+          description="Un dossier touché est relu en entier : son contenu dit où en est l'affaire."
+        >
+          <div className="divide-y rounded-xl border text-xs">
+            {runs.map((run) => (
+              <div key={run.id} className="flex flex-wrap items-center gap-3 px-3 py-2">
+                <span className="text-muted-foreground shrink-0 tabular-nums">
+                  {formatDateTime(run.started_at)}
+                </span>
+                <span className="bg-muted rounded-[3px] px-1.5 py-0.5 text-[0.65rem]">
+                  {run.origin}
+                </span>
+                <span className="min-w-0 flex-1">
+                  {run.finished_at === null ? (
+                    <span className="text-info">en cours…</span>
+                  ) : run.error ? (
+                    <span className="text-danger">{run.error}</span>
+                  ) : run.folders === 0 ? (
+                    <span className="text-muted-foreground/60">aucun changement</span>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      {run.folders} dossiers ·{" "}
+                      <span className="text-success">
+                        {run.customers} fiches, {run.projects} affaires, {run.quotes} devis
+                      </span>
+                    </span>
+                  )}
+                </span>
+              </div>
+            ))}
+          </div>
+        </SettingsSection>
+      )}
     </SettingsPage>
   );
 }
