@@ -1,13 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { PlusIcon } from "lucide-react";
 import { usePermission } from "@/modules/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState, ErrorNotice } from "@/shared/ui/feedback";
 import { CUSTOMER_STATUS } from "../lib/labels";
+import {
+  CYCLE_FILTERS,
+  matchesFilter,
+  nextAction,
+  readCycle,
+  type CycleFilter,
+} from "../lib/cycle";
+import { readJalons } from "../lib/jalons";
 import {
   useCustomerFilters,
   useCustomers,
@@ -16,6 +24,8 @@ import {
 import { CustomerFiltersBar } from "./customer-filters";
 import { CustomerTable } from "./customer-table";
 import { Pagination } from "./pagination";
+import { cn } from "@/lib/utils";
+import type { CustomerListItem } from "../lib/types";
 
 const STATUS_ORDER = ["prospect", "client", "perdu", "archive"] as const;
 
@@ -25,6 +35,32 @@ export function CustomersView() {
   const { data, loading, error, reload } = useCustomers(filters);
   const stats = useCustomerStats();
   const canCreate = usePermission("customers:write");
+
+  /**
+   * Les filtres de cycle s'appliquent à la page affichée, pas à la base.
+   *
+   * Le serveur sait filtrer par statut, pas par « acompte en attente » : la
+   * notion n'existe que dans la lecture du cycle, côté client. Filtrer ici est
+   * donc le seul endroit possible aujourd'hui, et l'écran dit sur quoi il
+   * porte plutôt que de laisser croire à une recherche globale.
+   */
+  const [cycle, setCycle] = useState<CycleFilter>("tous");
+  const [now] = useState(() => Date.now());
+
+  const visible = useMemo(
+    () => (data?.items ?? []).filter((item) => matchesCycle(item, cycle, now)),
+    [data, cycle, now],
+  );
+
+  const cycleCounts = useMemo(() => {
+    const result: Record<string, number> = {};
+    for (const entry of CYCLE_FILTERS) {
+      result[entry.key] = (data?.items ?? []).filter((item) =>
+        matchesCycle(item, entry.key, now),
+      ).length;
+    }
+    return result;
+  }, [data, now]);
 
   const counts = useMemo(() => {
     const result: Record<string, number> = {};
@@ -77,22 +113,63 @@ export function CustomersView() {
             hasActiveFilters={active}
             counts={counts}
           />
+
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            {CYCLE_FILTERS.map((entry) => {
+              const count = cycleCounts[entry.key] ?? 0;
+              const disabled = entry.key !== "tous" && count === 0;
+              return (
+                <button
+                  key={entry.key}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => setCycle(entry.key)}
+                  className={cn(
+                    "rounded-[4px] px-2 py-1 text-xs transition-colors",
+                    cycle === entry.key
+                      ? "bg-primary text-primary-foreground font-medium"
+                      : disabled
+                        ? "text-muted-foreground/40"
+                        : "text-muted-foreground hover:bg-muted",
+                  )}
+                >
+                  {entry.label}
+                  {entry.key !== "tous" && <span className="ml-1.5 tabular-nums">{count}</span>}
+                </button>
+              );
+            })}
+            {cycle !== "tous" && (
+              <span className="text-muted-foreground/60 ml-1 text-xs">
+                sur cette page seulement
+              </span>
+            )}
+          </div>
         </div>
 
         {error ? (
           <div className="px-4 pb-4">
             <ErrorNotice message={error} />
           </div>
-        ) : !loading && data?.items.length === 0 ? (
+        ) : !loading && visible.length === 0 ? (
           <EmptyState
-            title={active ? "Aucune fiche ne correspond" : "Aucune fiche pour le moment"}
+            title={
+              active || cycle !== "tous"
+                ? "Aucune fiche ne correspond"
+                : "Aucune fiche pour le moment"
+            }
             description={
-              active
+              cycle !== "tous"
+                ? "Aucune affaire de cette page n'en est là. Essayez une autre page ou un autre filtre."
+                : active
                 ? "Élargissez la recherche ou réinitialisez les filtres."
                 : "Créez la première fiche pour commencer à suivre vos prospects."
             }
             action={
-              active ? (
+              cycle !== "tous" ? (
+                <Button variant="outline" size="sm" onClick={() => setCycle("tous")}>
+                  Toutes les fiches
+                </Button>
+              ) : active ? (
                 <Button variant="outline" size="sm" onClick={reset}>
                   Réinitialiser
                 </Button>
@@ -105,11 +182,7 @@ export function CustomersView() {
           />
         ) : (
           <>
-            <CustomerTable
-              items={data?.items ?? []}
-              loading={loading}
-              onChanged={reload}
-            />
+            <CustomerTable items={visible} loading={loading} onChanged={reload} />
             <Pagination
               page={data?.page ?? 1}
               totalPages={data?.total_pages ?? 1}
@@ -121,4 +194,18 @@ export function CustomersView() {
       </Card>
     </div>
   );
+}
+
+/**
+ * Une fiche correspond si l'une de ses affaires correspond. Exiger que toutes
+ * le fassent viderait la liste dès qu'un client a deux chantiers à des stades
+ * différents, ce qui est le cas courant.
+ */
+function matchesCycle(customer: CustomerListItem, filter: CycleFilter, now: number): boolean {
+  if (filter === "tous") return true;
+  return customer.projects.some((project) => {
+    const jalons = readJalons(project.id, [], undefined, now);
+    const points = readCycle(project, [], [], jalons, now);
+    return matchesFilter(nextAction(points, project, [], jalons, now), filter);
+  });
 }
