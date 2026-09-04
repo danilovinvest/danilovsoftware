@@ -81,10 +81,7 @@ export function useMailMessage(id: string | null) {
   }>({ key: "", message: null, error: null });
 
   useEffect(() => {
-    if (!id) {
-      setResolved({ key: "", message: null, error: null });
-      return;
-    }
+    if (!id) return;
     const controller = new AbortController();
     api
       .getMessage(id, controller.signal)
@@ -100,10 +97,14 @@ export function useMailMessage(id: string | null) {
     return () => controller.abort();
   }, [id]);
 
+  // Le résultat n'est rendu que s'il porte sur le message demandé. Vider l'état
+  // à la fermeture serait un `setState` dans l'effet, que le compilateur React
+  // refuse — et qui coûterait un rendu de plus pour le même affichage.
+  const current = resolved.key === id;
   return {
-    message: resolved.message,
-    loading: id !== null && resolved.key !== id,
-    error: resolved.error,
+    message: current ? resolved.message : null,
+    loading: id !== null && !current,
+    error: current ? resolved.error : null,
   };
 }
 
