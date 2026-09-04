@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronRightIcon, FilePlusIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import {
+  ChevronRightIcon,
+  FilePlusIcon,
+  FileTextIcon,
+  PlusIcon,
+  Trash2Icon,
+} from "lucide-react";
 import { usePermission } from "@/modules/auth";
 import { createTask } from "@/modules/tasks";
 import { Button } from "@/components/ui/button";
@@ -562,6 +568,24 @@ function QuoteList({ quotes }: { quotes: Quote[] }) {
                   : quote.amount_note || "—"}
               </span>
             </span>
+
+            {/*
+              Le devis lui-même, quand la copie OneDrive en connaît l'adresse.
+              Le fichier n'est pas dans le CRM : le lien l'ouvre chez Microsoft,
+              et c'est ce qui évite de faire entrer trois cents PDF en base.
+            */}
+            {quote.drive_url && (
+              <a
+                href={quote.drive_url}
+                target="_blank"
+                rel="noreferrer"
+                title={quote.drive_name}
+                className="text-muted-foreground hover:text-primary hover:border-primary/40 flex w-full min-w-0 items-center gap-1.5 rounded-md border border-dashed px-2 py-1.5 text-xs transition-colors"
+              >
+                <FileTextIcon className="size-3.5 shrink-0" />
+                <span className="truncate">{quote.drive_name || "Ouvrir le devis"}</span>
+              </a>
+            )}
 
             {quote.comment && (
               <p className="text-muted-foreground w-full text-xs">{quote.comment}</p>

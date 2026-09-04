@@ -167,6 +167,12 @@ export type Quote = {
   deposit_status: PaymentStatus;
   balance_status: PaymentStatus;
   comment: string;
+  /**
+   * Le document du devis, chez Microsoft. Vide pour un devis saisi à la main.
+   * Le fichier n'entre pas dans le CRM : il s'ouvre d'un clic.
+   */
+  drive_url: string;
+  drive_name: string;
   created_at: string;
   updated_at: string;
 };
@@ -197,6 +203,8 @@ export type CustomerStats = {
 };
 
 export type CustomerFilters = {
+  /** Le filtre de cycle, résolu par le serveur sur toute la base. */
+  cycle?: string;
   search?: string;
   status?: CustomerStatus[];
   source?: CustomerSource[];
@@ -247,9 +255,24 @@ export type StagePayload = {
   outcome_note: string;
 };
 
+/**
+ * Ce qu'on envoie pour créer ou modifier un devis.
+ *
+ * Le document OneDrive n'en fait pas partie : il est posé par la copie, qui
+ * seule connaît l'adresse du fichier. Le laisser saisissable inviterait à
+ * coller une adresse à la main, qui cesserait d'être juste au premier dossier
+ * déplacé.
+ */
 export type QuotePayload = Omit<
   Quote,
-  "id" | "customer_id" | "project_id" | "project_label" | "created_at" | "updated_at"
+  | "id"
+  | "customer_id"
+  | "project_id"
+  | "project_label"
+  | "drive_url"
+  | "drive_name"
+  | "created_at"
+  | "updated_at"
 >;
 
 export type InteractionPayload = {

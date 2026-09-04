@@ -27,6 +27,7 @@ export function listCustomers(filters: CustomerFilters, signal?: AbortSignal) {
       source: filters.source,
       city: filters.city,
       owner_id: filters.owner_id,
+      cycle: filters.cycle,
       sort: filters.sort,
       page: filters.page,
       per_page: filters.per_page,
