@@ -1,5 +1,5 @@
-import { DeveloperView } from "@/modules/files";
+import { OneDriveView } from "@/modules/files";
 
-export default function DeveloperPage() {
-  return <DeveloperView />;
+export default function OneDrivePage() {
+  return <OneDriveView />;
 }

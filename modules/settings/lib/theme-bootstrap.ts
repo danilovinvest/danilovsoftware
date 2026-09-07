@@ -10,6 +10,11 @@
  * tourner sans module, sans React et sans hydratation. Toute modification de
  * l'une doit être reportée sur l'autre — d'où la forme minimale, réduite à ce
  * que le premier rendu exige (le thème et la palette ; l'échelle suit au montage).
+ *
+ * Les deux noms de palette y sont écrits en clair — « ompt » celle du poste
+ * neuf, « azur » celle que :root sert sans attribut. Un script qui n'importe
+ * rien ne peut pas lire `palettes.ts` ; ce sont `DEFAULT_PALETTE` et
+ * `ROOT_PALETTE` qu'il recopie, et qui doivent bouger avec lui.
  */
 export const THEME_BOOTSTRAP_SCRIPT = `
 try {
@@ -20,8 +25,9 @@ try {
     (choice === "system" &&
       window.matchMedia("(prefers-color-scheme: dark)").matches);
   if (dark) document.documentElement.classList.add("dark");
-  if (prefs && prefs.palette && prefs.palette !== "azur") {
-    document.documentElement.setAttribute("data-theme", prefs.palette);
+  var palette = prefs && prefs.palette ? prefs.palette : "ompt";
+  if (palette !== "azur") {
+    document.documentElement.setAttribute("data-theme", palette);
   }
   if (prefs && prefs.scale && prefs.scale !== 100) {
     document.documentElement.style.fontSize = prefs.scale + "%";

@@ -21,6 +21,18 @@ export type Palette = {
 
 export const PALETTES: Palette[] = [
   {
+    // La palette de la maison : l'orange du profilé, sur le gris froid que
+    // demande le bleu nuit du lettrage. Elle est en tête parce que c'est
+    // celle qu'un poste neuf reçoit.
+    id: "ompt",
+    label: "OMPT",
+    accent: { light: "#f76b15", dark: "#f76b15" },
+    surface: {
+      light: { base: "#fcfcfd", raised: "#e8e8ec" },
+      dark: { base: "#111113", raised: "#212225" },
+    },
+  },
+  {
     id: "azur",
     label: "Azur",
     accent: { light: "#3e63dd", dark: "#3e63dd" },
@@ -114,8 +126,18 @@ export const PALETTES: Palette[] = [
   },
 ];
 
-/** Palette servie par :root et .dark, sans attribut `data-theme`. */
-export const DEFAULT_PALETTE = "azur";
+/**
+ * Palette servie par :root et .dark, sans attribut `data-theme`.
+ *
+ * C'est celle reprise de Twenty, et elle reste le socle du fichier de styles :
+ * l'absence de `data-theme` est donc une valeur, pas un oubli. Elle n'est plus
+ * celle qu'on reçoit par défaut — ce sont deux questions différentes, et les
+ * confondre obligerait à réécrire :root à chaque changement de marque.
+ */
+export const ROOT_PALETTE = "azur";
+
+/** Palette d'un poste qui n'a rien choisi. */
+export const DEFAULT_PALETTE = "ompt";
 
 export function isPaletteId(value: unknown): value is string {
   return typeof value === "string" && PALETTES.some((p) => p.id === value);

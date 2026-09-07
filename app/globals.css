@@ -332,6 +332,30 @@
   --h-slate-3: #212225; --h-slate-4: #272a2d; --h-slate-9: #696e77; --h-slate-11: #b0b4ba;
 }
 
+/*
+ * La marque OMPT.
+ *
+ * Le logo garde ses couleurs. Une marque qui change de teinte avec la palette
+ * n'est plus une marque, et le fichier fourni par l'entreprise
+ * (`public/omptcrm.svg`) fixe les deux valeurs : le profilé orange, le
+ * lettrage bleu nuit. Ce sont, avec les teintes de repérage ci-dessus, les
+ * seules valeurs littérales de la couche sémantique.
+ *
+ * `--logo-ink` est la seule des trois qui bouge : le bleu nuit tombe à 1,4 de
+ * contraste sur le fond sombre, où le lettrage passe au blanc. Le profilé,
+ * lui, est orange dans les deux thèmes — c'est ce qui fait reconnaître la
+ * marque avant de la lire.
+ */
+:root {
+  --logo-beam: #f06011;
+  --logo-navy: #0c253f;
+  --logo-ink: var(--logo-navy);
+}
+
+.dark {
+  --logo-ink: #ffffff;
+}
+
 @supports (color: color(display-p3 1 1 1)) {
   @media (color-gamut: p3) {
     :root {
@@ -504,6 +528,10 @@
   --color-brand: var(--brand);
   --color-brand-text: var(--brand-text);
   --color-brand-ink: var(--brand-ink);
+
+  --color-logo-beam: var(--logo-beam);
+  --color-logo-navy: var(--logo-navy);
+  --color-logo-ink: var(--logo-ink);
   --color-selected: var(--selected);
 
   --color-success: var(--success);

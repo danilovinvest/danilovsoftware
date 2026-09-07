@@ -4,6 +4,6 @@
  */
 export { FilesPanel } from "./components/files-panel";
 export { DriveExplorer } from "./components/drive-explorer";
-export { DeveloperView } from "./components/developer-view";
+export { OneDriveView } from "./components/onedrive-view";
 export { parseFolder, looksLikeDeal } from "./lib/parse";
 export * from "./lib/types";

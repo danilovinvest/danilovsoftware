@@ -7,7 +7,7 @@
  * d'affaires et l'écran du bureau n'ont pas les mêmes besoins.
  */
 
-import { DEFAULT_PALETTE, isPaletteId } from "./palettes";
+import { DEFAULT_PALETTE, ROOT_PALETTE, isPaletteId } from "./palettes";
 
 export type ThemeChoice = "light" | "dark" | "system";
 
@@ -110,9 +110,10 @@ export function applyPreferences(preferences: Preferences) {
   const root = document.documentElement;
   root.classList.toggle("dark", resolveTheme(preferences.theme) === "dark");
 
-  // La palette par défaut est celle de :root, sans attribut — l'absence de
-  // `data-theme` est donc une valeur, pas un oubli.
-  if (preferences.palette === DEFAULT_PALETTE) {
+  // Une seule palette n'a pas d'attribut : celle que :root sert déjà. C'est
+  // `ROOT_PALETTE`, pas `DEFAULT_PALETTE` — depuis que le poste neuf reçoit la
+  // palette de la maison, les deux ont divergé.
+  if (preferences.palette === ROOT_PALETTE) {
     root.removeAttribute("data-theme");
   } else {
     root.setAttribute("data-theme", preferences.palette);

@@ -184,7 +184,7 @@ export function FilesPanel() {
                 Copier
               </Button>
               <Button variant="outline" size="sm" className="h-7" asChild>
-                <a href="/developpeur">
+                <a href="/onedrive">
                   <ExternalLinkIcon className="size-3.5" />
                   Parcourir
                 </a>

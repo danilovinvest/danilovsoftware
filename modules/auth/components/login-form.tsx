@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { errorMessage } from "@/shared/api/errors";
 import { Button } from "@/components/ui/button";
-import { LogoTile } from "@/shared/ui/logo";
+import { Wordmark } from "@/shared/ui/logo";
 import { TextField } from "@/shared/ui/form";
 import { ErrorNotice } from "@/shared/ui/feedback";
 import { useAuth } from "../auth-context";
@@ -43,9 +43,17 @@ export function LoginForm() {
       <DevAccountPicker onSignedIn={goToApp} />
 
       <div className="flex flex-col gap-2">
-        <LogoTile />
-        <h1 className="mt-2 text-lg font-semibold">Danilov CRM</h1>
-        <p className="text-muted-foreground text-sm">
+        {/*
+          Le bloc-marque en entier plutôt qu'une pastille surmontée du nom
+          écrit une seconde fois : la page de connexion est le seul endroit du
+          produit où l'on a la place de montrer le logo tel qu'il est, et le
+          répéter en texte au-dessous ne disait rien de plus. Le titre reste,
+          hors écran — c'est lui que lit un lecteur d'écran, et la structure
+          des titres de la page ne dépend pas d'une image.
+        */}
+        <Wordmark className="h-9" />
+        <h1 className="sr-only">OMPT CRM</h1>
+        <p className="text-muted-foreground mt-2 text-sm">
           Connectez-vous pour accéder aux fiches client.
         </p>
       </div>

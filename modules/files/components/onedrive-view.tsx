@@ -10,29 +10,29 @@ import { useDrive } from "../hooks/use-drive";
 import { DriveExplorer } from "./drive-explorer";
 
 /**
- * La page Développeur : les outils de reprise des données.
+ * OneDrive : l'arborescence de l'entreprise, telle qu'elle est.
  *
- * Elle n'est pas un écran de travail quotidien, et c'est pourquoi elle est à
- * part. Elle sert à regarder les sources brutes avant de décider ce qu'on en
- * tire — aujourd'hui l'arborescence OneDrive, demain le croisement avec les
- * courriels et l'agenda.
+ * Elle s'appelait « Développeur », ce qui décrivait qui l'avait écrite et non
+ * ce qu'on y trouve. On y regarde les dossiers d'affaires avant de décider ce
+ * qu'on en tire — et c'est aussi la meilleure liste de clients dont dispose
+ * l'entreprise, vingt-sept dossiers pour la seule année 2026.
  *
  * Rien n'y écrit dans le CRM. C'est délibéré : on regarde d'abord, on décide
  * ensuite, et une reprise qui crée trente fiches d'un clic sans qu'on ait vu ce
  * qu'elle allait créer se répare à la main pendant deux jours.
  */
-export function DeveloperView() {
-  useSetPageTitle("Développeur");
+export function OneDriveView() {
+  useSetPageTitle("OneDrive");
   const { accounts, configured, loading } = useDrive();
 
   return (
     <div className="flex flex-col gap-5">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-base font-semibold">Développeur</h1>
+          <h1 className="text-base font-semibold">OneDrive</h1>
           <p className="text-muted-foreground mt-0.5 text-sm">
-            Les sources brutes, avant de les verser dans les fiches. Rien n&apos;est
-            écrit d&apos;ici.
+            L&apos;arborescence de l&apos;entreprise, telle qu&apos;elle est. Le CRM
+            la lit, il n&apos;y écrit jamais.
           </p>
         </div>
         <Button variant="outline" size="sm" asChild>
@@ -104,7 +104,7 @@ function EntraGuide() {
             entra.microsoft.com
           </a>{" "}
           → Applications → Inscriptions d&apos;applications → Nouvelle inscription. Nom :
-          « Danilov CRM ».
+          « OMPT CRM ».
         </>
       ),
     },

@@ -7,7 +7,7 @@ import {
   MailIcon,
   MegaphoneIcon,
   ReceiptEuroIcon,
-  WrenchIcon,
+  CloudIcon,
   ZapIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -196,13 +196,13 @@ export const NAV_SECTIONS: NavSection[] = [
         permission: "automations:read",
       },
       {
-        href: "/developpeur",
-        label: "Développeur",
-        icon: WrenchIcon,
+        href: "/onedrive",
+        label: "OneDrive",
+        icon: CloudIcon,
         hue: "slate",
-        // Les outils de reprise : lire les sources brutes avant d'en tirer des
-        // fiches. Réservé à l'administration — ce n'est pas un écran de travail
-        // quotidien, et il montre l'arborescence entière de l'entreprise.
+        // L'arborescence brute de l'entreprise, avant d'en tirer des fiches.
+        // Réservé à l'administration : elle montre tous les dossiers, y compris
+        // ceux qui n'ont pas de fiche.
         permission: "system:admin",
       },
     ],

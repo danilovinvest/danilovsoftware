@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { LogoTile } from "@/shared/ui/logo";
+import { Wordmark } from "@/shared/ui/logo";
 import { ApiError } from "@/shared/api/errors";
 import { ErrorNotice, Spinner } from "@/shared/ui/feedback";
 import { TextField } from "@/shared/ui/form";
@@ -107,9 +107,9 @@ export function InvitationForm({ token }: { token: string }) {
   return (
     <form onSubmit={submit} className="flex w-full flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <LogoTile />
-        <div>
-          <h1 className="text-base font-semibold">Rejoindre Danilov CRM</h1>
+        <Wordmark className="h-7" />
+        <div className="mt-1">
+          <h1 className="text-base font-semibold">Rejoindre OMPT CRM</h1>
           <p className="text-muted-foreground mt-0.5 text-sm">
             Invitation pour {preview.email_hint} · rôle {preview.role_name}.
           </p>

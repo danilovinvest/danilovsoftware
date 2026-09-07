@@ -5,11 +5,15 @@
  * libellés apparaissent dans le sélecteur en haut du tiroir et dans les
  * réglages généraux — ils sont déclarés une fois pour ne pas diverger.
  *
- * La marque, elle, vit dans `shared/ui/logo.tsx` : une initiale dans une
- * pastille n'était pas un logo, et il en existait deux qui ne se
- * ressemblaient pas.
+ * Le nom est celui de l'enseigne, pas celui de la holding : les affaires se
+ * signent OMPT STRUCTURE et OMPT GROUPE, et c'est ce logo-là qui est sur les
+ * devis. DANILOV INVEST reste dans `modules/group` — c'est une société du
+ * groupe, pas la marque.
+ *
+ * La marque, elle, vit dans `shared/ui/logo.tsx` : les tracés du fichier
+ * fourni par l'entreprise, et non une initiale dans une pastille.
  */
 export const WORKSPACE = {
-  name: "Danilov",
+  name: "OMPT",
   tagline: "Bureau d'études techniques et travaux",
 } as const;
