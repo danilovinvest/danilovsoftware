@@ -10,13 +10,13 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { activityName } from "@/modules/group";
+
 import { euros, formatDate } from "@/shared/lib/format";
 import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
 import { TONE_SOFT } from "@/shared/ui/panel";
-import { ARTICLE_STATUS, PHOTO_KIND, STATUS_ORDER } from "../lib/labels";
-import { slugify, suggestTitle } from "../lib/snapshot";
-import type { Article, ArticleStatus, Photo, Realisation } from "../lib/types";
+import { ARTICLE_STATUS, STATUS_ORDER } from "../lib/labels";
+import { slugify, suggestTitle } from "../lib/derive";
+import type { Article, ArticleStatus, ReadRealisation } from "../lib/types";
 import { ArticlePreview } from "./article-preview";
 
 /**
@@ -26,19 +26,26 @@ import { ArticlePreview } from "./article-preview";
  * Écrire pour le site sans voir le rendu, c'est écrire à l'aveugle — et la
  * moitié des articles finissent avec un chapô vide qu'on n'avait pas remarqué.
  *
- * Rien de ce qui vient du chantier n'est saisissable : ville, durée, société,
- * technique. Le marketing n'ajoute que du texte.
+ * Rien de ce qui vient de l'affaire n'est saisissable : client, ville, devis.
+ * Le marketing n'ajoute que du texte.
+ *
+ * Il n'y a plus de photos ici. Celles d'un chantier vivent dans son dossier
+ * OneDrive, où l'entreprise les range déjà : en tenir un second exemplaire dans
+ * le CRM serait faux dès la première prise de vue. L'article renvoie au
+ * dossier.
  */
 export function ArticleEditor({
-  realisation,
+  entry,
   onBack,
   onSave,
+  saving,
 }: {
-  realisation: Realisation;
+  entry: ReadRealisation;
   onBack: () => void;
   onSave: (article: Article) => void;
+  saving: boolean;
 }) {
-  const { worksite } = realisation;
+  const realisation = entry.realisation;
   const [draft, setDraft] = useState<Article>(realisation.article);
   const [keywords, setKeywords] = useState(realisation.article.keywords.join(", "));
 
@@ -46,20 +53,23 @@ export function ArticleEditor({
     setDraft((current) => ({ ...current, [key]: value }));
   }
 
-  /** Reprend ce que le chantier sait déjà : titre, slug et mots-clés de base. */
+  /** Reprend ce que l'affaire sait déjà : titre, adresse et mots-clés de base. */
   function prefill() {
-    const title = draft.title.trim() === "" ? suggestTitle(worksite) : draft.title;
+    const title = draft.title.trim() === "" ? suggestTitle(realisation) : draft.title;
     setDraft((current) => ({
       ...current,
       title,
       slug: current.slug.trim() === "" ? slugify(title) : current.slug,
       context:
         current.context.trim() === ""
-          ? `Chantier livré à ${worksite.city} pour ${worksite.customer_name}, ` +
-            `en ${realisation.duration} jours.`
+          ? `Chantier réalisé${realisation.city ? ` à ${realisation.city}` : ""} ` +
+            `pour ${realisation.customer_name}.`
           : current.context,
     }));
-    const base = [worksite.city.toLowerCase(), activityName(worksite.activity_id).toLowerCase()];
+    // La ville d'abord : c'est le référencement local qui rapporte à un bureau
+    // d'études, pas le mot « structure ».
+    const base = [realisation.city.toLowerCase(), "bureau d'études structure"]
+      .filter(Boolean);
     if (keywords.trim() === "") setKeywords(base.join(", "));
   }
 
@@ -72,35 +82,18 @@ export function ArticleEditor({
         .split(",")
         .map((keyword) => keyword.trim())
         .filter(Boolean),
-      published_at:
-        status === "publie"
-          ? (draft.published_at ?? new Date().toISOString().slice(0, 10))
-          : draft.published_at,
     });
   }
 
-  function addPhoto(kind: Photo["kind"]) {
-    // L'identifiant se déduit des photos déjà là plutôt que de l'horloge :
-    // une fonction de rendu doit rester pure, et supprimer puis rajouter une
-    // photo ne doit pas ressusciter un identifiant déjà pris.
-    const next =
-      draft.photos.reduce(
-        (max, photo) => Math.max(max, Number(photo.id.replace(/\D/g, "")) || 0),
-        0,
-      ) + 1;
-
-    set("photos", [
-      ...draft.photos,
-      { id: `p${next}`, label: `${kind}-${next}.jpg`, caption: "", kind },
-    ]);
-  }
-
   // La prévisualisation suit la saisie sans attendre l'enregistrement.
-  const live: Realisation = {
-    ...realisation,
-    article: {
-      ...draft,
-      keywords: keywords.split(",").map((k) => k.trim()).filter(Boolean),
+  const live: ReadRealisation = {
+    ...entry,
+    realisation: {
+      ...realisation,
+      article: {
+        ...draft,
+        keywords: keywords.split(",").map((k) => k.trim()).filter(Boolean),
+      },
     },
   };
 
@@ -123,33 +116,41 @@ export function ArticleEditor({
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => commit(draft.status === "a_rediger" ? "brouillon" : draft.status)}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={saving}
+            onClick={() =>
+              commit(draft.status === "a_rediger" ? "brouillon" : draft.status)
+            }
+          >
             Enregistrer
           </Button>
-          <Button size="sm" onClick={() => commit("publie")}>
+          <Button size="sm" disabled={saving} onClick={() => commit("publie")}>
             <CheckIcon />
             {draft.status === "publie" ? "Mettre à jour" : "Publier"}
           </Button>
         </div>
       </div>
 
-      {/* Ce que le chantier apporte, et que personne n'a à ressaisir. */}
-      <div className="bg-muted/40 grid gap-3 rounded-lg border px-4 py-3 text-xs sm:grid-cols-4">
-        <Fact label="Client" value={worksite.customer_name} />
-        <Fact label="Chantier" value={`${worksite.label} · ${worksite.city}`} />
+      {/* Ce que l'affaire apporte, et que personne n'a à ressaisir. */}
+      <div className="bg-muted/40 grid gap-3 rounded-xl border px-4 py-3 text-xs sm:grid-cols-4">
+        <Fact label="Client" value={realisation.customer_name} />
+        <Fact label="Chantier" value={realisation.label} />
+        <Fact label="Lieu" value={realisation.city || "non renseigné"} />
         <Fact
-          label="Livré"
-          value={`${formatDate(worksite.completed_at)} · ${realisation.duration} jours`}
-        />
-        <Fact
-          label="Métier"
-          value={`${activityName(worksite.activity_id)} · ${euros(worksite.amount_ht)} HT`}
+          label="Montant"
+          value={
+            realisation.amount_ht === "0" || realisation.amount_ht === ""
+              ? "non chiffré"
+              : `${euros(Number(realisation.amount_ht))} HT`
+          }
         />
       </div>
 
-      {realisation.missing.length > 0 && (
+      {entry.missing.length > 0 && (
         <p className="text-warning bg-warning-soft/50 rounded-lg px-3 py-2 text-xs">
-          Avant publication, il manque : {realisation.missing.join(", ")}.
+          Avant publication, il manque : {entry.missing.join(", ")}.
         </p>
       )}
 
@@ -226,79 +227,19 @@ export function ArticleEditor({
             onChange={(event) => setKeywords(event.target.value)}
           />
 
-          {/* ---- Photos ------------------------------------------------- */}
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-xs font-medium">Photos</span>
-              <div className="flex gap-1">
-                {(Object.keys(PHOTO_KIND) as Photo["kind"][]).map((kind) => (
-                  <Button
-                    key={kind}
-                    variant="ghost"
-                    size="sm"
-                    className="h-7"
-                    onClick={() => addPhoto(kind)}
-                  >
-                    <ImagePlusIcon className="size-3.5" />
-                    {PHOTO_KIND[kind]}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            {draft.photos.length === 0 ? (
-              <p className="text-muted-foreground rounded-lg border border-dashed px-3 py-4 text-center text-[11px]">
-                Aucune photo. Un article de chantier sans image ne sera pas lu.
-              </p>
-            ) : (
-              <ul className="divide-y rounded-lg border">
-                {draft.photos.map((photo) => (
-                  <li key={photo.id} className="flex items-center gap-2 px-3 py-2">
-                    <span className="bg-muted text-muted-foreground shrink-0 rounded-md px-1.5 py-0.5 text-[11px]">
-                      {PHOTO_KIND[photo.kind]}
-                    </span>
-                    <input
-                      value={photo.caption}
-                      placeholder={photo.label}
-                      onChange={(event) =>
-                        set(
-                          "photos",
-                          draft.photos.map((entry) =>
-                            entry.id === photo.id
-                              ? { ...entry, caption: event.target.value }
-                              : entry,
-                          ),
-                        )
-                      }
-                      className="placeholder:text-muted-foreground/60 min-w-0 flex-1 bg-transparent text-xs outline-none"
-                    />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-destructive size-7"
-                      onClick={() =>
-                        set(
-                          "photos",
-                          draft.photos.filter((entry) => entry.id !== photo.id),
-                        )
-                      }
-                    >
-                      <Trash2Icon className="size-3.5" />
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            )}
+          <div className="text-muted-foreground rounded-xl border border-dashed px-3 py-3 text-[11px]">
+            {/* Les photos ne sont pas gérées ici, et c'est délibéré : celles du
+                chantier sont dans son dossier OneDrive. Les recopier dans le
+                CRM en ferait un second exemplaire, faux dès la prise de vue
+                suivante. */}
+            Les photos du chantier restent dans son dossier OneDrive. Le site les
+            reprendra de là — le CRM n&apos;en tient pas de copie.
           </div>
 
           {/* ---- Avis client -------------------------------------------- */}
           <TextAreaField
             label="Citation du client"
-            hint={
-              worksite.review_received_at === null
-                ? "Aucun avis n'a été recueilli sur ce chantier — à demander avant de citer."
-                : `Avis reçu le ${formatDate(worksite.review_received_at)}.`
-            }
+            hint="À recueillir auprès du client avant de le citer."
             value={draft.quote}
             onChange={(event) => set("quote", event.target.value)}
           />

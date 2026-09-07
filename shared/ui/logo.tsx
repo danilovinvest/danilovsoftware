@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
  * disparaîtrait.
  */
 
-/** Le profilé métallique, seul. Rapport 1013 × 179. */
+/** Le profilé métallique, seul. Rapport 1013 × 171. */
 const BEAM_PATH =
   "M332.85 496.46 l-2.82 -4.16 -103.72 0 c-57.19 0 -103.85 -0.37 -103.85 -0.86 -0.12 -0.61 -0.37 -5.88 -0.61 -11.76 l-0.49 -10.90 29.88 -14.45 30 -14.57 0 -33.55 0 -33.68 -7.72 -3.18 c-4.16 -1.71 -17.51 -7.23 -29.64 -12.25 l-22.04 -9.18 -0.12 -12.86 -0.12 -12.98 505.64 0 505.64 0 -0.37 13.23 -0.37 13.10 -9.18 4.53 c-5.02 2.57 -10.04 4.65 -11.02 4.65 -1.10 0 -2.94 0.73 -4.29 1.59 -1.35 0.98 -7.10 3.43 -12.86 5.51 -5.76 2.08 -12.98 4.90 -16.16 6.37 l-5.88 2.57 0 32.82 0 32.82 29.76 14.57 29.64 14.57 0.37 11.39 0.37 11.27 -101.40 0.12 c-55.72 0.12 -101.89 0 -102.62 -0.24 -0.61 -0.24 -7.59 -0.49 -15.31 -0.37 -7.72 0 -62.33 0 -121.24 0 -341.54 -0.24 -430.21 0 -431.43 1.22 -0.49 0.49 -0.24 1.71 0.61 2.57 2.33 2.82 -0.98 4.04 -10.90 4.04 -4.78 0 -10.16 0.49 -11.76 1.10 -2.69 1.10 -3.43 0.73 -6 -3.06z m675.25 -50.09 l13.23 -6.12 0 -30.86 0 -30.98 -388.45 0.12 c-213.69 0 -390.77 0.37 -393.47 0.86 l-4.90 0.86 -0.37 30.13 -0.24 30 13.72 6.37 13.84 6.37 366.77 -0.37 366.77 -0.24 13.10 -6.12z";
 
@@ -34,8 +34,15 @@ const LETTER_PATHS = [
   "M978.46 737.83 c0 -186.75 -0.12 -194.10 -2.20 -196.18 -1.35 -1.22 -12.37 -12.98 -24.86 -26.08 -12.37 -13.10 -22.90 -24.12 -23.39 -24.25 -0.49 -0.24 -0.98 -1.22 -0.98 -2.20 0 -1.47 14.94 -1.71 102.87 -1.71 l102.87 0 0 27.55 0 27.55 -30.62 0 -30.62 0 0 194.71 0 194.71 -46.54 0 -46.54 0 0 -194.10z",
 ];
 
-/** Cadre serré sur le profilé seul. */
-const BEAM_BOX = "121 322 1013 179";
+/**
+ * Cadre serré sur le profilé seul.
+ *
+ * Il s'arrête à 493, quatre unités au-dessus du bas du tracé : le fichier
+ * d'origine laisse un ergot sous l'arête basse, là où le profilé rejoint la
+ * pointe du M. Dans le bloc-marque il se perd derrière la lettre ; isolé et
+ * agrandi, il se voit. Le cadre de vue le coupe.
+ */
+const BEAM_BOX = "121 322 1013 171";
 /** Cadre serré sur le bloc entier, profilé et lettrage. */
 const MARK_BOX = "121 322 1013 611";
 
@@ -88,30 +95,27 @@ export function Wordmark({ className }: { className?: string }) {
 }
 
 /**
- * La marque sur sa pastille, telle qu'elle apparaît dans le tiroir.
+ * La marque sur sa pastille, là où la place est carrée : l'en-tête du tiroir,
+ * y compris replié en colonne d'icônes.
  *
- * Le fond est le bleu nuit du logo et le profilé son orange : c'est le seul
- * endroit de l'interface où les deux couleurs de la marque se rencontrent, et
- * elles ne bougent ni avec la palette ni avec le thème. Une pastille qui
- * suivrait l'accent ne dirait plus « OMPT », elle dirait « le réglage du
- * moment ».
+ * La plaque est peinte de l'encre du lettrage — bleu nuit en clair, blanche en
+ * sombre — et le profilé garde son orange. Elles ne suivent pas la palette :
+ * une pastille qui virerait au violet ne dirait plus « OMPT », elle dirait
+ * « le réglage du moment ».
  */
-export function LogoTile({
-  className,
-  markClassName,
-}: {
-  className?: string;
-  markClassName?: string;
-}) {
+export function LogoTile({ className }: { className?: string }) {
   return (
     <span
       aria-hidden
       className={cn(
-        "bg-logo-navy text-logo-beam grid size-9 shrink-0 place-items-center rounded-lg",
+        "bg-logo-ink text-logo-beam grid size-9 shrink-0 place-items-center rounded-lg",
         className,
       )}
     >
-      <Logo className={cn("w-[70%]", markClassName)} />
+      {/* Le profilé occupe une fraction de la pastille, pas une taille en
+          pixels : la pastille change de côté d'un écran à l'autre, et deux
+          réglages à tenir d'accord auraient fini par diverger. */}
+      <Logo className="w-[72%]" />
     </span>
   );
 }

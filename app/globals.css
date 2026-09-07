@@ -341,15 +341,15 @@
  * lettrage bleu nuit. Ce sont, avec les teintes de repérage ci-dessus, les
  * seules valeurs littérales de la couche sémantique.
  *
- * `--logo-ink` est la seule des trois qui bouge : le bleu nuit tombe à 1,4 de
- * contraste sur le fond sombre, où le lettrage passe au blanc. Le profilé,
- * lui, est orange dans les deux thèmes — c'est ce qui fait reconnaître la
- * marque avant de la lire.
+ * Le profilé ne bouge pas — c'est lui qu'on reconnaît avant d'avoir lu le
+ * nom. L'encre, si : le bleu nuit tombe à 1,2 de contraste sur le fond
+ * sombre, où le lettrage passe au blanc. Et la pastille du tiroir est peinte
+ * de cette même encre, donc elle s'inverse avec elle : une plaque bleu nuit
+ * sur un tiroir presque noir n'était plus une plaque.
  */
 :root {
   --logo-beam: #f06011;
-  --logo-navy: #0c253f;
-  --logo-ink: var(--logo-navy);
+  --logo-ink: #0c253f;
 }
 
 .dark {
@@ -530,7 +530,6 @@
   --color-brand-ink: var(--brand-ink);
 
   --color-logo-beam: var(--logo-beam);
-  --color-logo-navy: var(--logo-navy);
   --color-logo-ink: var(--logo-ink);
   --color-selected: var(--selected);
 

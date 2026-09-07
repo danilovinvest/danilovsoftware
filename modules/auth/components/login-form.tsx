@@ -51,7 +51,7 @@ export function LoginForm() {
           hors écran — c'est lui que lit un lecteur d'écran, et la structure
           des titres de la page ne dépend pas d'une image.
         */}
-        <Wordmark className="h-9" />
+        <Wordmark className="h-9 self-start" />
         <h1 className="sr-only">OMPT CRM</h1>
         <p className="text-muted-foreground mt-2 text-sm">
           Connectez-vous pour accéder aux fiches client.

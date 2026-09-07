@@ -68,7 +68,7 @@ export function WorkspaceMenu() {
               className="text-foreground data-[state=open]:bg-sidebar-accent h-8 gap-2 px-1.5 font-medium"
               tooltip={WORKSPACE.name}
             >
-              <LogoTile className="size-6 rounded-lg" markClassName="w-3.5" />
+              <LogoTile className="size-6 rounded-md" />
               <span className="truncate">{WORKSPACE.name}</span>
               <ChevronDownIcon className="text-muted-foreground ml-auto size-3.5!" />
             </SidebarMenuButton>

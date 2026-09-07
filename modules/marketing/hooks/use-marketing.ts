@@ -1,38 +1,96 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
-import { buildMarketingSnapshot } from "../lib/snapshot";
-import type { Article, ArticleStatus } from "../lib/types";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { errorMessage } from "@/shared/api/errors";
+import * as api from "../lib/api";
+import { coverage, read } from "../lib/derive";
+import type { Article, ArticleStatus, Realisation } from "../lib/types";
+
+type Resolved = { key: string; items: Realisation[] | null; error: string | null };
 
 /**
- * État de l'écran marketing.
+ * L'état de l'écran marketing.
  *
- * Les modifications vivent dans `overrides`, indexées par chantier, et
- * l'instantané est recalculé à partir d'elles. Rien ne part au serveur : le
- * jour où `PUT /v1/realisations/{id}` existera, `save` sera le seul point à
- * changer, et l'écran ne s'en apercevra pas.
+ * Les modifications partent au serveur, plus dans un état local : l'écran
+ * gardait ses articles dans le navigateur, et fermer l'onglet les perdait.
+ * `save` écrit puis recharge — un article n'est pas assez fréquent pour mériter
+ * une mise à jour optimiste, et le rechargement rend la complétude recalculée
+ * par le serveur.
  */
 export function useMarketing() {
-  const [at] = useState(() => new Date());
-  const [overrides, setOverrides] = useState<Record<string, Article>>({});
+  const [token, setToken] = useState(0);
   const [openId, setOpenId] = useState<string | null>(null);
   const [filter, setFilter] = useState<ArticleStatus | "toutes">("toutes");
+  const [saving, setSaving] = useState(false);
 
-  const data = useMemo(() => buildMarketingSnapshot(overrides, at), [overrides, at]);
+  const key = `realisations:${token}`;
+  const [resolved, setResolved] = useState<Resolved>({
+    key: "", items: null, error: null,
+  });
 
-  const save = useCallback((article: Article) => {
-    setOverrides((current) => ({
-      ...current,
-      [article.worksite_id]: { ...article, updated_at: new Date().toISOString() },
-    }));
-  }, []);
+  useEffect(() => {
+    const controller = new AbortController();
+    api
+      .listRealisations(controller.signal)
+      .then((page) => setResolved({ key, items: page.items, error: null }))
+      .catch((cause) => {
+        if (controller.signal.aborted) return;
+        setResolved({ key, items: null, error: errorMessage(cause) });
+      });
+    return () => controller.abort();
+  }, [key]);
 
-  const open = data.realisations.find((r) => r.worksite.id === openId) ?? null;
+  const reads = useMemo(
+    () => (resolved.items ?? []).map(read),
+    [resolved.items],
+  );
+  const cities = useMemo(() => coverage(reads), [reads]);
 
+  const save = useCallback(
+    async (projectId: string, article: Article) => {
+      setSaving(true);
+      try {
+        await api.saveRealisation(projectId, {
+          status: article.status,
+          title: article.title,
+          slug: article.slug,
+          excerpt: article.excerpt,
+          context: article.context,
+          solution: article.solution,
+          result: article.result,
+          keywords: article.keywords,
+          quote: article.quote,
+          quote_author: article.quote_author,
+        });
+        setToken((value) => value + 1);
+        return true;
+      } catch {
+        return false;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [],
+  );
+
+  const open = reads.find((r) => r.realisation.project_id === openId) ?? null;
   const visible =
     filter === "toutes"
-      ? data.realisations
-      : data.realisations.filter((r) => r.article.status === filter);
+      ? reads
+      : reads.filter((r) => r.realisation.article.status === filter);
 
-  return { data, at, open, openId, setOpenId, filter, setFilter, visible, save };
+  return {
+    reads,
+    cities,
+    visible,
+    open,
+    openId,
+    setOpenId,
+    filter,
+    setFilter,
+    save,
+    saving,
+    loading: resolved.key !== key,
+    error: resolved.error,
+  };
 }

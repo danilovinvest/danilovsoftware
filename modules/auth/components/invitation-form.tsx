@@ -107,7 +107,7 @@ export function InvitationForm({ token }: { token: string }) {
   return (
     <form onSubmit={submit} className="flex w-full flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <Wordmark className="h-7" />
+        <Wordmark className="h-7 self-start" />
         <div className="mt-1">
           <h1 className="text-base font-semibold">Rejoindre OMPT CRM</h1>
           <p className="text-muted-foreground mt-0.5 text-sm">
