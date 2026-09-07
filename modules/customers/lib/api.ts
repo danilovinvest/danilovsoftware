@@ -9,6 +9,7 @@ import type {
   CustomerPayload,
   CustomerStats,
   EnrichResult,
+  FoundContact,
   Interaction,
   InteractionPayload,
   Project,
@@ -131,6 +132,23 @@ export function deleteInteraction(id: string) {
  */
 export function enrichFromMail(customerId: string) {
   return apiFetch<EnrichResult>(`/v1/customers/${customerId}/enrich`, { method: "POST" });
+}
+
+/**
+ * Applique ce que le modèle a trouvé et que l'écran a laissé cocher.
+ *
+ * Deux gestes que la recherche par adresse ne sait pas faire : rattacher un fil
+ * où le client est seulement en copie, et nommer les intervenants du chantier —
+ * ingénieur béton, architecte, syndic — qui n'existaient nulle part.
+ */
+export function applyEnrichment(
+  customerId: string,
+  input: { message_ids: string[]; contacts: FoundContact[] },
+) {
+  return apiFetch<{ messages: number; contacts: number }>(
+    `/v1/customers/${customerId}/enrich/apply`,
+    { method: "POST", body: input },
+  );
 }
 
 export function setProjectStage(id: string, payload: StagePayload) {

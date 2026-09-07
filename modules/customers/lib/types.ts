@@ -304,6 +304,16 @@ export type FoundContact = {
   phone: string;
 };
 
+/** Un message que le modèle a jugé relatif à ce client. */
+export type RetainedMail = {
+  id: string;
+  subject: string;
+  from: string;
+  sent_at: string;
+  /** Vrai quand il est déjà rattaché à cette fiche. */
+  linked: boolean;
+};
+
 export type EnrichResult = {
   messages_examined: number;
   model: string;
@@ -320,4 +330,6 @@ export type EnrichResult = {
     summary: string;
     questions: string[];
   };
+  /** Les messages retenus, prêts à être rattachés à la fiche. */
+  retained: RetainedMail[];
 };
