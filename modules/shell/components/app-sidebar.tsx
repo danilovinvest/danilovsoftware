@@ -60,7 +60,10 @@ function WorkspaceNav() {
         <CommandSearch />
       </SidebarHeader>
 
-      <SidebarContent className="px-2">
+      {/* `gap-3` sépare les sections : `SidebarContent` ne met aucun espace par
+          défaut, et trois titres collés les uns aux autres se lisent comme une
+          seule liste — ce qu'on cherchait justement à défaire. */}
+      <SidebarContent className="gap-3 px-2">
         {NAV_SECTIONS.map((section) => {
           const visible = section.items.filter((item) => can(item.permission));
           // Une section dont rien n'est autorisé disparaît en entier : un titre
@@ -71,7 +74,9 @@ function WorkspaceNav() {
             <SidebarGroup key={section.label} className="p-0">
               <SidebarGroupLabel
                 title={section.hint}
-                className="text-muted-foreground h-7 px-1.5 text-[11px] font-medium"
+                // Le repli en mode icônes remonte le titre de sa propre
+                // hauteur ; la classe par défaut vise `h-8`, celle-ci `h-7`.
+                className="text-muted-foreground h-7 px-1.5 text-[11px] font-medium group-data-[collapsible=icon]:-mt-7"
               >
                 {section.label}
               </SidebarGroupLabel>
