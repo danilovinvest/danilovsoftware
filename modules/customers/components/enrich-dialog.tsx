@@ -6,6 +6,7 @@ import {
   CheckIcon,
   MailIcon,
   MapPinIcon,
+  PaperclipIcon,
   PhoneIcon,
   SparklesIcon,
   UsersIcon,
@@ -25,7 +26,13 @@ import { formatPhone, plural } from "@/shared/lib/format";
 import { cn } from "@/lib/utils";
 import { useAction } from "../hooks/use-customers";
 import * as api from "../lib/api";
-import type { CustomerDetail, EnrichResult, Finding } from "../lib/types";
+import type {
+  CustomerDetail,
+  EnrichResult,
+  Finding,
+  FoundContact,
+  RetainedMail,
+} from "../lib/types";
 
 /**
  * Faire lire les courriels du client par le modèle.
@@ -68,6 +75,10 @@ export function EnrichDialog({
 }) {
   const [result, setResult] = useState<EnrichResult | null>(null);
   const [choisis, setChoisis] = useState<Set<Champ>>(new Set());
+  // Les courriels et les interlocuteurs se cochent séparément des champs : ce
+  // ne sont pas les mêmes gestes, et on peut vouloir l'un sans l'autre.
+  const [mails, setMails] = useState<Set<string>>(new Set());
+  const [gens, setGens] = useState<Set<number>>(new Set());
 
   const chercher = useAction(() => api.enrichFromMail(customer.id));
   const appliquer = useAction((patch: Partial<CustomerDetail>) =>
@@ -106,6 +117,10 @@ export function EnrichDialog({
         if (trouve?.value && !customer[cle]) proposes.add(cle);
       }
       setChoisis(proposes);
+      // Tout ce qui n'est pas déjà en place est coché : c'est ce qu'on vient
+      // chercher, et décocher est plus rapide que cocher trente lignes.
+      setMails(new Set(found.retained.filter((m) => !m.linked).map((m) => m.id)));
+      setGens(new Set(found.proposal.contacts.map((_, index) => index)));
     });
     return () => {
       vivant = false;
@@ -122,7 +137,26 @@ export function EnrichDialog({
     });
   }
 
+  function basculeMail(id: string) {
+    setMails((actuel) => {
+      const suivant = new Set(actuel);
+      if (suivant.has(id)) suivant.delete(id);
+      else suivant.add(id);
+      return suivant;
+    });
+  }
+
+  function basculeGens(index: number) {
+    setGens((actuel) => {
+      const suivant = new Set(actuel);
+      if (suivant.has(index)) suivant.delete(index);
+      else suivant.add(index);
+      return suivant;
+    });
+  }
+
   const proposition = result?.proposal;
+  const aRattacher = (result?.retained ?? []).filter((m) => !m.linked);
   const trouvailles = proposition
     ? CHAMPS.map((c) => ({ ...c, trouve: proposition[c.cle] })).filter(
         (c): c is typeof c & { trouve: Finding } => Boolean(c.trouve?.value),
