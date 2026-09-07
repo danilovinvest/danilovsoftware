@@ -36,7 +36,7 @@ import { search, type Hit, type SearchResult } from "../lib/search";
 /** En deçà, on ne dérange pas le serveur : la palette montre la navigation. */
 const MIN_QUERY = 2;
 
-type Entry = Hit & { icon: LucideIcon; hue: Hue };
+type Entry = Hit & { icon: LucideIcon; hue: Hue; badgeTone?: Tone };
 type Group = { key: string; label: string; entries: Entry[] };
 
 const VIDE: SearchResult = {
