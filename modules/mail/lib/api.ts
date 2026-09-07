@@ -57,8 +57,11 @@ export function setCopyAll(accountId: string, copyAll: boolean) {
   });
 }
 
-export function listCustomerMail(customerId: string, signal?: AbortSignal) {
-  return apiFetch<{ items: MailMessage[] }>(`/v1/customers/${customerId}/mail`, { signal });
+export function listCustomerMail(customerId: string, limit = 100, signal?: AbortSignal) {
+  return apiFetch<{ items: MailMessage[]; total: number }>(
+    `/v1/customers/${customerId}/mail?limit=${limit}`,
+    { signal },
+  );
 }
 
 /**
@@ -71,6 +74,24 @@ export function listCustomerMail(customerId: string, signal?: AbortSignal) {
 export function detachCustomerMail(customerId: string, messageId: string) {
   return apiFetch<void>(`/v1/customers/${customerId}/mail/${messageId}`, {
     method: "DELETE",
+  });
+}
+
+/**
+ * Retire plusieurs courriels d'une fiche, ou tous.
+ *
+ * `all` est un champ à part et non « une liste vide veut dire tout » : la
+ * distinction entre « je n'ai rien coché » et « je veux tout retirer » ne doit
+ * tenir à rien d'implicite quand le second vide une fiche de huit mille
+ * messages.
+ */
+export function detachCustomerMailMany(
+  customerId: string,
+  selection: { ids?: string[]; all?: boolean },
+) {
+  return apiFetch<{ detached: number }>(`/v1/customers/${customerId}/mail/detach`, {
+    method: "POST",
+    body: selection,
   });
 }
 

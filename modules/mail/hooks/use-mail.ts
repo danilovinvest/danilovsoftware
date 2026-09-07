@@ -90,16 +90,16 @@ export function useMailbox() {
 export function useCustomerMail(customerId: string, enabled: boolean) {
   const [token, setToken] = useState(0);
   const key = enabled ? `customer-mail:${customerId}:${token}` : "";
-  const [resolved, setResolved] = useState<Resolved<MailMessage[]>>({
-    key: "", data: null, error: null,
-  });
+  const [resolved, setResolved] = useState<
+    Resolved<{ items: MailMessage[]; total: number }>
+  >({ key: "", data: null, error: null });
 
   useEffect(() => {
     if (!enabled) return;
     const controller = new AbortController();
     api
-      .listCustomerMail(customerId, controller.signal)
-      .then((data) => setResolved({ key, data: data.items, error: null }))
+      .listCustomerMail(customerId, 100, controller.signal)
+      .then((data) => setResolved({ key, data, error: null }))
       .catch((cause) => {
         if (controller.signal.aborted) return;
         setResolved({ key, data: null, error: errorMessage(cause) });
@@ -110,7 +110,10 @@ export function useCustomerMail(customerId: string, enabled: boolean) {
   const reload = useCallback(() => setToken((value) => value + 1), []);
 
   return {
-    messages: resolved.data ?? [],
+    messages: resolved.data?.items ?? [],
+    // Ce que la fiche porte en tout, au-delà de ce que la liste montre : une
+    // fiche peut en porter huit mille et n'en afficher que cent.
+    total: resolved.data?.total ?? 0,
     // Le squelette ne revient qu'en changeant de fiche : un rechargement après
     // détachement remplacerait la liste par des barres grises, et on perdrait
     // de vue la ligne qu'on vient de retirer.
