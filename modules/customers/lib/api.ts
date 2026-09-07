@@ -8,6 +8,7 @@ import type {
   CustomerListItem,
   CustomerPayload,
   CustomerStats,
+  EnrichResult,
   Interaction,
   InteractionPayload,
   Project,
@@ -121,6 +122,17 @@ export function deleteInteraction(id: string) {
 }
 
 /** Change l'avancement d'une affaire sans réécrire le reste de sa fiche. */
+/**
+ * Fait lire les courriels du client par le modèle.
+ *
+ * Rien n'est écrit : la route rend une proposition. L'appel prend des dizaines
+ * de secondes — le modèle lit vingt-cinq messages — d'où l'absence de délai
+ * côté client.
+ */
+export function enrichFromMail(customerId: string) {
+  return apiFetch<EnrichResult>(`/v1/customers/${customerId}/enrich`, { method: "POST" });
+}
+
 export function setProjectStage(id: string, payload: StagePayload) {
   return apiFetch<Project>(`/v1/projects/${id}/stage`, {
     method: "PATCH",

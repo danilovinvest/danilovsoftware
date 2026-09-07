@@ -9,6 +9,7 @@ import {
   MailIcon,
   PencilIcon,
   PhoneIcon,
+  SparklesIcon,
 } from "lucide-react";
 import { usePermission } from "@/modules/auth";
 import { useSetPageTitle } from "@/modules/shell";
@@ -25,6 +26,7 @@ import { useAction } from "../hooks/use-customers";
 import * as api from "../lib/api";
 import { CustomerForm } from "./customer-form";
 import { CustomerHeadline } from "./customer-headline";
+import { EnrichDialog } from "./enrich-dialog";
 import { DetailsPanel } from "./details-panel";
 import { EnumBadge } from "./enum-badge";
 import { InteractionsPanel } from "./interactions-panel";
@@ -39,6 +41,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
   const router = useRouter();
   const { customer, loading, error, reload } = useCustomer(customerId);
   const [editing, setEditing] = useState(false);
+  const [enriching, setEnriching] = useState(false);
 
   useSetPageTitle(customer?.display_name ?? null);
 
@@ -122,6 +125,18 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
         </div>
 
         <div className="flex gap-2">
+          {/*
+            Chercher dans la messagerie demande `mail:read` côté serveur : faire
+            lire vingt-cinq courriels par un modèle est aussi intrusif que les
+            lire soi-même. Le bouton suit donc la même permission que l'onglet
+            Courriels.
+          */}
+          {canWrite && canReadMail && (
+            <Button variant="outline" onClick={() => setEnriching(true)}>
+              <SparklesIcon />
+              Chercher dans les courriels
+            </Button>
+          )}
           {canWrite && (
             <Button variant="outline" onClick={() => setEditing(true)}>
               <PencilIcon />
@@ -198,6 +213,15 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
           <DetailsPanel customer={customer} onChanged={reload} />
         </TabsContent>
       </Tabs>
+
+      {enriching && (
+        <EnrichDialog
+          customer={customer}
+          open={enriching}
+          onOpenChange={setEnriching}
+          onSaved={reload}
+        />
+      )}
     </div>
   );
 }

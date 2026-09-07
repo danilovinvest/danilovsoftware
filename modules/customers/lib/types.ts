@@ -282,3 +282,42 @@ export type InteractionPayload = {
   summary: string;
   details: string;
 };
+
+/**
+ * Ce que le modèle propose après avoir lu les courriels d'un client.
+ *
+ * Chaque valeur porte sa **preuve** — l'objet du message et sa date — et sa
+ * confiance. Une valeur sans preuve est écartée côté serveur : un modèle qui
+ * doit citer invente beaucoup moins, et une valeur qu'on ne peut pas vérifier
+ * n'a rien à faire sur une fiche.
+ */
+export type Finding = {
+  value: string;
+  evidence: string;
+  confidence: number;
+};
+
+export type FoundContact = {
+  name: string;
+  role: string;
+  email: string;
+  phone: string;
+};
+
+export type EnrichResult = {
+  messages_examined: number;
+  model: string;
+  seconds: number;
+  generated_at: string;
+  proposal: {
+    email: Finding | null;
+    phone: Finding | null;
+    address_line: Finding | null;
+    postal_code: Finding | null;
+    city: Finding | null;
+    company_name: Finding | null;
+    contacts: FoundContact[];
+    summary: string;
+    questions: string[];
+  };
+};
