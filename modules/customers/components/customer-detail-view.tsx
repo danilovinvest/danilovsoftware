@@ -26,6 +26,7 @@ import { useAction } from "../hooks/use-customers";
 import * as api from "../lib/api";
 import { CustomerForm } from "./customer-form";
 import { CustomerHeadline } from "./customer-headline";
+import { ReviewChecks } from "./review-checks";
 import { EnrichDialog } from "./enrich-dialog";
 import { DetailsPanel } from "./details-panel";
 import { EnumBadge } from "./enum-badge";
@@ -122,6 +123,19 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
           </div>
 
           <CustomerHeadline customer={customer} className="mt-3" />
+
+          {/*
+            La relecture de la fiche, distincte du cycle de l'affaire : celui-ci
+            dit où en est la vente, celle-là ce qu'on sait de la fiche. Les deux
+            cent quarante-quatre fiches reprises n'ont jamais été ouvertes une à
+            une, et sans trace de ce qui a été relu on rouvre trois fois la même.
+          */}
+          <ReviewChecks
+            customerId={customer.id}
+            review={customer.review}
+            editable={canWrite}
+            className="mt-3"
+          />
         </div>
 
         <div className="flex gap-2">
