@@ -26,7 +26,6 @@ import { EnumBadge } from "./enum-badge";
 import { ProjectCycle } from "./project-cycle";
 import type { CustomerListItem, ProjectSummary, Review } from "../lib/types";
 
-const COLUMNS = 10;
 
 /**
  * La liste des fiches, relue autour du cycle.
