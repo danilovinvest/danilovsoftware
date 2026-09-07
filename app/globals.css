@@ -647,6 +647,17 @@
   --radius-3xl: 18px;
   --radius-4xl: 24px;
 
+  /*
+   * Le miroitement des attentes.
+   *
+   * Un balayage de gauche à droite plutôt qu'une pulsation : une pulsation
+   * fait clignoter toute la page d'un coup, un balayage a un sens de lecture
+   * et se remarque moins au bout de trois secondes. Le voile est blanc en
+   * clair, blanc très dilué en sombre — c'est la même règle des deux côtés,
+   * puisqu'il passe *sur* une surface qui a déjà la bonne couleur.
+   */
+  --animate-shimmer: shimmer 1.6s ease-in-out infinite;
+
   /* BOX_SHADOW_LIGHT : des ombres presque plates, très diffuses. */
   --shadow-2xs: 0 1px 2px 0 rgb(0 0 0 / 0.039);
   --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.039);
@@ -701,4 +712,38 @@
 .react-flow__attribution a {
   color: var(--muted-foreground);
   opacity: 0.4;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/*
+ * Le voile qui balaie une barre d'attente. Il est posé en `background-image`
+ * par-dessus la couleur du bloc, qui reste visible entre deux passages : c'est
+ * ce qui permet à une même classe de miroiter en gris comme dans la teinte du
+ * module.
+ */
+.animate-shimmer {
+  background-image: linear-gradient(
+    100deg,
+    transparent 20%,
+    color-mix(in oklab, var(--color-background) 65%, transparent) 45%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Un balayage perpétuel est une gêne pour qui a demandé moins d'animation :
+     la barre reste, immobile, et dit la même chose. */
+  .animate-shimmer {
+    animation: none;
+  }
 }

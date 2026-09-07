@@ -27,7 +27,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { GradientAvatar } from "@/shared/ui/gradient-avatar";
-import { LogoTile } from "@/shared/ui/logo";
+import { LogoTile, Wordmark } from "@/shared/ui/logo";
 import { initials } from "@/shared/lib/format";
 import { WORKSPACE } from "@/shared/lib/workspace";
 import { cn } from "@/lib/utils";
@@ -65,12 +65,29 @@ export function WorkspaceMenu() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
-              className="text-foreground data-[state=open]:bg-sidebar-accent h-8 gap-2 px-1.5 font-medium"
+              className="text-foreground data-[state=open]:bg-sidebar-accent h-12 gap-2 px-2 font-medium group-data-[collapsible=icon]:p-0!"
               tooltip={WORKSPACE.name}
             >
-              <LogoTile className="size-6 rounded-md" />
-              <span className="truncate">{WORKSPACE.name}</span>
-              <ChevronDownIcon className="text-muted-foreground ml-auto size-3.5!" />
+              {/*
+                Le logo, et rien d'autre : écrire « OMPT » à côté d'un logo qui
+                dit déjà « OMPT » le répétait, et les deux se disputaient une
+                colonne de deux cents pixels.
+
+                Les tailles sont forcées parce que `SidebarMenuButton` impose
+                `[&_svg]:size-4` à tout ce qu'il contient — la règle est faite
+                pour des icônes carrées, et elle écrasait le bloc-marque dans
+                un carré de seize pixels.
+              */}
+              <Wordmark className="h-8! w-auto! group-data-[collapsible=icon]:hidden" />
+              {/*
+                Replié en colonne d'icônes, le nom ne tiendrait pas : reste la
+                pastille, la même que dans l'onglet du navigateur. Elle occupe
+                tout le bouton — le rembourrage du tiroir est annulé plus haut,
+                sans quoi un profilé de onze pixels flottait au milieu d'un
+                carré de trente-deux.
+              */}
+              <LogoTile className="hidden size-8 rounded-lg group-data-[collapsible=icon]:grid" />
+              <ChevronDownIcon className="text-muted-foreground ml-auto size-3.5! group-data-[collapsible=icon]:hidden" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
 

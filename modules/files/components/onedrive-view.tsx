@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { useSetPageTitle } from "@/modules/shell";
 import { EmptyState } from "@/shared/ui/feedback";
 import { useDrive } from "../hooks/use-drive";
+import { ListSkeleton } from "@/shared/ui/loading";
 import { DriveExplorer } from "./drive-explorer";
 
 /**
@@ -51,7 +52,13 @@ export function OneDriveView() {
           </span>
         </div>
 
-        {loading ? null : !configured ? (
+        {/* L'écran n'affichait rien pendant l'interrogation du compte : une
+            page vide qu'on prend pour une panne. */}
+        {loading ? (
+          <Card className="overflow-hidden py-0">
+            <ListSkeleton rows={7} hue="slate" />
+          </Card>
+        ) : !configured ? (
           <EntraGuide />
         ) : accounts.length === 0 ? (
           <Card>

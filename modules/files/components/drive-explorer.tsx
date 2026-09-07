@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ListSkeleton } from "@/shared/ui/loading";
 import { EmptyState, ErrorNotice } from "@/shared/ui/feedback";
 import { formatDate, plural } from "@/shared/lib/format";
 import { useListing } from "../hooks/use-drive";
@@ -96,11 +96,7 @@ export function DriveExplorer() {
           <ErrorNotice message={error} />
         </div>
       ) : loading ? (
-        <div className="flex flex-col gap-2 p-3">
-          {Array.from({ length: 8 }, (_, index) => (
-            <Skeleton key={index} className="h-10 w-full" />
-          ))}
-        </div>
+        <ListSkeleton rows={8} hue="slate" />
       ) : items.length === 0 ? (
         <EmptyState
           title="Dossier vide"

@@ -114,8 +114,14 @@ export function LogoTile({ className }: { className?: string }) {
     >
       {/* Le profilé occupe une fraction de la pastille, pas une taille en
           pixels : la pastille change de côté d'un écran à l'autre, et deux
-          réglages à tenir d'accord auraient fini par diverger. */}
-      <Logo className="w-[72%]" />
+          réglages à tenir d'accord auraient fini par diverger.
+
+          La largeur est forcée : dans le tiroir, `SidebarMenuButton` impose
+          `[&_svg]:size-4` à tout ce qu'il contient, et le profilé s'y
+          retrouvait à seize pixels de large. La hauteur, elle, peut rester
+          contrainte — un cadre de vue trop haut ajoute du vide au-dessus et
+          au-dessous du tracé, il ne l'écrase pas. */}
+      <Logo className="w-[72%]!" />
     </span>
   );
 }
