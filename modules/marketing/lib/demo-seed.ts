@@ -1,12 +1,16 @@
-import type { BlockedReason, CostKind, StudyStatus } from "./types";
+import type { BlockedReason, CostKind, StudyStatus } from "./demo-worksites";
 
 /**
- * Jeu de démonstration des chantiers.
+ * Jeu de démonstration des chantiers livrés, matière première du marketing.
  *
- * Les clients sont ceux de l'export de devis réel : le tableau de bord, la
- * facturation et cet écran parlent des mêmes affaires. Les montants, les
- * coûts et les jalons sont inventés — le CRM n'a jamais suivi cette partie du
- * métier, il n'existe donc aucune donnée à reprendre.
+ * Il vivait dans le module chantiers, qui lit maintenant les vraies affaires
+ * signées. Le marketing, lui, a besoin de chantiers **terminés** avec leur
+ * durée, leur technique et leur avis client — quatre choses que les données
+ * réelles ne portent pas encore. Le jeu de démonstration le suit donc ici
+ * plutôt que de retenir l'écran chantiers dans la fiction.
+ *
+ * Les clients sont ceux de l'export de devis réel ; montants, coûts et jalons
+ * sont inventés.
  *
  * Les dates sont des décalages en jours : positif dans le passé, **négatif
  * dans le futur**. L'écran ne vieillit pas.
