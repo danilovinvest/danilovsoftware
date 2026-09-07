@@ -88,7 +88,8 @@ export function useMailbox() {
 /** Les courriels d'une fiche. Chargés à l'ouverture de l'onglet, pas avant :
  * la plupart des visites d'une fiche ne les regardent pas. */
 export function useCustomerMail(customerId: string, enabled: boolean) {
-  const key = enabled ? `customer-mail:${customerId}` : "";
+  const [token, setToken] = useState(0);
+  const key = enabled ? `customer-mail:${customerId}:${token}` : "";
   const [resolved, setResolved] = useState<Resolved<MailMessage[]>>({
     key: "", data: null, error: null,
   });
@@ -106,9 +107,15 @@ export function useCustomerMail(customerId: string, enabled: boolean) {
     return () => controller.abort();
   }, [key, customerId, enabled]);
 
+  const reload = useCallback(() => setToken((value) => value + 1), []);
+
   return {
     messages: resolved.data ?? [],
-    loading: enabled && resolved.key !== key,
+    // Le squelette ne revient qu'en changeant de fiche : un rechargement après
+    // détachement remplacerait la liste par des barres grises, et on perdrait
+    // de vue la ligne qu'on vient de retirer.
+    loading: enabled && !resolved.key.startsWith(`customer-mail:${customerId}:`),
     error: resolved.error,
+    reload,
   };
 }

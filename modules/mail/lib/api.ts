@@ -61,6 +61,19 @@ export function listCustomerMail(customerId: string, signal?: AbortSignal) {
   return apiFetch<{ items: MailMessage[] }>(`/v1/customers/${customerId}/mail`, { signal });
 }
 
+/**
+ * Retire un courriel d'une fiche.
+ *
+ * Le message n'est pas supprimé — il reste dans la boîte et dans l'écran
+ * Messagerie. Ce qui disparaît, c'est le rapprochement, et le serveur le note
+ * pour que la copie suivante ne le refasse pas toute seule.
+ */
+export function detachCustomerMail(customerId: string, messageId: string) {
+  return apiFetch<void>(`/v1/customers/${customerId}/mail/${messageId}`, {
+    method: "DELETE",
+  });
+}
+
 export function listAttachments(messageId: string, signal?: AbortSignal) {
   return apiFetch<{ items: MailAttachment[] }>(
     `/v1/mail/messages/${messageId}/attachments`,

@@ -414,7 +414,7 @@ function ProjectBlock({
               </TabsContent>
 
               <TabsContent value="devis" className="pt-4">
-                <QuoteList quotes={quotes} />
+                <QuoteList quotes={quotes} onChanged={onChanged} />
               </TabsContent>
 
               <TabsContent value="apres" className="pt-4">
@@ -507,7 +507,10 @@ function ProjectBlock({
  * moins cher, racontent une remise — l'écart est affiché, parce que c'est lui
  * qu'on cherche.
  */
-function QuoteList({ quotes }: { quotes: Quote[] }) {
+function QuoteList({ quotes, onChanged }: { quotes: Quote[]; onChanged: () => void }) {
+  const canDelete = usePermission("quotes:delete");
+  const remove = useAction((id: string) => api.deleteQuote(id));
+
   if (quotes.length === 0) {
     return (
       <EmptyState
@@ -589,6 +592,28 @@ function QuoteList({ quotes }: { quotes: Quote[] }) {
 
             {quote.comment && (
               <p className="text-muted-foreground w-full text-xs">{quote.comment}</p>
+            )}
+
+            {/*
+              Un devis peut être faux : deux fois le même repris d'un dossier
+              OneDrive, un montant lu de travers, une référence attribuée à la
+              mauvaise affaire. On le supprime ici, à la ligne où on le voit.
+            */}
+            {canDelete && (
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                className="text-muted-foreground/50 hover:text-danger -my-1"
+                aria-label="Supprimer le devis"
+                disabled={remove.pending}
+                onClick={async () => {
+                  const nom = quote.reference || quote.label || "ce devis";
+                  if (!confirm(`Supprimer le devis « ${nom} » ?`)) return;
+                  if (await remove.run(quote.id)) onChanged();
+                }}
+              >
+                <Trash2Icon />
+              </Button>
             )}
           </li>
         );
