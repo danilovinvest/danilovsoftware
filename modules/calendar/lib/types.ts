@@ -115,11 +115,41 @@ export type MirrorCalendar = {
   synced_at: string | null;
 };
 
+/**
+ * Un changement, tel que l'import le raconte.
+ *
+ * Un compteur ne suffit pas : « 5 mis à jour » ne dit pas *lequel* a bougé, et
+ * c'est justement ce qu'on veut savoir quand un rendez-vous se déplace.
+ */
+export type ImportChange = {
+  kind: "ajout" | "maj" | "conflit" | "suppression" | "conflit_suppression";
+  calendar: string;
+  title: string;
+  starts_at: string;
+  /** Ce qui a changé, en clair. Vide pour un ajout, qui n'a rien à comparer. */
+  detail: string;
+};
+
 export type ImportReport = {
   calendars: number;
   added: number;
-  /** Déjà connus, donc laissés tels quels — corrections locales comprises. */
-  skipped: number;
+  /** Repris de Google : modifiés là-bas, jamais corrigés ici. */
+  updated: number;
+  /** Déjà connus et identiques. */
+  unchanged: number;
+  /** Modifiés chez Google **et** corrigés ici : laissés tels quels. */
+  conflicts: number;
+  /** Supprimés chez Google, donc retirés du CRM. */
+  removed: number;
+  changes: ImportChange[];
+};
+
+/** Une exécution de l'import, telle que le journal la garde. */
+export type ImportRun = ImportReport & {
+  id: string;
+  started_at: string;
+  author_name: string;
+  error: string;
 };
 
 /**
