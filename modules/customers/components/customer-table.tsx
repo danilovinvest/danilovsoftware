@@ -13,17 +13,20 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { usePermission } from "@/modules/auth";
 import { cn } from "@/lib/utils";
 import { TONE_SOFT, TONE_TEXT } from "@/shared/ui/panel";
-import { formatAmount, formatPhone } from "@/shared/lib/format";
+import { formatAmount, formatDate, formatPhone } from "@/shared/lib/format";
+import * as api from "../lib/api";
 import { CUSTOMER_SOURCE, PROJECT_OUTCOME } from "../lib/labels";
 import { leadProject, nextAction, readCycle, type NextAction } from "../lib/cycle";
 import { readJalons } from "../lib/jalons";
 import { EnumBadge } from "./enum-badge";
 import { ProjectCycle } from "./project-cycle";
-import type { CustomerListItem, ProjectSummary } from "../lib/types";
+import type { CustomerListItem, ProjectSummary, Review } from "../lib/types";
 
-const COLUMNS = 8;
+const COLUMNS = 10;
 
 /**
  * La liste des fiches, relue autour du cycle.
@@ -49,6 +52,17 @@ export function CustomerTable({
   // aucune requête.
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [now] = useState(() => Date.now());
+  const canWrite = usePermission("customers:write");
+
+  /*
+    Les cases cochées pendant la session, par-dessus ce que le serveur a servi.
+
+    Sans cela, cocher demanderait de recharger toute la liste pour voir la coche
+    apparaître : une page qui se reconstruit sous le curseur alors qu'on
+    descend une colonne de deux cents cases. L'écart avec le serveur ne dure que
+    le temps de la réponse, et c'est nous qui l'avons écrit.
+  */
+  const [reviews, setReviews] = useState<Record<string, Review>>({});
 
   function toggle(id: string) {
     setExpanded((current) => {
@@ -73,6 +87,13 @@ export function CustomerTable({
             <TableHead>Prochaine action</TableHead>
             <TableHead>Source</TableHead>
             <TableHead className="text-right">Signé TTC</TableHead>
+            {/*
+              Deux colonnes plutôt qu'une à deux cases : chacune porte son
+              intitulé, et on descend une colonne de coches sans avoir à se
+              rappeler laquelle des deux boîtes veut dire quoi.
+            */}
+            <TableHead className="w-16 text-center">Vérifiée</TableHead>
+            <TableHead className="w-16 text-center">Complète</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -152,6 +173,25 @@ export function CustomerTable({
                           ? "—"
                           : formatAmount(customer.won_amount_ttc)}
                       </TableCell>
+
+                      <ReviewCell
+                        customerId={customer.id}
+                        review={reviews[customer.id] ?? customer.review}
+                        field="verified"
+                        editable={canWrite}
+                        onChanged={(next) =>
+                          setReviews((current) => ({ ...current, [customer.id]: next }))
+                        }
+                      />
+                      <ReviewCell
+                        customerId={customer.id}
+                        review={reviews[customer.id] ?? customer.review}
+                        field="completed"
+                        editable={canWrite}
+                        onChanged={(next) =>
+                          setReviews((current) => ({ ...current, [customer.id]: next }))
+                        }
+                      />
                     </TableRow>
 
                     {open &&
@@ -197,6 +237,9 @@ export function CustomerTable({
                               ? "—"
                               : formatAmount(project.total_amount_ttc)}
                           </TableCell>
+                          {/* La relecture porte sur la fiche, pas sur l'affaire. */}
+                          <TableCell className="py-2" />
+                          <TableCell className="py-2" />
                         </TableRow>
                       ))}
                   </Fragment>
