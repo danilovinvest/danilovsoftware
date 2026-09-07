@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -54,9 +55,18 @@ const SCOPES: Array<{ key: MailScope; label: string; hint: string }> = [
 export function MailboxView() {
   useSetPageTitle("Messagerie");
 
+  // La recherche globale mène ici avec `?message=` : sans cela elle
+  // n'ouvrirait qu'une boîte de neuf mille messages où il faudrait chercher
+  // une seconde fois. Lu une fois au montage — l'utilisateur clique ensuite
+  // dans la liste, et remettre l'URL d'accord à chaque clic ferait de la barre
+  // d'adresse un second état à tenir.
+  const params = useSearchParams();
+  const [selected, setSelected] = useState<string | null>(
+    () => params.get("message"),
+  );
+
   const { accounts } = useMailbox();
   const browse = useMailboxBrowse();
-  const [selected, setSelected] = useState<string | null>(null);
   const opened = useMailMessage(selected);
 
   const account = accounts[0] ?? null;
