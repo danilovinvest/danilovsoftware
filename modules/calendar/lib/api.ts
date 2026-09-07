@@ -81,6 +81,14 @@ export function listAccounts(signal?: AbortSignal) {
   );
 }
 
+/** Le journal des imports : ce que chaque passage a repris de Google. */
+export function listImportRuns(limit: number, signal?: AbortSignal) {
+  return apiFetch<{ items: ImportRun[] }>(
+    `/v1/calendar/import/runs?limit=${limit}`,
+    { signal },
+  );
+}
+
 export function listSyncRuns(limit: number, signal?: AbortSignal) {
   return apiFetch<{ items: SyncRun[] }>(`/v1/calendar/sync/runs?limit=${limit}`, {
     signal,

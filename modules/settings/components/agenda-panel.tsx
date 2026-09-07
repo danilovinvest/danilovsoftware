@@ -6,6 +6,7 @@ import {
   DownloadIcon,
   PlusIcon,
   RefreshCwIcon,
+  ScrollTextIcon,
   TriangleAlertIcon,
   XIcon,
 } from "lucide-react";
@@ -17,6 +18,7 @@ import {
   GoogleButton,
   GoogleMark,
   SyncBadge,
+  ImportLogDialog,
   SyncLogDialog,
   authorizeUrl,
   createCalendar,
@@ -54,6 +56,7 @@ export function AgendaPanel() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [journalOpen, setJournalOpen] = useState(false);
+  const [importLogOpen, setImportLogOpen] = useState(false);
   const [report, setReport] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
   const outcome = useAuthorizationOutcome();
@@ -93,11 +96,25 @@ export function AgendaPanel() {
 
   const runImport = guard(async () => {
     const result = await importFromGoogle();
+    /*
+      Le compte rendu dit les quatre choses qui peuvent arriver, et seulement
+      celles qui sont arrivées. « 756 inchangés » est vrai mais n'apprend rien ;
+      « 5 repris de Google » et « 2 conflits » sont ce qu'on ouvre l'écran pour
+      savoir.
+    */
+    const parts: string[] = [];
+    if (result.added > 0) parts.push(`${plural(result.added, "événement")} ajouté${result.added > 1 ? "s" : ""}`);
+    if (result.updated > 0) parts.push(`${result.updated} repris de Google`);
+    if (result.removed > 0) parts.push(`${result.removed} supprimé${result.removed > 1 ? "s" : ""}`);
+    if (result.conflicts > 0) {
+      parts.push(
+        `${result.conflicts} conflit${result.conflicts > 1 ? "s" : ""} — modifié${result.conflicts > 1 ? "s" : ""} dans Google mais corrigé${result.conflicts > 1 ? "s" : ""} ici, donc conservé${result.conflicts > 1 ? "s" : ""}`,
+      );
+    }
     setReport(
-      result.added === 0
-        ? `Rien de neuf : les ${result.skipped} événements du miroir sont déjà dans le CRM.`
-        : `${plural(result.added, "événement")} importé${result.added > 1 ? "s" : ""}, ` +
-          `${result.skipped} déjà connu${result.skipped > 1 ? "s" : ""} et laissé${result.skipped > 1 ? "s" : ""} tel${result.skipped > 1 ? "s" : ""} quel${result.skipped > 1 ? "s" : ""}.`,
+      parts.length === 0
+        ? `Rien n'avait changé : les ${result.unchanged} événements du miroir sont déjà à jour dans le CRM.`
+        : parts.join(" · ") + ".",
     );
   });
 
@@ -177,8 +194,16 @@ export function AgendaPanel() {
         )}
 
         {report && (
-          <p className="text-success bg-success-soft/40 rounded-lg px-3 py-2 text-xs">
+          <p className="text-success bg-success-soft/40 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg px-3 py-2 text-xs">
             {report}
+            {/* Le compte rendu dit combien ; le journal dit lesquels. */}
+            <button
+              type="button"
+              onClick={() => setImportLogOpen(true)}
+              className="text-brand-text underline underline-offset-2"
+            >
+              Voir le détail
+            </button>
           </p>
         )}
 
@@ -236,6 +261,21 @@ export function AgendaPanel() {
                 <Button size="sm" className="h-7" onClick={runImport} disabled={pending}>
                   {pending ? <Spinner /> : <DownloadIcon className="size-3.5" />}
                   Importer
+                </Button>
+
+                {/*
+                  Deux journaux, et ils ne racontent pas la même chose : celui
+                  du badge dit ce que la **copie** de Google a rapporté, celui-ci
+                  ce que l'**import** en a fait dans le CRM.
+                */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7"
+                  onClick={() => setImportLogOpen(true)}
+                  title="Journal des imports : ce qui a été repris, et ce qui a été laissé"
+                >
+                  <ScrollTextIcon className="size-3.5" />
                 </Button>
 
                 <Button
@@ -313,6 +353,7 @@ export function AgendaPanel() {
       </SettingsSection>
 
       <SyncLogDialog open={journalOpen} onClose={() => setJournalOpen(false)} />
+      <ImportLogDialog open={importLogOpen} onOpenChange={setImportLogOpen} />
     </SettingsPage>
   );
 }

@@ -11,6 +11,7 @@ export { GoogleMark } from "./components/google-mark";
 export { SyncBadge } from "./components/sync-badge";
 export { CALENDAR_PALETTE } from "./lib/labels";
 export { SyncLogDialog } from "./components/sync-log-dialog";
+export { ImportLogDialog } from "./components/import-log";
 export { useSyncRuns } from "./hooks/use-sync-runs";
 export * from "./lib/types";
 // Le raccordement du compte Google se pilote depuis l'écran des réglages, qui
@@ -24,6 +25,7 @@ export {
   disconnectAccount,
   importFromGoogle,
   listAccounts,
+  listImportRuns,
   listMirror,
   setMirrorSelected,
   syncNow,
