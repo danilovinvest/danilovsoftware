@@ -26,7 +26,6 @@ import {
 } from "@/components/ui/sidebar";
 import { NAV_ITEM_CLASS } from "@/shared/ui/nav";
 import { NAV_SECTIONS } from "../lib/navigation";
-import { CommandSearch } from "./command-search";
 import { WorkspaceMenu } from "./workspace-menu";
 
 /**
@@ -55,9 +54,11 @@ function WorkspaceNav() {
 
   return (
     <>
-      <SidebarHeader className="gap-0.5 p-2">
+      {/* La recherche a quitté cette colonne pour la barre du haut : elle
+          sert partout, y compris dans les réglages, où cette navigation-ci
+          disparaît entièrement. */}
+      <SidebarHeader className="p-2">
         <WorkspaceMenu />
-        <CommandSearch />
       </SidebarHeader>
 
       {/* `gap-3` sépare les sections : `SidebarContent` ne met aucun espace par

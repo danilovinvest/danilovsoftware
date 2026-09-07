@@ -20,6 +20,7 @@ import {
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { NAVIGATION } from "../lib/navigation";
 import { AppSidebar } from "./app-sidebar";
+import { CommandSearch } from "./command-search";
 import { PageTitleProvider, usePageTitle } from "./page-title";
 
 /** Largeur du tiroir de navigation de Twenty. */
@@ -49,9 +50,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             entière qui défilait latéralement au lieu du seul tableau.
           */}
           <SidebarInset className="min-w-0 md:peer-data-[variant=inset]:border">
-            <header className="flex h-10 shrink-0 items-center gap-1 border-b px-2">
-              <SidebarTrigger className="text-muted-foreground size-7" />
-              <ShellBreadcrumb />
+            {/*
+              La barre du haut : où l'on est à gauche, ce qu'on cherche à
+              droite. La recherche y a sa place et non dans la colonne de
+              gauche — elle sert sur tous les écrans, réglages compris, où
+              cette colonne bascule entièrement.
+            */}
+            <header className="flex h-11 shrink-0 items-center gap-2 border-b px-2">
+              <SidebarTrigger className="text-muted-foreground size-7 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <ShellBreadcrumb />
+              </div>
+              <CommandSearch />
             </header>
             <div className="flex flex-1 flex-col gap-5 p-4 md:px-6 md:py-5">
               {children}
