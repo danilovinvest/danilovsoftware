@@ -4,19 +4,18 @@ import {
   AlarmClockIcon,
   BanknoteIcon,
   CalendarPlusIcon,
-  FileSignatureIcon,
-  FlaskConicalIcon,
-  StarIcon,
+  ReceiptTextIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { EmptyState } from "@/shared/ui/feedback";
-import { euros, eurosShort, plural } from "@/shared/lib/format";
-import { MetricCards } from "@/shared/ui/metric-cards";
-import { Panel, RowShell } from "@/shared/ui/panel";
+import { EmptyState, ErrorNotice, Skeleton } from "@/shared/ui/feedback";
+import { plural } from "@/shared/lib/format";
+import { Panel, RowShell, TONE_SOFT } from "@/shared/ui/panel";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { useWorksites } from "../hooks/use-worksites";
+import { STATUS_ORDER } from "../lib/derive";
+import { WORKSITE_STATUS } from "../lib/labels";
 import type { Alert } from "../lib/types";
-import { ScopeSwitcher } from "./scope-switcher";
 import { WorksiteBoard } from "./worksite-board";
 import { WorksiteList } from "./worksite-list";
 import { WorksitePlanning } from "./worksite-planning";
@@ -29,106 +28,102 @@ const VIEWS = [
 ] as const;
 
 /**
- * L'écran chantiers : tout ce qui se passe **après** la signature.
+ * L'écran chantiers : les affaires signées, et ce qu'il en reste à faire.
  *
- * Le CRM couvrait l'avant-vente d'un côté et l'argent au niveau groupe de
- * l'autre ; entre les deux, rien ne disait ce qui se passe sur le terrain. Or
- * c'est là que la marge se fait, que les retards coûtent, et que la trésorerie
- * se bloque — un PV non signé, c'est un solde qu'on ne peut pas facturer.
+ * **Tout ce qui s'y affiche vient de la base.** L'écran était entièrement
+ * simulé — montants, coûts, marges, PV de réception, avis clients, périmètre
+ * par société. Rien de tout cela n'existe : le CRM ne suit pas les coûts, ne
+ * connaît pas de PV, et aucun devis ne porte de montant, tous venant des noms
+ * de fichiers OneDrive.
  *
- * D'où l'ordre : les quatre listes de travail d'abord, la vue d'ensemble
- * ensuite.
+ * Ce qui reste est ce que les données disent : cent dix affaires signées, leur
+ * client, leur lieu, leur date de démarrage quand elle est connue, et leurs
+ * pièces — deux cent quatre-vingt-quatre devis et factures, chacun ouvrant son
+ * fichier chez Microsoft.
+ *
+ * Les quatre listes de travail d'abord, la vue d'ensemble ensuite : on ouvre
+ * cet écran pour savoir quoi faire, pas pour contempler un tableau.
  */
 export function WorksitesView() {
   const board = useWorksites();
-  const { data } = board;
+  const { work, reads } = board;
 
   return (
     <div className="flex flex-col gap-5">
-      <header>
-        <h1 className="text-base font-semibold">Chantiers</h1>
-        <p className="text-muted-foreground mt-0.5 text-sm">
-          Exécution, coûts et jalons — de la signature à la clôture.
-        </p>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-base font-semibold">Chantiers</h1>
+          <p className="text-muted-foreground mt-0.5 text-sm">
+            Les affaires signées : où elles en sont, et ce qui manque.
+          </p>
+        </div>
+        <Input
+          value={board.city}
+          onChange={(event) => board.setCity(event.target.value)}
+          placeholder="Filtrer par ville"
+          className="h-8 w-52 text-sm"
+        />
       </header>
 
-      <div className="border-warning/30 bg-warning-soft/50 text-warning flex items-start gap-2 rounded-xl border px-3 py-2 text-xs">
-        <FlaskConicalIcon className="mt-0.5 size-3.5 shrink-0" />
-        <p>
-          <span className="font-medium">Données de démonstration.</span> Les
-          clients viennent de l&apos;export de devis réel, la structure du cycle du
-          classeur « CYCLE CHANTIER » ; montants, coûts et jalons sont inventés —
-          le CRM n&apos;a jamais suivi cette partie du métier, il n&apos;existe donc
-          rien à reprendre.
-        </p>
-      </div>
+      {board.error && <ErrorNotice message={board.error} />}
 
-      <ScopeSwitcher
-        entityId={board.entityId}
-        activityId={board.activityId}
-        onChange={board.scope}
-      />
-
-      <MetricCards metrics={data.metrics} />
-
-      <div className="grid items-start gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
+      <div className="grid items-start gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <AlertPanel
-          title="Signés sans date"
-          description="Devis signé, aucune date de démarrage"
+          title="Sans date de démarrage"
+          description="Signé, aucune date posée"
           icon={CalendarPlusIcon}
           tone="danger"
-          rows={data.unplanned}
-          onOpen={board.open}
-          money
+          rows={work.unplanned}
+          onOpen={board.select}
         />
         <AlertPanel
-          title="En retard"
-          description="Fin prévue dépassée"
+          title="Ouverts depuis longtemps"
+          description="Démarrés, jamais marqués réalisés"
           icon={AlarmClockIcon}
-          tone="danger"
-          rows={data.late}
-          onOpen={board.open}
-        />
-        <AlertPanel
-          title="PV à faire signer"
-          description="Travaux terminés, réception non actée"
-          icon={FileSignatureIcon}
           tone="warning"
-          rows={data.pv_pending}
-          onOpen={board.open}
+          rows={work.running}
+          onOpen={board.select}
         />
         <AlertPanel
-          title="Soldes à facturer"
-          description="Réception acquise, facture non émise"
-          icon={BanknoteIcon}
+          title="Réalisés, non facturés"
+          description="Aucune facture au dossier"
+          icon={ReceiptTextIcon}
           tone="danger"
-          rows={data.balance_to_invoice}
-          onOpen={board.open}
-          money
+          rows={work.toInvoice}
+          onOpen={board.select}
         />
         <AlertPanel
-          title="Avis à demander"
-          description="Chantiers clôturés sans demande d'avis"
-          icon={StarIcon}
-          tone="info"
-          rows={data.review_to_request}
-          onOpen={board.open}
+          title="Acompte non encaissé"
+          description="Signé, aucun acompte reçu"
+          icon={BanknoteIcon}
+          tone="warning"
+          rows={work.noDeposit}
+          onOpen={board.select}
         />
       </div>
 
       <Card className="gap-0 overflow-hidden py-0">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2">
-          <p className="text-sm font-medium">
-            {plural(data.worksites.length, "chantier")} ·{" "}
-            {euros(
-              data.worksites
-                .filter(
-                  (worksite) => worksite.status !== "cloture" && !worksite.internal,
-                )
-                .reduce((total, worksite) => total + worksite.amount_ht, 0),
-            )}{" "}
-            en cours
+          <p className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="font-medium">{plural(reads.length, "chantier")}</span>
+            {STATUS_ORDER.map((status) => {
+              const count = board.board.find((b) => b.status === status)?.count ?? 0;
+              if (count === 0) return null;
+              const entry = WORKSITE_STATUS[status];
+              return (
+                <span
+                  key={status}
+                  className={cn(
+                    "rounded-[4px] px-1.5 py-0.5 text-[11px] font-medium",
+                    TONE_SOFT[entry.tone],
+                  )}
+                >
+                  {count} {entry.label.toLowerCase()}
+                </span>
+              );
+            })}
           </p>
+
           <div className="bg-muted flex rounded-[4px] p-0.5">
             {VIEWS.map((entry) => (
               <button
@@ -150,34 +145,39 @@ export function WorksitesView() {
         </div>
 
         <div className="p-3">
-          {data.worksites.length === 0 ? (
+          {board.loading && reads.length === 0 ? (
+            <Skeleton className="h-64 w-full" />
+          ) : reads.length === 0 ? (
             <EmptyState
-              title="Aucun chantier dans ce périmètre"
-              description="Élargissez la sélection de société ou de métier."
+              title="Aucun chantier"
+              description={
+                board.city
+                  ? "Aucune affaire signée dans cette ville."
+                  : "Un chantier apparaît ici dès qu'une affaire passe à « gagnée »."
+              }
             />
           ) : board.view === "tableau" ? (
-            <WorksiteBoard
-              worksites={data.worksites}
-              board={data.board}
-              onSelect={board.select}
-            />
+            <WorksiteBoard reads={reads} board={board.board} onSelect={board.select} />
           ) : board.view === "planning" ? (
-            <WorksitePlanning
-              worksites={data.worksites}
-              now={board.at}
-              onSelect={board.select}
-            />
+            <WorksitePlanning reads={reads} now={board.now} onSelect={board.select} />
           ) : (
-            <WorksiteList worksites={data.worksites} onSelect={board.select} />
+            <WorksiteList reads={reads} onSelect={board.select} />
           )}
         </div>
       </Card>
 
-      <WorksiteSheet worksite={board.selected} onClose={() => board.select(null)} />
+      <WorksiteSheet read={board.selected} onClose={() => board.select(null)} />
     </div>
   );
 }
 
+/**
+ * Une liste de travail.
+ *
+ * Plus de total en euros en pied : aucun devis ne porte de montant, et un
+ * « 0 € » sous une liste de trente-sept chantiers dirait le contraire de la
+ * vérité. Le nombre suffit — c'est lui qu'on regarde.
+ */
 function AlertPanel({
   title,
   description,
@@ -185,7 +185,6 @@ function AlertPanel({
   tone,
   rows,
   onOpen,
-  money,
 }: {
   title: string;
   description: string;
@@ -193,19 +192,11 @@ function AlertPanel({
   tone: "danger" | "warning" | "info";
   rows: Alert[];
   onOpen: (id: string) => void;
-  /** Le total en pied a du sens quand la liste porte de l'argent qui dort. */
-  money?: boolean;
 }) {
-  const total = rows.reduce((sum, row) => sum + row.amount, 0);
-
   return (
     <Panel
       title={title}
-      description={
-        rows.length === 0
-          ? description
-          : `${plural(rows.length, "chantier")}${money ? ` · ${eurosShort(total)}` : ""}`
-      }
+      description={rows.length === 0 ? description : plural(rows.length, "chantier")}
       icon={icon}
       tone={tone}
       bodyClassName="divide-y"
@@ -215,7 +206,7 @@ function AlertPanel({
           Rien à signaler
         </p>
       ) : (
-        rows.slice(0, 5).map((row) => (
+        rows.slice(0, 6).map((row) => (
           <RowShell key={row.worksite_id} className="cursor-pointer">
             <button
               type="button"
@@ -228,13 +219,10 @@ function AlertPanel({
               <span className="text-muted-foreground block truncate text-[11px]">
                 {row.label}
               </span>
-              <span className="text-muted-foreground mt-0.5 block text-[11px]">
+              <span className="text-muted-foreground/70 mt-0.5 block text-[11px]">
                 {row.reason}
               </span>
             </button>
-            <span className="shrink-0 text-xs font-medium tabular-nums">
-              {eurosShort(row.amount)}
-            </span>
           </RowShell>
         ))
       )}

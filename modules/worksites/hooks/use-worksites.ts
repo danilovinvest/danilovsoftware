@@ -24,6 +24,10 @@ type Resolved = { key: string; data: WorksiteResult | null; error: string | null
  */
 export function useWorksites() {
   const [city, setCity] = useState("");
+  // Un repère de repli, figé au montage. Il ne sert qu'avant la première
+  // réponse, sur une liste vide : le lire de l'horloge à chaque rendu ferait
+  // du rendu autre chose qu'une fonction de son état.
+  const [fallbackNow] = useState(() => Date.now());
   const [view, setView] = useState<WorksiteView>("tableau");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [token, setToken] = useState(0);
@@ -46,14 +50,14 @@ export function useWorksites() {
   }, [key, city]);
 
   const derived = useMemo(() => {
+    // Pas encore de réponse : on dérive sur une liste vide plutôt que de rendre
+    // une forme différente. Un écran qui change de forme entre le chargement et
+    // les données oblige chaque composant à connaître les deux.
     const data = resolved.data;
-    if (!data) {
-      return { now: Date.now(), reads: [] as ReadWorksite[], board: [], work: null };
-    }
-    const now = new Date(data.generated_at).getTime();
-    const reads = data.items.map((item) => read(item, now));
+    const now = data ? new Date(data.generated_at).getTime() : fallbackNow;
+    const reads: ReadWorksite[] = (data?.items ?? []).map((item) => read(item, now));
     return { now, reads, board: buckets(reads), work: alerts(reads) };
-  }, [resolved.data]);
+  }, [resolved.data, fallbackNow]);
 
   const reload = useCallback(() => setToken((value) => value + 1), []);
 
