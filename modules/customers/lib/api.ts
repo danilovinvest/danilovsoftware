@@ -16,6 +16,7 @@ import type {
   ProjectPayload,
   Quote,
   QuotePayload,
+  Review,
   StagePayload,
 } from "./types";
 
@@ -30,6 +31,7 @@ export function listCustomers(filters: CustomerFilters, signal?: AbortSignal) {
       city: filters.city,
       owner_id: filters.owner_id,
       cycle: filters.cycle,
+      review: filters.review,
       sort: filters.sort,
       page: filters.page,
       per_page: filters.per_page,
@@ -40,6 +42,23 @@ export function listCustomers(filters: CustomerFilters, signal?: AbortSignal) {
 
 export function getCustomer(id: string, signal?: AbortSignal) {
   return apiFetch<CustomerDetail>(`/v1/customers/${id}`, { signal });
+}
+
+/**
+ * Coche ou décoche un cran de relecture.
+ *
+ * On n'envoie que la case cliquée : le serveur laisse l'autre telle qu'elle
+ * est. Envoyer les deux à chaque fois écraserait le geste d'un collègue en
+ * train de relire la même fiche.
+ */
+export function setCustomerReview(
+  id: string,
+  change: { verified?: boolean; completed?: boolean },
+) {
+  return apiFetch<Review>(`/v1/customers/${id}/review`, {
+    method: "PATCH",
+    body: change,
+  });
 }
 
 export function getStats(signal?: AbortSignal) {

@@ -69,6 +69,20 @@ export type ProjectSummary = {
   last_reminder_at: string | null;
 };
 
+/**
+ * Les deux crans de relecture d'une fiche.
+ *
+ * Deux affirmations distinctes, et c'est pour cela qu'il y en a deux :
+ * « je l'ai regardée, elle n'est pas absurde » n'est pas « elle est complète ».
+ * Nuls tant que personne n'a coché.
+ */
+export type Review = {
+  verified_at: string | null;
+  verified_by_name: string;
+  completed_at: string | null;
+  completed_by_name: string;
+};
+
 export type CustomerListItem = {
   id: string;
   reference: string;
@@ -89,6 +103,7 @@ export type CustomerListItem = {
   last_interaction_at: string | null;
   created_at: string;
   updated_at: string;
+  review: Review;
   /** Affaires du client : le tableau les déplie en sous-lignes. */
   projects: ProjectSummary[];
 };
@@ -113,6 +128,7 @@ export type Customer = {
   owner_name: string;
   created_at: string;
   updated_at: string;
+  review: Review;
 };
 
 export type Contact = {
@@ -205,6 +221,8 @@ export type CustomerStats = {
 export type CustomerFilters = {
   /** Le filtre de cycle, résolu par le serveur sur toute la base. */
   cycle?: string;
+  /** La relecture : ce qui reste à vérifier, ce qui reste à compléter. */
+  review?: string;
   search?: string;
   status?: CustomerStatus[];
   source?: CustomerSource[];
