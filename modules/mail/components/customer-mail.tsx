@@ -70,7 +70,7 @@ export function CustomerMail({ customerId }: { customerId: string }) {
           const isOpen = expanded === message.id;
           return (
             <div key={message.id}>
-              <div className="hover:bg-accent/50 group flex items-start transition-colors">
+              <div className="hover:bg-accent/50 flex items-start transition-colors">
               <button
                 type="button"
                 onClick={() => setExpanded(isOpen ? null : message.id)}
@@ -115,8 +115,9 @@ export function CustomerMail({ customerId }: { customerId: string }) {
                 Retirer un courriel de la fiche, pas de la boîte. Le
                 rapprochement se fait par adresse : un client en copie d'un fil
                 qui ne le concerne pas atterrit ici, et rien ne permettait de
-                l'en sortir. Le bouton n'apparaît qu'au survol — c'est une
-                correction, pas une action courante.
+                l'en sortir. Le bouton reste visible, comme la corbeille des
+                échanges : un bouton qui n'apparaît qu'au survol n'existe pas
+                sur une tablette, et c'est là que la fiche se relit.
               */}
               {canWrite && (
                 <button
@@ -125,7 +126,7 @@ export function CustomerMail({ customerId }: { customerId: string }) {
                   aria-label="Retirer ce courriel de la fiche"
                   disabled={detaching === message.id}
                   onClick={() => detach(message.id, message.subject)}
-                  className="text-muted-foreground/50 hover:text-danger focus-visible:opacity-100 mt-2 mr-2 shrink-0 rounded p-1 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-40"
+                  className="text-muted-foreground/40 hover:text-danger hover:bg-danger-soft mt-1.5 mr-2 shrink-0 rounded p-1.5 transition-colors disabled:opacity-40"
                 >
                   <Unlink2Icon className="size-3.5" />
                 </button>
