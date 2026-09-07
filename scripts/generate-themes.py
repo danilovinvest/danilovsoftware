@@ -45,7 +45,14 @@ def parse(scale: str, dark: bool):
 
 # Accent + gris apparié, selon les recommandations de Radix : chaque teinte a
 # un gris « naturel » qui partage sa température.
+#
+# « OMPT » est la palette de la maison, et la seule qui ne suive pas
+# l'appariement recommandé : Radix marie l'orange au sable, un gris chaud,
+# alors que le logo est un profilé orange sur un lettrage bleu nuit. C'est le
+# gris froid — slate — qui tient cette température. Corail garde le sable et
+# reste donc une autre palette, pas un doublon.
 THEMES = [
+    ("ompt",     "OMPT",      "orange",  "slate"),
     ("ocean",    "Océan",     "cyan",    "slate"),
     ("emeraude", "Émeraude",  "jade",    "sage"),
     ("menthe",   "Menthe",    "teal",    "sage"),
