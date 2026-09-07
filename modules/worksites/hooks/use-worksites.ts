@@ -1,50 +1,72 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { buildWorksiteSnapshot } from "../lib/snapshot";
-import type { Worksite } from "../lib/types";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { errorMessage } from "@/shared/api/errors";
+import * as api from "../lib/api";
+import { alerts, buckets, read } from "../lib/derive";
+import type { ReadWorksite, WorksiteResult } from "../lib/types";
 
 export type WorksiteView = "tableau" | "planning" | "liste";
 
+type Resolved = { key: string; data: WorksiteResult | null; error: string | null };
+
 /**
- * État de l'écran chantiers.
+ * L'état de l'écran chantiers.
  *
- * Le périmètre a deux niveaux — société, puis activité — parce que le groupe
- * en a deux : une raison sociale facture, un métier exécute. Choisir une
- * activité fixe la société ; choisir une société laisse voir tous ses métiers.
+ * **L'instant vient du serveur.** `generated_at` accompagne la réponse, et
+ * c'est lui qui sert de repère pour « démarré il y a 74 jours » : l'horloge
+ * d'un poste ne décide pas de ce qui traîne, et deux navigateurs mal réglés
+ * ne doivent pas afficher deux chantiers en retard différents.
  *
- * L'instant de référence est figé au montage : sans cela, « 12 jours de
- * retard » se recalculerait à chaque rendu sur une horloge qui a bougé.
+ * Le périmètre société / activité a disparu avec le jeu de démonstration :
+ * rien, dans les données, ne rattache une affaire à un métier. Un filtre qui
+ * ne filtre rien fait douter de ce qu'il montre.
  */
 export function useWorksites() {
-  const [entityId, setEntityId] = useState<string | null>(null);
-  const [activityId, setActivityId] = useState<string | null>(null);
+  const [city, setCity] = useState("");
   const [view, setView] = useState<WorksiteView>("tableau");
-  const [selected, setSelected] = useState<Worksite | null>(null);
-  const [at] = useState(() => new Date());
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [token, setToken] = useState(0);
 
-  const data = useMemo(
-    () => buildWorksiteSnapshot(entityId, activityId, at),
-    [entityId, activityId, at],
-  );
+  const key = `worksites:${city}:${token}`;
+  const [resolved, setResolved] = useState<Resolved>({
+    key: "", data: null, error: null,
+  });
 
-  function scope(entity: string | null, activity: string | null) {
-    setEntityId(entity);
-    setActivityId(activity);
-  }
+  useEffect(() => {
+    const controller = new AbortController();
+    api
+      .listWorksites(city, controller.signal)
+      .then((data) => setResolved({ key, data, error: null }))
+      .catch((cause) => {
+        if (controller.signal.aborted) return;
+        setResolved({ key, data: null, error: errorMessage(cause) });
+      });
+    return () => controller.abort();
+  }, [key, city]);
+
+  const derived = useMemo(() => {
+    const data = resolved.data;
+    if (!data) {
+      return { now: Date.now(), reads: [] as ReadWorksite[], board: [], work: null };
+    }
+    const now = new Date(data.generated_at).getTime();
+    const reads = data.items.map((item) => read(item, now));
+    return { now, reads, board: buckets(reads), work: alerts(reads) };
+  }, [resolved.data]);
+
+  const reload = useCallback(() => setToken((value) => value + 1), []);
 
   return {
-    data,
-    at,
-    entityId,
-    activityId,
-    scope,
+    ...derived,
+    loading: resolved.key !== key,
+    error: resolved.error,
+    city,
+    setCity,
     view,
     setView,
-    selected,
-    select: setSelected,
-    /** Retrouve un chantier depuis une ligne d'alerte, qui n'en porte que l'id. */
-    open: (id: string) =>
-      setSelected(data.worksites.find((worksite) => worksite.id === id) ?? null),
+    reload,
+    selected: derived.reads.find((r) => r.worksite.id === selectedId) ?? null,
+    select: (id: string | null) => setSelectedId(id),
   };
 }

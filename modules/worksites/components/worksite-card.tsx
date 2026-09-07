@@ -1,154 +1,84 @@
 "use client";
 
-import {
-  AlertTriangleIcon,
-  BanknoteIcon,
-  CalendarPlusIcon,
-  FileSignatureIcon,
-  MapPinIcon,
-} from "lucide-react";
+import { CalendarPlusIcon, FileTextIcon, MapPinIcon, ReceiptTextIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { activityName } from "@/modules/group";
-import { PLANNING_GRACE_DAYS } from "@/modules/customers";
-import { agoLabel, eurosShort } from "@/shared/lib/format";
-import { BLOCKED_REASON, STATUS_RAIL, marginTone } from "../lib/labels";
-import { TONE_TEXT } from "@/shared/ui/panel";
-import type { Worksite } from "../lib/types";
-
-const dayMonth = new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit" });
-
-function short(value: string | null): string {
-  return value === null ? "—" : dayMonth.format(new Date(value));
-}
+import { formatDate } from "@/shared/lib/format";
+import { STATUS_RAIL } from "../lib/labels";
+import type { ReadWorksite } from "../lib/types";
 
 /**
  * Une carte de chantier.
  *
- * Trois pastilles en pied — PV, solde, avis — parce que c'est la chaîne qui
- * ferme un chantier, et qu'un chantier « terminé » dont le PV n'est pas signé
- * n'est pas terminé du tout.
+ * Elle porte ce que les données portent : le client, l'intitulé, le lieu, la
+ * date de démarrage, les devis et les factures. Les pastilles PV / solde /
+ * avis ont disparu avec le jeu de démonstration — trois jalons qu'aucune
+ * donnée ne renseigne, donc trois pastilles éteintes en permanence.
  */
 export function WorksiteCard({
-  worksite,
+  read,
   onSelect,
 }: {
-  worksite: Worksite;
-  onSelect: (worksite: Worksite) => void;
+  read: ReadWorksite;
+  onSelect: (id: string) => void;
 }) {
-  const blocked = worksite.blocked_reason
-    ? BLOCKED_REASON[worksite.blocked_reason]
-    : null;
+  const { worksite: w } = read;
 
   return (
     <button
       type="button"
-      onClick={() => onSelect(worksite)}
+      onClick={() => onSelect(w.id)}
       className={cn(
         "bg-card hover:bg-accent/40 flex w-full flex-col gap-1.5 rounded-lg border border-l-2 px-2.5 py-2 text-left transition-colors",
-        STATUS_RAIL[worksite.status],
+        STATUS_RAIL[read.status],
       )}
     >
-      <div className="flex items-start justify-between gap-2">
-        <span className="min-w-0">
-          <span className="block truncate text-xs font-medium">
-            {worksite.customer_name}
-            {worksite.internal && (
-              <span className="text-info ml-1.5 text-[11px] font-normal">interne</span>
+      <span className="min-w-0">
+        <span className="block truncate text-xs font-medium">{w.customer_name}</span>
+        <span className="text-muted-foreground block truncate text-[11px]">
+          {w.label}
+        </span>
+      </span>
+
+      {w.city && (
+        <span className="text-muted-foreground/70 flex items-center gap-1 text-[11px]">
+          <MapPinIcon className="size-3 shrink-0" />
+          <span className="truncate">{w.city}</span>
+        </span>
+      )}
+
+      <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px]">
+        {w.started_at ? (
+          <span className="text-muted-foreground/70 flex items-center gap-1">
+            <CalendarPlusIcon className="size-3 shrink-0" />
+            {formatDate(w.started_at)}
+            {read.daysRunning !== null && read.status === "en_cours" && (
+              <span className="text-muted-foreground/50">
+                · {read.daysRunning} j
+              </span>
             )}
           </span>
-          <span className="text-muted-foreground block truncate text-[11px]">
-            {worksite.label}
-          </span>
-        </span>
-        <span className="shrink-0 text-xs font-medium tabular-nums">
-          {eurosShort(worksite.amount_ht)}
-        </span>
-      </div>
-
-      <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]">
-        <span className="inline-flex items-center gap-1">
-          <MapPinIcon className="size-3" />
-          {worksite.city}
-        </span>
-        <span className="tabular-nums">
-          {short(worksite.starts_at)} → {short(worksite.ends_at)}
-        </span>
-        {worksite.cost_total > 0 && (
-          <span className={cn("font-medium", TONE_TEXT[marginTone(worksite.margin_rate)])}>
-            marge {worksite.margin_rate} %
+        ) : (
+          <span className="text-warning flex items-center gap-1">
+            <CalendarPlusIcon className="size-3 shrink-0" />
+            sans date
           </span>
         )}
-      </div>
 
-      {worksite.days_late > 0 && (
-        <p className="text-danger inline-flex items-center gap-1 text-[11px] font-medium">
-          <AlertTriangleIcon className="size-3" />
-          {worksite.days_late} jours de retard
-        </p>
-      )}
-
-      {/*
-        Un chantier signé sans date ne réclame rien : personne ne s'en plaint,
-        et il glisse. La carte compte donc les jours depuis la signature, et
-        passe en alerte au même seuil que la fiche client.
-      */}
-      {worksite.status === "a_planifier" && (
-        <p
-          className={cn(
-            "inline-flex items-center gap-1 text-[11px]",
-            worksite.days_since_signature > PLANNING_GRACE_DAYS
-              ? "text-danger font-medium"
-              : "text-warning",
-          )}
-        >
-          <CalendarPlusIcon className="size-3" />
-          signé {agoLabel(worksite.days_since_signature)}, sans date
-        </p>
-      )}
-
-      {blocked && (
-        <p className="text-warning text-[11px]">{blocked.label}</p>
-      )}
-
-      <div className="text-muted-foreground/70 flex items-center gap-2.5 text-[11px]">
-        <Pip
-          icon={<FileSignatureIcon className="size-3" />}
-          done={worksite.pv_signed_at !== null}
-          pending={worksite.pv_sent_at !== null}
-          title="PV de réception"
-        />
-        <Pip
-          icon={<BanknoteIcon className="size-3" />}
-          done={worksite.balance?.paid_at != null}
-          pending={worksite.balance?.invoiced_at != null}
-          title="Solde"
-        />
-        <span className="ml-auto truncate">{activityName(worksite.activity_id)}</span>
-      </div>
+        {read.devis.length > 0 && (
+          <span className="text-muted-foreground/70 flex items-center gap-1">
+            <FileTextIcon className="size-3 shrink-0" />
+            {read.devis.length}
+          </span>
+        )}
+        {/* La facture est le seul jalon d'après-signature que les données
+            portent réellement : elle mérite sa propre pastille. */}
+        {read.factures.length > 0 && (
+          <span className="text-success flex items-center gap-1">
+            <ReceiptTextIcon className="size-3 shrink-0" />
+            {read.factures.length}
+          </span>
+        )}
+      </span>
     </button>
-  );
-}
-
-/** Un jalon : fait, engagé, ou pas commencé. */
-function Pip({
-  icon,
-  done,
-  pending,
-  title,
-}: {
-  icon: React.ReactNode;
-  done: boolean;
-  pending: boolean;
-  title: string;
-}) {
-  return (
-    <span
-      title={`${title} — ${done ? "fait" : pending ? "en cours" : "à faire"}`}
-      className={cn(
-        done ? "text-success" : pending ? "text-warning" : "text-muted-foreground/40",
-      )}
-    >
-      {icon}
-    </span>
   );
 }

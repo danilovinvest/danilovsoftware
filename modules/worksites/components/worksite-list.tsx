@@ -1,5 +1,6 @@
 "use client";
 
+import { ExternalLinkIcon } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -9,128 +10,98 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import { activityName } from "@/modules/group";
-import { eurosShort, formatDate } from "@/shared/lib/format";
-import { TONE_SOFT, TONE_TEXT } from "@/shared/ui/panel";
-import { WORKSITE_STATUS, marginTone } from "../lib/labels";
-import type { Worksite } from "../lib/types";
+import { TONE_SOFT } from "@/shared/ui/panel";
+import { formatDate } from "@/shared/lib/format";
+import { WORKSITE_STATUS } from "../lib/labels";
+import type { ReadWorksite } from "../lib/types";
 
-/** La même matière que le tableau, dense et triable à l'œil. */
+/**
+ * La vue liste : tout voir d'un coup, triable à l'œil.
+ *
+ * La colonne « pièces » n'affiche pas un nombre mais les références elles-mêmes
+ * — `DE2026-0048`, `FA2026-0106`. C'est ce qu'on cherche quand on ouvre cet
+ * écran, et c'est le seul identifiant que l'entreprise partage avec ses
+ * dossiers OneDrive.
+ */
 export function WorksiteList({
-  worksites,
+  reads,
   onSelect,
 }: {
-  worksites: Worksite[];
-  onSelect: (worksite: Worksite) => void;
+  reads: ReadWorksite[];
+  onSelect: (id: string) => void;
 }) {
   return (
-    <div className="overflow-x-auto">
-      <Table className="min-w-[64rem] [&_thead_th]:text-muted-foreground [&_thead_th]:h-8 [&_thead_th]:text-xs [&_thead_th]:font-medium">
+    <div className="w-full min-w-0 overflow-x-auto">
+      <Table className="min-w-200 [&_thead_th]:text-muted-foreground [&_thead_th]:h-8 [&_thead_th]:text-xs [&_thead_th]:font-medium">
         <TableHeader>
           <TableRow>
+            <TableHead>Client</TableHead>
             <TableHead>Chantier</TableHead>
+            <TableHead>Lieu</TableHead>
+            <TableHead>Démarrage</TableHead>
             <TableHead>État</TableHead>
-            <TableHead>Métier</TableHead>
-            <TableHead className="text-right">Devisé HT</TableHead>
-            <TableHead className="text-right">Marge</TableHead>
-            <TableHead className="text-right">Période</TableHead>
-            <TableHead>Reste à faire</TableHead>
+            <TableHead>Pièces</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {worksites.map((worksite) => {
-            const status = WORKSITE_STATUS[worksite.status];
-            const missing: string[] = [];
-            if (worksite.completed_at !== null && worksite.pv_signed_at === null)
-              missing.push("PV à signer");
-            if (worksite.balance !== null && worksite.balance.invoiced_at === null)
-              missing.push("solde à facturer");
-            else if (worksite.balance !== null && worksite.balance.paid_at === null)
-              missing.push("solde à encaisser");
-            if (worksite.status === "cloture" && worksite.review_requested_at === null)
-              missing.push("avis à demander");
-
+          {reads.map((read) => {
+            const { worksite: w } = read;
+            const entry = WORKSITE_STATUS[read.status];
             return (
               <TableRow
-                key={worksite.id}
+                key={w.id}
                 className="cursor-pointer"
-                onClick={() => onSelect(worksite)}
+                onClick={() => onSelect(w.id)}
               >
-                <TableCell className="max-w-72">
-                  <p className="truncate text-sm font-medium">
-                    {worksite.customer_name}
-                    {worksite.internal && (
-                      <span className="text-info ml-1.5 text-[11px] font-normal">
-                        interne
-                      </span>
-                    )}
-                  </p>
-                  <p className="text-muted-foreground truncate text-[11px]">
-                    {worksite.reference} · {worksite.label}
-                  </p>
+                <TableCell className="font-medium">{w.customer_name}</TableCell>
+                <TableCell className="text-muted-foreground max-w-70 truncate text-sm">
+                  {w.label}
                 </TableCell>
-
+                <TableCell className="text-muted-foreground text-sm">
+                  {w.city || "—"}
+                </TableCell>
+                <TableCell className="text-sm tabular-nums">
+                  {w.started_at ? (
+                    formatDate(w.started_at)
+                  ) : (
+                    <span className="text-warning">à planifier</span>
+                  )}
+                </TableCell>
                 <TableCell>
                   <span
                     className={cn(
-                      "rounded-[4px] px-1.5 py-0.5 text-xs whitespace-nowrap",
-                      TONE_SOFT[status.tone],
+                      "rounded-[4px] px-1.5 py-0.5 text-[11px] font-medium",
+                      TONE_SOFT[entry.tone],
                     )}
                   >
-                    {status.label}
+                    {entry.label}
                   </span>
-                  {worksite.days_late > 0 && (
-                    <span className="text-danger block text-[11px]">
-                      {worksite.days_late} j de retard
-                    </span>
-                  )}
                 </TableCell>
-
-                <TableCell className="text-muted-foreground text-xs">
-                  {activityName(worksite.activity_id)}
-                </TableCell>
-
-                <TableCell className="text-right text-xs tabular-nums">
-                  {eurosShort(worksite.amount_ht)}
-                </TableCell>
-
-                <TableCell className="text-right text-xs tabular-nums">
-                  {worksite.cost_total > 0 ? (
-                    <>
-                      <span
+                <TableCell>
+                  <span className="flex flex-wrap gap-1">
+                    {w.quotes.length === 0 && (
+                      <span className="text-muted-foreground/50 text-xs">aucune</span>
+                    )}
+                    {w.quotes.map((quote) => (
+                      <a
+                        key={quote.id}
+                        href={quote.drive_url || undefined}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={quote.drive_name || quote.label}
+                        onClick={(event) => event.stopPropagation()}
                         className={cn(
-                          "font-medium",
-                          TONE_TEXT[marginTone(worksite.margin_rate)],
+                          "hover:bg-accent flex items-center gap-1 rounded-[4px] border px-1.5 py-0.5 font-mono text-[10px] transition-colors",
+                          quote.reference.toUpperCase().startsWith("FA")
+                            ? "text-success border-success/40"
+                            : "text-muted-foreground",
                         )}
                       >
-                        {worksite.margin_rate} %
-                      </span>
-                      <span className="text-muted-foreground block text-[11px]">
-                        {eurosShort(worksite.margin)}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
-                </TableCell>
-
-                <TableCell className="text-muted-foreground text-right text-[11px] tabular-nums">
-                  {worksite.starts_at === null ? (
-                    "non planifié"
-                  ) : (
-                    <>
-                      {formatDate(worksite.starts_at)}
-                      <span className="block">→ {formatDate(worksite.ends_at)}</span>
-                    </>
-                  )}
-                </TableCell>
-
-                <TableCell className="text-xs">
-                  {missing.length === 0 ? (
-                    <span className="text-muted-foreground">—</span>
-                  ) : (
-                    <span className="text-warning">{missing.join(" · ")}</span>
-                  )}
+                        {quote.reference || "sans référence"}
+                        {quote.drive_url && <ExternalLinkIcon className="size-2.5" />}
+                      </a>
+                    ))}
+                  </span>
                 </TableCell>
               </TableRow>
             );
