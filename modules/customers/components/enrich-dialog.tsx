@@ -81,6 +81,9 @@ export function EnrichDialog({
   const [gens, setGens] = useState<Set<number>>(new Set());
 
   const chercher = useAction(() => api.enrichFromMail(customer.id));
+  const rattacher = useAction((input: { message_ids: string[]; contacts: FoundContact[] }) =>
+    api.applyEnrichment(customer.id, input),
+  );
   const appliquer = useAction((patch: Partial<CustomerDetail>) =>
     api.updateCustomer(customer.id, {
       display_name: customer.display_name,
@@ -157,6 +160,7 @@ export function EnrichDialog({
 
   const proposition = result?.proposal;
   const aRattacher = (result?.retained ?? []).filter((m) => !m.linked);
+  const total = choisis.size + mails.size + gens.size;
   const trouvailles = proposition
     ? CHAMPS.map((c) => ({ ...c, trouve: proposition[c.cle] })).filter(
         (c): c is typeof c & { trouve: Finding } => Boolean(c.trouve?.value),
@@ -189,6 +193,7 @@ export function EnrichDialog({
 
         {chercher.error && <ErrorNotice message={chercher.error} />}
         {appliquer.error && <ErrorNotice message={appliquer.error} />}
+        {rattacher.error && <ErrorNotice message={rattacher.error} />}
 
         {proposition && !chercher.pending && (
           <div className="flex max-h-[60vh] flex-col gap-4 overflow-y-auto">
@@ -256,30 +261,50 @@ export function EnrichDialog({
             )}
 
             {/*
-              Les autres personnes du dossier — architecte, syndic, conjoint.
-              Elles sont montrées mais pas créées : un contact se rattache à une
-              fiche, et deviner laquelle en poserait de faux.
+              Les courriels que le modèle a reconnus. La recherche par adresse
+              ne trouve que ce qui porte l'adresse : un fil où le client est en
+              copie, ou signé d'une autre boîte, lui échappe. Le modèle, lui,
+              l'a lu.
+            */}
+            {aRattacher.length > 0 && (
+              <div className="flex flex-col gap-1.5">
+                <span className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium">
+                  <PaperclipIcon className="size-3.5" />
+                  Courriels à rattacher à la fiche
+                </span>
+                <ul className="flex flex-col gap-1">
+                  {aRattacher.map((message) => (
+                    <MailRow
+                      key={message.id}
+                      message={message}
+                      coche={mails.has(message.id)}
+                      onToggle={() => basculeMail(message.id)}
+                    />
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/*
+              Les intervenants du chantier : ingénieur béton, architecte,
+              syndic. Ils écrivent dans le fil, portent une part de l'affaire,
+              et n'existent nulle part dans le CRM. Les nommer, c'est pouvoir
+              les retrouver au chantier suivant.
             */}
             {proposition.contacts.length > 0 && (
               <div className="flex flex-col gap-1.5">
                 <span className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium">
                   <UsersIcon className="size-3.5" />
-                  Autres personnes citées
+                  Interlocuteurs à ajouter
                 </span>
-                <ul className="divide-y rounded-md border text-xs">
+                <ul className="flex flex-col gap-1">
                   {proposition.contacts.map((contact, index) => (
-                    <li key={index} className="flex flex-wrap gap-x-3 px-3 py-2">
-                      <span className="font-medium">{contact.name || contact.email}</span>
-                      {contact.role && (
-                        <span className="text-muted-foreground">{contact.role}</span>
-                      )}
-                      {contact.email && (
-                        <span className="text-muted-foreground">{contact.email}</span>
-                      )}
-                      {contact.phone && (
-                        <span className="text-muted-foreground">{formatPhone(contact.phone)}</span>
-                      )}
-                    </li>
+                    <ContactRow
+                      key={index}
+                      contact={contact}
+                      coche={gens.has(index)}
+                      onToggle={() => basculeGens(index)}
+                    />
                   ))}
                 </ul>
               </div>
@@ -305,24 +330,124 @@ export function EnrichDialog({
             Fermer
           </Button>
           <Button
-            disabled={choisis.size === 0 || appliquer.pending}
+            disabled={total === 0 || appliquer.pending || rattacher.pending}
             onClick={async () => {
               if (!proposition) return;
-              const patch: Record<string, string> = {};
-              for (const cle of choisis) {
-                const trouve = proposition[cle];
-                if (trouve?.value) patch[cle] = trouve.value;
+
+              // Les champs d'abord : renseigner l'adresse rattache d'elle-même
+              // le courrier qui la porte, et le rattachement explicite se
+              // limite alors à ce qui lui échappait.
+              if (choisis.size > 0) {
+                const patch: Record<string, string> = {};
+                for (const cle of choisis) {
+                  const trouve = proposition[cle];
+                  if (trouve?.value) patch[cle] = trouve.value;
+                }
+                if (!(await appliquer.run(patch))) return;
               }
-              if (!(await appliquer.run(patch))) return;
+
+              if (mails.size > 0 || gens.size > 0) {
+                const ok = await rattacher.run({
+                  message_ids: [...mails],
+                  contacts: proposition.contacts.filter((_, index) => gens.has(index)),
+                });
+                if (!ok) return;
+              }
+
               onOpenChange(false);
               onSaved();
             }}
           >
             <CheckIcon />
-            Appliquer {choisis.size > 0 && `(${choisis.size})`}
+            Appliquer {total > 0 && `(${total})`}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Une case à cocher partagée : même geste, même aspect, deux contenus. */
+function Coche({ coche }: { coche: boolean }) {
+  return (
+    <span
+      className={cn(
+        "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-[3px] border",
+        coche ? "bg-primary border-primary" : "border-border",
+      )}
+    >
+      {coche && <CheckIcon className="text-primary-foreground size-3" strokeWidth={3} />}
+    </span>
+  );
+}
+
+function MailRow({
+  message,
+  coche,
+  onToggle,
+}: {
+  message: RetainedMail;
+  coche: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={onToggle}
+        className={cn(
+          "flex w-full items-start gap-3 rounded-md border px-3 py-2 text-left transition-colors",
+          coche ? "border-primary bg-primary/5" : "hover:bg-muted/40",
+        )}
+      >
+        <Coche coche={coche} />
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-xs font-medium">
+            {message.subject || "(sans objet)"}
+          </div>
+          <div className="text-muted-foreground/70 truncate text-[0.7rem]">
+            {message.from} · {new Date(message.sent_at).toLocaleDateString("fr-FR")}
+          </div>
+        </div>
+      </button>
+    </li>
+  );
+}
+
+function ContactRow({
+  contact,
+  coche,
+  onToggle,
+}: {
+  contact: FoundContact;
+  coche: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={onToggle}
+        className={cn(
+          "flex w-full items-start gap-3 rounded-md border px-3 py-2 text-left transition-colors",
+          coche ? "border-primary bg-primary/5" : "hover:bg-muted/40",
+        )}
+      >
+        <Coche coche={coche} />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-baseline gap-x-2">
+            <span className="text-xs font-medium">{contact.name || contact.email}</span>
+            {contact.role && (
+              <span className="text-muted-foreground text-[0.7rem]">{contact.role}</span>
+            )}
+          </div>
+          <div className="text-muted-foreground/70 truncate text-[0.7rem]">
+            {[contact.email, contact.phone && formatPhone(contact.phone)]
+              .filter(Boolean)
+              .join(" · ")}
+          </div>
+        </div>
+      </button>
+    </li>
   );
 }
