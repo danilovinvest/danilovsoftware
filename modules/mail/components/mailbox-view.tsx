@@ -15,9 +15,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useSetPageTitle } from "@/modules/shell";
-import { EmptyState, ErrorNotice, Spinner } from "@/shared/ui/feedback";
+import { EmptyState, ErrorNotice } from "@/shared/ui/feedback";
+import { Bar, ListSkeleton } from "@/shared/ui/loading";
 import { formatDateTime, initials, plural } from "@/shared/lib/format";
 import { GradientAvatar } from "@/shared/ui/gradient-avatar";
 import { cn } from "@/lib/utils";
@@ -152,11 +152,7 @@ export function MailboxView() {
               <ErrorNotice message={browse.error} />
             </div>
           ) : browse.loading && !browse.page ? (
-            <div className="flex flex-col gap-2 p-3">
-              {Array.from({ length: 8 }, (_, index) => (
-                <Skeleton key={index} className="h-12 w-full" />
-              ))}
-            </div>
+            <ListSkeleton rows={9} hue="cyan" />
           ) : browse.page && browse.page.items.length === 0 ? (
             <EmptyState
               title="Aucun message"
@@ -303,10 +299,26 @@ function Reader({
   }
 
   if (loading) {
+    /*
+      Le corps d'un message est récupéré en IMAP à l'ouverture : c'est la seule
+      attente du CRM qui dépasse la seconde. Elle prend donc la forme du
+      message qui arrive — l'objet, l'expéditeur, puis les lignes — plutôt
+      qu'un rond qui tourne au milieu du vide.
+    */
     return (
-      <div className="flex flex-col items-center gap-3 p-12">
-        <Spinner />
-        <p className="text-muted-foreground text-xs">
+      <div className="flex flex-col gap-4 p-4">
+        <div className="flex flex-col gap-2">
+          <Bar hue="cyan" className="h-4 w-3/4" />
+          <Bar className="h-2.5 w-1/2" />
+        </div>
+        <div className="flex flex-col gap-2 border-t pt-4">
+          {["w-full", "w-11/12", "w-full", "w-4/5", "w-full", "w-2/3"].map(
+            (largeur, index) => (
+              <Bar key={index} className={`h-2.5 ${largeur}`} />
+            ),
+          )}
+        </div>
+        <p className="text-muted-foreground/60 text-[11px]">
           Récupération du message auprès du serveur…
         </p>
       </div>

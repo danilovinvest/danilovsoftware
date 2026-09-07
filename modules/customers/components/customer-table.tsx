@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Bar } from "@/shared/ui/loading";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { usePermission } from "@/modules/auth";
@@ -98,11 +98,36 @@ export function CustomerTable({
         </TableHeader>
         <TableBody>
           {loading && items.length === 0
-            ? Array.from({ length: 5 }, (_, index) => (
+            ? /*
+                Les colonnes gardent leurs largeurs pendant l'attente : une
+                barre unique en `colSpan` laissait le tableau se réorganiser
+                d'un coup à l'arrivée des données, et l'œil perdait la ligne
+                qu'il suivait.
+              */
+              Array.from({ length: 8 }, (_, index) => (
                 <TableRow key={index}>
-                  <TableCell colSpan={COLUMNS}>
-                    <Skeleton className="h-5 w-full" />
+                  <TableCell />
+                  <TableCell>
+                    <Bar hue="indigo" className="h-3.5 w-2/3" />
+                    <Bar className="mt-1.5 h-2 w-1/3" />
                   </TableCell>
+                  <TableCell>
+                    <Bar className="h-2.5 w-4/5" />
+                  </TableCell>
+                  <TableCell>
+                    <Bar className="h-2.5 w-24" />
+                  </TableCell>
+                  <TableCell>
+                    <Bar className="h-2.5 w-3/4" />
+                  </TableCell>
+                  <TableCell>
+                    <Bar className="h-4 w-16 rounded-md" />
+                  </TableCell>
+                  <TableCell>
+                    <Bar className="ml-auto h-2.5 w-16" />
+                  </TableCell>
+                  <TableCell />
+                  <TableCell />
                 </TableRow>
               ))
             : items.map((customer) => {

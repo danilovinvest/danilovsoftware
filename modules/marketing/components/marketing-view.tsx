@@ -3,7 +3,8 @@
 import { MapPinIcon, QuoteIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
-import { EmptyState, ErrorNotice, Skeleton } from "@/shared/ui/feedback";
+import { EmptyState, ErrorNotice } from "@/shared/ui/feedback";
+import { CardsSkeleton } from "@/shared/ui/loading";
 import { plural } from "@/shared/lib/format";
 import { Meter, Panel } from "@/shared/ui/panel";
 import { useMarketing } from "../hooks/use-marketing";
@@ -108,7 +109,7 @@ export function MarketingView() {
 
           <div className="p-3">
             {marketing.loading && marketing.reads.length === 0 ? (
-              <Skeleton className="h-64 w-full" />
+              <CardsSkeleton count={6} columns="md:grid-cols-2" hue="pink" />
             ) : marketing.visible.length === 0 ? (
               <EmptyState
                 title="Aucune réalisation dans cet état"

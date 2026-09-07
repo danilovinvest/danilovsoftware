@@ -7,7 +7,8 @@ import {
   ReceiptTextIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { EmptyState, ErrorNotice, Skeleton } from "@/shared/ui/feedback";
+import { EmptyState, ErrorNotice } from "@/shared/ui/feedback";
+import { CardsSkeleton } from "@/shared/ui/loading";
 import { eurosShort, plural } from "@/shared/lib/format";
 import { Panel, RowShell, TONE_SOFT } from "@/shared/ui/panel";
 import { Card } from "@/components/ui/card";
@@ -160,7 +161,7 @@ export function WorksitesView() {
 
         <div className="p-3">
           {board.loading && reads.length === 0 ? (
-            <Skeleton className="h-64 w-full" />
+            <CardsSkeleton count={8} columns="sm:grid-cols-2 xl:grid-cols-4" hue="amber" />
           ) : reads.length === 0 ? (
             <EmptyState
               title="Aucun chantier"

@@ -16,7 +16,7 @@ import { useSetPageTitle } from "@/modules/shell";
 import { CustomerMail } from "@/modules/mail";
 import { CustomerTasksPanel } from "@/modules/tasks";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Bar, ListSkeleton } from "@/shared/ui/loading";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ErrorNotice } from "@/shared/ui/feedback";
 import { formatPhone } from "@/shared/lib/format";
@@ -56,8 +56,15 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
   if (loading && !customer) {
     return (
       <div className="flex flex-col gap-4">
-        <Skeleton className="h-24 w-full" />
-        <Skeleton className="h-64 w-full" />
+        {/* L'en-tête d'abord, les affaires ensuite : c'est l'ordre dans
+            lequel la fiche se peint quand elle arrive. */}
+        <div className="flex flex-col gap-2">
+          <Bar hue="indigo" className="h-6 w-64" />
+          <Bar className="h-3 w-96" />
+        </div>
+        <div className="bg-card overflow-hidden rounded-xl border">
+          <ListSkeleton rows={4} hue="indigo" />
+        </div>
       </div>
     );
   }
