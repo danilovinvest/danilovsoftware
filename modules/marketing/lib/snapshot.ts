@@ -1,5 +1,4 @@
-import { finishedWorksites } from "@/modules/worksites";
-import type { Worksite } from "@/modules/worksites";
+import { finishedWorksites, type DemoWorksite as Worksite } from "./demo-worksites";
 import type { Metric } from "@/shared/ui/metric-cards";
 import { SEED_ARTICLES } from "./seed";
 import type { Article, CityCoverage, MarketingSnapshot, Realisation } from "./types";

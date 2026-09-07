@@ -1,4 +1,4 @@
-import type { Worksite } from "@/modules/worksites";
+import type { DemoWorksite as Worksite } from "./demo-worksites";
 
 /**
  * Types du module marketing.
