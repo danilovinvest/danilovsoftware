@@ -64,7 +64,7 @@ export function ArticlePreview({ realisation }: { realisation: Realisation }) {
       <Section title="Le résultat" body={article.result} />
 
       {article.quote.trim() !== "" && (
-        <blockquote className="border-brand text-muted-foreground border-l-2 pl-3 text-sm italic">
+        <blockquote className="border-brand-text text-muted-foreground border-l-2 pl-3 text-sm italic">
           <QuoteIcon className="text-muted-foreground/40 mb-1 size-3.5" />
           {article.quote}
           {article.quote_author && (

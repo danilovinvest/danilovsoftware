@@ -67,7 +67,7 @@ export function SettingsNav() {
                       asChild
                       isActive={isSettingsItemActive(item.href, pathname)}
                       tooltip={item.label}
-                      className={cn(NAV_ITEM_CLASS, NAV_ACTIVE_CLASS, "text-brand")}
+                      className={cn(NAV_ITEM_CLASS, NAV_ACTIVE_CLASS, "text-brand-text")}
                     >
                       <Link href={item.href}>
                         <Icon />

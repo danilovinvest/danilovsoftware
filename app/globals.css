@@ -397,6 +397,16 @@
   --primary: var(--t-gray-12);
   --primary-foreground: var(--t-gray-1);
   --brand: var(--t-accent-9);
+  /*
+   * La même couleur, au cran lisible.
+   *
+   * `--brand` est le cran 9 : il remplit, il ne s'écrit pas. Sur les palettes
+   * claires — Ambre, Citron — du blanc dessus tombe à 1,4 de contraste, et le
+   * texte disparaît. Le cran 11 de Radix est fait pour être lu, sur blanc
+   * comme sur le cran 3 : c'est lui qu'emploient les textes, les icônes et les
+   * entrées de navigation actives.
+   */
+  --brand-text: var(--t-accent-11);
   --selected: var(--t-accent-3);
 
   --secondary: var(--t-gray-3);
@@ -433,20 +443,22 @@
   --neutral-soft: var(--t-gray-4);
 
   /*
-   * Barre latérale : gray3, la toile sur laquelle flotte le panneau.
+   * Barre latérale : la toile sur laquelle flotte le panneau, **teintée**.
    *
-   * Elle était en gray2, à deux valeurs du blanc du panneau : la séparation
-   * ne tenait qu'au liseré, et l'écran entier se lisait comme une seule
-   * surface. Trois plans valent mieux qu'un — la toile (gray3), le panneau
-   * (gray1), et les liserés entre les deux.
+   * Elle était en gray2, à deux valeurs du blanc du panneau : la séparation ne
+   * tenait qu'au liseré, et l'écran entier se lisait comme une seule surface
+   * blanche. Le cran 2 de l'accent la sépare et la colore d'un même geste —
+   * et comme il suit la palette, la colonne prend la couleur choisie dans les
+   * réglages au lieu d'un gris de plus.
    */
-  --sidebar: var(--t-gray-3);
+  --sidebar: var(--t-accent-2);
+  --sidebar-tinted: var(--t-accent-3);
   --sidebar-foreground: var(--t-gray-11);
   --sidebar-primary: var(--t-accent-9);
   --sidebar-primary-foreground: var(--t-gray-1);
-  --sidebar-accent: var(--t-gray-4);
+  --sidebar-accent: var(--t-accent-3);
   --sidebar-accent-foreground: var(--t-gray-12);
-  --sidebar-border: var(--t-gray-5);
+  --sidebar-border: var(--t-accent-5);
   --sidebar-ring: var(--t-accent-7);
 
   /* Graphiques — MAIN_COLORS_LIGHT (cran 9 de chaque teinte). */
@@ -479,6 +491,7 @@
   --color-ring: var(--ring);
 
   --color-brand: var(--brand);
+  --color-brand-text: var(--brand-text);
   --color-selected: var(--selected);
 
   --color-success: var(--success);

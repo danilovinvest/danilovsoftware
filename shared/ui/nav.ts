@@ -19,5 +19,5 @@ export const NAV_ITEM_CLASS = "h-7 gap-2 rounded-md px-1.5 text-sm font-normal";
  * teinte d'adresse, ils sont un lieu et non dix.
  */
 export const NAV_ACTIVE_CLASS =
-  "data-active:bg-selected data-active:text-brand data-active:font-medium " +
-  "data-active:hover:bg-selected data-active:hover:text-brand";
+  "data-active:bg-selected data-active:text-brand-text data-active:font-medium " +
+  "data-active:hover:bg-selected data-active:hover:text-brand-text";

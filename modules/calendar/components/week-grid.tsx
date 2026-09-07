@@ -383,7 +383,7 @@ export function WeekGrid({
                       height: `${ratioOfMinutes(drag.to) - ratioOfMinutes(drag.from)}%`,
                     }}
                     className={cn(
-                      "bg-brand/25 border-brand text-brand pointer-events-none absolute inset-x-0.5 z-20",
+                      "bg-brand/25 border-brand-text text-brand-text pointer-events-none absolute inset-x-0.5 z-20",
                       "overflow-hidden rounded-sm border-l-2 px-1 py-px text-[10px] leading-[13px] font-medium",
                     )}
                   >

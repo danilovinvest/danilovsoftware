@@ -92,7 +92,7 @@ function ShellBreadcrumb() {
       <Breadcrumb>
         <BreadcrumbList className="gap-1 text-sm sm:gap-1">
           <BreadcrumbItem className="gap-2">
-            <span className="bg-selected text-brand flex size-5 shrink-0 items-center justify-center rounded-md">
+            <span className="bg-selected text-brand-text flex size-5 shrink-0 items-center justify-center rounded-md">
               <SettingsIcon className="size-3.5" />
             </span>
             {section ? (

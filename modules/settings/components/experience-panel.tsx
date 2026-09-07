@@ -56,7 +56,7 @@ function AppearanceSection() {
               className={cn(
                 "relative block overflow-hidden rounded-lg border-2 transition-colors",
                 theme === option.value
-                  ? "border-brand"
+                  ? "border-brand-text"
                   : "border-border group-hover:border-neutral",
               )}
             >
@@ -132,7 +132,7 @@ function PaletteSection() {
                 className={cn(
                   "relative block overflow-hidden rounded-lg border-2 transition-colors",
                   selected
-                    ? "border-brand"
+                    ? "border-brand-text"
                     : "border-border group-hover:border-neutral",
                 )}
               >
@@ -293,7 +293,7 @@ function NavigationSection() {
               aria-hidden
               className={cn(
                 "size-4 shrink-0 rounded-full border",
-                mode.available ? "border-brand border-4" : "border-border",
+                mode.available ? "border-brand-text border-4" : "border-border",
               )}
             />
           </div>

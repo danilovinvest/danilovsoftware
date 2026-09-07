@@ -42,7 +42,7 @@ export function AgendaList({
             <p
               className={cn(
                 "text-[13px] font-medium first-letter:uppercase",
-                isSameDay(day, today) && "text-brand",
+                isSameDay(day, today) && "text-brand-text",
               )}
             >
               {formatDayLong(day)}
