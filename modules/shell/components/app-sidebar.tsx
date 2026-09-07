@@ -25,6 +25,8 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { NAV_ITEM_CLASS } from "@/shared/ui/nav";
+import { HUE } from "@/shared/ui/hue";
+import { cn } from "@/lib/utils";
 import { NAV_SECTIONS } from "../lib/navigation";
 import { WorkspaceMenu } from "./workspace-menu";
 
@@ -90,6 +92,8 @@ function WorkspaceNav() {
                     (sub) => !sub.permission || can(sub.permission),
                   );
 
+                  const teinte = HUE[item.hue];
+
                   if (subItems.length === 0) {
                     return (
                       <SidebarMenuItem key={item.href}>
@@ -97,11 +101,22 @@ function WorkspaceNav() {
                           asChild
                           isActive={active}
                           tooltip={item.label}
-                          className={NAV_ITEM_CLASS}
+                          /*
+                            L'icône porte la couleur du module en permanence,
+                            pas seulement quand l'entrée est active : c'est
+                            elle qui rend la colonne lisible d'un coup d'œil,
+                            et une couleur qui n'apparaît qu'une fois sur dix
+                            n'apprend rien.
+                          */
+                          className={cn(
+                            NAV_ITEM_CLASS,
+                            teinte.text,
+                            active && `${teinte.soft} font-medium`,
+                          )}
                         >
                           <Link href={item.href}>
                             <Icon />
-                            <span>{item.label}</span>
+                            <span className="text-foreground/85">{item.label}</span>
                           </Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
@@ -120,10 +135,14 @@ function WorkspaceNav() {
                           <SidebarMenuButton
                             tooltip={item.label}
                             isActive={active}
-                            className={NAV_ITEM_CLASS}
+                            className={cn(
+                              NAV_ITEM_CLASS,
+                              teinte.text,
+                              active && `${teinte.soft} font-medium`,
+                            )}
                           >
                             <Icon />
-                            <span>{item.label}</span>
+                            <span className="text-foreground/85">{item.label}</span>
                             <ChevronRightIcon className="text-muted-foreground ml-auto size-3.5! transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                           </SidebarMenuButton>
                         </CollapsibleTrigger>

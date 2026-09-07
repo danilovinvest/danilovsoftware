@@ -282,6 +282,83 @@
   }
 }
 
+
+/*
+ * ---------------------------------------------------------------------------
+ * Teintes de module — l'identité colorée du CRM.
+ * ---------------------------------------------------------------------------
+ *
+ * Le CRM était gris. Dix modules, dix icônes de la même couleur, et rien à
+ * l'écran ne disait où l'on était sans lire un libellé. Chaque module porte
+ * désormais **sa teinte**, la même partout : l'icône dans la barre latérale,
+ * l'entrée active, le fil d'Ariane, la pastille en tête de page.
+ *
+ * La couleur n'est donc pas une décoration mais une **adresse** : on reconnaît
+ * l'écran des chantiers à son ambre avant d'avoir lu le mot « Chantiers ».
+ * C'est aussi pour cela qu'elle est fixe et n'obéit pas à la palette : une
+ * adresse qui change de couleur selon les réglages n'est plus une adresse.
+ *
+ * Quatre crans par teinte, ceux de Radix : `3` le fond doux, `4` le fond au
+ * survol, `9` la couleur pleine (pastilles, points), `11` le texte lisible sur
+ * fond doux. C'est la formule des tags de Twenty, appliquée à dix teintes
+ * plutôt qu'à cinq tonalités de statut.
+ */
+:root {
+  --h-violet-3: #f4f0fe; --h-violet-4: #ebe4ff; --h-violet-9: #6e56cf; --h-violet-11: #6550b9;
+  --h-indigo-3: #edf2fe; --h-indigo-4: #e1e9ff; --h-indigo-9: #3e63dd; --h-indigo-11: #3a5bc7;
+  --h-amber-3: #fff7c2; --h-amber-4: #ffee9c; --h-amber-9: #ffc53d; --h-amber-11: #ab6400;
+  --h-jade-3: #e6f7ed; --h-jade-4: #d6f1e3; --h-jade-9: #29a383; --h-jade-11: #208368;
+  --h-grass-3: #e9f6e9; --h-grass-4: #daf1db; --h-grass-9: #46a758; --h-grass-11: #2a7e3b;
+  --h-crimson-3: #ffe9f0; --h-crimson-4: #fedce7; --h-crimson-9: #e93d82; --h-crimson-11: #cb1d63;
+  --h-cyan-3: #def7f9; --h-cyan-4: #caf1f6; --h-cyan-9: #00a2c7; --h-cyan-11: #107d98;
+  --h-pink-3: #fee9f5; --h-pink-4: #fbdcef; --h-pink-9: #d6409f; --h-pink-11: #c2298a;
+  --h-orange-3: #ffefd6; --h-orange-4: #ffdfb5; --h-orange-9: #f76b15; --h-orange-11: #cc4e00;
+  --h-slate-3: #f0f0f3; --h-slate-4: #e8e8ec; --h-slate-9: #8b8d98; --h-slate-11: #60646c;
+}
+
+.dark {
+  --h-violet-3: #291f43; --h-violet-4: #33255b; --h-violet-9: #6e56cf; --h-violet-11: #baa7ff;
+  --h-indigo-3: #182449; --h-indigo-4: #1d2e62; --h-indigo-9: #3e63dd; --h-indigo-11: #9eb1ff;
+  --h-amber-3: #302008; --h-amber-4: #3f2700; --h-amber-9: #ffc53d; --h-amber-11: #ffca16;
+  --h-jade-3: #0f2e22; --h-jade-4: #0b3b2c; --h-jade-9: #29a383; --h-jade-11: #1fd8a4;
+  --h-grass-3: #1b2a1e; --h-grass-4: #1d3a24; --h-grass-9: #46a758; --h-grass-11: #71d083;
+  --h-crimson-3: #381525; --h-crimson-4: #4d122f; --h-crimson-9: #e93d82; --h-crimson-11: #ff92ad;
+  --h-cyan-3: #082c36; --h-cyan-4: #003848; --h-cyan-9: #00a2c7; --h-cyan-11: #4ccce6;
+  --h-pink-3: #37172f; --h-pink-4: #4b143d; --h-pink-9: #d6409f; --h-pink-11: #ff8dcc;
+  --h-orange-3: #331e0b; --h-orange-4: #462100; --h-orange-9: #f76b15; --h-orange-11: #ffa057;
+  --h-slate-3: #212225; --h-slate-4: #272a2d; --h-slate-9: #696e77; --h-slate-11: #b0b4ba;
+}
+
+@supports (color: color(display-p3 1 1 1)) {
+  @media (color-gamut: p3) {
+    :root {
+      --h-violet-3: color(display-p3 0.953 0.943 0.993); --h-violet-4: color(display-p3 0.916 0.897 1); --h-violet-9: color(display-p3 0.417 0.341 0.784); --h-violet-11: color(display-p3 0.383 0.317 0.702);
+      --h-indigo-3: color(display-p3 0.933 0.948 0.992); --h-indigo-4: color(display-p3 0.885 0.914 1); --h-indigo-9: color(display-p3 0.276 0.384 0.837); --h-indigo-11: color(display-p3 0.256 0.354 0.755);
+      --h-amber-3: color(display-p3 0.994 0.969 0.782); --h-amber-4: color(display-p3 0.989 0.937 0.65); --h-amber-9: color(display-p3 1 0.77 0.26); --h-amber-11: color(display-p3 0.64 0.4 0);
+      --h-jade-3: color(display-p3 0.912 0.965 0.932); --h-jade-4: color(display-p3 0.858 0.941 0.893); --h-jade-9: color(display-p3 0.319 0.63 0.521); --h-jade-11: color(display-p3 0.15 0.5 0.37);
+      --h-grass-3: color(display-p3 0.923 0.965 0.917); --h-grass-4: color(display-p3 0.872 0.94 0.865); --h-grass-9: color(display-p3 0.38 0.647 0.378); --h-grass-11: color(display-p3 0.263 0.488 0.261);
+      --h-crimson-3: color(display-p3 0.987 0.917 0.941); --h-crimson-4: color(display-p3 0.975 0.866 0.904); --h-crimson-9: color(display-p3 0.843 0.298 0.507); --h-crimson-11: color(display-p3 0.731 0.195 0.388);
+      --h-cyan-3: color(display-p3 0.888 0.965 0.975); --h-cyan-4: color(display-p3 0.821 0.941 0.959); --h-cyan-9: color(display-p3 0.282 0.627 0.765); --h-cyan-11: color(display-p3 0.08 0.48 0.63);
+      --h-pink-3: color(display-p3 0.981 0.917 0.96); --h-pink-4: color(display-p3 0.963 0.867 0.932); --h-pink-9: color(display-p3 0.775 0.297 0.61); --h-pink-11: color(display-p3 0.698 0.219 0.528);
+      --h-orange-3: color(display-p3 0.989 0.938 0.85); --h-orange-4: color(display-p3 1 0.874 0.687); --h-orange-9: color(display-p3 0.9 0.45 0.2); --h-orange-11: color(display-p3 0.76 0.34 0);
+      --h-slate-3: color(display-p3 0.94 0.941 0.953); --h-slate-4: color(display-p3 0.908 0.909 0.925); --h-slate-9: color(display-p3 0.547 0.553 0.592); --h-slate-11: color(display-p3 0.379 0.392 0.421);
+    }
+
+    .dark {
+      --h-violet-3: color(display-p3 0.154 0.123 0.256); --h-violet-4: color(display-p3 0.191 0.148 0.345); --h-violet-9: color(display-p3 0.417 0.341 0.784); --h-violet-11: color(display-p3 0.72 0.65 1);
+      --h-indigo-3: color(display-p3 0.105 0.141 0.275); --h-indigo-4: color(display-p3 0.129 0.18 0.369); --h-indigo-9: color(display-p3 0.276 0.384 0.837); --h-indigo-11: color(display-p3 0.63 0.69 1);
+      --h-amber-3: color(display-p3 0.178 0.128 0.049); --h-amber-4: color(display-p3 0.239 0.156 0); --h-amber-9: color(display-p3 1 0.77 0.26); --h-amber-11: color(display-p3 1 0.8 0.29);
+      --h-jade-3: color(display-p3 0.091 0.176 0.138); --h-jade-4: color(display-p3 0.102 0.228 0.177); --h-jade-9: color(display-p3 0.319 0.63 0.521); --h-jade-11: color(display-p3 0.4 0.835 0.656);
+      --h-grass-3: color(display-p3 0.118 0.163 0.122); --h-grass-4: color(display-p3 0.142 0.225 0.15); --h-grass-9: color(display-p3 0.38 0.647 0.378); --h-grass-11: color(display-p3 0.535 0.807 0.542);
+      --h-crimson-3: color(display-p3 0.203 0.091 0.143); --h-crimson-4: color(display-p3 0.277 0.087 0.182); --h-crimson-9: color(display-p3 0.843 0.298 0.507); --h-crimson-11: color(display-p3 1 0.56 0.66);
+      --h-cyan-3: color(display-p3 0.073 0.168 0.209); --h-cyan-4: color(display-p3 0.063 0.216 0.277); --h-cyan-9: color(display-p3 0.282 0.627 0.765); --h-cyan-11: color(display-p3 0.446 0.79 0.887);
+      --h-pink-3: color(display-p3 0.198 0.098 0.179); --h-pink-4: color(display-p3 0.271 0.095 0.231); --h-pink-9: color(display-p3 0.775 0.297 0.61); --h-pink-11: color(display-p3 1 0.535 0.78);
+      --h-orange-3: color(display-p3 0.189 0.12 0.056); --h-orange-4: color(display-p3 0.262 0.132 0); --h-orange-9: color(display-p3 0.9 0.45 0.2); --h-orange-11: color(display-p3 1 0.63 0.38);
+      --h-slate-3: color(display-p3 0.13 0.135 0.145); --h-slate-4: color(display-p3 0.156 0.163 0.176); --h-slate-9: color(display-p3 0.415 0.431 0.463); --h-slate-11: color(display-p3 0.692 0.704 0.728);
+    }
+  }
+}
+
 /*
  * ---------------------------------------------------------------------------
  * Couche sémantique : les variables que lisent shadcn et les modules.
@@ -414,6 +491,48 @@
   --color-danger-soft: var(--danger-soft);
   --color-neutral: var(--neutral);
   --color-neutral-soft: var(--neutral-soft);
+
+  /* Teintes de module : `bg-hue-cyan-3`, `text-hue-cyan-11`… */
+  --color-h-violet-3: var(--h-violet-3);
+  --color-h-violet-4: var(--h-violet-4);
+  --color-h-violet-9: var(--h-violet-9);
+  --color-h-violet-11: var(--h-violet-11);
+  --color-h-indigo-3: var(--h-indigo-3);
+  --color-h-indigo-4: var(--h-indigo-4);
+  --color-h-indigo-9: var(--h-indigo-9);
+  --color-h-indigo-11: var(--h-indigo-11);
+  --color-h-amber-3: var(--h-amber-3);
+  --color-h-amber-4: var(--h-amber-4);
+  --color-h-amber-9: var(--h-amber-9);
+  --color-h-amber-11: var(--h-amber-11);
+  --color-h-jade-3: var(--h-jade-3);
+  --color-h-jade-4: var(--h-jade-4);
+  --color-h-jade-9: var(--h-jade-9);
+  --color-h-jade-11: var(--h-jade-11);
+  --color-h-grass-3: var(--h-grass-3);
+  --color-h-grass-4: var(--h-grass-4);
+  --color-h-grass-9: var(--h-grass-9);
+  --color-h-grass-11: var(--h-grass-11);
+  --color-h-crimson-3: var(--h-crimson-3);
+  --color-h-crimson-4: var(--h-crimson-4);
+  --color-h-crimson-9: var(--h-crimson-9);
+  --color-h-crimson-11: var(--h-crimson-11);
+  --color-h-cyan-3: var(--h-cyan-3);
+  --color-h-cyan-4: var(--h-cyan-4);
+  --color-h-cyan-9: var(--h-cyan-9);
+  --color-h-cyan-11: var(--h-cyan-11);
+  --color-h-pink-3: var(--h-pink-3);
+  --color-h-pink-4: var(--h-pink-4);
+  --color-h-pink-9: var(--h-pink-9);
+  --color-h-pink-11: var(--h-pink-11);
+  --color-h-orange-3: var(--h-orange-3);
+  --color-h-orange-4: var(--h-orange-4);
+  --color-h-orange-9: var(--h-orange-9);
+  --color-h-orange-11: var(--h-orange-11);
+  --color-h-slate-3: var(--h-slate-3);
+  --color-h-slate-4: var(--h-slate-4);
+  --color-h-slate-9: var(--h-slate-9);
+  --color-h-slate-11: var(--h-slate-11);
 
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);

@@ -18,10 +18,32 @@ import type { Permission } from "@/modules/auth";
  * la barre latérale masque automatiquement ceux que le rôle courant ne peut
  * pas ouvrir.
  */
+/**
+ * Les dix teintes d'adresse du CRM.
+ *
+ * Une par module, fixe. Elle n'obéit pas à la palette choisie dans les
+ * réglages : une adresse qui change de couleur selon les préférences n'est
+ * plus une adresse, et c'est justement pour reconnaître un écran sans le lire
+ * qu'elle existe.
+ */
+export type Hue =
+  | "violet"
+  | "indigo"
+  | "amber"
+  | "jade"
+  | "grass"
+  | "crimson"
+  | "cyan"
+  | "pink"
+  | "orange"
+  | "slate";
+
 export type NavItem = {
   href: string;
   label: string;
   icon: LucideIcon;
+  /** La couleur du module, portée partout où il se montre. */
+  hue: Hue;
   permission: Permission;
   /** Sous-entrées dépliables ; chacune peut exiger sa propre permission. */
   items?: Array<{ href: string; label: string; permission?: Permission }>;
@@ -62,6 +84,7 @@ export const NAV_SECTIONS: NavSection[] = [
         href: "/dashboard",
         label: "Tableau de bord",
         icon: LayoutDashboardIcon,
+        hue: "violet",
         // La synthèse ne montre rien de plus que les fiches : qui peut les lire
         // peut la lire.
         permission: "customers:read",
@@ -70,6 +93,7 @@ export const NAV_SECTIONS: NavSection[] = [
         href: "/customers",
         label: "Fiches client",
         icon: FileTextIcon,
+        hue: "indigo",
         permission: "customers:read",
         items: [
           { href: "/customers", label: "Toutes les fiches" },
@@ -87,6 +111,7 @@ export const NAV_SECTIONS: NavSection[] = [
         href: "/chantiers",
         label: "Chantiers",
         icon: HardHatIcon,
+        hue: "amber",
         // Les affaires signées : ce qui suit la signature. Même permission que
         // les fiches — c'est la suite de la même affaire.
         permission: "customers:read",
@@ -95,6 +120,7 @@ export const NAV_SECTIONS: NavSection[] = [
         href: "/billing",
         label: "Facturation",
         icon: ReceiptEuroIcon,
+        hue: "jade",
         // Faute d'une permission « invoices:read » côté API, la facturation
         // suit celle des devis. La lecture financière du groupe reste, elle,
         // derrière « users:read » — un chargé d'affaires a besoin de savoir si
@@ -119,6 +145,7 @@ export const NAV_SECTIONS: NavSection[] = [
         href: "/tasks",
         label: "Tâches",
         icon: CheckSquareIcon,
+        hue: "grass",
         permission: "tasks:read",
       },
       {
@@ -128,6 +155,7 @@ export const NAV_SECTIONS: NavSection[] = [
         // module lui-même. Deux noms pour un écran font chercher deux écrans.
         label: "Agenda",
         icon: CalendarIcon,
+        hue: "crimson",
         // L'agenda ne montre rien de plus que les fiches : qui peut les lire
         // peut le lire.
         permission: "customers:read",
@@ -136,6 +164,7 @@ export const NAV_SECTIONS: NavSection[] = [
         href: "/mail",
         label: "Messagerie",
         icon: MailIcon,
+        hue: "cyan",
         // La boîte de l'entreprise. Sa propre permission : lire les échanges
         // d'un client est plus intrusif que lire sa fiche, et devoir retirer
         // l'un sans l'autre est un besoin réel.
@@ -151,6 +180,7 @@ export const NAV_SECTIONS: NavSection[] = [
         href: "/marketing",
         label: "Marketing",
         icon: MegaphoneIcon,
+        hue: "pink",
         // Les réalisations viennent des chantiers livrés : qui peut lire les
         // fiches peut les valoriser.
         permission: "customers:read",
@@ -159,6 +189,7 @@ export const NAV_SECTIONS: NavSection[] = [
         href: "/automations",
         label: "Automatisations",
         icon: ZapIcon,
+        hue: "orange",
         // Regarder une automatisation et son journal se distingue de la
         // concevoir : dessiner un graphe, c'est décider que le CRM écrira tout
         // seul à des numéros. L'écriture est vérifiée par l'API, route par route.
@@ -168,6 +199,7 @@ export const NAV_SECTIONS: NavSection[] = [
         href: "/developpeur",
         label: "Développeur",
         icon: WrenchIcon,
+        hue: "slate",
         // Les outils de reprise : lire les sources brutes avant d'en tirer des
         // fiches. Réservé à l'administration — ce n'est pas un écran de travail
         // quotidien, et il montre l'arborescence entière de l'entreprise.
