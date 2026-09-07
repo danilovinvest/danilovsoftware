@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ArrowRightIcon,
+  CheckSquareIcon,
   CornerDownLeftIcon,
   FileTextIcon,
   HardHatIcon,
@@ -16,19 +16,27 @@ import {
 } from "lucide-react";
 import { usePermission } from "@/modules/auth";
 import {
+  CUSTOMER_STATUS,
+  PROJECT_STAGE,
+  QUOTE_STATUS,
+  type Tone,
+} from "@/modules/customers";
+import { TASK_STATUS } from "@/modules/tasks";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { HUE } from "@/shared/ui/hue";
 import { cn } from "@/lib/utils";
-import { NAV_SECTIONS } from "../lib/navigation";
+import { NAV_SECTIONS, type Hue } from "../lib/navigation";
 import { search, type Hit, type SearchResult } from "../lib/search";
 
 /** En deçà, on ne dérange pas le serveur : la palette montre la navigation. */
 const MIN_QUERY = 2;
 
-type Entry = Hit & { icon: LucideIcon };
+type Entry = Hit & { icon: LucideIcon; hue: Hue };
 type Group = { key: string; label: string; entries: Entry[] };
 
 const VIDE: SearchResult = {
@@ -47,6 +55,10 @@ const VIDE: SearchResult = {
  * toujours, filtrée en local : la palette sert autant à aller quelque part
  * qu'à trouver quelque chose, et une palette qui ne répond rien tant qu'on n'a
  * pas tapé deux lettres apprend à ne pas s'ouvrir.
+ *
+ * **Chaque section porte la teinte de son module**, la même que dans la barre
+ * latérale : une liste de vingt résultats gris demande de lire chaque ligne
+ * pour savoir de quoi elle parle.
  *
  * Comme `useCustomers`, elle ne garde qu'une réponse *avec la question qui l'a
  * produite* : « en cours » et « résultats affichés » s'en déduisent, aucun état
@@ -118,8 +130,21 @@ export function CommandSearch() {
       ? Math.min(pointer.index, Math.max(flat.length - 1, 0))
       : 0;
 
+  // La liste dépasse la fenêtre dès qu'on cherche : sans cela, la flèche bas
+  // déplace un curseur qu'on ne voit plus.
+  const listRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    listRef.current
+      ?.querySelector(`[data-index="${cursor}"]`)
+      ?.scrollIntoView({ block: "nearest" });
+  }, [cursor, listKey]);
+
   function moveCursor(index: number) {
-    setPointer({ listKey, index: Math.min(Math.max(index, 0), flat.length - 1) });
+    // La liste boucle : arrivé en bas, la flèche revient en tête plutôt que de
+    // ne rien faire.
+    const total = flat.length;
+    if (total === 0) return;
+    setPointer({ listKey, index: (index + total) % total });
   }
 
   function go(entry: Entry | undefined) {
@@ -140,11 +165,11 @@ export function CommandSearch() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring flex h-7 w-full max-w-80 items-center gap-2 rounded-md border px-2 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+        className="bg-background text-muted-foreground hover:border-brand-text/40 hover:text-foreground focus-visible:ring-ring flex h-7 w-full max-w-72 items-center gap-2 rounded-lg border px-2.5 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
       >
         <SearchIcon className="size-3.5 shrink-0" />
         <span className="truncate">Rechercher</span>
-        <kbd className="border-border bg-background ml-auto hidden rounded-md border px-1 py-px font-sans text-[10px] leading-4 sm:inline-block">
+        <kbd className="border-border bg-muted text-muted-foreground ml-auto hidden rounded-sm border px-1 py-px font-sans text-[10px] leading-4 sm:inline-block">
           ⌘K
         </kbd>
       </button>
@@ -152,7 +177,7 @@ export function CommandSearch() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
           showCloseButton={false}
-          className="top-[12%] max-w-xl translate-y-0 gap-0 overflow-hidden p-0"
+          className="top-[12%] max-w-xl translate-y-0 gap-0 overflow-hidden rounded-xl p-0"
           onKeyDown={(event) => {
             if (event.key === "ArrowDown") {
               event.preventDefault();
@@ -172,48 +197,65 @@ export function CommandSearch() {
             ou aller directement à un écran.
           </DialogDescription>
 
-          <div className="flex h-12 items-center gap-2 border-b px-3">
-            <SearchIcon className="text-muted-foreground size-4 shrink-0" />
+          <div className="flex h-12 items-center gap-2.5 border-b px-3.5">
+            <SearchIcon className="text-brand-text size-4 shrink-0" />
             <input
               autoFocus
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Client, affaire, devis, tâche, courriel…"
-              className="placeholder:text-muted-foreground h-full w-full bg-transparent text-sm outline-none"
+              className="placeholder:text-muted-foreground/70 h-full w-full bg-transparent text-sm outline-none"
             />
             {loading && (
-              <span className="text-muted-foreground/60 shrink-0 text-[11px]">
-                recherche…
-              </span>
+              <span className="border-brand-text/30 border-t-brand-text size-3.5 shrink-0 animate-spin rounded-full border-2" />
             )}
           </div>
 
-          <div className="max-h-[26rem] overflow-y-auto p-1.5">
+          <div ref={listRef} className="max-h-[24rem] overflow-y-auto p-2">
             {flat.length === 0 ? (
-              <p className="text-muted-foreground px-2 py-8 text-center text-sm">
-                {loading ? "Recherche…" : `Rien pour « ${trimmed} »`}
+              <p className="text-muted-foreground px-2 py-10 text-center text-sm">
+                {loading
+                  ? "Recherche…"
+                  : `Rien ne correspond à « ${trimmed} »`}
               </p>
             ) : (
               groups.map((group) => (
-                <div key={group.key} className="mb-1 last:mb-0">
-                  <p className="text-muted-foreground/70 px-2 py-1.5 text-[11px] font-medium">
+                <div key={group.key} className="mb-2 last:mb-0">
+                  <p className="text-muted-foreground/70 flex items-center gap-1.5 px-1.5 pb-1 text-[11px] font-medium">
                     {group.label}
+                    <span className="tabular-nums opacity-60">
+                      {group.entries.length}
+                    </span>
                   </p>
                   {group.entries.map((entry) => {
                     const index = flat.indexOf(entry);
                     const Icon = entry.icon;
+                    const teinte = HUE[entry.hue];
+                    const actif = index === cursor;
                     return (
                       <button
                         key={`${group.key}:${entry.id}`}
                         type="button"
+                        data-index={index}
                         onMouseEnter={() => moveCursor(index)}
                         onClick={() => go(entry)}
                         className={cn(
-                          "flex h-9 w-full items-center gap-2.5 rounded-md px-2 text-left text-sm",
-                          index === cursor && "bg-accent text-accent-foreground",
+                          "flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-sm transition-colors",
+                          actif && "bg-accent",
                         )}
                       >
-                        <Icon className="text-muted-foreground size-4 shrink-0" />
+                        {/* La pastille reprend la teinte du module : on sait de
+                            quoi parle la ligne avant de l'avoir lue. */}
+                        <span
+                          className={cn(
+                            "flex size-7 shrink-0 items-center justify-center rounded-md",
+                            teinte.soft,
+                            teinte.text,
+                          )}
+                        >
+                          <Icon className="size-3.5" />
+                        </span>
+
                         <span className="min-w-0 flex-1">
                           <span className="block truncate">{entry.title}</span>
                           {entry.hint && (
@@ -222,14 +264,25 @@ export function CommandSearch() {
                             </span>
                           )}
                         </span>
+
                         {entry.badge && (
-                          <span className="text-muted-foreground/60 shrink-0 text-[11px]">
+                          <span
+                            className={cn(
+                              "shrink-0 rounded-sm px-1.5 py-0.5 text-[10px] font-medium",
+                              entry.badgeTone
+                                ? TONE_CLASS[entry.badgeTone]
+                                : "text-muted-foreground/70",
+                            )}
+                          >
                             {entry.badge}
                           </span>
                         )}
-                        {index === cursor && (
-                          <CornerDownLeftIcon className="text-muted-foreground/50 size-3 shrink-0" />
-                        )}
+                        <CornerDownLeftIcon
+                          className={cn(
+                            "text-muted-foreground/50 size-3 shrink-0",
+                            !actif && "invisible",
+                          )}
+                        />
                       </button>
                     );
                   })}
@@ -237,10 +290,52 @@ export function CommandSearch() {
               ))
             )}
           </div>
+
+          {/* Le pied dit ce que fait le clavier. Sans lui, la palette se
+              parcourt à la souris — et une palette qu'on parcourt à la souris
+              ne vaut pas mieux qu'un menu. */}
+          <div className="text-muted-foreground/70 bg-muted/40 flex items-center gap-4 border-t px-3.5 py-2 text-[11px]">
+            <Touche signe="↑↓">naviguer</Touche>
+            <Touche signe="⏎">ouvrir</Touche>
+            <Touche signe="esc">fermer</Touche>
+            {flat.length > 0 && (
+              <span className="ml-auto tabular-nums">
+                {flat.length} résultat{flat.length > 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </>
   );
+}
+
+function Touche({ signe, children }: { signe: string; children: string }) {
+  return (
+    <span className="flex items-center gap-1.5">
+      <kbd className="border-border bg-background rounded-sm border px-1 py-px font-sans leading-4">
+        {signe}
+      </kbd>
+      {children}
+    </span>
+  );
+}
+
+const TONE_CLASS: Record<Tone, string> = {
+  neutral: "bg-neutral-soft text-neutral",
+  info: "bg-info-soft text-info",
+  success: "bg-success-soft text-success",
+  warning: "bg-warning-soft text-warning",
+  danger: "bg-danger-soft text-danger",
+};
+
+/** Traduit un identifiant d'énumération, ou le rend tel quel s'il est inconnu. */
+function libelle(
+  table: Record<string, { label: string; tone: Tone }>,
+  value: string,
+): { badge: string; badgeTone?: Tone } {
+  const entry = table[value];
+  return entry ? { badge: entry.label, badgeTone: entry.tone } : { badge: value };
 }
 
 /**
@@ -263,17 +358,60 @@ function buildGroups({
 }): Group[] {
   const groups: Group[] = [];
 
-  const sections: Array<[string, string, Hit[] | null, LucideIcon]> = [
-    ["customers", "Fiches client", data.customers, FileTextIcon],
-    ["projects", "Affaires", data.projects, HardHatIcon],
-    ["quotes", "Devis et factures", data.quotes, ReceiptEuroIcon],
-    ["tasks", "Tâches", data.tasks, ArrowRightIcon],
-    ["messages", "Courriels", data.messages, MailIcon],
+  /*
+    Chaque section reprend la teinte et l'icône de son module, et traduit son
+    étiquette : le serveur transporte des identifiants ASCII stables
+    (« devis_envoye »), le français vit dans les dictionnaires du module. Sans
+    cette traduction la palette affichait le slug brut.
+  */
+  const sections: Array<{
+    key: string;
+    label: string;
+    hits: Hit[] | null;
+    icon: LucideIcon;
+    hue: Hue;
+    badge?: (value: string) => { badge: string; badgeTone?: Tone };
+  }> = [
+    {
+      key: "customers", label: "Fiches client", hits: data.customers,
+      icon: FileTextIcon, hue: "indigo",
+      badge: (v) => libelle(CUSTOMER_STATUS, v),
+    },
+    {
+      key: "projects", label: "Affaires", hits: data.projects,
+      icon: HardHatIcon, hue: "amber",
+      badge: (v) => libelle(PROJECT_STAGE, v),
+    },
+    {
+      key: "quotes", label: "Devis et factures", hits: data.quotes,
+      icon: ReceiptEuroIcon, hue: "jade",
+      badge: (v) => libelle(QUOTE_STATUS, v),
+    },
+    {
+      key: "tasks", label: "Tâches", hits: data.tasks,
+      icon: CheckSquareIcon, hue: "grass",
+      badge: (v) => libelle(TASK_STATUS, v),
+    },
+    {
+      // Le courriel porte une date, pas une énumération : elle reste telle
+      // quelle, sans tonalité.
+      key: "messages", label: "Courriels", hits: data.messages,
+      icon: MailIcon, hue: "cyan",
+    },
   ];
 
-  for (const [k, label, hits, icon] of sections) {
-    if (!hits || hits.length === 0) continue;
-    groups.push({ key: k, label, entries: hits.map((hit) => ({ ...hit, icon })) });
+  for (const section of sections) {
+    if (!section.hits || section.hits.length === 0) continue;
+    groups.push({
+      key: section.key,
+      label: section.label,
+      entries: section.hits.map((hit) => ({
+        ...hit,
+        ...(section.badge && hit.badge ? section.badge(hit.badge) : {}),
+        icon: section.icon,
+        hue: section.hue,
+      })),
+    });
   }
 
   // La navigation, filtrée en local : elle tient en dix entrées, l'envoyer au
@@ -287,6 +425,7 @@ function buildGroups({
       href: item.href,
       badge: "",
       icon: item.icon,
+      hue: item.hue,
     })),
   ).filter((entry) => besoin === "" || entry.title.toLowerCase().includes(besoin));
 
@@ -298,13 +437,13 @@ function buildGroups({
     ...(canCreate
       ? [{
           id: "new", title: "Nouvelle fiche", hint: "", badge: "",
-          href: "/customers/nouveau", icon: PlusIcon,
+          href: "/customers/nouveau", icon: PlusIcon, hue: "indigo" as Hue,
         }]
       : []),
     ...(canImport
       ? [{
           id: "import", title: "Synchronisation Excel", hint: "", badge: "",
-          href: "/customers/import", icon: UploadIcon,
+          href: "/customers/import", icon: UploadIcon, hue: "indigo" as Hue,
         }]
       : []),
   ].filter((entry) => besoin === "" || entry.title.toLowerCase().includes(besoin));

@@ -5,4 +5,7 @@ export { TaskStatusBadge } from "./components/task-badge";
 // en pause n'est réveillée par rien. C'est la seule écriture que le module des
 // fiches client fait ici, et elle passe par la surface publique.
 export { createTask } from "./lib/api";
+// Les libellés français des statuts : la recherche globale les emploie pour
+// ne pas afficher « a_faire » à la place de « À faire ».
+export { TASK_STATUS } from "./lib/labels";
 export * from "./lib/types";
