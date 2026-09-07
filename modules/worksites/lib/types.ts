@@ -1,149 +1,100 @@
 /**
- * Types du module chantiers.
+ * Types du module chantiers, miroir de `GET /v1/worksites`.
  *
- * Ils décrivent ce que servira `GET /v1/worksites` : rien n'est pré-formaté,
- * les montants sont des nombres et les dates des ISO 8601. La forme vient du
- * classeur « CYCLE CHANTIER », qui décrit le cycle réel d'un chantier — c'est
- * la partie du métier que le CRM ignorait entièrement, tout ce qui se passe
- * **après** la signature.
+ * **Un chantier est une affaire signée.** Il n'y a pas de table de chantiers
+ * et il n'en faut pas : même client, même intitulé, même adresse, mêmes devis.
+ * Ce qui distingue l'exécution de la vente, ce sont les dates et les factures.
+ *
+ * Ce que le serveur rend, ce sont des **faits** : des dates, des devis, et
+ * l'heure à laquelle il a répondu. Aucun jugement — « en cours », « à
+ * planifier », « en retard » se déduisent dans `derive.ts`, à partir de
+ * `generated_at`. L'horloge d'un poste ne décide pas de ce qui traîne.
  */
 
-/**
- * Où en est l'exécution.
- *
- * Cet axe est distinct de l'étape commerciale (`project_stage`). La vente et la
- * production n'avancent pas au même rythme : un devis signé peut rester six
- * semaines en attente de sondages sans que la vente recule d'un pas. C'est la
- * même leçon qu'en éclatant la colonne « Statut » du premier classeur.
- *
- * Le statut n'est **pas saisi** : il se déduit des dates et des jalons. Une
- * carte ne se déplace donc pas à la main — on renseigne une date, et elle
- * change de colonne toute seule.
- */
-export type WorksiteStatus =
-  | "a_planifier"
-  | "planifie"
-  | "en_cours"
-  | "en_attente"
-  | "reception"
-  | "cloture";
-
-/** Ce qui bloque, quand ça bloque. Repris des statuts d'étude du classeur. */
-export type BlockedReason =
-  | "elements"
-  | "sondages"
-  | "tiers"
-  | "client"
-  | "meteo";
-
-/** État d'une étude, propre à l'ingénierie et indépendant de l'exécution. */
-export type StudyStatus =
-  | "en_cours"
-  | "en_attente_elements"
-  | "en_attente_sondages"
-  | "termine";
-
-export type CostKind = "sous_traitance" | "materiaux" | "autre";
-
-/**
- * Une ligne de coût.
- *
- * Le classeur a une colonne « sous-traitant » et une colonne « coût
- * matériaux », parce qu'un tableur ne sait pas faire autrement. Une table de
- * lignes couvre les deux avec un seul concept — et accepte plusieurs
- * sous-traitants sur un même chantier, ce que la feuille ne permet pas.
- */
-export type Cost = {
-  id: string;
-  kind: CostKind;
-  label: string;
-  /** Texte libre : aucun sous-traitant n'apparaît dans les données actuelles,
-      une table de fournisseurs serait un objet à gérer pour rien. */
-  supplier: string;
-  amount_ht: number;
-  paid_at: string | null;
-};
-
-/** Un règlement attendu : acompte ou solde. */
-export type Payment = {
-  label: string;
-  amount_ttc: number;
-  invoiced_at: string | null;
-  due_at: string | null;
-  paid_at: string | null;
-  reminded_at: string | null;
-};
-
-/** Un devis de l'affaire, avec l'activité — donc la société — qui l'émet. */
+/** Un devis ou une facture de l'affaire, avec son fichier sur OneDrive. */
 export type WorksiteQuote = {
+  id: string;
   reference: string;
+  kind: string;
   label: string;
-  activity_id: string;
-  amount_ht: number;
-  vat_rate: number;
-  signed_at: string | null;
+  status: string;
+  issued_at: string | null;
+  /** Nuls sur toutes les données actuelles : les devis viennent des noms de
+      fichiers OneDrive, qui portent une référence et pas un montant. */
+  amount_ht: string | null;
+  amount_ttc: string | null;
+  amount_note: string;
+  deposit_status: string;
+  balance_status: string;
+  drive_url: string;
+  drive_name: string;
 };
 
 export type Worksite = {
   id: string;
-  reference: string;
   label: string;
+  /** L'étape commerciale, servie telle quelle : `realise` est le seul signal
+      de fin dont on dispose — aucune affaire ne porte de date de clôture. */
+  stage: "gagne" | "realise";
+  outcome: string;
+  outcome_note: string;
+  notes: string;
+
   customer_id: string;
+  customer_reference: string;
   customer_name: string;
-  /** Vrai quand le client est une société du groupe : sort des statistiques
-      commerciales et alimente les flux internes. */
-  internal: boolean;
-  city: string;
-  address: string;
   owner_name: string;
 
-  /** Activité pilote — celle qui exécute. Les devis peuvent en viser d'autres. */
-  activity_id: string;
-  entity_id: string;
+  site_address: string;
+  site_postal_code: string;
+  /** Ville du chantier si connue, celle de la fiche sinon. */
+  city: string;
 
-  status: WorksiteStatus;
-  blocked_reason: BlockedReason | null;
-  study_status: StudyStatus | null;
+  started_at: string | null;
+  closed_at: string | null;
+  created_at: string;
 
-  signed_at: string;
-  starts_at: string | null;
-  ends_at: string | null;
-  /** Fin réelle. Nulle tant que les travaux ne sont pas terminés. */
-  completed_at: string | null;
-  /** Jours de retard sur la fin prévue. Calculé par le serveur. */
-  days_late: number;
-  /**
-   * Jours écoulés depuis la signature.
-   *
-   * Calculé ici et non dans la carte : c'est la même raison que `days_late` —
-   * l'ancienneté se lit sur l'instant de l'instantané, pas sur une horloge
-   * relue à chaque rendu.
-   */
-  days_since_signature: number;
-
-  amount_ht: number;
-  costs: Cost[];
-  /** Somme des coûts engagés. */
-  cost_total: number;
-  margin: number;
-  margin_rate: number;
-
-  deposit: Payment | null;
-  balance: Payment | null;
-
-  /** Jalons : une date renseignée vaut « fait », nulle vaut « à faire ». */
-  pv_sent_at: string | null;
-  pv_signed_at: string | null;
-  review_requested_at: string | null;
-  review_received_at: string | null;
-
+  last_interaction_at: string | null;
   quotes: WorksiteQuote[];
+};
+
+export type WorksiteResult = {
+  generated_at: string;
+  items: Worksite[];
+};
+
+/**
+ * Où en est l'exécution.
+ *
+ * Quatre états, pas six : « réception » et « clôture » supposaient un PV et un
+ * solde encaissé, que rien dans les données ne suit. Un état qu'aucune donnée
+ * ne peut atteindre est une colonne vide qui fait douter du reste.
+ *
+ * Le statut ne se saisit pas, il se déduit — donc le tableau n'est pas
+ * déplaçable. Autoriser le glisser-déposer créerait une seconde vérité, qui
+ * divergerait des dates dès la première carte oubliée.
+ */
+export type WorksiteStatus = "a_planifier" | "planifie" | "en_cours" | "realise";
+
+/** Un chantier, augmenté de ce qui s'en déduit à un instant donné. */
+export type ReadWorksite = {
+  worksite: Worksite;
+  status: WorksiteStatus;
+  /** Jours écoulés depuis le démarrage, nul quand aucune date n'est connue. */
+  daysRunning: number | null;
+  /** Jours depuis la dernière trace d'échange, nul s'il n'y en a jamais eu. */
+  daysSilent: number | null;
+  /** Vrai dès qu'une facture existe — la référence commence par `FA`. */
+  invoiced: boolean;
+  /** Vrai quand un devis porte un acompte encaissé. */
+  depositReceived: boolean;
+  devis: WorksiteQuote[];
+  factures: WorksiteQuote[];
 };
 
 export type StatusBucket = {
   status: WorksiteStatus;
   count: number;
-  amount: number;
 };
 
 /** Une ligne de travail : ce qui demande une action aujourd'hui. */
@@ -153,29 +104,4 @@ export type Alert = {
   customer_name: string;
   /** La phrase que le conducteur de travaux lira. */
   reason: string;
-  amount: number;
-  days: number;
-};
-
-export type WorksiteSnapshot = {
-  generated_at: string;
-  /** Périmètre retenu : société, activité, ou le groupe entier. */
-  entity_id: string | null;
-  activity_id: string | null;
-  metrics: import("@/shared/ui/metric-cards").Metric[];
-  worksites: Worksite[];
-  board: StatusBucket[];
-  /**
-   * Signés sans date de démarrage.
-   *
-   * En tête des quatre listes, et devant « en retard » : un chantier en retard
-   * a au moins commencé. Un chantier signé qui n'a pas de date ne commencera
-   * pas tout seul, et personne ne le réclamera — c'est le seul de ces quatre
-   * cas où l'oubli est silencieux.
-   */
-  unplanned: Alert[];
-  late: Alert[];
-  pv_pending: Alert[];
-  balance_to_invoice: Alert[];
-  review_to_request: Alert[];
 };
