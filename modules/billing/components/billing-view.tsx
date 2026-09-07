@@ -73,7 +73,7 @@ export function BillingView() {
           <h2 className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
             {entity ? entity.name : "Groupe consolidé"}
           </h2>
-          <div className="bg-muted flex rounded-[4px] p-0.5">
+          <div className="bg-muted flex rounded-md p-0.5">
             {PERIODS.map((entry) => (
               <button
                 key={entry.value}
@@ -81,7 +81,7 @@ export function BillingView() {
                 onClick={() => setPeriod(entry.value)}
                 aria-pressed={period === entry.value}
                 className={cn(
-                  "rounded-[3px] px-2.5 py-1 text-xs transition-colors",
+                  "rounded-sm px-2.5 py-1 text-xs transition-colors",
                   period === entry.value
                     ? "bg-background text-foreground font-medium shadow-2xs"
                     : "text-muted-foreground hover:text-foreground",

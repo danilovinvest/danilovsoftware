@@ -71,7 +71,7 @@ export function WorksiteList({
                 <TableCell>
                   <span
                     className={cn(
-                      "rounded-[4px] px-1.5 py-0.5 text-[11px] font-medium",
+                      "rounded-md px-1.5 py-0.5 text-[11px] font-medium",
                       TONE_SOFT[entry.tone],
                     )}
                   >
@@ -99,7 +99,7 @@ export function WorksiteList({
                         title={quote.drive_name || quote.label}
                         onClick={(event) => event.stopPropagation()}
                         className={cn(
-                          "hover:bg-accent flex items-center gap-1 rounded-[4px] border px-1.5 py-0.5 font-mono text-[10px] transition-colors",
+                          "hover:bg-accent flex items-center gap-1 rounded-md border px-1.5 py-0.5 font-mono text-[10px] transition-colors",
                           quote.reference.toUpperCase().startsWith("FA")
                             ? "text-success border-success/40"
                             : "text-muted-foreground",

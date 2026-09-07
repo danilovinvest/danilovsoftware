@@ -54,7 +54,7 @@ export function TreasuryView() {
         {/* La période ne pilote que ce qui se mesure sur une durée — le chiffre
             d'affaires et les flux internes. L'encours et la TVA se lisent à
             l'instant t, leurs panneaux le disent. */}
-        <div className="bg-muted flex rounded-[4px] p-0.5">
+        <div className="bg-muted flex rounded-md p-0.5">
           {PERIODS.map((entry) => (
             <button
               key={entry.value}
@@ -62,7 +62,7 @@ export function TreasuryView() {
               onClick={() => setPeriod(entry.value)}
               aria-pressed={period === entry.value}
               className={cn(
-                "rounded-[3px] px-2.5 py-1 text-xs transition-colors",
+                "rounded-sm px-2.5 py-1 text-xs transition-colors",
                 period === entry.value
                   ? "bg-background text-foreground font-medium shadow-2xs"
                   : "text-muted-foreground hover:text-foreground",

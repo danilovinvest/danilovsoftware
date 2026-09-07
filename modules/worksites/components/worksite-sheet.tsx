@@ -59,19 +59,19 @@ function Body({ read }: { read: ReadWorksite }) {
         <div className="flex flex-wrap items-center gap-2">
           <span
             className={cn(
-              "rounded-[4px] px-1.5 py-0.5 text-[11px] font-medium",
+              "rounded-md px-1.5 py-0.5 text-[11px] font-medium",
               TONE_SOFT[status.tone],
             )}
           >
             {status.label}
           </span>
           {read.depositReceived && (
-            <span className="bg-success-soft text-success rounded-[4px] px-1.5 py-0.5 text-[11px] font-medium">
+            <span className="bg-success-soft text-success rounded-md px-1.5 py-0.5 text-[11px] font-medium">
               acompte encaissé
             </span>
           )}
           {read.invoiced && (
-            <span className="bg-info-soft text-info rounded-[4px] px-1.5 py-0.5 text-[11px] font-medium">
+            <span className="bg-info-soft text-info rounded-md px-1.5 py-0.5 text-[11px] font-medium">
               facturé
             </span>
           )}

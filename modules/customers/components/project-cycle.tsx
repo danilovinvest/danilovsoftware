@@ -161,7 +161,7 @@ function MiniCycle({ points, className }: { points: CyclePoint[]; className?: st
         <span
           key={point.step}
           className={cn(
-            "h-1.5 w-3 rounded-[1px] first:rounded-l-[3px] last:rounded-r-[3px]",
+            "h-1.5 w-3 rounded-sm first:rounded-l-[3px] last:rounded-r-[3px]",
             point.state === "todo" ? "bg-border" : BAR[point.state],
             point.state === "current" && "animate-pulse",
           )}

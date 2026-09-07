@@ -215,7 +215,7 @@ export function FilesPanel() {
                 <span className="text-muted-foreground shrink-0 tabular-nums">
                   {formatDateTime(run.started_at)}
                 </span>
-                <span className="bg-muted rounded-[3px] px-1.5 py-0.5 text-[0.65rem]">
+                <span className="bg-muted rounded-sm px-1.5 py-0.5 text-[0.65rem]">
                   {run.origin}
                 </span>
                 <span className="min-w-0 flex-1">

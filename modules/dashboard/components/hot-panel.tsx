@@ -76,7 +76,7 @@ export function HotPanel({ rows }: { rows: HotRow[] }) {
               {row.signals.map((signal) => (
                 <span
                   key={signal}
-                  className="bg-muted text-muted-foreground rounded-[4px] px-1.5 py-0.5 text-[11px]"
+                  className="bg-muted text-muted-foreground rounded-md px-1.5 py-0.5 text-[11px]"
                 >
                   {signal}
                 </span>

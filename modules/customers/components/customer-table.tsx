@@ -323,7 +323,7 @@ function ActionCell({ action }: { action: NextAction }) {
       )}
       <span
         className={cn(
-          "truncate rounded-[4px] text-xs",
+          "truncate rounded-md text-xs",
           action.alert ? cn(TONE_SOFT[action.tone], "px-1.5 py-0.5 font-medium") : "text-muted-foreground",
         )}
         title={action.detail}

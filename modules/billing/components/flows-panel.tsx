@@ -46,7 +46,7 @@ export function FlowsPanel({ flows }: { flows: IntraFlow[] }) {
                 <p className="mt-0.5 flex items-center gap-1.5">
                   <span
                     className={cn(
-                      "rounded-[4px] px-1.5 py-0.5 text-[11px]",
+                      "rounded-md px-1.5 py-0.5 text-[11px]",
                       TONE_SOFT[kind.tone],
                     )}
                   >

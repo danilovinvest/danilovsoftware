@@ -36,7 +36,7 @@ export function WorksiteBoard({
             <div className="flex items-center justify-between gap-2">
               <span
                 className={cn(
-                  "rounded-[4px] px-1.5 py-0.5 text-[11px] font-medium",
+                  "rounded-md px-1.5 py-0.5 text-[11px] font-medium",
                   TONE_SOFT[entry.tone],
                 )}
               >

@@ -372,7 +372,7 @@
    * (2 / 4 / 8 / 16). Elle est déclarée telle quelle dans @theme plutôt que
    * dérivée d'un multiplicateur.
    */
-  --radius: 4px;
+  --radius: 8px;
 
   /* Surfaces et texte — background.* et font.color.* de Twenty. */
   --background: var(--t-gray-1);
@@ -572,17 +572,28 @@
   --text-2xl--line-height: 2.25rem;
 
   /*
-   * BORDER_COMMON.radius : 2 / 4 / 8 / 16. Les composants shadcn tapent dans
-   * `rounded-lg` (boutons, champs) et `rounded-xl` (cartes, panneaux) : ce
-   * sont ces deux crans-là qui font le plus pour la silhouette.
+   * Une seule échelle de rayons, et elle est **respectée partout**.
+   *
+   * Le code mélangeait `rounded-[4px]`, `rounded-[3px]`, `rounded-[6px]` et
+   * `rounded-[1px]` — quatre valeurs écrites à la main qui contournaient
+   * l'échelle et donnaient à chaque écran une silhouette légèrement
+   * différente. Toutes ont été remplacées par les crans ci-dessous.
+   *
+   * Les valeurs montent d'un cran par rapport à l'austérité de Twenty : 4 px
+   * sur un bouton donne un angle qui se lit comme un carré, et c'est une des
+   * raisons pour lesquelles l'interface paraissait dure.
+   *
+   * Qui fait quoi : `sm` les pastilles et les puces, `md` les entrées de
+   * navigation et les petits boutons, `lg` les boutons et les champs, `xl` les
+   * cartes et les menus, `2xl` les panneaux et les boîtes de dialogue.
    */
-  --radius-sm: 2px;
-  --radius-md: 4px;
-  --radius-lg: 4px;
-  --radius-xl: 8px;
-  --radius-2xl: 8px;
-  --radius-3xl: 16px;
-  --radius-4xl: 16px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 14px;
+  --radius-3xl: 18px;
+  --radius-4xl: 24px;
 
   /* BOX_SHADOW_LIGHT : des ombres presque plates, très diffuses. */
   --shadow-2xs: 0 1px 2px 0 rgb(0 0 0 / 0.039);

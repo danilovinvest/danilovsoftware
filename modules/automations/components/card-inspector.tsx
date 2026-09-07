@@ -157,7 +157,7 @@ function DigestFields({
                   })
                 }
                 className={cn(
-                  "flex items-center gap-2 rounded-[4px] px-1.5 py-1 text-left text-xs transition-colors",
+                  "flex items-center gap-2 rounded-md px-1.5 py-1 text-left text-xs transition-colors",
                   on ? "bg-accent" : "hover:bg-accent/60 text-muted-foreground",
                 )}
               >
@@ -206,7 +206,7 @@ function TelegramFields({
 
       <div className="flex flex-col gap-1.5">
         <Label className="text-muted-foreground text-xs font-medium">Découpage</Label>
-        <div className="bg-muted grid grid-cols-2 gap-0.5 rounded-[6px] p-0.5">
+        <div className="bg-muted grid grid-cols-2 gap-0.5 rounded-md p-0.5">
           {[
             { value: false, label: "Un seul message" },
             { value: true, label: "Un par rendez-vous" },
@@ -225,7 +225,7 @@ function TelegramFields({
                 })
               }
               className={cn(
-                "rounded-[4px] px-2 py-1 text-[11px] transition-colors",
+                "rounded-md px-2 py-1 text-[11px] transition-colors",
                 (config.split ?? false) === choice.value
                   ? "bg-background text-foreground font-medium shadow-2xs"
                   : "text-muted-foreground hover:text-foreground",
@@ -278,9 +278,9 @@ function TelegramFields({
             onClick={() =>
               set({ message: `${config.message ?? ""}{{${variable.name}}}` })
             }
-            className="hover:bg-accent flex items-baseline gap-2 rounded-[4px] px-1.5 py-1 text-left transition-colors"
+            className="hover:bg-accent flex items-baseline gap-2 rounded-md px-1.5 py-1 text-left transition-colors"
           >
-            <code className="bg-muted shrink-0 rounded-[3px] px-1 py-0.5 font-mono text-[10px]">
+            <code className="bg-muted shrink-0 rounded-sm px-1 py-0.5 font-mono text-[10px]">
               {`{{${variable.name}}}`}
             </code>
             <span className="text-muted-foreground/70 min-w-0 flex-1 truncate text-[11px]">
@@ -394,7 +394,7 @@ function ChatPicker({
               type="button"
               onClick={() => onPick(chat.id)}
               className={cn(
-                "flex items-baseline gap-2 rounded-[4px] px-1.5 py-1 text-left text-xs transition-colors",
+                "flex items-baseline gap-2 rounded-md px-1.5 py-1 text-left text-xs transition-colors",
                 chat.id === value ? "bg-accent" : "hover:bg-accent/60",
               )}
             >

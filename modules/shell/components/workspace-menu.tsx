@@ -68,22 +68,31 @@ export function WorkspaceMenu() {
               className="text-foreground data-[state=open]:bg-sidebar-accent h-8 gap-2 px-1.5 font-medium"
               tooltip={WORKSPACE.name}
             >
-              <LogoTile className="size-5 rounded-[4px]" markClassName="size-3.5" />
+              <LogoTile className="size-6 rounded-lg" markClassName="size-3.5" />
               <span className="truncate">{WORKSPACE.name}</span>
               <ChevronDownIcon className="text-muted-foreground ml-auto size-3.5!" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
 
           <DropdownMenuContent
-            className="w-64 rounded-lg p-1"
+            className="w-68 overflow-hidden rounded-xl p-0"
             side="bottom"
             align="start"
-            sideOffset={4}
+            sideOffset={6}
           >
-            {/* En-tête : qui est connecté, pas où l'on est. Le nom de l'espace
-                est déjà sur le déclencheur juste au-dessus. */}
-            <div className="flex items-center gap-2 px-1.5 py-1.5">
-              <GradientAvatar seed={account.email} text={initials(name)} size={32} />
+            {/*
+              L'en-tête sur un fond teinté : c'est la seule zone du menu qui
+              parle de la personne, et un aplat la sépare des actions mieux
+              qu'un trait. Le dégradé de l'avatar y répond au lieu de flotter
+              sur du blanc.
+            */}
+            <div className="bg-selected flex items-center gap-2.5 px-3 py-3">
+              <GradientAvatar
+                seed={account.email}
+                text={initials(name)}
+                size={36}
+                rounded={10}
+              />
               <div className="grid min-w-0 flex-1 leading-tight">
                 <span className="truncate text-sm font-medium">{name}</span>
                 <span className="text-muted-foreground truncate text-xs">
@@ -92,39 +101,54 @@ export function WorkspaceMenu() {
               </div>
             </div>
 
-            <DropdownMenuSeparator />
+            <div className="p-1.5">
+              <ThemePicker />
+            </div>
 
-            <ThemePicker />
+            <DropdownMenuSeparator className="mx-0 my-0" />
 
-            <DropdownMenuSeparator />
+            <div className="p-1.5">
 
-            {canInvite && (
-              <DropdownMenuItem asChild>
-                <Link href="/settings/membres">
-                  <UserPlusIcon />
-                  Inviter un utilisateur
+              {canInvite && (
+                <DropdownMenuItem asChild className="h-8 gap-2.5 rounded-lg px-2">
+                  <Link href="/settings/membres">
+                    {/* Chaque action porte sa pastille : à taille et rayon
+                        égaux, la colonne d'icônes s'aligne d'elle-même, et
+                        c'est la couleur qui distingue au lieu de la forme. */}
+                    <span className="bg-h-grass-3 text-h-grass-11 flex size-6 shrink-0 items-center justify-center rounded-md">
+                      <UserPlusIcon className="size-3.5" />
+                    </span>
+                    Inviter un utilisateur
+                  </Link>
+                </DropdownMenuItem>
+              )}
+
+              <DropdownMenuItem asChild className="h-8 gap-2.5 rounded-lg px-2">
+                <Link href="/settings">
+                  <span className="bg-h-slate-3 text-h-slate-11 flex size-6 shrink-0 items-center justify-center rounded-md">
+                    <SettingsIcon className="size-3.5" />
+                  </span>
+                  Paramètres
                 </Link>
               </DropdownMenuItem>
-            )}
+            </div>
 
-            <DropdownMenuItem asChild>
-              <Link href="/settings">
-                <SettingsIcon />
-                Paramètres
-              </Link>
-            </DropdownMenuItem>
+            <DropdownMenuSeparator className="mx-0 my-0" />
 
-            <DropdownMenuSeparator />
-
-            <DropdownMenuItem
-              onSelect={async () => {
-                await logout();
-                router.replace("/login");
-              }}
-            >
-              <LogOutIcon />
-              Se déconnecter
-            </DropdownMenuItem>
+            <div className="p-1.5">
+              <DropdownMenuItem
+                className="text-danger focus:text-danger focus:bg-danger-soft h-8 gap-2.5 rounded-lg px-2"
+                onSelect={async () => {
+                  await logout();
+                  router.replace("/login");
+                }}
+              >
+                <span className="bg-danger-soft flex size-6 shrink-0 items-center justify-center rounded-md">
+                  <LogOutIcon className="size-3.5" />
+                </span>
+                Se déconnecter
+              </DropdownMenuItem>
+            </div>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
@@ -144,9 +168,16 @@ function ThemePicker() {
   const { theme } = usePreferences();
 
   return (
-    <div className="px-1.5 py-1.5">
-      <p className="text-muted-foreground mb-1.5 text-[11px] font-medium">Thème</p>
-      <div className="grid grid-cols-3 gap-1">
+    <>
+      <p className="text-muted-foreground px-2 pt-0.5 pb-1.5 text-[11px] font-medium">
+        Thème
+      </p>
+      {/*
+        Un segmenté plutôt que trois cartes bordées : les bordures dessinaient
+        trois boîtes de rayons différents dans un menu qui en a déjà un, et
+        c'est l'option choisie qu'on veut voir, pas la grille.
+      */}
+      <div className="bg-muted flex gap-0.5 rounded-lg p-0.5">
         {THEMES.map(({ value, label, Icon }) => {
           const selected = theme === value;
           return (
@@ -156,10 +187,10 @@ function ThemePicker() {
               aria-pressed={selected}
               onClick={() => setPreferences({ theme: value })}
               className={cn(
-                "flex flex-col items-center gap-1 rounded-[4px] border px-1 py-1.5 text-[11px] transition-colors",
+                "flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-[11px] transition-colors",
                 selected
-                  ? "border-brand text-foreground bg-accent"
-                  : "border-border text-muted-foreground hover:bg-accent hover:text-foreground",
+                  ? "bg-brand text-primary-foreground font-medium shadow-2xs"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               <Icon className="size-3.5" />
@@ -168,6 +199,6 @@ function ThemePicker() {
           );
         })}
       </div>
-    </div>
+    </>
   );
 }

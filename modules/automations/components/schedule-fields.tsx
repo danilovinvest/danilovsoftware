@@ -69,7 +69,7 @@ export function ScheduleFields({
     <>
       <div className="flex flex-col gap-1.5">
         <Label className="text-muted-foreground text-xs font-medium">Rythme</Label>
-        <div className="bg-muted grid grid-cols-2 gap-0.5 rounded-[6px] p-0.5">
+        <div className="bg-muted grid grid-cols-2 gap-0.5 rounded-md p-0.5">
           {RHYTHMS.map((rhythm) => (
             <button
               key={rhythm.value}
@@ -77,7 +77,7 @@ export function ScheduleFields({
               onClick={() => apply({ rhythm: rhythm.value })}
               aria-pressed={schedule.rhythm === rhythm.value}
               className={cn(
-                "rounded-[4px] px-2 py-1 text-[11px] transition-colors",
+                "rounded-md px-2 py-1 text-[11px] transition-colors",
                 schedule.rhythm === rhythm.value
                   ? "bg-background text-foreground font-medium shadow-2xs"
                   : "text-muted-foreground hover:text-foreground",
@@ -165,7 +165,7 @@ export function ScheduleFields({
       ) : (
         <div className="flex items-center justify-between gap-2">
           <span className="text-muted-foreground text-[11px]">Expression</span>
-          <code className="bg-muted rounded-[3px] px-1.5 py-0.5 font-mono text-[10px]">
+          <code className="bg-muted rounded-sm px-1.5 py-0.5 font-mono text-[10px]">
             {cron}
           </code>
         </div>

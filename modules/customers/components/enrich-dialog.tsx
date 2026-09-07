@@ -218,7 +218,7 @@ export function EnrichDialog({
                       >
                         <span
                           className={cn(
-                            "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-[3px] border",
+                            "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-sm border",
                             coche ? "bg-primary border-primary" : "border-border",
                           )}
                         >
@@ -372,7 +372,7 @@ function Coche({ coche }: { coche: boolean }) {
   return (
     <span
       className={cn(
-        "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-[3px] border",
+        "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-sm border",
         coche ? "bg-primary border-primary" : "border-border",
       )}
     >

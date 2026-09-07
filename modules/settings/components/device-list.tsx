@@ -126,7 +126,7 @@ export function DeviceList() {
                       </p>
                     </div>
                     {session.current ? (
-                      <Badge className="bg-success-soft text-success rounded-[4px]">
+                      <Badge className="bg-success-soft text-success rounded-md">
                         Cet appareil
                       </Badge>
                     ) : (

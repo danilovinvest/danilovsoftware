@@ -99,7 +99,7 @@ export function DashboardView() {
           </h2>
           {/* Le sélecteur ne pilote que les compteurs : les listes de travail
               sont, elles, toujours au présent. */}
-          <div className="bg-muted flex rounded-[4px] p-0.5">
+          <div className="bg-muted flex rounded-md p-0.5">
             {PERIODS.map((entry) => (
               <button
                 key={entry.value}
@@ -107,7 +107,7 @@ export function DashboardView() {
                 onClick={() => setPeriod(entry.value)}
                 aria-pressed={period === entry.value}
                 className={cn(
-                  "rounded-[3px] px-2.5 py-1 text-xs transition-colors",
+                  "rounded-sm px-2.5 py-1 text-xs transition-colors",
                   period === entry.value
                     ? "bg-background text-foreground font-medium shadow-2xs"
                     : "text-muted-foreground hover:text-foreground",

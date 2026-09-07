@@ -61,11 +61,11 @@ export function CalendarSidebar({
                 onClick={() => onToggle(calendar.id)}
                 aria-pressed={!calendar.hidden}
                 title={calendar.name}
-                className="hover:bg-accent flex items-center gap-2 rounded-[4px] px-1.5 py-1.5 text-left transition-colors"
+                className="hover:bg-accent flex items-center gap-2 rounded-md px-1.5 py-1.5 text-left transition-colors"
               >
                 <span
                   className={cn(
-                    "flex size-3.5 shrink-0 items-center justify-center rounded-[3px] border",
+                    "flex size-3.5 shrink-0 items-center justify-center rounded-sm border",
                     calendar.hidden
                       ? "border-input"
                       : cn("border-transparent", style.solid),

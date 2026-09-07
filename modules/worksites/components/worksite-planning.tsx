@@ -74,7 +74,7 @@ export function WorksitePlanning({
               <div key={week.start} className="flex min-w-0 flex-1 flex-col gap-1.5">
                 <div
                   className={cn(
-                    "rounded-[4px] px-1.5 py-1 text-center text-[11px]",
+                    "rounded-md px-1.5 py-1 text-center text-[11px]",
                     isCurrent
                       ? "bg-primary text-primary-foreground font-medium"
                       : "text-muted-foreground/70",
@@ -91,7 +91,7 @@ export function WorksitePlanning({
                       onClick={() => onSelect(read.worksite.id)}
                       title={`${read.worksite.customer_name} — ${read.worksite.label}`}
                       className={cn(
-                        "truncate rounded-[4px] px-1.5 py-1 text-left text-[11px] transition-opacity hover:opacity-80",
+                        "truncate rounded-md px-1.5 py-1 text-left text-[11px] transition-opacity hover:opacity-80",
                         TONE_SOFT[WORKSITE_STATUS[read.status].tone],
                       )}
                     >

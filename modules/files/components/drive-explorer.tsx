@@ -158,7 +158,7 @@ function FolderRow({ item, onOpen }: { item: DriveItem; onOpen: () => void }) {
               {deal ? parsed.client : item.name}
             </span>
             {parsed.aside && (
-              <span className="text-muted-foreground bg-muted rounded-[3px] px-1.5 py-0.5 text-[0.65rem]">
+              <span className="text-muted-foreground bg-muted rounded-sm px-1.5 py-0.5 text-[0.65rem]">
                 {parsed.aside}
               </span>
             )}

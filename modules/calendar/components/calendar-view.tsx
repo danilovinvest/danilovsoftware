@@ -238,7 +238,7 @@ Rendez-vous, visites de chantier et absences de l&apos;équipe.
 
             <ShortcutsHelp />
 
-            <div className="bg-muted flex rounded-[4px] p-0.5">
+            <div className="bg-muted flex rounded-md p-0.5">
               {VIEWS.map((entry) => (
                 <button
                   key={entry.value}
@@ -246,7 +246,7 @@ Rendez-vous, visites de chantier et absences de l&apos;équipe.
                   onClick={() => calendar.setView(entry.value)}
                   aria-pressed={calendar.view === entry.value}
                   className={cn(
-                    "rounded-[3px] px-2.5 py-1 text-xs transition-colors",
+                    "rounded-sm px-2.5 py-1 text-xs transition-colors",
                     calendar.view === entry.value
                       ? "bg-background text-foreground font-medium shadow-2xs"
                       : "text-muted-foreground hover:text-foreground",
@@ -367,7 +367,7 @@ function ShortcutsHelp() {
           {shortcuts.map(([keys, label]) => (
             <li key={keys} className="flex items-center justify-between gap-3 text-xs">
               <span className="text-muted-foreground">{label}</span>
-              <kbd className="bg-muted rounded-[3px] px-1.5 py-0.5 font-mono text-[10px]">
+              <kbd className="bg-muted rounded-sm px-1.5 py-0.5 font-mono text-[10px]">
                 {keys}
               </kbd>
             </li>

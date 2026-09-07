@@ -81,7 +81,7 @@ export function MarketingView() {
                     type="button"
                     onClick={() => marketing.setFilter(key)}
                     className={cn(
-                      "rounded-[4px] px-2 py-1 text-xs transition-colors",
+                      "rounded-md px-2 py-1 text-xs transition-colors",
                       marketing.filter === key
                         ? "bg-selected text-foreground font-medium"
                         : "text-muted-foreground hover:bg-accent",

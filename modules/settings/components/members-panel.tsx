@@ -180,17 +180,17 @@ export function MembersPanel() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge className="bg-info-soft text-info rounded-[4px]">
+                          <Badge className="bg-info-soft text-info rounded-md">
                             {user.role_name}
                           </Badge>
                         </TableCell>
                         <TableCell>
                           {user.is_active ? (
-                            <Badge className="bg-success-soft text-success rounded-[4px]">
+                            <Badge className="bg-success-soft text-success rounded-md">
                               Actif
                             </Badge>
                           ) : (
-                            <Badge className="bg-neutral-soft text-neutral rounded-[4px]">
+                            <Badge className="bg-neutral-soft text-neutral rounded-md">
                               Désactivé
                             </Badge>
                           )}
@@ -267,7 +267,7 @@ export function MembersPanel() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge className="bg-info-soft text-info rounded-[4px]">
+                        <Badge className="bg-info-soft text-info rounded-md">
                           {invitation.role_name}
                         </Badge>
                       </TableCell>

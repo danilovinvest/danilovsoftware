@@ -41,7 +41,7 @@ export function RealisationCard({
         </span>
         <span
           className={cn(
-            "shrink-0 rounded-[4px] px-1.5 py-0.5 text-[11px] whitespace-nowrap",
+            "shrink-0 rounded-md px-1.5 py-0.5 text-[11px] whitespace-nowrap",
             TONE_SOFT[status.tone],
           )}
         >

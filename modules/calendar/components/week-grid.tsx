@@ -306,7 +306,7 @@ export function WeekGrid({
                       type="button"
                       onClick={() => onSelect(occurrence)}
                       className={cn(
-                        "h-4 truncate rounded-[3px] px-1.5 text-left text-[11px] leading-4 font-medium",
+                        "h-4 truncate rounded-sm px-1.5 text-left text-[11px] leading-4 font-medium",
                         style.solid,
                       )}
                     >
@@ -384,7 +384,7 @@ export function WeekGrid({
                     }}
                     className={cn(
                       "bg-brand/25 border-brand text-brand pointer-events-none absolute inset-x-0.5 z-20",
-                      "overflow-hidden rounded-[3px] border-l-2 px-1 py-px text-[10px] leading-[13px] font-medium",
+                      "overflow-hidden rounded-sm border-l-2 px-1 py-px text-[10px] leading-[13px] font-medium",
                     )}
                   >
                     {formatTime(at(day, drag.from))} – {formatTime(at(day, drag.to))}
@@ -435,7 +435,7 @@ export function WeekGrid({
                         width: `calc(${width}% - 4px)`,
                       }}
                       className={cn(
-                        "absolute overflow-hidden rounded-[3px] border-l-2 px-1 py-px text-left leading-[13px]",
+                        "absolute overflow-hidden rounded-sm border-l-2 px-1 py-px text-left leading-[13px]",
                         style.soft,
                         style.rail,
                         onMove && "cursor-grab active:cursor-grabbing",

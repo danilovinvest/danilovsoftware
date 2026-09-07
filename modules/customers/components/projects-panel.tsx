@@ -318,7 +318,7 @@ function ProjectBlock({
             <div className="flex flex-wrap items-center gap-2">
               <span className="truncate text-sm font-medium">{project.label}</span>
               {hasSurvey(quotes) && (
-                <span className="text-muted-foreground bg-muted rounded-[4px] px-1.5 py-0.5 text-[0.65rem]">
+                <span className="text-muted-foreground bg-muted rounded-md px-1.5 py-0.5 text-[0.65rem]">
                   sondage
                 </span>
               )}
@@ -333,7 +333,7 @@ function ProjectBlock({
 
           <span
             className={cn(
-              "hidden shrink-0 rounded-[4px] px-1.5 py-0.5 text-[0.7rem] whitespace-nowrap md:inline-block",
+              "hidden shrink-0 rounded-md px-1.5 py-0.5 text-[0.7rem] whitespace-nowrap md:inline-block",
               action.alert ? TONE_SOFT[action.tone] : "text-muted-foreground",
             )}
           >
@@ -539,7 +539,7 @@ function QuoteList({ quotes, onChanged }: { quotes: Quote[]; onChanged: () => vo
             <EnumBadge value={quote.status} entries={QUOTE_STATUS} />
 
             {revision > 1 && (
-              <span className="text-muted-foreground bg-muted rounded-[4px] px-1.5 py-0.5 text-[0.65rem]">
+              <span className="text-muted-foreground bg-muted rounded-md px-1.5 py-0.5 text-[0.65rem]">
                 révision {revision}
               </span>
             )}

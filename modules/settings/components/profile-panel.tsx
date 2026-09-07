@@ -168,7 +168,7 @@ function TwoFactorSection() {
             À construire : l&apos;API n&apos;a ni secret TOTP ni codes de secours.
           </p>
         </div>
-        <Badge className="bg-neutral-soft text-neutral rounded-[4px]">
+        <Badge className="bg-neutral-soft text-neutral rounded-md">
           Désactivée
         </Badge>
       </div>

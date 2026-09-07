@@ -13,7 +13,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { NAV_ITEM_CLASS } from "@/shared/ui/nav";
+import { NAV_ACTIVE_CLASS, NAV_ITEM_CLASS } from "@/shared/ui/nav";
+import { cn } from "@/lib/utils";
 import {
   SETTINGS_NAVIGATION,
   isSettingsItemActive,
@@ -54,7 +55,7 @@ export function SettingsNav() {
       <SidebarContent className="gap-3 px-2">
         {sections.map((section) => (
           <SidebarGroup key={section.label} className="p-0">
-            <SidebarGroupLabel className="text-muted-foreground h-7 px-1.5 text-[11px] font-medium">
+            <SidebarGroupLabel className="text-muted-foreground h-7 px-1.5 text-[11px] font-medium group-data-[collapsible=icon]:-mt-7">
               {section.label}
             </SidebarGroupLabel>
             <SidebarMenu className="gap-0.5">
@@ -66,11 +67,11 @@ export function SettingsNav() {
                       asChild
                       isActive={isSettingsItemActive(item.href, pathname)}
                       tooltip={item.label}
-                      className={NAV_ITEM_CLASS}
+                      className={cn(NAV_ITEM_CLASS, NAV_ACTIVE_CLASS, "text-brand")}
                     >
                       <Link href={item.href}>
                         <Icon />
-                        <span>{item.label}</span>
+                        <span className="text-foreground/85">{item.label}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

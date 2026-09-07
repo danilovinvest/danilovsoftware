@@ -70,7 +70,7 @@ export function DigestTable({ rows }: { rows: DigestRow[] }) {
                   setExpanded(false);
                 }}
                 className={cn(
-                  "rounded-[4px] px-2 py-1 text-xs transition-colors",
+                  "rounded-md px-2 py-1 text-xs transition-colors",
                   filter === entry.value
                     ? "bg-selected text-foreground font-medium"
                     : "text-muted-foreground hover:bg-accent",
@@ -134,7 +134,7 @@ export function DigestTable({ rows }: { rows: DigestRow[] }) {
                         <span
                           title={health.hint}
                           className={cn(
-                            "inline-flex items-center gap-1.5 rounded-[4px] px-1.5 py-0.5 text-xs whitespace-nowrap",
+                            "inline-flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-xs whitespace-nowrap",
                             TONE_SOFT[health.tone],
                           )}
                         >

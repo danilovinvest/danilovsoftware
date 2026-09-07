@@ -27,7 +27,7 @@ export function EntitySwitcher({
         onClick={() => onChange(null)}
         aria-pressed={value === null}
         className={cn(
-          "flex items-center gap-1.5 rounded-[4px] border px-2.5 py-1.5 text-xs transition-colors",
+          "flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs transition-colors",
           value === null
             ? "border-foreground/20 bg-selected text-foreground font-medium"
             : "text-muted-foreground hover:bg-accent border-transparent",
@@ -49,7 +49,7 @@ export function EntitySwitcher({
             aria-pressed={active}
             title={`${entity.legal_form} · SIREN ${entity.siren} · ${entity.naf_label}`}
             className={cn(
-              "flex items-center gap-1.5 rounded-[4px] border px-2.5 py-1.5 text-xs transition-colors",
+              "flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs transition-colors",
               active
                 ? "border-foreground/20 bg-selected text-foreground font-medium"
                 : "text-muted-foreground hover:bg-accent border-transparent",

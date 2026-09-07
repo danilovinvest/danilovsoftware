@@ -113,7 +113,7 @@ export function RolesPanel() {
                           <div className="flex items-center gap-2">
                             <span className="font-medium">{role.name}</span>
                             {role.is_system && (
-                              <Badge className="bg-neutral-soft text-neutral rounded-[4px]">
+                              <Badge className="bg-neutral-soft text-neutral rounded-md">
                                 Système
                               </Badge>
                             )}
@@ -137,7 +137,7 @@ export function RolesPanel() {
                             qu'il est limité à ce nombre.
                           */}
                           {role.grants_all ? (
-                            <Badge className="bg-info-soft text-info rounded-[4px]">
+                            <Badge className="bg-info-soft text-info rounded-md">
                               Toutes
                             </Badge>
                           ) : (

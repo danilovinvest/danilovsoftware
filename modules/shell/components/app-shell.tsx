@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { NAVIGATION } from "../lib/navigation";
+import { HUE } from "@/shared/ui/hue";
+import { cn } from "@/lib/utils";
 import { AppSidebar } from "./app-sidebar";
 import { CommandSearch } from "./command-search";
 import { PageTitleProvider, usePageTitle } from "./page-title";
@@ -89,8 +91,10 @@ function ShellBreadcrumb() {
     return (
       <Breadcrumb>
         <BreadcrumbList className="gap-1 text-sm sm:gap-1">
-          <BreadcrumbItem className="gap-1.5">
-            <SettingsIcon className="text-muted-foreground size-3.5" />
+          <BreadcrumbItem className="gap-2">
+            <span className="bg-selected text-brand flex size-5 shrink-0 items-center justify-center rounded-md">
+              <SettingsIcon className="size-3.5" />
+            </span>
             {section ? (
               <BreadcrumbLink asChild className="hover:text-foreground">
                 <Link href="/settings">Paramètres</Link>
@@ -119,12 +123,23 @@ function ShellBreadcrumb() {
   if (!active) return null;
 
   const Icon = active.icon;
+  const teinte = HUE[active.hue];
 
   return (
     <Breadcrumb>
       <BreadcrumbList className="gap-1 text-sm sm:gap-1">
-        <BreadcrumbItem className="gap-1.5">
-          <Icon className="text-muted-foreground size-3.5" />
+        <BreadcrumbItem className="gap-2">
+          {/* La pastille reprend la teinte du module : la barre du haut dit
+              alors où l'on est avant qu'on ait lu le mot. */}
+          <span
+            className={cn(
+              "flex size-5 shrink-0 items-center justify-center rounded-md",
+              teinte.soft,
+              teinte.text,
+            )}
+          >
+            <Icon className="size-3.5" />
+          </span>
           {leaf ? (
             <BreadcrumbLink asChild className="hover:text-foreground">
               <Link href={active.href}>{active.label}</Link>

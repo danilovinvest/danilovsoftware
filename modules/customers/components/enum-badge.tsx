@@ -36,7 +36,7 @@ export function EnumBadge<T extends string>({
     // le `rounded-4xl` par défaut de shadcn est ramené au cran `sm` (4 px).
     <Badge
       className={cn(
-        "rounded-[4px]",
+        "rounded-md",
         TONE_CLASSES[entry?.tone ?? "neutral"],
         className,
       )}

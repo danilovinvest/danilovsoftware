@@ -60,7 +60,7 @@ export function AgendaList({
                   <button
                     type="button"
                     onClick={() => onSelect(occurrence)}
-                    className="hover:bg-accent/60 flex w-full items-baseline gap-2.5 rounded-[4px] px-2 py-1 text-left transition-colors"
+                    className="hover:bg-accent/60 flex w-full items-baseline gap-2.5 rounded-md px-2 py-1 text-left transition-colors"
                   >
                     <span
                       className={cn("size-1.5 shrink-0 translate-y-[-1px] rounded-full", style.dot)}

@@ -352,7 +352,7 @@ export function EventChip({
       onClick={() => onSelect(occurrence)}
       title={`${formatTime(occurrence.start)} ${occurrence.event.title}`}
       className={cn(
-        "hover:bg-accent flex h-[17px] w-full min-w-0 shrink-0 items-center gap-1 rounded-[3px] px-1 text-left text-[11px] transition-colors",
+        "hover:bg-accent flex h-[17px] w-full min-w-0 shrink-0 items-center gap-1 rounded-sm px-1 text-left text-[11px] transition-colors",
         onGrab && "cursor-grab active:cursor-grabbing",
         dragged && "opacity-40",
       )}

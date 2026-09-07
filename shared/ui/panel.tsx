@@ -64,7 +64,7 @@ export function Panel({
           {Icon && (
             <span
               className={cn(
-                "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-[4px]",
+                "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md",
                 TONE_SOFT[tone],
               )}
             >
@@ -186,7 +186,7 @@ export function ScorePill({
     <span
       title={title}
       className={cn(
-        "inline-flex h-5 min-w-8 items-center justify-center rounded-[4px] px-1 text-[11px] font-medium tabular-nums",
+        "inline-flex h-5 min-w-8 items-center justify-center rounded-md px-1 text-[11px] font-medium tabular-nums",
         TONE_SOFT[tone],
       )}
     >

@@ -56,7 +56,7 @@ export function Attachments({ messageId }: { messageId: string }) {
             {missing ? (
               <span
                 title="Trop lourde pour être conservée : seul son nom l'a été."
-                className="bg-muted/40 text-muted-foreground/70 flex items-center gap-1.5 rounded-[4px] border px-2 py-1 text-[11px]"
+                className="bg-muted/40 text-muted-foreground/70 flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px]"
               >
                 {label}
               </span>
@@ -65,7 +65,7 @@ export function Attachments({ messageId }: { messageId: string }) {
                 href={api.attachmentUrl(attachment.id)}
                 target="_blank"
                 rel="noreferrer"
-                className="hover:bg-accent flex items-center gap-1.5 rounded-[4px] border px-2 py-1 text-[11px] transition-colors"
+                className="hover:bg-accent flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] transition-colors"
               >
                 {label}
                 <DownloadIcon className="size-3 shrink-0 opacity-60" />

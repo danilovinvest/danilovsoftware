@@ -124,7 +124,7 @@ export function MailboxView() {
                   title={entry.hint}
                   onClick={() => browse.setScope(entry.key)}
                   className={cn(
-                    "rounded-[4px] px-2 py-1 text-xs transition-colors",
+                    "rounded-md px-2 py-1 text-xs transition-colors",
                     browse.scope === entry.key
                       ? "bg-primary text-primary-foreground font-medium"
                       : "text-muted-foreground hover:bg-muted",
@@ -266,7 +266,7 @@ function MessageRow({
 
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
             {message.matched && message.customer_name && (
-              <span className="bg-success-soft text-success rounded-[3px] px-1.5 py-0.5 text-[0.65rem]">
+              <span className="bg-success-soft text-success rounded-sm px-1.5 py-0.5 text-[0.65rem]">
                 {message.customer_name}
               </span>
             )}

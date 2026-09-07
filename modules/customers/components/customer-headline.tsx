@@ -46,7 +46,7 @@ export function CustomerHeadline({
     <div className={cn("flex flex-wrap items-center gap-x-3 gap-y-2", className)}>
       <span
         className={cn(
-          "flex items-center gap-1.5 rounded-[4px] px-2 py-1 text-xs",
+          "flex items-center gap-1.5 rounded-md px-2 py-1 text-xs",
           action.alert ? TONE_SOFT[action.tone] : "bg-muted text-muted-foreground",
         )}
       >

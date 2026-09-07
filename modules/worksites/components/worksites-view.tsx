@@ -128,7 +128,7 @@ export function WorksitesView() {
                 <span
                   key={status}
                   className={cn(
-                    "rounded-[4px] px-1.5 py-0.5 text-[11px] font-medium",
+                    "rounded-md px-1.5 py-0.5 text-[11px] font-medium",
                     TONE_SOFT[entry.tone],
                   )}
                 >
@@ -138,7 +138,7 @@ export function WorksitesView() {
             })}
           </p>
 
-          <div className="bg-muted flex rounded-[4px] p-0.5">
+          <div className="bg-muted flex rounded-md p-0.5">
             {VIEWS.map((entry) => (
               <button
                 key={entry.value}
@@ -146,7 +146,7 @@ export function WorksitesView() {
                 onClick={() => board.setView(entry.value)}
                 aria-pressed={board.view === entry.value}
                 className={cn(
-                  "rounded-[3px] px-2.5 py-1 text-xs transition-colors",
+                  "rounded-sm px-2.5 py-1 text-xs transition-colors",
                   board.view === entry.value
                     ? "bg-background text-foreground font-medium shadow-2xs"
                     : "text-muted-foreground hover:text-foreground",

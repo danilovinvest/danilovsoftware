@@ -106,7 +106,7 @@ export function CustomersView() {
                   update({ cycle: entry.key === "tous" ? undefined : entry.key, page: 1 })
                 }
                 className={cn(
-                  "rounded-[4px] px-2 py-1 text-xs transition-colors",
+                  "rounded-md px-2 py-1 text-xs transition-colors",
                   cycle === entry.key
                     ? "bg-primary text-primary-foreground font-medium"
                     : "text-muted-foreground hover:bg-muted",
@@ -131,7 +131,7 @@ export function CustomersView() {
                   update({ review: review === entry.key ? undefined : entry.key, page: 1 })
                 }
                 className={cn(
-                  "rounded-[4px] px-2 py-1 text-xs transition-colors",
+                  "rounded-md px-2 py-1 text-xs transition-colors",
                   review === entry.key
                     ? "bg-primary text-primary-foreground font-medium"
                     : "text-muted-foreground hover:bg-muted",

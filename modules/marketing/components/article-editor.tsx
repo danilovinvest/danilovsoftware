@@ -114,7 +114,7 @@ export function ArticleEditor({
           </Button>
           <span
             className={cn(
-              "rounded-[4px] px-1.5 py-0.5 text-[11px]",
+              "rounded-md px-1.5 py-0.5 text-[11px]",
               TONE_SOFT[ARTICLE_STATUS[draft.status].tone],
             )}
           >
@@ -254,7 +254,7 @@ export function ArticleEditor({
               <ul className="divide-y rounded-lg border">
                 {draft.photos.map((photo) => (
                   <li key={photo.id} className="flex items-center gap-2 px-3 py-2">
-                    <span className="bg-muted text-muted-foreground shrink-0 rounded-[4px] px-1.5 py-0.5 text-[11px]">
+                    <span className="bg-muted text-muted-foreground shrink-0 rounded-md px-1.5 py-0.5 text-[11px]">
                       {PHOTO_KIND[photo.kind]}
                     </span>
                     <input

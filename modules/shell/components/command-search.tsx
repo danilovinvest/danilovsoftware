@@ -144,7 +144,7 @@ export function CommandSearch() {
       >
         <SearchIcon className="size-3.5 shrink-0" />
         <span className="truncate">Rechercher</span>
-        <kbd className="border-border bg-background ml-auto hidden rounded-[4px] border px-1 py-px font-sans text-[10px] leading-4 sm:inline-block">
+        <kbd className="border-border bg-background ml-auto hidden rounded-md border px-1 py-px font-sans text-[10px] leading-4 sm:inline-block">
           ⌘K
         </kbd>
       </button>
@@ -209,7 +209,7 @@ export function CommandSearch() {
                         onMouseEnter={() => moveCursor(index)}
                         onClick={() => go(entry)}
                         className={cn(
-                          "flex h-9 w-full items-center gap-2.5 rounded-[4px] px-2 text-left text-sm",
+                          "flex h-9 w-full items-center gap-2.5 rounded-md px-2 text-left text-sm",
                           index === cursor && "bg-accent text-accent-foreground",
                         )}
                       >
