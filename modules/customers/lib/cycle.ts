@@ -17,8 +17,8 @@ import type { Jalons } from "./jalons";
  * n'aurait pas été « à relancer » au même moment selon l'écran regardé.
  *
  * Le module est **pur** : il ne connaît ni React, ni le réseau. Il prend ce que
- * l'API sert déjà — l'affaire, ses devis, ses échanges — plus les quatre jalons
- * qu'elle ne sait pas encore stocker, et rend une position.
+ * l'API sert déjà — l'affaire, ses devis, ses échanges, ses jalons — et rend
+ * une position.
  *
  * Rien n'est calculé sur `Date.now()` : l'instant est un argument. C'est ce qui
  * rend la lecture stable pendant un rendu et testable hors du navigateur.

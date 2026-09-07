@@ -181,6 +181,9 @@ export type Quote = {
   vat_rate: string | null;
   amount_note: string;
   deposit_status: PaymentStatus;
+  /** Depuis quand l'acompte est facturé, et depuis quand il est encaissé. */
+  deposit_invoiced_at: string | null;
+  deposit_paid_at: string | null;
   balance_status: PaymentStatus;
   comment: string;
   /**
@@ -206,12 +209,28 @@ export type Interaction = {
   updated_at: string;
 };
 
+/**
+ * Les jalons d'après-signature d'une affaire, tels que l'API les sert.
+ *
+ * La date de chantier n'est pas ici : réserver une date, c'est renseigner
+ * `Project.started_at`, la colonne que l'écran Chantiers lit déjà.
+ */
+export type Milestones = {
+  project_id: string;
+  rib_sent_at: string | null;
+  insurance_sent_at: string | null;
+  materials_ordered_at: string | null;
+  /** Quand reprendre une affaire reportée. */
+  resume_at: string | null;
+};
+
 /** Réponse de GET /v1/customers/{id} : fiche + collections en un seul appel. */
 export type CustomerDetail = Customer & {
   contacts: Contact[];
   projects: Project[];
   quotes: Quote[];
   interactions: Interaction[];
+  milestones: Milestones[];
 };
 
 export type CustomerStats = {
@@ -281,6 +300,12 @@ export type StagePayload = {
  * coller une adresse à la main, qui cesserait d'être juste au premier dossier
  * déplacé.
  */
+/*
+  Les dates de l'acompte sont exclues : le serveur les pose lui-même à partir du
+  statut, comme `completed_at` suit le statut d'une tâche. Les laisser dans la
+  charge utile inviterait l'écran à en proposer une, et il y aurait deux
+  vérités sur la même question.
+*/
 export type QuotePayload = Omit<
   Quote,
   | "id"
@@ -291,6 +316,8 @@ export type QuotePayload = Omit<
   | "drive_name"
   | "created_at"
   | "updated_at"
+  | "deposit_invoiced_at"
+  | "deposit_paid_at"
 >;
 
 export type InteractionPayload = {

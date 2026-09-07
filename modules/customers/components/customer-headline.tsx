@@ -31,7 +31,7 @@ export function CustomerHeadline({
   const reads = customer.projects.map((project) => {
     const quotes = customer.quotes.filter((quote) => quote.project_id === project.id);
     const interactions = customer.interactions.filter((entry) => entry.project_id === project.id);
-    const jalons = readJalons(project.id, quotes, undefined, now);
+    const jalons = readJalons(project.id, quotes, customer.milestones, project);
     const points = readCycle(project, quotes, interactions, jalons, now);
     return { project, quotes, action: nextAction(points, project, quotes, jalons, now), points };
   });

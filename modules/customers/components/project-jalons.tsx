@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckIcon, FlaskConicalIcon } from "lucide-react";
+import { CheckIcon, InfoIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DateField } from "@/shared/ui/date-time-field";
@@ -74,12 +74,6 @@ export function ProjectJalons({
                     )}
                   >
                     {jalon.label}
-                    {!jalon.real && (
-                      <FlaskConicalIcon
-                        className="text-muted-foreground/50 size-3"
-                        aria-label="Jalon simulé : pas encore en base"
-                      />
-                    )}
                   </div>
                   <div className="text-muted-foreground/70 text-xs">
                     {done ? formatDate(at) : jalon.hint}
@@ -108,11 +102,16 @@ export function ProjectJalons({
         })}
       </ol>
 
+      {/*
+        Chaque jalon vit là où il appartient, et l'écran le dit : l'acompte est
+        une propriété du devis, la date de chantier est celle de l'affaire —
+        la même que lit l'écran Chantiers.
+      */}
       <p className="text-muted-foreground/70 flex items-start gap-1.5 text-xs">
-        <FlaskConicalIcon className="mt-0.5 size-3 shrink-0" />
+        <InfoIcon className="mt-0.5 size-3 shrink-0" />
         <span>
-          L&apos;acompte est lu du devis. Les jalons marqués d&apos;une fiole n&apos;ont pas
-          encore de colonne en base : ce que vous cochez vit le temps de la session.
+          L&apos;acompte suit le devis ; la date de chantier est celle de
+          l&apos;affaire, partagée avec l&apos;écran Chantiers.
         </span>
       </p>
     </div>

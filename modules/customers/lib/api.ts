@@ -12,6 +12,7 @@ import type {
   FoundContact,
   Interaction,
   InteractionPayload,
+  Milestones,
   Project,
   ProjectPayload,
   Quote,
@@ -105,6 +106,31 @@ export function createProject(customerId: string, payload: ProjectPayload) {
 
 export function updateProject(id: string, payload: ProjectPayload) {
   return apiFetch<Project>(`/v1/projects/${id}`, { method: "PATCH", body: payload });
+}
+
+/**
+ * Les quatre jalons d'après-signature d'une affaire.
+ *
+ * Les quatre dates partent ensemble : l'écran envoie l'état complet des cases
+ * après un clic, et une écriture partielle obligerait le serveur à distinguer
+ * « pas coché » de « pas envoyé » sur chaque champ.
+ *
+ * La date de chantier n'est pas ici : elle vit dans `Project.started_at` et
+ * s'écrit par `updateProject`.
+ */
+export function setMilestones(
+  projectId: string,
+  values: {
+    rib_sent_at: string | null;
+    insurance_sent_at: string | null;
+    materials_ordered_at: string | null;
+    resume_at: string | null;
+  },
+) {
+  return apiFetch<Milestones>(`/v1/projects/${projectId}/milestones`, {
+    method: "PUT",
+    body: values,
+  });
 }
 
 export function deleteProject(id: string) {

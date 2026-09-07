@@ -42,7 +42,7 @@ import { ProjectTimeline } from "./project-timeline";
 import { ProjectDialog, QuoteDialog } from "./project-dialogs";
 import { RelanceDialog } from "./relance-dialog";
 import type {
-  Customer,
+  CustomerDetail,
   Interaction,
   InteractionKind,
   Project,
@@ -68,7 +68,7 @@ export function ProjectsPanel({
   interactions,
   onChanged,
 }: {
-  customer: Customer;
+  customer: CustomerDetail;
   projects: Project[];
   quotes: Quote[];
   interactions: Interaction[];
@@ -89,7 +89,51 @@ export function ProjectsPanel({
    * Ce n'est pas de l'état d'affichage : c'est la seule mémoire dont disposent
    * les quatre jalons que l'API ne stocke pas encore.
    */
-  const [overrides, setOverrides] = useState<Record<string, Partial<Jalons>>>({});
+  /*
+    Les jalons ne vivent plus en mémoire.
+
+    Ils étaient conservés ici, par affaire, et mouraient au rechargement :
+    cocher « RIB envoyé » ne servait à rien, et l'alerte « aucune date de
+    chantier » ne reposait sur rien. Chaque case écrit maintenant en base, puis
+    la fiche se recharge — un jalon se coche deux ou trois fois dans la vie
+    d'une affaire, ça ne mérite pas une mise à jour optimiste.
+  */
+  const saveJalons = useAction(
+    async (project: Project, patch: Partial<Jalons>) => {
+      // La date de chantier est `started_at` de l'affaire, pas un jalon à
+      // part : c'est la colonne que l'écran Chantiers lit déjà.
+      if ("worksite_date" in patch) {
+        const date = patch.worksite_date;
+        await api.updateProject(project.id, {
+          label: project.label,
+          stage: project.stage,
+          outcome: project.outcome,
+          outcome_note: project.outcome_note,
+          site_address: project.site_address,
+          site_postal_code: project.site_postal_code,
+          site_city: project.site_city,
+          notes: project.notes,
+          started_at: date ? date.slice(0, 10) : null,
+          closed_at: project.closed_at,
+        });
+        return;
+      }
+
+      const actuels = readJalons(
+        project.id,
+        quotes.filter((quote) => quote.project_id === project.id),
+        customer.milestones,
+        project,
+      );
+      const suivant = { ...actuels, ...patch };
+      await api.setMilestones(project.id, {
+        rib_sent_at: suivant.rib_sent_at,
+        insurance_sent_at: suivant.insurance_sent_at,
+        materials_ordered_at: suivant.materials_ordered_at,
+        resume_at: suivant.resume_at,
+      });
+    },
+  );
 
   if (projects.length === 0) {
     return (
@@ -130,8 +174,8 @@ export function ProjectsPanel({
           jalons={readJalons(
             project.id,
             quotes.filter((quote) => quote.project_id === project.id),
-            overrides[project.id],
-            now,
+            customer.milestones,
+            project,
           )}
           now={now}
           canWrite={canWrite}
@@ -139,12 +183,9 @@ export function ProjectsPanel({
           // La première affaire s'ouvre : sur la majorité des fiches il n'y en
           // a qu'une, et la refermer d'office ferait un clic pour rien.
           defaultOpen={index === 0}
-          onOverride={(patch) =>
-            setOverrides((current) => ({
-              ...current,
-              [project.id]: { ...current[project.id], ...patch },
-            }))
-          }
+          onOverride={async (patch) => {
+            if (await saveJalons.run(project, patch)) onChanged();
+          }}
           onAddQuote={() => setQuoteFor(project)}
           onChanged={onChanged}
         />
@@ -194,7 +235,7 @@ function ProjectBlock({
   onAddQuote,
   onChanged,
 }: {
-  customer: Customer;
+  customer: CustomerDetail;
   project: Project;
   quotes: Quote[];
   interactions: Interaction[];
@@ -203,7 +244,7 @@ function ProjectBlock({
   canWrite: boolean;
   canWriteQuotes: boolean;
   defaultOpen: boolean;
-  onOverride: (patch: Partial<Jalons>) => void;
+  onOverride: (patch: Partial<Jalons>) => void | Promise<void>;
   onAddQuote: () => void;
   onChanged: () => void;
 }) {
@@ -422,8 +463,11 @@ function ProjectBlock({
                   jalons={jalons}
                   disabled={!canWrite || setDeposit.pending}
                   onToggle={async (key, value) => {
-                    // Les deux jalons d'acompte s'écrivent en base ; les quatre
-                    // autres n'ont pas encore de colonne.
+                    /*
+                      L'acompte appartient au devis : cocher « facturé » ou
+                      « encaissé » change son statut, et le serveur en horodate
+                      la date. Les quatre autres jalons passent par leur table.
+                    */
                     if (key === "deposit_invoiced_at") {
                       if (await setDeposit.run(value ? "en_attente" : "en_attente")) onChanged();
                       return;
@@ -459,7 +503,7 @@ function ProjectBlock({
           onOpenChange={(next) => !next && setOutcome(null)}
           onSaved={onChanged}
           onScheduleResume={async (date, _outcome, note) => {
-            onOverride({ resume_at: `${date}T09:00:00.000Z` });
+            await onOverride({ resume_at: date });
             /*
             Une affaire reportée n'est réveillée par rien.
 

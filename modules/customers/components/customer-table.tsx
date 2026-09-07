@@ -366,7 +366,7 @@ function ActionCell({ action }: { action: NextAction }) {
  * détaille.
  */
 function read(project: ProjectSummary, now: number) {
-  const jalons = readJalons(project.id, [], undefined, now);
+  const jalons = readJalons(project.id, [], undefined, project);
   const points = readCycle(project, [], [], jalons, now);
   return {
     project,
