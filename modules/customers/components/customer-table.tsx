@@ -176,6 +176,7 @@ export function CustomerTable({
 
                       <ReviewCell
                         customerId={customer.id}
+                        name={customer.display_name}
                         review={reviews[customer.id] ?? customer.review}
                         field="verified"
                         editable={canWrite}
@@ -185,6 +186,7 @@ export function CustomerTable({
                       />
                       <ReviewCell
                         customerId={customer.id}
+                        name={customer.display_name}
                         review={reviews[customer.id] ?? customer.review}
                         field="completed"
                         editable={canWrite}
@@ -248,6 +250,67 @@ export function CustomerTable({
         </TableBody>
       </Table>
     </div>
+  );
+}
+
+/*
+Une case de relecture.
+
+Deux crans indépendants, et le CRM ne les enchaîne pas : déclarer une fiche
+complète sans l'avoir cochée « vérifiée » est le droit de celui qui relit, pas
+une incohérence à corriger dans son dos.
+
+La coche part au serveur seule — jamais les deux à la fois — pour qu'un collègue
+qui relit la même fiche au même moment ne se fasse pas décocher.
+*/
+function ReviewCell({
+  customerId,
+  name,
+  review,
+  field,
+  editable,
+  onChanged,
+}: {
+  customerId: string;
+  name: string;
+  review: Review;
+  field: "verified" | "completed";
+  editable: boolean;
+  onChanged: (next: Review) => void;
+}) {
+  const [pending, setPending] = useState(false);
+  const at = field === "verified" ? review.verified_at : review.completed_at;
+  const by = field === "verified" ? review.verified_by_name : review.completed_by_name;
+  const quoi = field === "verified" ? "Première vérification faite" : "Fiche complète";
+
+  async function toggle(next: boolean) {
+    setPending(true);
+    try {
+      onChanged(await api.setCustomerReview(customerId, { [field]: next }));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <TableCell className="text-center">
+      <span className="inline-flex">
+        <Checkbox
+          checked={at !== null}
+          disabled={!editable || pending}
+          onCheckedChange={(value) => toggle(value === true)}
+          aria-label={`${quoi} : ${name}`}
+          // La date et l'auteur au survol : « complète depuis quand, par qui »
+          // est la première question posée le jour où elle ne l'est plus.
+          title={
+            at
+              ? `${quoi} le ${formatDate(at)}${by ? ` par ${by}` : ""}`
+              : quoi
+          }
+          className={cn(pending && "opacity-50")}
+        />
+      </span>
+    </TableCell>
   );
 }
 

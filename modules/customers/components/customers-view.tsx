@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState, ErrorNotice } from "@/shared/ui/feedback";
 import { CUSTOMER_STATUS } from "../lib/labels";
 import { CYCLE_FILTERS, type CycleFilter } from "../lib/cycle";
+import { REVIEW_FILTERS } from "../lib/review";
 import {
   useCustomerFilters,
   useCustomers,
@@ -33,6 +34,7 @@ export function CustomersView() {
   conclure qu'il n'y a rien à faire.
   */
   const cycle = (filters.cycle ?? "tous") as CycleFilter;
+  const review = filters.review ?? "";
   const { data, loading, error } = useCustomers(filters);
   const stats = useCustomerStats();
   const canCreate = usePermission("customers:write");
@@ -113,7 +115,33 @@ export function CustomersView() {
                 {entry.label}
               </button>
             ))}
-            {cycle !== "tous" && data && (
+            {/*
+              La relecture, séparée du cycle par un trait : elle ne répond pas à
+              la même question. Le cycle dit où en est l'affaire ; ceci dit ce
+              qu'on sait de la fiche, et c'est ce qui reste de la reprise des
+              deux cent quarante-quatre dossiers.
+            */}
+            <span className="bg-border mx-1 h-4 w-px" aria-hidden />
+            {REVIEW_FILTERS.map((entry) => (
+              <button
+                key={entry.key}
+                type="button"
+                title={entry.hint}
+                onClick={() =>
+                  update({ review: review === entry.key ? undefined : entry.key, page: 1 })
+                }
+                className={cn(
+                  "rounded-[4px] px-2 py-1 text-xs transition-colors",
+                  review === entry.key
+                    ? "bg-primary text-primary-foreground font-medium"
+                    : "text-muted-foreground hover:bg-muted",
+                )}
+              >
+                {entry.label}
+              </button>
+            ))}
+
+            {(cycle !== "tous" || review !== "") && data && (
               <span className="text-muted-foreground/60 ml-1 text-xs tabular-nums">
                 {data.total} fiche{data.total > 1 ? "s" : ""}
               </span>
@@ -128,20 +156,26 @@ export function CustomersView() {
         ) : !loading && (data?.items.length ?? 0) === 0 ? (
           <EmptyState
             title={
-              active || cycle !== "tous"
+              active || cycle !== "tous" || review !== ""
                 ? "Aucune fiche ne correspond"
                 : "Aucune fiche pour le moment"
             }
             description={
-              cycle !== "tous"
+              review !== ""
+                ? "Rien ne reste dans cette liste — tout est coché."
+                : cycle !== "tous"
                 ? "Aucune affaire de cette page n'en est là. Essayez une autre page ou un autre filtre."
                 : active
                 ? "Élargissez la recherche ou réinitialisez les filtres."
                 : "Créez la première fiche pour commencer à suivre vos prospects."
             }
             action={
-              cycle !== "tous" ? (
-                <Button variant="outline" size="sm" onClick={() => update({ cycle: undefined })}>
+              cycle !== "tous" || review !== "" ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => update({ cycle: undefined, review: undefined })}
+                >
                   Toutes les fiches
                 </Button>
               ) : active ? (
