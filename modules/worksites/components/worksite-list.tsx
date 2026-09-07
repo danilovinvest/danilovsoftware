@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { TONE_SOFT } from "@/shared/ui/panel";
-import { formatDate } from "@/shared/lib/format";
+import { euros, formatDate } from "@/shared/lib/format";
 import { WORKSITE_STATUS } from "../lib/labels";
 import type { ReadWorksite } from "../lib/types";
 
@@ -40,6 +40,7 @@ export function WorksiteList({
             <TableHead>Lieu</TableHead>
             <TableHead>Démarrage</TableHead>
             <TableHead>État</TableHead>
+            <TableHead className="text-right">Devis HT</TableHead>
             <TableHead>Pièces</TableHead>
           </TableRow>
         </TableHeader>
@@ -76,6 +77,13 @@ export function WorksiteList({
                   >
                     {entry.label}
                   </span>
+                </TableCell>
+                <TableCell className="text-right text-sm tabular-nums">
+                  {read.amountHT === null ? (
+                    <span className="text-muted-foreground/40">non chiffré</span>
+                  ) : (
+                    euros(read.amountHT)
+                  )}
                 </TableCell>
                 <TableCell>
                   <span className="flex flex-wrap gap-1">

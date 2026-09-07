@@ -60,6 +60,28 @@ export function statusOf(worksite: Worksite, now: number): WorksiteStatus {
   return new Date(worksite.started_at).getTime() > now ? "planifie" : "en_cours";
 }
 
+/**
+ * Le chiffré d'un chantier.
+ *
+ * On additionne les **devis**, jamais les factures : une facture reprend le
+ * montant du devis qu'elle solde, les compter toutes deux doublerait le
+ * chantier. Quand aucun devis n'est chiffré, on rend `null` — un zéro se lirait
+ * comme un chantier gratuit.
+ */
+function total(quotes: WorksiteQuote[], champ: "amount_ht" | "amount_ttc"): number | null {
+  let somme = 0;
+  let trouve = false;
+  for (const quote of quotes) {
+    const brut = quote[champ];
+    if (!brut) continue;
+    const valeur = Number(brut);
+    if (Number.isNaN(valeur)) continue;
+    somme += valeur;
+    trouve = true;
+  }
+  return trouve ? somme : null;
+}
+
 export function read(worksite: Worksite, now: number): ReadWorksite {
   const factures = worksite.quotes.filter(isInvoice);
   const devis = worksite.quotes.filter((quote) => !isInvoice(quote));
@@ -73,6 +95,8 @@ export function read(worksite: Worksite, now: number): ReadWorksite {
       : null,
     invoiced: factures.length > 0,
     depositReceived: worksite.quotes.some((q) => q.deposit_status === "recu"),
+    amountHT: total(devis, "amount_ht"),
+    amountTTC: total(devis, "amount_ttc"),
     devis,
     factures,
   };
@@ -98,7 +122,16 @@ function alert(read: ReadWorksite, reason: string): Alert {
     label: read.worksite.label,
     customer_name: read.worksite.customer_name,
     reason,
+    amount: read.amountHT,
   };
+}
+
+/** Le total d'une liste de travail. Nul quand rien n'y est chiffré. */
+export function alertTotal(rows: Alert[]): number | null {
+  const chiffres = rows.filter((row) => row.amount !== null);
+  return chiffres.length === 0
+    ? null
+    : chiffres.reduce((sum, row) => sum + (row.amount ?? 0), 0);
 }
 
 /**

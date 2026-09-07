@@ -88,6 +88,16 @@ export type ReadWorksite = {
   invoiced: boolean;
   /** Vrai quand un devis porte un acompte encaissé. */
   depositReceived: boolean;
+  /**
+   * Le chiffré du chantier, en HT et TTC.
+   *
+   * Nuls quand aucun devis n'est chiffré — et c'est fréquent : les devis repris
+   * de OneDrive n'ont qu'une référence, seuls ceux recoupés avec l'export du
+   * logiciel de devis portent un montant. Un zéro s'afficherait comme un
+   * chantier gratuit ; l'absence s'affiche comme une absence.
+   */
+  amountHT: number | null;
+  amountTTC: number | null;
   devis: WorksiteQuote[];
   factures: WorksiteQuote[];
 };
@@ -104,4 +114,6 @@ export type Alert = {
   customer_name: string;
   /** La phrase que le conducteur de travaux lira. */
   reason: string;
+  /** Le chiffré, quand il est connu. Nul se lit « non chiffré », pas « zéro ». */
+  amount: number | null;
 };

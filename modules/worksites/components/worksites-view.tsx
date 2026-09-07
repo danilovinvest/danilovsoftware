@@ -8,12 +8,12 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmptyState, ErrorNotice, Skeleton } from "@/shared/ui/feedback";
-import { plural } from "@/shared/lib/format";
+import { eurosShort, plural } from "@/shared/lib/format";
 import { Panel, RowShell, TONE_SOFT } from "@/shared/ui/panel";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useWorksites } from "../hooks/use-worksites";
-import { STATUS_ORDER } from "../lib/derive";
+import { alertTotal, STATUS_ORDER } from "../lib/derive";
 import { WORKSITE_STATUS } from "../lib/labels";
 import type { Alert } from "../lib/types";
 import { WorksiteBoard } from "./worksite-board";
@@ -47,6 +47,15 @@ const VIEWS = [
 export function WorksitesView() {
   const board = useWorksites();
   const { work, reads } = board;
+
+  // Le chiffré global, et sur combien de chantiers il porte. Le second nombre
+  // n'est pas une coquetterie : un quart des devis seulement ont un montant,
+  // et un total sans son dénominateur laisserait croire qu'il couvre tout.
+  const chiffresList = reads.filter((r) => r.amountHT !== null);
+  const chiffres = chiffresList.length;
+  const chiffre = chiffres === 0
+    ? null
+    : chiffresList.reduce((sum, r) => sum + (r.amountHT ?? 0), 0);
 
   return (
     <div className="flex flex-col gap-5">
@@ -106,6 +115,11 @@ export function WorksitesView() {
         <div className="flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2">
           <p className="flex flex-wrap items-center gap-2 text-sm">
             <span className="font-medium">{plural(reads.length, "chantier")}</span>
+            {chiffre !== null && (
+              <span className="text-muted-foreground tabular-nums">
+                {eurosShort(chiffre)} HT sur {chiffres} devis chiffrés
+              </span>
+            )}
             {STATUS_ORDER.map((status) => {
               const count = board.board.find((b) => b.status === status)?.count ?? 0;
               if (count === 0) return null;
@@ -174,9 +188,9 @@ export function WorksitesView() {
 /**
  * Une liste de travail.
  *
- * Plus de total en euros en pied : aucun devis ne porte de montant, et un
- * « 0 € » sous une liste de trente-sept chantiers dirait le contraire de la
- * vérité. Le nombre suffit — c'est lui qu'on regarde.
+ * Le total n'apparaît que si au moins un chantier de la liste est chiffré :
+ * un quart des devis le sont, et un « 0 € » sous trente-sept lignes dirait le
+ * contraire de la vérité.
  */
 function AlertPanel({
   title,
@@ -196,7 +210,13 @@ function AlertPanel({
   return (
     <Panel
       title={title}
-      description={rows.length === 0 ? description : plural(rows.length, "chantier")}
+      description={
+        rows.length === 0
+          ? description
+          : `${plural(rows.length, "chantier")}${
+              alertTotal(rows) !== null ? ` · ${eurosShort(alertTotal(rows)!)}` : ""
+            }`
+      }
       icon={icon}
       tone={tone}
       bodyClassName="divide-y"
@@ -223,6 +243,11 @@ function AlertPanel({
                 {row.reason}
               </span>
             </button>
+            {row.amount !== null && (
+              <span className="shrink-0 text-xs font-medium tabular-nums">
+                {eurosShort(row.amount)}
+              </span>
+            )}
           </RowShell>
         ))
       )}

@@ -2,7 +2,7 @@
 
 import { CalendarPlusIcon, FileTextIcon, MapPinIcon, ReceiptTextIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatDate } from "@/shared/lib/format";
+import { eurosShort, formatDate } from "@/shared/lib/format";
 import { STATUS_RAIL } from "../lib/labels";
 import type { ReadWorksite } from "../lib/types";
 
@@ -32,11 +32,20 @@ export function WorksiteCard({
         STATUS_RAIL[read.status],
       )}
     >
-      <span className="min-w-0">
-        <span className="block truncate text-xs font-medium">{w.customer_name}</span>
-        <span className="text-muted-foreground block truncate text-[11px]">
-          {w.label}
+      <span className="flex items-start justify-between gap-2">
+        <span className="min-w-0">
+          <span className="block truncate text-xs font-medium">{w.customer_name}</span>
+          <span className="text-muted-foreground block truncate text-[11px]">
+            {w.label}
+          </span>
         </span>
+        {/* Le montant n'apparaît que s'il existe : un « — » sur les deux tiers
+            des cartes ferait du vide une information. */}
+        {read.amountHT !== null && (
+          <span className="shrink-0 text-xs font-medium tabular-nums">
+            {eurosShort(read.amountHT)}
+          </span>
+        )}
       </span>
 
       {w.city && (

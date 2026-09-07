@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { TONE_SOFT } from "@/shared/ui/panel";
-import { formatDate, formatDateTime } from "@/shared/lib/format";
+import { euros, formatAmount, formatDate, formatDateTime } from "@/shared/lib/format";
 import { WORKSITE_STATUS } from "../lib/labels";
 import { isSilent } from "../lib/derive";
 import type { ReadWorksite, WorksiteQuote } from "../lib/types";
@@ -78,6 +78,13 @@ function Body({ read }: { read: ReadWorksite }) {
           <span className="text-muted-foreground font-mono text-[11px]">
             {w.customer_reference}
           </span>
+          {/* Le chiffré vient des devis, jamais des factures : une facture
+              solde un devis, les additionner doublerait le chantier. */}
+          {read.amountHT !== null && (
+            <span className="ml-auto text-sm font-medium tabular-nums">
+              {euros(read.amountHT)} HT
+            </span>
+          )}
         </div>
 
         <Facts read={read} />
@@ -197,11 +204,13 @@ function Section({
                 <span className="text-muted-foreground min-w-0 flex-1 truncate text-[11px]">
                   {quote.drive_name || quote.label}
                 </span>
-                {/* Les montants sont nuls partout : les devis viennent des noms
-                    de fichiers OneDrive, qui ne les portent pas. Afficher
-                    « 0 € » serait un chiffre faux. */}
-                {quote.amount_ttc && (
-                  <span className="text-xs tabular-nums">{quote.amount_ttc} €</span>
+                {/* Un devis repris d'un nom de fichier OneDrive n'a pas de
+                    montant ; seuls ceux recoupés avec l'export du logiciel de
+                    devis en portent un. Rien plutôt qu'un « 0 € ». */}
+                {quote.amount_ht && (
+                  <span className="shrink-0 text-xs tabular-nums">
+                    {formatAmount(quote.amount_ht)}
+                  </span>
                 )}
                 {quote.drive_url && (
                   <ExternalLinkIcon className="text-muted-foreground/50 size-3 shrink-0" />
