@@ -58,6 +58,22 @@ THEMES = [
 ]
 
 ACCENT_STEPS = [2, 3, 5, 7, 8, 9, 11]
+
+
+def ink(hex_color: str) -> str:
+    """L'encre lisible sur un aplat du cran 9.
+
+    Radix ne livre pas de valeur `contrast` en 3.0.0, et le cran 9 change de
+    nature d'une teinte à l'autre : indigo est sombre, ambre et citron sont
+    clairs. Du blanc écrit dessus tombe à 1,4 de contraste sur ces deux-là et
+    disparaît. On tranche donc au calcul, une fois, plutôt que de le vérifier
+    palette par palette à l'œil.
+    """
+    r, g, b = (int(hex_color.lstrip("#")[i:i + 2], 16) / 255 for i in (0, 2, 4))
+    lin = lambda v: v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4
+    luminance = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
+    # Le seuil est celui où le blanc et le noir se valent (~0,18).
+    return "#ffffff" if luminance < 0.4 else "#1c2024"
 GRAY_STEPS = list(range(1, 13))
 
 for _pid, _label, _accent, _gray in THEMES:
@@ -82,6 +98,9 @@ def block(theme_id, accent, gray, dark, p3):
         lines.append(f"  --t-gray-{n}: {g[n]};")
     for n in ACCENT_STEPS:
         lines.append(f"  --t-accent-{n}: {a[n]};")
+    # L'encre se calcule sur l'hex, jamais sur le P3 : c'est la même décision
+    # dans les deux espaces, et un `color()` ne se convertit pas ici.
+    lines.append(f"  --t-accent-ink: {ink(a_hex[9])};")
     lines.append("}")
     return "\n".join(lines)
 
@@ -91,8 +110,10 @@ out = ['''/*
  * Produit par le script décrit dans CLAUDE.md à partir de @radix-ui/colors.
  * Chaque palette redéfinit deux choses, et seulement deux :
  *
- *   --t-gray-1..12   le gris de la palette, légèrement teinté vers l'accent
+*   --t-gray-1..12   le gris de la palette, légèrement teinté vers l'accent
  *   --t-accent-*     la teinte d'accent (marque, focus, sélection)
+ *   --t-accent-ink   l'encre lisible sur un aplat du cran 9 — calculée, parce
+ *                    qu'ambre et citron sont clairs là où indigo est sombre
  *
  * Elle ne touche ni `--t-green-*`, ni `--t-red-*`, ni `--t-orange-*`, ni
  * `--t-blue-*` : une pastille « Accepté » doit rester verte quelle que soit la

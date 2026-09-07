@@ -74,7 +74,7 @@ function AppearanceSection() {
                 )}
               </span>
               {theme === option.value && (
-                <span className="bg-brand absolute right-1.5 bottom-1.5 flex size-4 items-center justify-center rounded-full text-white">
+                <span className="bg-brand absolute right-1.5 bottom-1.5 flex size-4 items-center justify-center rounded-full text-brand-ink">
                   <CheckIcon className="size-3" />
                 </span>
               )}
@@ -141,7 +141,7 @@ function PaletteSection() {
                   <PalettePreview palette={option} mode="dark" half />
                 </span>
                 {selected && (
-                  <span className="bg-brand absolute right-1 bottom-1 flex size-4 items-center justify-center rounded-full text-white">
+                  <span className="bg-brand absolute right-1 bottom-1 flex size-4 items-center justify-center rounded-full text-brand-ink">
                     <CheckIcon className="size-3" />
                   </span>
                 )}

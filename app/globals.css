@@ -78,6 +78,8 @@
   --t-accent-8: #8da4ef;
   --t-accent-9: #3e63dd;
   --t-accent-11: #3a5bc7;
+  /* Encre lisible sur un aplat du cran 9 — voir scripts/generate-themes.py. */
+  --t-accent-ink: #ffffff;
 
   /* Radix indigo — la tonalité « info » du CRM. */
   --t-blue-2: #f7f9ff;
@@ -200,6 +202,7 @@
   --t-accent-8: #435db1;
   --t-accent-9: #3e63dd;
   --t-accent-11: #9eb1ff;
+  --t-accent-ink: #ffffff;
 
   /* Radix indigo dark */
   --t-blue-2: #141726;
@@ -407,18 +410,26 @@
    * entrées de navigation actives.
    */
   --brand-text: var(--t-accent-11);
-  --selected: var(--t-accent-3);
+  /* Ce qui s'écrit **sur** un aplat de marque : blanc ou encre sombre selon la
+     palette, calculé une fois par le générateur. */
+  --brand-ink: var(--t-accent-ink);
+  /* Un cran au-dessus du survol : l'élément choisi ne doit pas ressembler à
+     celui que la souris frôle. */
+  --selected: var(--t-accent-5);
 
   --secondary: var(--t-gray-3);
   --secondary-foreground: var(--t-gray-12);
 
   /*
-   * Le survol de Twenty est gris, jamais teinté : c'est ce qui donne à
-   * l'interface son calme. --accent n'est donc pas une couleur d'accent au
-   * sens shadcn, c'est l'état de survol.
+   * Le survol prend la teinte de la palette.
+   *
+   * Il était gris — le calme de Twenty — et c'est une des raisons pour
+   * lesquelles l'interface paraissait éteinte : sur un écran, le survol est
+   * l'endroit où la couleur se montre le plus souvent. Cran 3 pour le fond,
+   * cran 11 pour le texte, la paire que Radix garantit lisible.
    */
-  --accent: var(--t-gray-4);
-  --accent-foreground: var(--t-gray-12);
+  --accent: var(--t-accent-3);
+  --accent-foreground: var(--t-accent-11);
   --destructive: var(--t-red-11);
   --ring: var(--t-accent-7);
 
@@ -457,7 +468,7 @@
   --sidebar-primary: var(--t-accent-9);
   --sidebar-primary-foreground: var(--t-gray-1);
   --sidebar-accent: var(--t-accent-3);
-  --sidebar-accent-foreground: var(--t-gray-12);
+  --sidebar-accent-foreground: var(--t-accent-11);
   --sidebar-border: var(--t-accent-5);
   --sidebar-ring: var(--t-accent-7);
 
@@ -492,6 +503,7 @@
 
   --color-brand: var(--brand);
   --color-brand-text: var(--brand-text);
+  --color-brand-ink: var(--brand-ink);
   --color-selected: var(--selected);
 
   --color-success: var(--success);

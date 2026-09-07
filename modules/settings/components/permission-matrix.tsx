@@ -96,7 +96,7 @@ export function PermissionMatrix({
                   <span
                     className={cn(
                       "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-sm border",
-                      granted ? "bg-brand border-transparent text-white" : "border-input",
+                      granted ? "bg-brand border-transparent text-brand-ink" : "border-input",
                     )}
                   >
                     {granted && <CheckIcon className="size-3" strokeWidth={3} />}

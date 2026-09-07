@@ -33,7 +33,11 @@ export function Logo({ className }: { className?: string }) {
 
 /**
  * La marque sur sa tuile, telle qu'elle apparaît dans le tiroir et sur la page
- * de connexion. Le fond utilise `--brand`, donc il suit le thème sombre.
+ * de connexion.
+ *
+ * Le fond est le cran 9 de la palette, le profilé son encre. Sur Ambre ou
+ * Citron ce cran est un jaune clair : un profilé blanc dessus disparaît.
+ * `--brand-ink` tranche au calcul, palette par palette.
  */
 export function LogoTile({
   className,
@@ -46,7 +50,7 @@ export function LogoTile({
     <span
       aria-hidden
       className={cn(
-        "bg-brand grid size-9 shrink-0 place-items-center rounded-lg text-white",
+        "bg-brand text-brand-ink grid size-9 shrink-0 place-items-center rounded-lg",
         className,
       )}
     >

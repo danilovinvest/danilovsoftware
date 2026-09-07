@@ -274,7 +274,7 @@ export function WeekGrid({
             <span
               className={cn(
                 "flex size-5 items-center justify-center rounded-full text-[13px] tabular-nums",
-                isSameDay(day, today) && "bg-brand font-medium text-white",
+                isSameDay(day, today) && "bg-brand font-medium text-brand-ink",
               )}
             >
               {day.getDate()}

@@ -119,7 +119,7 @@ export function ScheduleFields({
                   className={cn(
                     "size-7 rounded-full text-[11px] font-medium transition-colors",
                     on
-                      ? "bg-brand text-white"
+                      ? "bg-brand text-brand-ink"
                       : "bg-muted text-muted-foreground hover:bg-accent",
                   )}
                 >

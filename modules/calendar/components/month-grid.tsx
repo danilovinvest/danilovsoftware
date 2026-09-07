@@ -232,7 +232,7 @@ export function MonthGrid({
                       className={cn(
                         "mx-auto flex size-[18px] shrink-0 items-center justify-center rounded-full text-[11px] tabular-nums transition-colors",
                         isSameDay(day, today)
-                          ? "bg-brand text-white font-medium"
+                          ? "bg-brand text-brand-ink font-medium"
                           : outside
                             ? "text-muted-foreground/60 hover:bg-accent"
                             : "hover:bg-accent",

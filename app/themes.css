@@ -4,8 +4,10 @@
  * Produit par le script décrit dans CLAUDE.md à partir de @radix-ui/colors.
  * Chaque palette redéfinit deux choses, et seulement deux :
  *
- *   --t-gray-1..12   le gris de la palette, légèrement teinté vers l'accent
+*   --t-gray-1..12   le gris de la palette, légèrement teinté vers l'accent
  *   --t-accent-*     la teinte d'accent (marque, focus, sélection)
+ *   --t-accent-ink   l'encre lisible sur un aplat du cran 9 — calculée, parce
+ *                    qu'ambre et citron sont clairs là où indigo est sombre
  *
  * Elle ne touche ni `--t-green-*`, ni `--t-red-*`, ni `--t-orange-*`, ni
  * `--t-blue-*` : une pastille « Accepté » doit rester verte quelle que soit la
@@ -40,6 +42,7 @@
   --t-accent-8: #3db9cf;
   --t-accent-9: #00a2c7;
   --t-accent-11: #107d98;
+  --t-accent-ink: #ffffff;
 }
 
 :root[data-theme="emeraude"] {
@@ -62,6 +65,7 @@
   --t-accent-8: #56ba9f;
   --t-accent-9: #29a383;
   --t-accent-11: #208368;
+  --t-accent-ink: #ffffff;
 }
 
 :root[data-theme="menthe"] {
@@ -84,6 +88,7 @@
   --t-accent-8: #53b9ab;
   --t-accent-9: #12a594;
   --t-accent-11: #008573;
+  --t-accent-ink: #ffffff;
 }
 
 :root[data-theme="citron"] {
@@ -106,6 +111,7 @@
   --t-accent-8: #8db654;
   --t-accent-9: #bdee63;
   --t-accent-11: #5c7c2f;
+  --t-accent-ink: #1c2024;
 }
 
 :root[data-theme="ambre"] {
@@ -128,6 +134,7 @@
   --t-accent-8: #e2a336;
   --t-accent-9: #ffc53d;
   --t-accent-11: #ab6400;
+  --t-accent-ink: #1c2024;
 }
 
 :root[data-theme="corail"] {
@@ -150,6 +157,7 @@
   --t-accent-8: #ec9455;
   --t-accent-9: #f76b15;
   --t-accent-11: #cc4e00;
+  --t-accent-ink: #ffffff;
 }
 
 :root[data-theme="grenat"] {
@@ -172,6 +180,7 @@
   --t-accent-8: #e093b2;
   --t-accent-9: #e93d82;
   --t-accent-11: #cb1d63;
+  --t-accent-ink: #ffffff;
 }
 
 :root[data-theme="violette"] {
@@ -194,6 +203,7 @@
   --t-accent-8: #aa99ec;
   --t-accent-9: #6e56cf;
   --t-accent-11: #6550b9;
+  --t-accent-ink: #ffffff;
 }
 
 :root[data-theme="magenta"] {
@@ -216,6 +226,7 @@
   --t-accent-8: #dd93c2;
   --t-accent-9: #d6409f;
   --t-accent-11: #c2298a;
+  --t-accent-ink: #ffffff;
 }
 
 :root.dark[data-theme="ocean"] {
@@ -238,6 +249,7 @@
   --t-accent-8: #11809c;
   --t-accent-9: #00a2c7;
   --t-accent-11: #4ccce6;
+  --t-accent-ink: #ffffff;
 }
 
 :root.dark[data-theme="emeraude"] {
@@ -260,6 +272,7 @@
   --t-accent-8: #2a7e68;
   --t-accent-9: #29a383;
   --t-accent-11: #1fd8a4;
+  --t-accent-ink: #ffffff;
 }
 
 :root.dark[data-theme="menthe"] {
@@ -282,6 +295,7 @@
   --t-accent-8: #207e73;
   --t-accent-9: #12a594;
   --t-accent-11: #0bd8b6;
+  --t-accent-ink: #ffffff;
 }
 
 :root.dark[data-theme="citron"] {
@@ -304,6 +318,7 @@
   --t-accent-8: #577538;
   --t-accent-9: #bdee63;
   --t-accent-11: #bde56c;
+  --t-accent-ink: #1c2024;
 }
 
 :root.dark[data-theme="ambre"] {
@@ -326,6 +341,7 @@
   --t-accent-8: #8f6424;
   --t-accent-9: #ffc53d;
   --t-accent-11: #ffca16;
+  --t-accent-ink: #1c2024;
 }
 
 :root.dark[data-theme="corail"] {
@@ -348,6 +364,7 @@
   --t-accent-8: #a35829;
   --t-accent-9: #f76b15;
   --t-accent-11: #ffa057;
+  --t-accent-ink: #ffffff;
 }
 
 :root.dark[data-theme="grenat"] {
@@ -370,6 +387,7 @@
   --t-accent-8: #b0436e;
   --t-accent-9: #e93d82;
   --t-accent-11: #ff92ad;
+  --t-accent-ink: #ffffff;
 }
 
 :root.dark[data-theme="violette"] {
@@ -392,6 +410,7 @@
   --t-accent-8: #6958ad;
   --t-accent-9: #6e56cf;
   --t-accent-11: #baa7ff;
+  --t-accent-ink: #ffffff;
 }
 
 :root.dark[data-theme="magenta"] {
@@ -414,6 +433,7 @@
   --t-accent-8: #a84885;
   --t-accent-9: #d6409f;
   --t-accent-11: #ff8dcc;
+  --t-accent-ink: #ffffff;
 }
 
 @supports (color: color(display-p3 1 1 1)) {
@@ -438,6 +458,7 @@
       --t-accent-8: color(display-p3 0.388 0.715 0.798);
       --t-accent-9: color(display-p3 0.282 0.627 0.765);
       --t-accent-11: color(display-p3 0.08 0.48 0.63);
+      --t-accent-ink: #ffffff;
     }
     :root[data-theme="emeraude"] {
       --t-gray-1: color(display-p3 0.986 0.992 0.988);
@@ -459,6 +480,7 @@
       --t-accent-8: color(display-p3 0.44 0.72 0.629);
       --t-accent-9: color(display-p3 0.319 0.63 0.521);
       --t-accent-11: color(display-p3 0.15 0.5 0.37);
+      --t-accent-ink: #ffffff;
     }
     :root[data-theme="menthe"] {
       --t-gray-1: color(display-p3 0.986 0.992 0.988);
@@ -480,6 +502,7 @@
       --t-accent-8: color(display-p3 0.433 0.716 0.671);
       --t-accent-9: color(display-p3 0.297 0.637 0.581);
       --t-accent-11: color(display-p3 0.08 0.5 0.43);
+      --t-accent-ink: #ffffff;
     }
     :root[data-theme="citron"] {
       --t-gray-1: color(display-p3 0.989 0.992 0.989);
@@ -501,6 +524,7 @@
       --t-accent-8: color(display-p3 0.585 0.707 0.378);
       --t-accent-9: color(display-p3 0.78 0.928 0.466);
       --t-accent-11: color(display-p3 0.386 0.482 0.227);
+      --t-accent-ink: #1c2024;
     }
     :root[data-theme="ambre"] {
       --t-gray-1: color(display-p3 0.992 0.992 0.989);
@@ -522,6 +546,7 @@
       --t-accent-8: color(display-p3 0.85 0.65 0.3);
       --t-accent-9: color(display-p3 1 0.77 0.26);
       --t-accent-11: color(display-p3 0.64 0.4 0);
+      --t-accent-ink: #1c2024;
     }
     :root[data-theme="corail"] {
       --t-gray-1: color(display-p3 0.992 0.992 0.989);
@@ -543,6 +568,7 @@
       --t-accent-8: color(display-p3 0.877 0.597 0.379);
       --t-accent-9: color(display-p3 0.9 0.45 0.2);
       --t-accent-11: color(display-p3 0.76 0.34 0);
+      --t-accent-ink: #ffffff;
     }
     :root[data-theme="grenat"] {
       --t-gray-1: color(display-p3 0.991 0.988 0.992);
@@ -564,6 +590,7 @@
       --t-accent-8: color(display-p3 0.834 0.592 0.694);
       --t-accent-9: color(display-p3 0.843 0.298 0.507);
       --t-accent-11: color(display-p3 0.731 0.195 0.388);
+      --t-accent-ink: #ffffff;
     }
     :root[data-theme="violette"] {
       --t-gray-1: color(display-p3 0.991 0.988 0.992);
@@ -585,6 +612,7 @@
       --t-accent-8: color(display-p3 0.654 0.602 0.902);
       --t-accent-9: color(display-p3 0.417 0.341 0.784);
       --t-accent-11: color(display-p3 0.383 0.317 0.702);
+      --t-accent-ink: #ffffff;
     }
     :root[data-theme="magenta"] {
       --t-gray-1: color(display-p3 0.991 0.988 0.992);
@@ -606,6 +634,7 @@
       --t-accent-8: color(display-p3 0.825 0.59 0.751);
       --t-accent-9: color(display-p3 0.775 0.297 0.61);
       --t-accent-11: color(display-p3 0.698 0.219 0.528);
+      --t-accent-ink: #ffffff;
     }
     :root.dark[data-theme="ocean"] {
       --t-gray-1: color(display-p3 0.067 0.067 0.074);
@@ -627,6 +656,7 @@
       --t-accent-8: color(display-p3 0.23 0.496 0.6);
       --t-accent-9: color(display-p3 0.282 0.627 0.765);
       --t-accent-11: color(display-p3 0.446 0.79 0.887);
+      --t-accent-ink: #ffffff;
     }
     :root.dark[data-theme="emeraude"] {
       --t-gray-1: color(display-p3 0.064 0.07 0.067);
@@ -648,6 +678,7 @@
       --t-accent-8: color(display-p3 0.263 0.488 0.411);
       --t-accent-9: color(display-p3 0.319 0.63 0.521);
       --t-accent-11: color(display-p3 0.4 0.835 0.656);
+      --t-accent-ink: #ffffff;
     }
     :root.dark[data-theme="menthe"] {
       --t-gray-1: color(display-p3 0.064 0.07 0.067);
@@ -669,6 +700,7 @@
       --t-accent-8: color(display-p3 0.245 0.489 0.453);
       --t-accent-9: color(display-p3 0.297 0.637 0.581);
       --t-accent-11: color(display-p3 0.388 0.835 0.719);
+      --t-accent-ink: #ffffff;
     }
     :root.dark[data-theme="citron"] {
       --t-gray-1: color(display-p3 0.067 0.07 0.063);
@@ -690,6 +722,7 @@
       --t-accent-8: color(display-p3 0.365 0.456 0.25);
       --t-accent-9: color(display-p3 0.78 0.928 0.466);
       --t-accent-11: color(display-p3 0.771 0.893 0.485);
+      --t-accent-ink: #1c2024;
     }
     :root.dark[data-theme="ambre"] {
       --t-gray-1: color(display-p3 0.067 0.067 0.063);
@@ -711,6 +744,7 @@
       --t-accent-8: color(display-p3 0.535 0.399 0.189);
       --t-accent-9: color(display-p3 1 0.77 0.26);
       --t-accent-11: color(display-p3 1 0.8 0.29);
+      --t-accent-ink: #1c2024;
     }
     :root.dark[data-theme="corail"] {
       --t-gray-1: color(display-p3 0.067 0.067 0.063);
@@ -732,6 +766,7 @@
       --t-accent-8: color(display-p3 0.601 0.359 0.201);
       --t-accent-9: color(display-p3 0.9 0.45 0.2);
       --t-accent-11: color(display-p3 1 0.63 0.38);
+      --t-accent-ink: #ffffff;
     }
     :root.dark[data-theme="grenat"] {
       --t-gray-1: color(display-p3 0.07 0.067 0.074);
@@ -753,6 +788,7 @@
       --t-accent-8: color(display-p3 0.638 0.289 0.429);
       --t-accent-9: color(display-p3 0.843 0.298 0.507);
       --t-accent-11: color(display-p3 1 0.56 0.66);
+      --t-accent-ink: #ffffff;
     }
     :root.dark[data-theme="violette"] {
       --t-gray-1: color(display-p3 0.07 0.067 0.074);
@@ -774,6 +810,7 @@
       --t-accent-8: color(display-p3 0.399 0.346 0.656);
       --t-accent-9: color(display-p3 0.417 0.341 0.784);
       --t-accent-11: color(display-p3 0.72 0.65 1);
+      --t-accent-ink: #ffffff;
     }
     :root.dark[data-theme="magenta"] {
       --t-gray-1: color(display-p3 0.07 0.067 0.074);
@@ -795,6 +832,7 @@
       --t-accent-8: color(display-p3 0.612 0.304 0.51);
       --t-accent-9: color(display-p3 0.775 0.297 0.61);
       --t-accent-11: color(display-p3 1 0.535 0.78);
+      --t-accent-ink: #ffffff;
     }
   }
 }

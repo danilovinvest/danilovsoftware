@@ -188,8 +188,14 @@ function ThemePicker() {
               onClick={() => setPreferences({ theme: value })}
               className={cn(
                 "flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-[11px] transition-colors",
+                /*
+                  Le sélectionné remonte sur le fond de la carte plutôt que de
+                  se remplir de la couleur de marque : sur une palette claire —
+                  Ambre, Citron — du texte sur le cran 9 tombe sous 1,6 de
+                  contraste. Le cran 11 de l'accent, lui, se lit partout.
+                */
                 selected
-                  ? "bg-brand text-primary-foreground font-medium shadow-2xs"
+                  ? "bg-background text-brand-text font-medium shadow-2xs"
                   : "text-muted-foreground hover:text-foreground",
               )}
             >
