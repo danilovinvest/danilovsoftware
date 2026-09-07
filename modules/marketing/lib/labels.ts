@@ -1,5 +1,5 @@
 import type { Tone } from "@/modules/customers";
-import type { ArticleStatus, Photo } from "./types";
+import type { ArticleStatus } from "./types";
 
 type Entry<T extends string> = Record<T, { label: string; tone: Tone }>;
 
@@ -16,13 +16,6 @@ export const STATUS_ORDER: ArticleStatus[] = [
   "a_relire",
   "publie",
 ];
-
-export const PHOTO_KIND: Record<Photo["kind"], string> = {
-  avant: "Avant",
-  pendant: "Pendant",
-  apres: "Après",
-  detail: "Détail",
-};
 
 /** Tonalité d'un taux de complétude : sous 60 %, l'article n'est pas publiable. */
 export function completenessTone(rate: number): Tone {

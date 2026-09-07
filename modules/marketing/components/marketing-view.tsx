@@ -1,11 +1,10 @@
 "use client";
 
-import { FlaskConicalIcon, MapPinIcon, StarIcon } from "lucide-react";
+import { MapPinIcon, QuoteIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
-import { EmptyState } from "@/shared/ui/feedback";
+import { EmptyState, ErrorNotice, Skeleton } from "@/shared/ui/feedback";
 import { plural } from "@/shared/lib/format";
-import { MetricCards } from "@/shared/ui/metric-cards";
 import { Meter, Panel } from "@/shared/ui/panel";
 import { useMarketing } from "../hooks/use-marketing";
 import { ARTICLE_STATUS, STATUS_ORDER } from "../lib/labels";
@@ -13,12 +12,17 @@ import { ArticleEditor } from "./article-editor";
 import { RealisationCard } from "./realisation-card";
 
 /**
- * L'écran marketing : transformer les chantiers livrés en réalisations.
+ * L'écran marketing : transformer les affaires réalisées en réalisations.
  *
- * Le CRM sait déjà ce qui a été fait, où, pour qui, avec quelle technique et en
- * combien de temps — c'est tout ce qu'un article de chantier demande, à
- * l'exception du texte. D'où le principe : rien ne se ressaisit, on ne fait
- * qu'écrire par-dessus.
+ * Le CRM sait déjà ce qui a été fait, où et pour qui — c'est tout ce qu'un
+ * article de chantier demande, à l'exception du texte. D'où le principe : rien
+ * ne se ressaisit, on ne fait qu'écrire par-dessus.
+ *
+ * **Tout ce qui s'y affiche vient de la base.** L'écran était simulé — les
+ * chantiers, les articles, les photos, les avis clients, et jusqu'aux
+ * modifications, qui ne quittaient pas le navigateur. Les réalisations sont
+ * maintenant les quatre-vingt-quatorze affaires d'étape « réalisé », et les
+ * articles vivent dans leur table.
  *
  * L'écran a deux états : la liste, ou l'éditeur. Ouvrir une réalisation
  * remplace la liste plutôt que d'ouvrir une fenêtre — on écrit un article, ça
@@ -26,55 +30,62 @@ import { RealisationCard } from "./realisation-card";
  */
 export function MarketingView() {
   const marketing = useMarketing();
-  const { data } = marketing;
 
   if (marketing.open) {
+    const ouvert = marketing.open;
     return (
       <ArticleEditor
-        key={marketing.open.worksite.id}
-        realisation={marketing.open}
+        key={ouvert.realisation.project_id}
+        entry={ouvert}
+        saving={marketing.saving}
         onBack={() => marketing.setOpenId(null)}
-        onSave={(article) => {
-          marketing.save(article);
-          marketing.setOpenId(null);
+        onSave={async (article) => {
+          if (await marketing.save(ouvert.realisation.project_id, article)) {
+            marketing.setOpenId(null);
+          }
         }}
       />
     );
   }
+
+  const publies = marketing.reads.filter(
+    (r) => r.realisation.article.status === "publie",
+  ).length;
+  const citations = marketing.reads.filter(
+    (r) => r.realisation.article.quote.trim() !== "",
+  ).length;
+  const sansVille = marketing.reads.filter(
+    (r) => r.realisation.city.trim() === "",
+  ).length;
 
   return (
     <div className="flex flex-col gap-5">
       <header>
         <h1 className="text-base font-semibold">Marketing</h1>
         <p className="text-muted-foreground mt-0.5 text-sm">
-          Les chantiers livrés, transformés en réalisations publiables.
+          Les affaires réalisées, transformées en réalisations publiables.
         </p>
       </header>
 
-      <div className="border-warning/30 bg-warning-soft/50 text-warning flex items-start gap-2 rounded-xl border px-3 py-2 text-xs">
-        <FlaskConicalIcon className="mt-0.5 size-3.5 shrink-0" />
-        <p>
-          <span className="font-medium">Données de démonstration.</span> Les
-          réalisations sont les chantiers livrés de l&apos;onglet Chantiers ; les
-          textes, photos et publications sont inventés. Les modifications
-          restent dans le navigateur — rien n&apos;est encore envoyé au serveur.
-        </p>
-      </div>
-
-      <MetricCards metrics={data.metrics} />
+      {marketing.error && <ErrorNotice message={marketing.error} />}
 
       <div className="grid items-start gap-4 lg:grid-cols-3">
         <Card className="gap-0 overflow-hidden py-0 lg:col-span-2">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2">
             <p className="text-sm font-medium">
               {plural(marketing.visible.length, "réalisation")}
+              <span className="text-muted-foreground ml-2 font-normal">
+                {publies} publiée{publies > 1 ? "s" : ""}
+              </span>
             </p>
             <div className="flex flex-wrap gap-1">
               {(["toutes", ...STATUS_ORDER] as const).map((key) => {
                 const count =
                   key === "toutes"
-                    ? data.realisations.length
-                    : data.realisations.filter((r) => r.article.status === key).length;
+                    ? marketing.reads.length
+                    : marketing.reads.filter(
+                        (r) => r.realisation.article.status === key,
+                      ).length;
                 return (
                   <button
                     key={key}
@@ -83,7 +94,7 @@ export function MarketingView() {
                     className={cn(
                       "rounded-md px-2 py-1 text-xs transition-colors",
                       marketing.filter === key
-                        ? "bg-selected text-foreground font-medium"
+                        ? "bg-selected text-brand-text font-medium"
                         : "text-muted-foreground hover:bg-accent",
                     )}
                   >
@@ -96,17 +107,19 @@ export function MarketingView() {
           </div>
 
           <div className="p-3">
-            {marketing.visible.length === 0 ? (
+            {marketing.loading && marketing.reads.length === 0 ? (
+              <Skeleton className="h-64 w-full" />
+            ) : marketing.visible.length === 0 ? (
               <EmptyState
                 title="Aucune réalisation dans cet état"
-                description="Les chantiers apparaissent ici dès qu'ils sont livrés."
+                description="Une affaire apparaît ici dès que son étape passe à « réalisé »."
               />
             ) : (
               <div className="grid gap-3 md:grid-cols-2">
-                {marketing.visible.map((realisation) => (
+                {marketing.visible.map((entry) => (
                   <RealisationCard
-                    key={realisation.worksite.id}
-                    realisation={realisation}
+                    key={entry.realisation.project_id}
+                    entry={entry}
                     onOpen={marketing.setOpenId}
                   />
                 ))}
@@ -123,39 +136,64 @@ export function MarketingView() {
             tone="info"
             bodyClassName="flex flex-col gap-2.5 p-4"
           >
-            {data.cities.map((city) => (
-              <div key={city.city} className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1">
-                <span className="truncate text-xs">{city.city}</span>
-                <span className="text-muted-foreground text-[11px] tabular-nums">
-                  {city.published} / {city.total}
-                </span>
-                <div className="col-span-2">
-                  <Meter
-                    value={city.published}
-                    max={city.total}
-                    tone={city.published > 0 ? "success" : "neutral"}
-                  />
+            {marketing.cities.length === 0 ? (
+              <p className="text-muted-foreground text-xs">
+                Aucune affaire réalisée ne porte de ville.
+              </p>
+            ) : (
+              marketing.cities.map((city) => (
+                <div
+                  key={city.city}
+                  className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1"
+                >
+                  <span className="truncate text-xs">{city.city}</span>
+                  <span className="text-muted-foreground text-[11px] tabular-nums">
+                    {city.published} / {city.total}
+                  </span>
+                  <div className="col-span-2">
+                    <Meter
+                      value={city.published}
+                      max={city.total}
+                      tone={city.published > 0 ? "success" : "neutral"}
+                    />
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
+            {/*
+              Une affaire sans ville ne couvre rien. Le dire ici plutôt que de
+              l'omettre : c'est une donnée qui manque, pas une ville qui n'a pas
+              de chantier.
+            */}
+            {sansVille > 0 && (
+              <p className="text-muted-foreground/70 border-t pt-2 text-[11px]">
+                {sansVille} affaire{sansVille > 1 ? "s" : ""} sans lieu renseigné —
+                elles ne comptent dans aucune ville.
+              </p>
+            )}
           </Panel>
 
           <Panel
-            title="Avis clients"
+            title="Citations clients"
             description="Une citation vaut mieux qu'un paragraphe de plus"
-            icon={StarIcon}
+            icon={QuoteIcon}
             tone="warning"
             bodyClassName="px-4 py-3"
           >
             <p className="text-xs">
               <span className="text-warning font-medium">
-                {plural(data.reviews_missing, "chantier livré", "chantiers livrés")}
+                {citations} réalisation{citations > 1 ? "s" : ""}
               </span>{" "}
-              sans avis client recueilli.
+              sur {marketing.reads.length} portent une citation.
             </p>
+            {/*
+              Le CRM ne suit pas les demandes d'avis, et l'écran ne prétend pas
+              le contraire : la citation se recueille auprès du client, puis se
+              recopie ici.
+            */}
             <p className="text-muted-foreground mt-1 text-[11px]">
-              La demande d&apos;avis est un jalon du chantier : elle se suit
-              depuis l&apos;onglet Chantiers, liste « Avis à demander ».
+              Le CRM ne suit pas les demandes d&apos;avis. Une citation se
+              recueille auprès du client, puis se recopie dans l&apos;article.
             </p>
           </Panel>
         </div>

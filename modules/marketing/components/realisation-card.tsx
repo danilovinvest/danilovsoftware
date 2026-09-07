@@ -1,42 +1,46 @@
 "use client";
 
-import { ImageIcon, MapPinIcon, QuoteIcon } from "lucide-react";
+import { MapPinIcon, QuoteIcon, ReceiptEuroIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { activityName } from "@/modules/group";
-import { formatDate } from "@/shared/lib/format";
+import { euros, formatDate } from "@/shared/lib/format";
 import { Meter, TONE_SOFT } from "@/shared/ui/panel";
 import { ARTICLE_STATUS, completenessTone } from "../lib/labels";
-import type { Realisation } from "../lib/types";
+import type { ReadRealisation } from "../lib/types";
 
 /**
- * Un chantier livré, vu comme une réalisation à valoriser.
+ * Une affaire réalisée, vue comme une réalisation à valoriser.
  *
  * La barre de complétude n'est pas décorative : elle dit ce qui manque avant de
  * publier, et c'est la seule information qui fait avancer un article.
  */
 export function RealisationCard({
-  realisation,
+  entry,
   onOpen,
 }: {
-  realisation: Realisation;
+  entry: ReadRealisation;
   onOpen: (id: string) => void;
 }) {
-  const { worksite, article, duration, completeness, missing } = realisation;
+  const { realisation, completeness, missing } = entry;
+  const article = realisation.article;
   const status = ARTICLE_STATUS[article.status];
+  const chiffre =
+    realisation.amount_ht !== "0" && realisation.amount_ht !== ""
+      ? euros(Number(realisation.amount_ht))
+      : null;
 
   return (
     <button
       type="button"
-      onClick={() => onOpen(worksite.id)}
-      className="bg-card hover:bg-accent/40 flex flex-col gap-2.5 rounded-lg border p-3 text-left transition-colors"
+      onClick={() => onOpen(realisation.project_id)}
+      className="bg-card hover:bg-accent/40 flex flex-col gap-2.5 rounded-xl border p-3 text-left transition-colors"
     >
       <div className="flex items-start justify-between gap-2">
         <span className="min-w-0">
           <span className="block truncate text-sm font-medium">
-            {article.title.trim() === "" ? worksite.label : article.title}
+            {article.title.trim() === "" ? realisation.label : article.title}
           </span>
           <span className="text-muted-foreground block truncate text-[11px]">
-            {worksite.customer_name}
+            {realisation.customer_name}
           </span>
         </span>
         <span
@@ -50,13 +54,22 @@ export function RealisationCard({
       </div>
 
       <div className="text-muted-foreground flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px]">
-        <span className="inline-flex items-center gap-1">
-          <MapPinIcon className="size-3" />
-          {worksite.city}
-        </span>
-        <span>{activityName(worksite.activity_id)}</span>
-        <span>{duration} j de chantier</span>
-        <span>livré le {formatDate(worksite.completed_at)}</span>
+        {/* Une ligne ne montre que ce qu'elle sait : la ville manque sur les
+            trois quarts des affaires, la date sur une partie, le montant sur la
+            plupart. Un « — » à chaque place ferait du vide une information. */}
+        {realisation.city && (
+          <span className="inline-flex items-center gap-1">
+            <MapPinIcon className="size-3" />
+            {realisation.city}
+          </span>
+        )}
+        {realisation.started_at && <span>{formatDate(realisation.started_at)}</span>}
+        {chiffre && (
+          <span className="inline-flex items-center gap-1">
+            <ReceiptEuroIcon className="size-3" />
+            {chiffre} HT
+          </span>
+        )}
       </div>
 
       <div className="flex items-center gap-2">
@@ -70,25 +83,11 @@ export function RealisationCard({
         <span
           className={cn(
             "inline-flex items-center gap-1",
-            article.photos.length > 0 && "text-success",
-          )}
-        >
-          <ImageIcon className="size-3" />
-          {article.photos.length}
-        </span>
-        <span
-          className={cn(
-            "inline-flex items-center gap-1",
             article.quote.trim() !== "" && "text-success",
           )}
-          title={
-            worksite.review_received_at === null
-              ? "Aucun avis client recueilli"
-              : "Avis client disponible"
-          }
         >
           <QuoteIcon className="size-3" />
-          {article.quote.trim() !== "" ? "citation" : "sans citation"}
+          {article.quote.trim() !== "" ? "citation client" : "sans citation"}
         </span>
         {missing.length > 0 && (
           <span className="text-warning ml-auto truncate">

@@ -1,10 +1,8 @@
 "use client";
 
-import { ImageIcon, QuoteIcon } from "lucide-react";
-import { activityName, entityOfActivity } from "@/modules/group";
+import { QuoteIcon } from "lucide-react";
 import { formatDate } from "@/shared/lib/format";
-import { PHOTO_KIND } from "../lib/labels";
-import type { Realisation } from "../lib/types";
+import type { ReadRealisation } from "../lib/types";
 
 /**
  * L'article tel qu'il paraîtrait sur le site.
@@ -13,18 +11,18 @@ import type { Realisation } from "../lib/types";
  * voit tout de suite qu'un chapô vide laisse un trou, et qu'un texte technique
  * sans photo n'a pas de raison d'exister.
  *
- * Les métadonnées — ville, durée, société — ne se saisissent pas : elles
- * viennent du chantier. Les recopier garantirait qu'un jour elles divergent.
+ * Les métadonnées — client, ville, date — ne se saisissent pas : elles viennent
+ * de l'affaire. Les recopier garantirait qu'un jour elles divergent.
  */
-export function ArticlePreview({ realisation }: { realisation: Realisation }) {
-  const { article, worksite, duration } = realisation;
-  const entity = entityOfActivity(worksite.activity_id);
+export function ArticlePreview({ entry }: { entry: ReadRealisation }) {
+  const realisation = entry.realisation;
+  const article = realisation.article;
 
   return (
-    <article className="bg-card flex flex-col gap-4 rounded-lg border p-5">
+    <article className="bg-card flex flex-col gap-4 rounded-xl border p-5">
       <header className="flex flex-col gap-2">
         <p className="text-muted-foreground text-[11px] tracking-wide uppercase">
-          Réalisation · {worksite.city}
+          Réalisation{realisation.city && ` · ${realisation.city}`}
         </p>
         <h2 className="font-heading text-lg leading-snug font-semibold">
           {article.title.trim() === "" ? (
@@ -37,27 +35,11 @@ export function ArticlePreview({ realisation }: { realisation: Realisation }) {
           <p className="text-muted-foreground text-sm">{article.excerpt}</p>
         )}
         <p className="text-muted-foreground/70 text-[11px]">
-          {activityName(worksite.activity_id)}
-          {entity && ` · ${entity.name}`} · {duration} jours de chantier
+          {realisation.customer_name}
+          {realisation.started_at && ` · ${formatDate(realisation.started_at)}`}
           {article.published_at && ` · publié le ${formatDate(article.published_at)}`}
         </p>
       </header>
-
-      {article.photos.length > 0 && (
-        <div className="grid grid-cols-3 gap-2">
-          {article.photos.slice(0, 3).map((photo) => (
-            <figure key={photo.id} className="flex flex-col gap-1">
-              <div className="bg-muted text-muted-foreground/60 grid aspect-4/3 place-items-center rounded">
-                <ImageIcon className="size-5" />
-              </div>
-              <figcaption className="text-muted-foreground text-[10px] leading-tight">
-                <span className="font-medium">{PHOTO_KIND[photo.kind]}</span> —{" "}
-                {photo.caption || photo.label}
-              </figcaption>
-            </figure>
-          ))}
-        </div>
-      )}
 
       <Section title="Le contexte" body={article.context} />
       <Section title="Notre solution" body={article.solution} />

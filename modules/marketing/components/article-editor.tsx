@@ -4,14 +4,12 @@ import { useState } from "react";
 import {
   ArrowLeftIcon,
   CheckIcon,
-  ImagePlusIcon,
   SparklesIcon,
-  Trash2Icon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-import { euros, formatDate } from "@/shared/lib/format";
+import { euros } from "@/shared/lib/format";
 import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
 import { TONE_SOFT } from "@/shared/ui/panel";
 import { ARTICLE_STATUS, STATUS_ORDER } from "../lib/labels";
@@ -266,7 +264,7 @@ export function ArticleEditor({
           <p className="text-muted-foreground mb-2 text-[11px] font-medium tracking-wide uppercase">
             Aperçu sur le site
           </p>
-          <ArticlePreview realisation={live} />
+          <ArticlePreview entry={live} />
         </div>
       </div>
     </div>
