@@ -25,7 +25,9 @@ export const PALETTES: Palette[] = [
     label: "Azur",
     accent: { light: "#3e63dd", dark: "#3e63dd" },
     surface: {
-      light: { base: "#ffffff", raised: "#f1f1f1" },
+      // Slate en clair, comme l'échelle de `:root` : la vignette mentirait si
+      // elle montrait le gris neutre qu'Azur avait avant.
+      light: { base: "#fcfcfd", raised: "#e8e8ec" },
       dark: { base: "#171717", raised: "#1d1d1d" },
     },
   },
