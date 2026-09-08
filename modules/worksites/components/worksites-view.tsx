@@ -215,7 +215,12 @@ export function WorksitesView({ metier = "travaux" }: { metier?: Metier }) {
         </div>
       </Card>
 
-      <WorksiteSheet read={board.selected} onClose={() => board.select(null)} />
+      <WorksiteSheet
+        read={board.selected}
+        metier={metier}
+        onChanged={board.reload}
+        onClose={() => board.select(null)}
+      />
     </div>
   );
 }

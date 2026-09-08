@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { ExternalLinkIcon, FileTextIcon, ReceiptTextIcon } from "lucide-react";
 import {
@@ -13,40 +14,182 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { TONE_SOFT } from "@/shared/ui/panel";
 import { euros, formatAmount, formatDate, formatDateTime } from "@/shared/lib/format";
-import { WORKSITE_STATUS } from "../lib/labels";
+import { usePermission } from "@/modules/auth";
+import {
+  ProjectJalons,
+  setMilestones,
+  updateProject,
+  updateQuote,
+  type Jalons,
+  type PaymentStatus,
+  type ProjectPayload,
+  type QuoteKind,
+  type QuoteStatus,
+} from "@/modules/customers";
+import { errorMessage } from "@/shared/api/errors";
+import { ErrorNotice } from "@/shared/ui/feedback";
+import { STUDY_STATUS, WORKSITE_STATUS } from "../lib/labels";
 import { isSilent } from "../lib/derive";
-import type { ReadWorksite, WorksiteQuote } from "../lib/types";
+import type { Metier, ReadWorksite, WorksiteQuote } from "../lib/types";
+
+/** Le devis signé de l'affaire, celui qui porte le règlement. */
+function signedQuote(w: ReadWorksite["worksite"]): WorksiteQuote | null {
+  return (
+    w.quotes.find((q) => q.status === "accepte" || q.status === "realise") ??
+    w.quotes[0] ??
+    null
+  );
+}
+
+/** Le statut d'acompte du devis signé, « non_applicable » à défaut de devis. */
+function quoteDeposit(w: ReadWorksite["worksite"]): string {
+  return signedQuote(w)?.deposit_status ?? "non_applicable";
+}
 
 /**
- * La fiche d'un chantier.
+ * La fiche d'un chantier ou d'une étude.
  *
- * Elle ne montre plus de coûts, de marge, de PV ni d'avis client : le CRM ne
- * les suit pas, et une frise de six jalons dont quatre resteraient
- * éternellement gris ferait douter des deux autres.
+ * **Elle ne fait plus que décrire.** Elle alignait des faits — dates, pièces,
+ * dossier — et laissait l'utilisateur retourner sur la fiche client pour agir.
+ * On ouvre pourtant un chantier depuis le tableau précisément parce qu'il
+ * réclame quelque chose : une date, des matériaux, des plans, un solde.
  *
- * Ce qu'elle montre est vrai et se tient en trois blocs : où on en est, les
- * pièces au dossier — chacune ouvrant son fichier sur OneDrive —, et le lien
- * vers la fiche client, qui porte la chronologie complète.
+ * Les jalons sont donc ici, et ce sont **les mêmes cases que sur la fiche
+ * client** — même composant, même écriture, même règle d'ordre. Deux listes de
+ * cases auraient divergé au premier ajustement.
  */
 export function WorksiteSheet({
   read,
+  metier,
+  onChanged,
   onClose,
 }: {
   read: ReadWorksite | null;
+  metier: Metier;
+  /** Rechargement de la liste après une écriture. */
+  onChanged: () => void;
   onClose: () => void;
 }) {
   return (
     <Sheet open={read !== null} onOpenChange={(open) => !open && onClose()}>
       <SheetContent className="w-full gap-0 overflow-y-auto sm:max-w-xl">
-        {read && <Body read={read} />}
+        {read && <Body read={read} metier={metier} onChanged={onChanged} />}
       </SheetContent>
     </Sheet>
   );
 }
 
-function Body({ read }: { read: ReadWorksite }) {
+function Body({
+  read,
+  metier,
+  onChanged,
+}: {
+  read: ReadWorksite;
+  metier: Metier;
+  onChanged: () => void;
+}) {
   const { worksite: w } = read;
-  const status = WORKSITE_STATUS[read.status];
+  const status =
+    metier === "etudes" ? STUDY_STATUS[read.study] : WORKSITE_STATUS[read.status];
+  const canWrite = usePermission("customers:write");
+
+  /*
+    Les jalons s'affichent tout de suite, puis s'enregistrent.
+
+    Même mécanique que sur la fiche client : attendre l'aller-retour pour voir
+    une case se cocher donne une interface qui semble morte. En cas d'échec, la
+    surcouche est retirée et la case revient où elle était.
+  */
+  const [optimiste, setOptimiste] = useState<Partial<Jalons>>({});
+  const [enCours, setEnCours] = useState(false);
+  const [echec, setEchec] = useState<string | null>(null);
+
+  const jalons: Jalons = {
+    deposit_invoiced_at: read.depositReceived || quoteDeposit(w) !== "non_applicable"
+      ? (w.started_at ?? w.created_at)
+      : null,
+    deposit_paid_at: read.depositReceived ? (w.started_at ?? w.created_at) : null,
+    rib_sent_at: w.rib_sent_at,
+    insurance_sent_at: w.insurance_sent_at,
+    worksite_date: w.started_at,
+    materials_ordered_at: w.materials_ordered_at,
+    resume_at: w.resume_at,
+    plans_sent_at: w.plans_sent_at,
+    review_requested_at: w.review_requested_at,
+    review_received_at: w.review_received_at,
+    ...optimiste,
+  };
+
+  async function poser(key: keyof Jalons, value: string | null) {
+    setOptimiste((current) => ({ ...current, [key]: value }));
+    setEnCours(true);
+    setEchec(null);
+    const suivant = { ...jalons, [key]: value };
+    try {
+      if (key === "deposit_invoiced_at" || key === "deposit_paid_at") {
+        // L'acompte appartient au devis : c'est lui qui porte le règlement.
+        const cible = signedQuote(w);
+        if (!cible) throw new Error("Aucun devis à mettre à jour sur cette affaire.");
+        /*
+          Le devis est renvoyé entier parce que la route le remplace. Les
+          champs que cet écran ne connaît pas — le taux de TVA — ne sont pas
+          servis avec un chantier : les laisser nuls les effacerait, d'où la
+          seule modification permise ici, le statut de l'acompte.
+        */
+        await updateQuote(cible.id, {
+          reference: cible.reference,
+          kind: cible.kind as QuoteKind,
+          label: cible.label,
+          status: cible.status as QuoteStatus,
+          issued_at: cible.issued_at,
+          amount_ht: cible.amount_ht, amount_ttc: cible.amount_ttc,
+          vat_rate: null, amount_note: cible.amount_note,
+          deposit_status:
+            key === "deposit_paid_at"
+              ? value
+                ? "recu"
+                : "en_attente"
+              : value
+                ? "en_attente"
+                : "non_applicable",
+          balance_status: cible.balance_status as PaymentStatus,
+          comment: "",
+        });
+      } else if (key === "worksite_date") {
+        // Réserver une date, c'est renseigner `started_at` de l'affaire : la
+        // colonne que cet écran lit déjà pour classer ses colonnes.
+        await updateProject(w.id, {
+          label: w.label, stage: w.stage,
+          outcome: (w.outcome || null) as ProjectPayload["outcome"],
+          outcome_note: w.outcome_note,
+          site_address: w.site_address, site_postal_code: w.site_postal_code,
+          site_city: w.city, notes: w.notes,
+          started_at: value ? value.slice(0, 10) : null,
+          closed_at: w.closed_at,
+        });
+      } else {
+        await setMilestones(w.id, {
+          rib_sent_at: suivant.rib_sent_at,
+          insurance_sent_at: suivant.insurance_sent_at,
+          materials_ordered_at: suivant.materials_ordered_at,
+          resume_at: suivant.resume_at,
+          plans_sent_at: suivant.plans_sent_at,
+          review_requested_at: suivant.review_requested_at,
+          review_received_at: suivant.review_received_at,
+        });
+      }
+      onChanged();
+    } catch (cause) {
+      setOptimiste((current) => {
+        const copie = { ...current };
+        delete copie[key];
+        return copie;
+      });
+      setEchec(errorMessage(cause));
+    } finally {
+      setEnCours(false);
+    }
+  }
 
   return (
     <>
@@ -87,7 +230,25 @@ function Body({ read }: { read: ReadWorksite }) {
           )}
         </div>
 
-        <Facts read={read} />
+        <Facts read={read} metier={metier} />
+
+        {echec && <ErrorNotice message={echec} />}
+
+        {/*
+          Ce qu'il reste à faire, et de quoi le faire.
+
+          C'est la seule chose qu'on vient chercher en ouvrant un chantier
+          depuis le tableau : il y est parce qu'il réclame quelque chose.
+        */}
+        <div>
+          <h3 className="mb-2 text-xs font-medium">Après la signature</h3>
+          <ProjectJalons
+            metier={metier}
+            jalons={jalons}
+            disabled={!canWrite || enCours}
+            onToggle={poser}
+          />
+        </div>
 
         <Section
           title="Devis"
@@ -122,12 +283,19 @@ function Body({ read }: { read: ReadWorksite }) {
 }
 
 /** Les faits datés. Une ligne absente vaut « on ne sait pas », jamais zéro. */
-function Facts({ read }: { read: ReadWorksite }) {
+function Facts({ read, metier }: { read: ReadWorksite; metier: Metier }) {
   const { worksite: w } = read;
   const rows: Array<[string, string]> = [];
 
+  if (metier === "etudes") {
+    rows.push([
+      "Plans rendus",
+      w.plans_sent_at ? formatDate(w.plans_sent_at) : "pas encore",
+    ]);
+  }
+
   rows.push([
-    "Démarrage",
+    metier === "etudes" ? "Acompte encaissé le" : "Démarrage",
     w.started_at
       ? `${formatDate(w.started_at)}${
           read.status === "en_cours" && read.daysRunning !== null

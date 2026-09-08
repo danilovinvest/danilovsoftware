@@ -18,5 +18,9 @@ export * from "./lib/labels";
 export * from "./lib/cycle";
 export { EMPTY_JALONS, JALON_ORDER, readJalons, type Jalons } from "./lib/jalons";
 export { ProjectCycle } from "./components/project-cycle";
+// Le panneau des jalons d'après-signature sert aussi à la fiche latérale des
+// chantiers et des études : c'est la même liste de cases, sur la même affaire.
+export { ProjectJalons } from "./components/project-jalons";
+export { setMilestones, updateProject, updateQuote } from "./lib/api";
 export * from "./lib/types";
 export { ImportView } from "./import";

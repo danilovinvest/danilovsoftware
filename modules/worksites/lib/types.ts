@@ -55,6 +55,11 @@ export type Worksite = {
   created_at: string;
 
   last_interaction_at: string | null;
+  /** Les jalons d'après-signature, au complet : la fiche les fait cocher. */
+  rib_sent_at: string | null;
+  insurance_sent_at: string | null;
+  materials_ordered_at: string | null;
+  resume_at: string | null;
   /** Les plans d'exécution envoyés — le rendu du bureau d'études. */
   plans_sent_at: string | null;
   /** L'avis client, demandé puis reçu. Les deux métiers en recueillent. */
