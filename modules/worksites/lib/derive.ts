@@ -1,7 +1,9 @@
 import type {
   Alert,
+  Metier,
   ReadWorksite,
   StatusBucket,
+  StudyStatus,
   Worksite,
   WorksiteQuote,
   WorksiteStatus,
@@ -61,6 +63,28 @@ export function statusOf(worksite: Worksite, now: number): WorksiteStatus {
 }
 
 /**
+ * Où en est une étude.
+ *
+ * Le bureau d'études ne planifie pas, il produit. L'ordre des tests est celui
+ * de l'argent : rien ne commence avant l'acompte, et rien n'est fini avant le
+ * solde. Entre les deux, le seul jalon qui compte est le **rendu des plans** —
+ * c'est le livrable, et l'équivalent exact de la date de chantier.
+ */
+export function studyOf(worksite: Worksite, soldee: boolean, acompte: boolean): StudyStatus {
+  if (soldee) return "soldee";
+  if (worksite.plans_sent_at !== null) return "rendue";
+  if (!acompte) return "acompte_attendu";
+  return "en_cours";
+}
+
+export const STUDY_ORDER: StudyStatus[] = [
+  "acompte_attendu",
+  "en_cours",
+  "rendue",
+  "soldee",
+];
+
+/**
  * Le chiffré d'un chantier.
  *
  * On additionne les **devis**, jamais les factures : une facture reprend le
@@ -86,9 +110,13 @@ export function read(worksite: Worksite, now: number): ReadWorksite {
   const factures = worksite.quotes.filter(isInvoice);
   const devis = worksite.quotes.filter((quote) => !isInvoice(quote));
 
+  const acompte = worksite.quotes.some((q) => q.deposit_status === "recu");
+  const soldee = worksite.quotes.some((q) => q.balance_status === "recu");
+
   return {
     worksite,
     status: statusOf(worksite, now),
+    study: studyOf(worksite, soldee, acompte),
     daysRunning: worksite.started_at ? days(worksite.started_at, now) : null,
     daysSilent: worksite.last_interaction_at
       ? days(worksite.last_interaction_at, now)
@@ -109,7 +137,13 @@ export const STATUS_ORDER: WorksiteStatus[] = [
   "realise",
 ];
 
-export function buckets(reads: ReadWorksite[]): StatusBucket[] {
+export function buckets(reads: ReadWorksite[], metier: Metier): StatusBucket[] {
+  if (metier === "etudes") {
+    return STUDY_ORDER.map((status) => ({
+      status,
+      count: reads.filter((r) => r.study === status).length,
+    }));
+  }
   return STATUS_ORDER.map((status) => ({
     status,
     count: reads.filter((r) => r.status === status).length,
@@ -140,6 +174,40 @@ export function alertTotal(rows: Alert[]): number | null {
  * Chacune se lit sur une colonne réelle, et chacune est peuplée — une liste
  * d'alertes vide en permanence apprend à ignorer le bloc entier.
  */
+/**
+ * Les quatre listes de travail du bureau d'études.
+ *
+ * Ce ne sont pas celles des travaux, et c'est tout l'intérêt d'un écran à part :
+ * une étude ne manque pas de date de démarrage, elle manque d'acompte, de
+ * plans rendus, ou d'une facture de solde. Chacune se lit sur une colonne
+ * réelle, et chacune est peuplée.
+ */
+export function studyAlerts(reads: ReadWorksite[]) {
+  const attente = reads
+    .filter((r) => r.study === "acompte_attendu")
+    .map((r) => alert(r, "Signée, acompte non encaissé — l'étude ne démarre pas"));
+
+  const production = reads
+    .filter((r) => r.study === "en_cours" && (r.daysRunning ?? 0) > RUNNING_LONG_DAYS)
+    .sort((a, b) => (b.daysRunning ?? 0) - (a.daysRunning ?? 0))
+    .map((r) => alert(r, `En production depuis ${r.daysRunning} jours`));
+
+  const aFacturer = reads
+    .filter((r) => r.study === "rendue")
+    .map((r) => alert(r, "Plans rendus, solde non encaissé"));
+
+  const avis = reads
+    .filter(
+      (r) =>
+        r.study === "soldee" &&
+        r.worksite.review_requested_at === null &&
+        r.worksite.review_received_at === null,
+    )
+    .map((r) => alert(r, "Soldée — c'est le moment de demander l'avis"));
+
+  return { unplanned: attente, running: production, toInvoice: aFacturer, noDeposit: avis };
+}
+
 export function alerts(reads: ReadWorksite[]) {
   const unplanned = reads
     .filter((r) => r.status === "a_planifier")

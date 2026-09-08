@@ -772,7 +772,7 @@ export function nextAction(
         actions: [{ key: "send_plans", label: "Plans envoyés", primary: true }],
       };
     }
-    return soldeEtAvis(at, jalons, "plans");
+    return soldeEtAvis(at, jalons, "plans", "etudes");
   }
 
   const chantier = at("chantier");
@@ -804,7 +804,7 @@ export function nextAction(
     };
   }
 
-  return soldeEtAvis(at, jalons, "materiaux");
+  return soldeEtAvis(at, jalons, "materiaux", "travaux");
 }
 
 /**
@@ -819,6 +819,7 @@ function soldeEtAvis(
   at: (step: CycleStep) => CyclePoint,
   jalons: Jalons,
   precedent: CycleStep,
+  metier: Metier,
 ): NextAction {
   const solde = at("solde");
   if (solde.state !== "done") {
@@ -858,10 +859,18 @@ function soldeEtAvis(
   return {
     step: precedent,
     title: "Affaire terminée",
-    detail: "Prestation rendue, solde encaissé, avis recueilli.",
+    detail:
+      metier === "etudes"
+        ? "Plans rendus, solde encaissé, avis recueilli."
+        : "Chantier livré, solde encaissé, avis recueilli.",
     tone: "success",
     alert: false,
-    actions: [{ key: "open_worksite", label: "Ouvrir le chantier" }],
+    // Un bureau d'études n'a pas de chantier à ouvrir : lui proposer le bouton
+    // enverrait sur un écran qui ne le concerne pas.
+    actions:
+      metier === "travaux"
+        ? [{ key: "open_worksite", label: "Ouvrir le chantier" }]
+        : [],
   };
 }
 

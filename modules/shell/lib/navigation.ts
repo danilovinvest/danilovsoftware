@@ -4,6 +4,7 @@ import {
   FileTextIcon,
   HardHatIcon,
   LayoutDashboardIcon,
+  RulerIcon,
   MailIcon,
   MegaphoneIcon,
   ReceiptEuroIcon,
@@ -115,12 +116,22 @@ export const NAV_SECTIONS: NavSection[] = [
         ],
       },
       {
+        href: "/etudes",
+        label: "Études",
+        icon: RulerIcon,
+        hue: "indigo",
+        // Le carnet du bureau d'études : ce qui est en production, ce qui est
+        // rendu. Un métier qui produit un document, pas un chantier.
+        scopes: ["ompt-structure"],
+        permission: "customers:read",
+      },
+      {
         href: "/chantiers",
         label: "Chantiers",
         icon: HardHatIcon,
         hue: "amber",
-        // L'exécution appartient à OMPT GROUPE. STRUCTURE rend des plans, pas
-        // des chantiers — son écran à elle reste à écrire.
+        // L'exécution appartient à OMPT GROUPE : c'est elle qui réserve une
+        // date et commande du béton.
         scopes: ["ompt-groupe"],
         // Les affaires signées : ce qui suit la signature. Même permission que
         // les fiches — c'est la suite de la même affaire.

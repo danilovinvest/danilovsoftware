@@ -2,10 +2,16 @@
 
 import { TONE_SOFT } from "@/shared/ui/panel";
 import { cn } from "@/lib/utils";
-import { STATUS_ORDER } from "../lib/derive";
-import { WORKSITE_STATUS } from "../lib/labels";
+import { STATUS_ORDER, STUDY_ORDER } from "../lib/derive";
+import { STUDY_STATUS, WORKSITE_STATUS } from "../lib/labels";
 import { WorksiteCard } from "./worksite-card";
-import type { ReadWorksite, StatusBucket } from "../lib/types";
+import type {
+  Metier,
+  ReadWorksite,
+  StatusBucket,
+  StudyStatus,
+  WorksiteStatus,
+} from "../lib/types";
 
 /**
  * Le tableau, quatre colonnes.
@@ -18,18 +24,31 @@ import type { ReadWorksite, StatusBucket } from "../lib/types";
 export function WorksiteBoard({
   reads,
   board,
+  metier,
   onSelect,
 }: {
   reads: ReadWorksite[];
   board: StatusBucket[];
+  metier: Metier;
   onSelect: (id: string) => void;
 }) {
+  // Les deux métiers n'ont pas les mêmes colonnes : un bureau d'études ne
+  // planifie pas, il produit puis rend.
+  const etudes = metier === "etudes";
+  const ordre: Array<WorksiteStatus | StudyStatus> = etudes
+    ? STUDY_ORDER
+    : STATUS_ORDER;
+
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      {STATUS_ORDER.map((status) => {
-        const entry = WORKSITE_STATUS[status];
+      {ordre.map((status) => {
+        const entry = etudes
+          ? STUDY_STATUS[status as StudyStatus]
+          : WORKSITE_STATUS[status as WorksiteStatus];
         const bucket = board.find((b) => b.status === status);
-        const cards = reads.filter((r) => r.status === status);
+        const cards = reads.filter((r) =>
+          etudes ? r.study === status : r.status === status,
+        );
 
         return (
           <div key={status} className="flex min-w-0 flex-col gap-2">
@@ -54,7 +73,12 @@ export function WorksiteBoard({
                 </p>
               ) : (
                 cards.map((read) => (
-                  <WorksiteCard key={read.worksite.id} read={read} onSelect={onSelect} />
+                  <WorksiteCard
+                    key={read.worksite.id}
+                    read={read}
+                    metier={metier}
+                    onSelect={onSelect}
+                  />
                 ))
               )}
             </div>

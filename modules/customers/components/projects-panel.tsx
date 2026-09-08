@@ -97,14 +97,19 @@ export function ProjectsPanel({
    * les quatre jalons que l'API ne stocke pas encore.
    */
   /*
-    Les jalons ne vivent plus en mémoire.
+    Les jalons s'affichent tout de suite, puis s'enregistrent.
 
-    Ils étaient conservés ici, par affaire, et mouraient au rechargement :
-    cocher « RIB envoyé » ne servait à rien, et l'alerte « aucune date de
-    chantier » ne reposait sur rien. Chaque case écrit maintenant en base, puis
-    la fiche se recharge — un jalon se coche deux ou trois fois dans la vie
-    d'une affaire, ça ne mérite pas une mise à jour optimiste.
+    Ils vivaient en mémoire et mouraient au rechargement ; ils vivent
+    maintenant en base, mais attendre l'aller-retour pour voir une case se
+    cocher donne une interface qui semble ne pas répondre. Le geste est donc
+    appliqué localement d'abord — `optimiste` — et le serveur confirme.
+
+    En cas d'échec, la surcouche est retirée : la case revient où elle était, et
+    l'erreur s'affiche. C'est le seul moment où l'écran ment brièvement, et il
+    se dédit.
   */
+  const [optimiste, setOptimiste] = useState<Record<string, Partial<Jalons>>>({});
+
   const saveJalons = useAction(
     async (project: Project, patch: Partial<Jalons>) => {
       // La date de chantier est `started_at` de l'affaire, pas un jalon à
@@ -126,12 +131,15 @@ export function ProjectsPanel({
         return;
       }
 
-      const actuels = readJalons(
-        project.id,
-        quotes.filter((quote) => quote.project_id === project.id),
-        customer.milestones,
-        project,
-      );
+      const actuels = {
+        ...readJalons(
+          project.id,
+          quotes.filter((quote) => quote.project_id === project.id),
+          customer.milestones,
+          project,
+        ),
+        ...optimiste[project.id],
+      };
       const suivant = { ...actuels, ...patch };
       await api.setMilestones(project.id, {
         rib_sent_at: suivant.rib_sent_at,
@@ -142,8 +150,31 @@ export function ProjectsPanel({
         review_requested_at: suivant.review_requested_at,
         review_received_at: suivant.review_received_at,
       });
+      // `useAction` rend ce que l'action renvoie, et l'appelant s'en sert pour
+      // décider s'il recharge. Sans ce `true`, l'écriture réussissait et la
+      // fiche ne se rafraîchissait jamais.
+      return true;
     },
   );
+
+  /** Applique le geste tout de suite, l'enregistre, et se dédit s'il échoue. */
+  async function poserJalon(project: Project, patch: Partial<Jalons>) {
+    setOptimiste((current) => ({
+      ...current,
+      [project.id]: { ...current[project.id], ...patch },
+    }));
+    if (await saveJalons.run(project, patch)) {
+      onChanged();
+      return;
+    }
+    setOptimiste((current) => {
+      const suivant = { ...current };
+      const propre = { ...suivant[project.id] };
+      for (const cle of Object.keys(patch)) delete propre[cle as keyof Jalons];
+      suivant[project.id] = propre;
+      return suivant;
+    });
+  }
 
   if (projects.length === 0) {
     return (
@@ -181,21 +212,22 @@ export function ProjectsPanel({
           project={project}
           quotes={quotes.filter((quote) => quote.project_id === project.id)}
           interactions={interactions.filter((entry) => entry.project_id === project.id)}
-          jalons={readJalons(
-            project.id,
-            quotes.filter((quote) => quote.project_id === project.id),
-            customer.milestones,
-            project,
-          )}
+          jalons={{
+            ...readJalons(
+              project.id,
+              quotes.filter((quote) => quote.project_id === project.id),
+              customer.milestones,
+              project,
+            ),
+            ...optimiste[project.id],
+          }}
           now={now}
           canWrite={canWrite}
           canWriteQuotes={canWriteQuotes}
           // La première affaire s'ouvre : sur la majorité des fiches il n'y en
           // a qu'une, et la refermer d'office ferait un clic pour rien.
           defaultOpen={index === 0}
-          onOverride={async (patch) => {
-            if (await saveJalons.run(project, patch)) onChanged();
-          }}
+          onOverride={(patch) => poserJalon(project, patch)}
           onAddQuote={() => setQuoteFor(project)}
           onChanged={onChanged}
         />
@@ -384,7 +416,10 @@ function ProjectBlock({
         onOverride({ review_received_at: new Date().toISOString() });
         break;
       case "open_worksite":
-        router.push("/chantiers");
+        // Le chantier **est** cette affaire : on emmène son identifiant, sinon
+        // on atterrit sur une liste de quarante-neuf et il faut y rechercher
+        // ce qu'on venait de quitter.
+        router.push(`/chantiers?affaire=${project.id}`);
         break;
     }
   }

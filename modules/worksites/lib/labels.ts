@@ -1,5 +1,5 @@
 import type { Tone } from "@/modules/customers";
-import type { WorksiteStatus } from "./types";
+import type { StudyStatus, WorksiteStatus } from "./types";
 
 /**
  * Les quatre colonnes du tableau, dans l'ordre du chantier.
@@ -28,4 +28,26 @@ export const STATUS_RAIL: Record<WorksiteStatus, string> = {
   planifie: "border-l-info",
   en_cours: "border-l-success",
   realise: "border-l-neutral",
+};
+
+/**
+ * Les quatre crans d'une étude.
+ *
+ * Ils suivent l'argent : rien ne commence avant l'acompte, rien n'est fini
+ * avant le solde, et entre les deux le seul jalon qui compte est le rendu des
+ * plans. Proposer « à planifier » à une étude n'aurait aucun sens — un bureau
+ * d'études ne réserve pas de date, il produit.
+ */
+export const STUDY_STATUS: Record<StudyStatus, { label: string; tone: Tone }> = {
+  acompte_attendu: { label: "Acompte attendu", tone: "warning" },
+  en_cours: { label: "En production", tone: "info" },
+  rendue: { label: "Plans rendus", tone: "success" },
+  soldee: { label: "Soldée", tone: "neutral" },
+};
+
+export const STUDY_RAIL: Record<StudyStatus, string> = {
+  acompte_attendu: "border-l-warning",
+  en_cours: "border-l-info",
+  rendue: "border-l-success",
+  soldee: "border-l-neutral",
 };

@@ -55,6 +55,11 @@ export type Worksite = {
   created_at: string;
 
   last_interaction_at: string | null;
+  /** Les plans d'exécution envoyés — le rendu du bureau d'études. */
+  plans_sent_at: string | null;
+  /** L'avis client, demandé puis reçu. Les deux métiers en recueillent. */
+  review_requested_at: string | null;
+  review_received_at: string | null;
   quotes: WorksiteQuote[];
 };
 
@@ -76,10 +81,25 @@ export type WorksiteResult = {
  */
 export type WorksiteStatus = "a_planifier" | "planifie" | "en_cours" | "realise";
 
+/**
+ * Où en est une étude.
+ *
+ * Le bureau d'études ne planifie pas, il produit : rien ne commence avant
+ * l'acompte, et ce qui compte ensuite est le **rendu des plans**, puis
+ * l'encaissement du solde. Quatre crans, comme les chantiers, mais ce ne sont
+ * pas les mêmes — proposer « à planifier » à une étude n'aurait aucun sens.
+ */
+export type StudyStatus = "acompte_attendu" | "en_cours" | "rendue" | "soldee";
+
+/** Les deux métiers partagent l'écran ; ils n'y montrent pas la même chose. */
+export type Metier = "etudes" | "travaux";
+
 /** Un chantier, augmenté de ce qui s'en déduit à un instant donné. */
 export type ReadWorksite = {
   worksite: Worksite;
   status: WorksiteStatus;
+  /** L'avancement vu du bureau d'études. */
+  study: StudyStatus;
   /** Jours écoulés depuis le démarrage, nul quand aucune date n'est connue. */
   daysRunning: number | null;
   /** Jours depuis la dernière trace d'échange, nul s'il n'y en a jamais eu. */
@@ -103,7 +123,8 @@ export type ReadWorksite = {
 };
 
 export type StatusBucket = {
-  status: WorksiteStatus;
+  /** Le cran, dans l'un ou l'autre vocabulaire selon le métier de l'écran. */
+  status: WorksiteStatus | StudyStatus;
   count: number;
 };
 

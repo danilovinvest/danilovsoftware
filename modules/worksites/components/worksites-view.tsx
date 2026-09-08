@@ -5,6 +5,7 @@ import {
   BanknoteIcon,
   CalendarPlusIcon,
   ReceiptTextIcon,
+  StarIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmptyState, ErrorNotice } from "@/shared/ui/feedback";
@@ -14,9 +15,9 @@ import { Panel, RowShell, TONE_SOFT } from "@/shared/ui/panel";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useWorksites } from "../hooks/use-worksites";
-import { alertTotal, STATUS_ORDER } from "../lib/derive";
-import { WORKSITE_STATUS } from "../lib/labels";
-import type { Alert } from "../lib/types";
+import { alertTotal, STATUS_ORDER, STUDY_ORDER } from "../lib/derive";
+import { STUDY_STATUS, WORKSITE_STATUS } from "../lib/labels";
+import type { Alert, Metier, StudyStatus, WorksiteStatus } from "../lib/types";
 import { WorksiteBoard } from "./worksite-board";
 import { WorksiteList } from "./worksite-list";
 import { WorksitePlanning } from "./worksite-planning";
@@ -45,9 +46,19 @@ const VIEWS = [
  * Les quatre listes de travail d'abord, la vue d'ensemble ensuite : on ouvre
  * cet écran pour savoir quoi faire, pas pour contempler un tableau.
  */
-export function WorksitesView() {
-  const board = useWorksites();
+/**
+ * Un écran, deux métiers.
+ *
+ * Chantiers et Études partagent tout ce qui compte — le chargement, la carte,
+ * la liste, la fiche latérale — et divergent sur ce qui les définit : les
+ * colonnes du tableau et les quatre listes de travail. En faire deux modules
+ * aurait dupliqué quatre cents lignes pour que la moitié dérive au premier
+ * ajustement.
+ */
+export function WorksitesView({ metier = "travaux" }: { metier?: Metier }) {
+  const board = useWorksites(metier);
   const { work, reads } = board;
+  const etudes = metier === "etudes";
 
   // Le chiffré global, et sur combien de chantiers il porte. Le second nombre
   // n'est pas une coquetterie : un quart des devis seulement ont un montant,
@@ -62,9 +73,13 @@ export function WorksitesView() {
     <div className="flex flex-col gap-5">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-base font-semibold">Chantiers</h1>
+          <h1 className="text-base font-semibold">
+            {etudes ? "Études" : "Chantiers"}
+          </h1>
           <p className="text-muted-foreground mt-0.5 text-sm">
-            Les affaires signées : où elles en sont, et ce qui manque.
+            {etudes
+              ? "Le carnet du bureau d'études : ce qui est en production, ce qui est rendu."
+              : "Les affaires signées : où elles en sont, et ce qui manque."}
           </p>
         </div>
         <Input
@@ -79,33 +94,41 @@ export function WorksitesView() {
 
       <div className="grid items-start gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <AlertPanel
-          title="Sans date de démarrage"
-          description="Signé, aucune date posée"
-          icon={CalendarPlusIcon}
+          title={etudes ? "Acompte attendu" : "Sans date de démarrage"}
+          description={
+            etudes ? "L'étude ne démarre pas" : "Signé, aucune date posée"
+          }
+          icon={etudes ? BanknoteIcon : CalendarPlusIcon}
           tone="danger"
           rows={work.unplanned}
           onOpen={board.select}
         />
         <AlertPanel
-          title="Ouverts depuis longtemps"
-          description="Démarrés, jamais marqués réalisés"
+          title={etudes ? "En production depuis longtemps" : "Ouverts depuis longtemps"}
+          description={
+            etudes ? "Acompte encaissé, plans non rendus" : "Démarrés, jamais marqués réalisés"
+          }
           icon={AlarmClockIcon}
           tone="warning"
           rows={work.running}
           onOpen={board.select}
         />
         <AlertPanel
-          title="Réalisés, non facturés"
-          description="Aucune facture au dossier"
+          title={etudes ? "Rendues, non soldées" : "Réalisés, non facturés"}
+          description={
+            etudes ? "Plans remis, solde non encaissé" : "Aucune facture au dossier"
+          }
           icon={ReceiptTextIcon}
           tone="danger"
           rows={work.toInvoice}
           onOpen={board.select}
         />
         <AlertPanel
-          title="Acompte non encaissé"
-          description="Signé, aucun acompte reçu"
-          icon={BanknoteIcon}
+          title={etudes ? "Avis à demander" : "Acompte non encaissé"}
+          description={
+            etudes ? "Soldées, avis jamais demandé" : "Signé, aucun acompte reçu"
+          }
+          icon={etudes ? StarIcon : BanknoteIcon}
           tone="warning"
           rows={work.noDeposit}
           onOpen={board.select}
@@ -115,16 +138,20 @@ export function WorksitesView() {
       <Card className="gap-0 overflow-hidden py-0">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2">
           <p className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="font-medium">{plural(reads.length, "chantier")}</span>
+            <span className="font-medium">
+              {plural(reads.length, etudes ? "étude" : "chantier")}
+            </span>
             {chiffre !== null && (
               <span className="text-muted-foreground tabular-nums">
                 {eurosShort(chiffre)} HT sur {chiffres} devis chiffrés
               </span>
             )}
-            {STATUS_ORDER.map((status) => {
+            {(etudes ? STUDY_ORDER : STATUS_ORDER).map((status) => {
               const count = board.board.find((b) => b.status === status)?.count ?? 0;
               if (count === 0) return null;
-              const entry = WORKSITE_STATUS[status];
+              const entry = etudes
+                ? STUDY_STATUS[status as StudyStatus]
+                : WORKSITE_STATUS[status as WorksiteStatus];
               return (
                 <span
                   key={status}
@@ -164,15 +191,22 @@ export function WorksitesView() {
             <CardsSkeleton count={8} columns="sm:grid-cols-2 xl:grid-cols-4" hue="amber" />
           ) : reads.length === 0 ? (
             <EmptyState
-              title="Aucun chantier"
+              title={etudes ? "Aucune étude" : "Aucun chantier"}
               description={
                 board.city
                   ? "Aucune affaire signée dans cette ville."
-                  : "Un chantier apparaît ici dès qu'une affaire passe à « gagnée »."
+                  : etudes
+                    ? "Une étude apparaît ici dès qu'un devis d'OMPT STRUCTURE est signé."
+                    : "Un chantier apparaît ici dès qu'une affaire passe à « gagnée »."
               }
             />
           ) : board.view === "tableau" ? (
-            <WorksiteBoard reads={reads} board={board.board} onSelect={board.select} />
+            <WorksiteBoard
+              reads={reads}
+              board={board.board}
+              metier={metier}
+              onSelect={board.select}
+            />
           ) : board.view === "planning" ? (
             <WorksitePlanning reads={reads} now={board.now} onSelect={board.select} />
           ) : (
