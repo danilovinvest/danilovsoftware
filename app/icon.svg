@@ -20,8 +20,8 @@
       logo qui donne l'initiale d'un autre nom que celui de l'enseigne se lit
       comme une erreur, pas comme une signature.
 
-    Les couleurs sont figées : un fichier statique ne lit pas `--logo-*`, et
-    elles ne changent de toute façon ni avec la palette ni avec le thème.
+    Les couleurs sont figées : un fichier statique ne lit aucune
+    variable CSS, et elles ne changent de toute façon ni avec la palette ni avec le thème.
 
     Le découpage retire l'ergot que le tracé d'origine laisse sous l'arête
     basse : dans le logo complet il se perd derrière le M, isolé il se voit.
