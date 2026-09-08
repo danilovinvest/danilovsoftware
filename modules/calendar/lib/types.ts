@@ -20,6 +20,17 @@ export type Attendee = {
   self?: boolean;
 };
 
+/**
+ * De quoi il s'agit.
+ *
+ * L'agenda ne portait que des titres : rien ne distinguait un échange
+ * téléphonique d'une visite de chantier, et il fallait lire pour savoir. Les
+ * cinq valeurs sont celles de l'énumération SQL — « autre » recueille tout ce
+ * qui n'est aucune des quatre, y compris ce qu'un import a rapporté sans qu'on
+ * sache le classer.
+ */
+export type EventKind = "echange" | "rdv" | "chantier" | "interne" | "autre";
+
 export type CalendarEvent = {
   id: string;
   calendar_id: string;
@@ -38,6 +49,14 @@ export type CalendarEvent = {
   organizer: string;
   attendees: Attendee[];
   meet_url: string;
+  /**
+   * La fiche concernée, nulle pour ce qui ne concerne personne — une réunion
+   * interne, un congé. Le nom voyage avec l'identifiant : l'agenda l'affiche
+   * sans avoir à charger trois cent soixante-six fiches pour en nommer une.
+   */
+  customer_id: string | null;
+  customer_name: string;
+  kind: EventKind;
   updated_at: string;
 };
 
@@ -60,6 +79,14 @@ export type EventInput = {
   /** ISO 8601 pour un horaire, AAAA-MM-JJ pour une journée entière. */
   start: string;
   end: string;
+  /** La fiche concernée. Nulle pour ce qui ne concerne aucun client. */
+  customer_id: string | null;
+  /**
+   * Toujours envoyée, jamais omise : l'écriture remplace l'événement entier, et
+   * un champ absent retomberait sur « autre » en effaçant silencieusement la
+   * catégorie qu'on venait de choisir.
+   */
+  kind: EventKind;
 };
 
 /**
