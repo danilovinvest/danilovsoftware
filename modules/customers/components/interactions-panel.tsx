@@ -1,73 +1,46 @@
 "use client";
 
-import { useState } from "react";
-import { PlusIcon, Trash2Icon } from "lucide-react";
+import { Trash2Icon } from "lucide-react";
 import { usePermission } from "@/modules/auth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { EmptyState, ErrorNotice } from "@/shared/ui/feedback";
-import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
+import { EmptyState } from "@/shared/ui/feedback";
 import { formatDateTime } from "@/shared/lib/format";
 import * as api from "../lib/api";
-import { INTERACTION_KIND, toOptions } from "../lib/labels";
+import { INTERACTION_KIND } from "../lib/labels";
 import { useAction } from "../hooks/use-customers";
 import { CustomerAgenda } from "./customer-agenda";
 import { EnumBadge } from "./enum-badge";
-import type {
-  Interaction,
-  InteractionKind,
-  InteractionPayload,
-  Project,
-} from "../lib/types";
-
-function emptyInteraction(): InteractionPayload {
-  return {
-    project_id: null,
-    kind: "appel",
-    // <input type="datetime-local"> attend une heure locale sans fuseau.
-    occurred_at: new Date(Date.now() - new Date().getTimezoneOffset() * 60_000)
-      .toISOString()
-      .slice(0, 16),
-    summary: "",
-    details: "",
-  };
-}
+import type { Interaction } from "../lib/types";
 
 /**
  * Onglet « Échanges ».
  *
  * Deux moitiés, et la distinction est tout le dispositif : **ce qui est prévu**
  * — des événements d'agenda rattachés à la fiche — puis **ce qui a eu lieu**,
- * l'historique des interactions. Planifier un échange et en consigner un sont
- * deux gestes différents, et les fondre en un seul aurait fait apparaître dans
- * l'historique un rendez-vous qui n'a pas encore eu lieu.
+ * l'historique.
  *
- * Le formulaire de saisie reste replié : la page s'ouvre sur l'historique, pas
- * sur un champ vide.
+ * Il n'y a plus qu'une seule façon de noter un échange, et c'est le formulaire
+ * d'agenda : un échange daté d'hier est un échange qui a eu lieu, un échange
+ * daté de mardi est un échange prévu. Deux boutons côte à côte pour la même
+ * chose faisaient hésiter sur lequel prendre — et le second n'écrivait pas au
+ * même endroit que le premier, donc le choix était piégeux.
+ *
+ * L'historique, lui, reste : les relances y écrivent, et l'import Excel y a
+ * déposé la prospection reprise du classeur.
  */
 export function InteractionsPanel({
   customerId,
   customerName,
   interactions,
-  projects,
   onChanged,
 }: {
   customerId: string;
   customerName: string;
   interactions: Interaction[];
-  projects: Project[];
   onChanged: () => void;
 }) {
   const canWrite = usePermission("customers:write");
-  const [adding, setAdding] = useState(false);
-  const [values, setValues] = useState<InteractionPayload>(emptyInteraction);
-
-  const create = useAction(() =>
-    api.createInteraction(customerId, {
-      ...values,
-      occurred_at: new Date(values.occurred_at).toISOString(),
-    }),
-  );
   const remove = useAction((id: string) => api.deleteInteraction(id));
 
   return (
@@ -76,104 +49,22 @@ export function InteractionsPanel({
           savoir ce qu'on doit faire, pas pour relire ce qu'on a fait. */}
       <CustomerAgenda customerId={customerId} customerName={customerName} />
 
-      {canWrite && !adding && (
-        <div className="flex justify-end">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              setValues(emptyInteraction());
-              setAdding(true);
-            }}
-          >
-            <PlusIcon />
-            Ajouter un échange
-          </Button>
-        </div>
-      )}
-
-      {adding && (
-        <Card className="p-5">
-          <form
-            className="grid gap-4 sm:grid-cols-3"
-            onSubmit={async (event) => {
-              event.preventDefault();
-              if (!(await create.run())) return;
-              setAdding(false);
-              onChanged();
-            }}
-          >
-            {create.error && (
-              <div className="sm:col-span-3">
-                <ErrorNotice message={create.error} />
-              </div>
-            )}
-            <SelectField
-              label="Type"
-              options={toOptions(INTERACTION_KIND)}
-              value={values.kind}
-              onValueChange={(value) =>
-                setValues({ ...values, kind: value as InteractionKind })
-              }
-            />
-            <TextField
-              label="Date"
-              type="datetime-local"
-              value={values.occurred_at}
-              onChange={(event) =>
-                setValues({ ...values, occurred_at: event.target.value })
-              }
-            />
-            <SelectField
-              label="Affaire liée"
-              placeholder="Aucune"
-              emptyLabel="Aucune"
-              options={projects.map((project) => ({
-                value: project.id,
-                label: project.label,
-              }))}
-              value={values.project_id ?? ""}
-              onValueChange={(value) =>
-                setValues({ ...values, project_id: value || null })
-              }
-            />
-            <TextField
-              label="Résumé"
-              required
-              wrapperClassName="sm:col-span-3"
-              placeholder="Relance téléphonique"
-              value={values.summary}
-              error={create.fields.summary}
-              onChange={(event) => setValues({ ...values, summary: event.target.value })}
-            />
-            <TextAreaField
-              label="Détails"
-              wrapperClassName="sm:col-span-3"
-              className="min-h-20"
-              placeholder="Sans réponse, rappeler lundi."
-              value={values.details}
-              onChange={(event) => setValues({ ...values, details: event.target.value })}
-            />
-            <div className="flex gap-2 sm:col-span-3">
-              <Button type="submit" disabled={create.pending}>
-                Enregistrer
-              </Button>
-              <Button type="button" variant="ghost" onClick={() => setAdding(false)}>
-                Annuler
-              </Button>
-            </div>
-          </form>
-        </Card>
-      )}
-
       <Card className="gap-0 py-0">
+        <div className="px-5 py-3">
+          <p className="text-sm font-medium">Historique</p>
+          <p className="text-muted-foreground text-xs">
+            Appels, relances et rendez-vous déjà consignés.
+          </p>
+        </div>
         {interactions.length === 0 ? (
-          <EmptyState
-            title="Aucun échange"
-            description="Appels, relances, rendez-vous et rapports apparaîtront ici."
-          />
+          <div className="border-t">
+            <EmptyState
+              title="Aucun échange"
+              description="Les relances et les échanges consignés apparaîtront ici."
+            />
+          </div>
         ) : (
-          <ol className="divide-y">
+          <ol className="divide-y border-t">
             {interactions.map((item) => (
               <li
                 key={item.id}

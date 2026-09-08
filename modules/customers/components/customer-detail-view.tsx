@@ -216,7 +216,6 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
             customerId={customer.id}
             customerName={customer.display_name}
             interactions={customer.interactions}
-            projects={customer.projects}
             onChanged={reload}
           />
         </TabsContent>
