@@ -20,7 +20,14 @@ import { TONE_SOFT, TONE_TEXT } from "@/shared/ui/panel";
 import { formatAmount, formatDate, formatPhone } from "@/shared/lib/format";
 import * as api from "../lib/api";
 import { CUSTOMER_SOURCE, PROJECT_OUTCOME } from "../lib/labels";
-import { leadProject, nextAction, readCycle, type NextAction } from "../lib/cycle";
+import {
+  leadProject,
+  nextAction,
+  readCycle,
+  type Metier,
+  type NextAction,
+} from "../lib/cycle";
+import { useScope } from "@/modules/group";
 import { readJalons } from "../lib/jalons";
 import { EnumBadge } from "./enum-badge";
 import { ProjectCycle } from "./project-cycle";
@@ -52,6 +59,10 @@ export function CustomerTable({
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [now] = useState(() => Date.now());
   const canWrite = usePermission("customers:write");
+  // Sans devis dans la liste, le périmètre est le meilleur indice du métier :
+  // en mode STRUCTURE ce sont des études qu'on regarde, pas des chantiers.
+  const scope = useScope();
+  const metier: Metier = scope === "ompt-structure" ? "etudes" : "travaux";
 
   /*
     Les cases cochées pendant la session, par-dessus ce que le serveur a servi.
@@ -132,7 +143,9 @@ export function CustomerTable({
             : items.map((customer) => {
                 const open = expanded.has(customer.id);
                 const hasProjects = customer.projects.length > 0;
-                const reads = customer.projects.map((project) => read(project, now));
+                const reads = customer.projects.map((project) =>
+                  read(project, now, metier),
+                );
                 const lead = leadProject(reads);
 
                 return (
@@ -365,9 +378,9 @@ function ActionCell({ action }: { action: NextAction }) {
  * l'étape enregistrée. C'est le compromis assumé : la liste situe, la fiche
  * détaille.
  */
-function read(project: ProjectSummary, now: number) {
+function read(project: ProjectSummary, now: number, metier: Metier) {
   const jalons = readJalons(project.id, [], undefined, project);
-  const points = readCycle(project, [], [], jalons, now);
+  const points = readCycle(project, [], [], jalons, now, metier);
   return {
     project,
     points,

@@ -275,6 +275,15 @@ export function readCycle(
   interactions: Interaction[],
   jalons: Jalons,
   now: number,
+  /*
+    Le métier, quand l'appelant le sait mieux que les devis.
+
+    La liste des fiches ne transporte pas les devis — elle situe, la fiche
+    détaille — et déduirait donc « travaux » pour tout le monde. Le périmètre
+    choisi dans la barre latérale est alors le meilleur indice disponible : en
+    mode STRUCTURE, ce sont des études qu'on regarde.
+  */
+  metierForce?: Metier,
 ): CyclePoint[] {
   const mine = interactions.filter((i) => i.project_id === project.id);
   const lead = leadQuote(quotes);
@@ -319,7 +328,7 @@ export function readCycle(
   const balance: PaymentStatus = signed?.balance_status ?? lead?.balance_status ?? "non_applicable";
   const soldeDone = balance === "recu";
 
-  const metier = metierOf(quotes);
+  const metier = metierForce ?? metierOf(quotes);
 
   /*
     Le rapport de visite, propre aux études.
