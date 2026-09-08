@@ -7,7 +7,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { DateField } from "@/shared/ui/date-time-field";
 import { formatDate } from "@/shared/lib/format";
 import { cn } from "@/lib/utils";
-import { JALON_ORDER, type Jalons } from "../lib/jalons";
+import { jalonOrder, type Jalons } from "../lib/jalons";
+import type { Metier } from "../lib/cycle";
 
 /**
  * L'après-signature : ce qui sépare un devis signé d'un chantier qui démarre.
@@ -23,27 +24,32 @@ import { JALON_ORDER, type Jalons } from "../lib/jalons";
  * parce que c'est là que tout attend.
  */
 export function ProjectJalons({
+  metier,
   jalons,
   onToggle,
   disabled,
   className,
 }: {
+  /** Le métier de l'affaire : il décide de la liste des jalons. */
+  metier: Metier;
   jalons: Jalons;
   onToggle: (key: keyof Jalons, value: string | null) => void;
   disabled?: boolean;
   className?: string;
 }) {
+  const ordre = jalonOrder(metier);
+
   return (
     <div className={cn("flex flex-col gap-3", className)}>
       <ol className="flex flex-col">
-        {JALON_ORDER.map((jalon, index) => {
+        {ordre.map((jalon, index) => {
           const at = jalons[jalon.key];
           const done = at !== null;
-          const last = index === JALON_ORDER.length - 1;
+          const last = index === ordre.length - 1;
           // Le premier jalon non atteint est celui qui bloque la suite : lui
           // seul se met en avant, sans quoi six lignes réclameraient à la fois.
           const blocking =
-            !done && JALON_ORDER.slice(0, index).every((prev) => jalons[prev.key] !== null);
+            !done && ordre.slice(0, index).every((prev) => jalons[prev.key] !== null);
 
           return (
             <li key={jalon.key} className="flex gap-3">

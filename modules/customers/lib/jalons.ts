@@ -110,25 +110,52 @@ function signedQuote(quotes: Quote[]): Quote | null {
 export { depositOf };
 
 /**
- * Les six jalons dans l'ordre du cycle.
+ * Les jalons d'après-signature, dans l'ordre du cycle et selon le métier.
  *
  * L'ordre n'est pas décoratif : rien ne se commande avant l'acompte encaissé,
- * et c'est en le voyant qu'on comprend pourquoi une affaire signée depuis six
- * semaines n'a toujours pas de date.
+ * et l'avis ne se demande qu'après le solde — « il faut la preuve que les sous
+ * sont payés ». C'est en le voyant qu'on comprend pourquoi une affaire signée
+ * depuis six semaines n'a toujours pas de date.
+ *
+ * Les deux métiers divergent après l'acompte : les travaux réservent une date
+ * et commandent du béton, l'étude envoie ses plans d'exécution. Un bureau
+ * d'études à qui l'on proposerait de cocher « matériaux commandés » douterait
+ * du reste de l'écran.
  */
-export const JALON_ORDER: Array<{
+export type Jalon = {
   key: keyof Jalons;
   label: string;
   hint: string;
   /** Une date choisie au calendrier, et non la date du jour. */
   picks: boolean;
-}> = [
+};
+
+const ACOMPTE: Jalon[] = [
   {
     key: "deposit_invoiced_at",
     label: "Acompte facturé",
     hint: "La facture d'acompte est partie",
     picks: false,
   },
+];
+
+const FIN: Jalon[] = [
+  {
+    key: "review_requested_at",
+    label: "Avis demandé",
+    hint: "À demander une fois le solde encaissé, jamais avant",
+    picks: false,
+  },
+  {
+    key: "review_received_at",
+    label: "Avis reçu",
+    hint: "La parole du client, à reprendre dans une réalisation",
+    picks: false,
+  },
+];
+
+const TRAVAUX: Jalon[] = [
+  ...ACOMPTE,
   {
     key: "rib_sent_at",
     label: "RIB envoyé",
@@ -150,7 +177,7 @@ export const JALON_ORDER: Array<{
   {
     key: "worksite_date",
     label: "Date de chantier",
-    hint: "La date réservée au planning",
+    hint: "La date réservée au planning, partagée avec l'écran Chantiers",
     picks: true,
   },
   {
@@ -159,4 +186,29 @@ export const JALON_ORDER: Array<{
     hint: "Béton, acier et fournitures",
     picks: false,
   },
+  ...FIN,
 ];
+
+const ETUDES: Jalon[] = [
+  ...ACOMPTE,
+  {
+    key: "deposit_paid_at",
+    label: "Acompte encaissé",
+    hint: "L'étude démarre à l'encaissement",
+    picks: false,
+  },
+  {
+    key: "plans_sent_at",
+    label: "Plans envoyés",
+    hint: "Les plans d'exécution remis au client — le livrable attendu",
+    picks: false,
+  },
+  ...FIN,
+];
+
+export function jalonOrder(metier: "etudes" | "travaux"): Jalon[] {
+  return metier === "etudes" ? ETUDES : TRAVAUX;
+}
+
+/** Conservé pour ce qui ne distingue pas les métiers. */
+export const JALON_ORDER = TRAVAUX;

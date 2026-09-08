@@ -30,6 +30,7 @@ import {
 import {
   hasSurvey,
   leadQuote,
+  metierOf,
   nextAction,
   readCycle,
   revisions,
@@ -137,6 +138,9 @@ export function ProjectsPanel({
         insurance_sent_at: suivant.insurance_sent_at,
         materials_ordered_at: suivant.materials_ordered_at,
         resume_at: suivant.resume_at,
+        plans_sent_at: suivant.plans_sent_at,
+        review_requested_at: suivant.review_requested_at,
+        review_received_at: suivant.review_received_at,
       });
     },
   );
@@ -286,6 +290,31 @@ function ProjectBlock({
       amount_note: target.amount_note,
       deposit_status: status,
       balance_status: target.balance_status,
+      comment: target.comment,
+    });
+  });
+
+  /*
+    Le solde suit la même route que l'acompte : c'est le devis qui porte le
+    règlement, et le serveur horodate la date à partir du statut. Deux actions
+    distinctes parce qu'un solde encaissé n'implique pas un acompte, ni
+    l'inverse — on peut solder une prestation payée en une fois.
+  */
+  const setBalance = useAction((status: "en_attente" | "recu") => {
+    const target = quotes.find((q) => q.status === "accepte" || q.status === "realise") ?? lead;
+    if (!target) throw new Error("Aucun devis à mettre à jour sur cette affaire.");
+    return api.updateQuote(target.id, {
+      reference: target.reference,
+      kind: target.kind,
+      label: target.label,
+      status: target.status,
+      issued_at: target.issued_at,
+      amount_ht: target.amount_ht,
+      amount_ttc: target.amount_ttc,
+      vat_rate: target.vat_rate,
+      amount_note: target.amount_note,
+      deposit_status: target.deposit_status,
+      balance_status: status,
       comment: target.comment,
     });
   });
@@ -480,6 +509,7 @@ function ProjectBlock({
 
               <TabsContent value="apres" className="pt-4">
                 <ProjectJalons
+                  metier={metierOf(quotes)}
                   jalons={jalons}
                   disabled={!canWrite || setDeposit.pending}
                   onToggle={async (key, value) => {

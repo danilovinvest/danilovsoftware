@@ -126,6 +126,9 @@ export function setMilestones(
     insurance_sent_at: string | null;
     materials_ordered_at: string | null;
     resume_at: string | null;
+    plans_sent_at: string | null;
+    review_requested_at: string | null;
+    review_received_at: string | null;
   },
 ) {
   return apiFetch<Milestones>(`/v1/projects/${projectId}/milestones`, {
