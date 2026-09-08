@@ -62,15 +62,19 @@ export function useCustomers(filters: CustomerFilters) {
 
 export function useCustomerStats() {
   const [stats, setStats] = useState<CustomerStats | null>(null);
+  // Les comptes suivent le périmètre : en mode STRUCTURE, « à relancer » doit
+  // compter les études et non les chantiers.
+  const scope = useScope();
+  const issuer = scopeParam(scope) ?? "";
 
   useEffect(() => {
     const controller = new AbortController();
     api
-      .getStats(controller.signal)
+      .getStats(issuer, controller.signal)
       .then(setStats)
       .catch(() => setStats(null));
     return () => controller.abort();
-  }, []);
+  }, [issuer]);
 
   return stats;
 }

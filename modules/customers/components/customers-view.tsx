@@ -8,8 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState, ErrorNotice } from "@/shared/ui/feedback";
 import { CUSTOMER_STATUS } from "../lib/labels";
-import { CYCLE_FILTERS, type CycleFilter } from "../lib/cycle";
-import { REVIEW_FILTERS } from "../lib/review";
+import { type CycleFilter } from "../lib/cycle";
 import {
   useCustomerFilters,
   useCustomers,
@@ -18,7 +17,6 @@ import {
 import { CustomerFiltersBar } from "./customer-filters";
 import { CustomerTable } from "./customer-table";
 import { Pagination } from "./pagination";
-import { cn } from "@/lib/utils";
 
 const STATUS_ORDER = ["prospect", "client", "perdu", "archive"] as const;
 
@@ -95,58 +93,10 @@ export function CustomersView() {
             onReset={reset}
             hasActiveFilters={active}
             counts={counts}
+            filterCounts={stats?.by_filter ?? null}
+            total={data?.total ?? null}
           />
 
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
-            {CYCLE_FILTERS.map((entry) => (
-              <button
-                key={entry.key}
-                type="button"
-                onClick={() =>
-                  update({ cycle: entry.key === "tous" ? undefined : entry.key, page: 1 })
-                }
-                className={cn(
-                  "rounded-md px-2 py-1 text-xs transition-colors",
-                  cycle === entry.key
-                    ? "bg-primary text-primary-foreground font-medium"
-                    : "text-muted-foreground hover:bg-muted",
-                )}
-              >
-                {entry.label}
-              </button>
-            ))}
-            {/*
-              La relecture, séparée du cycle par un trait : elle ne répond pas à
-              la même question. Le cycle dit où en est l'affaire ; ceci dit ce
-              qu'on sait de la fiche, et c'est ce qui reste de la reprise des
-              deux cent quarante-quatre dossiers.
-            */}
-            <span className="bg-border mx-1 h-4 w-px" aria-hidden />
-            {REVIEW_FILTERS.map((entry) => (
-              <button
-                key={entry.key}
-                type="button"
-                title={entry.hint}
-                onClick={() =>
-                  update({ review: review === entry.key ? undefined : entry.key, page: 1 })
-                }
-                className={cn(
-                  "rounded-md px-2 py-1 text-xs transition-colors",
-                  review === entry.key
-                    ? "bg-primary text-primary-foreground font-medium"
-                    : "text-muted-foreground hover:bg-muted",
-                )}
-              >
-                {entry.label}
-              </button>
-            ))}
-
-            {(cycle !== "tous" || review !== "") && data && (
-              <span className="text-muted-foreground/60 ml-1 text-xs tabular-nums">
-                {data.total} fiche{data.total > 1 ? "s" : ""}
-              </span>
-            )}
-          </div>
         </div>
 
         {error ? (

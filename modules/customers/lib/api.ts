@@ -63,8 +63,11 @@ export function setCustomerReview(
   });
 }
 
-export function getStats(signal?: AbortSignal) {
-  return apiFetch<CustomerStats>("/v1/customers/stats", { signal });
+export function getStats(issuer: string, signal?: AbortSignal) {
+  return apiFetch<CustomerStats>("/v1/customers/stats", {
+    query: { issuer: issuer || undefined },
+    signal,
+  });
 }
 
 export function createCustomer(payload: CustomerPayload) {

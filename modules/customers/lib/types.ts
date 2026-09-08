@@ -246,8 +246,26 @@ export type CustomerDetail = Customer & {
   milestones: Milestones[];
 };
 
+/**
+ * Combien de fiches derrière chaque filtre de travail.
+ *
+ * Un filtre sans son compte ne dit pas s'il vaut le clic : « À relancer 63 » et
+ * « Sans RDV 0 » ne s'ouvrent pas de la même façon.
+ */
+export type FilterCounts = {
+  toutes: number;
+  a_relancer: number;
+  sans_rdv: number;
+  devis_en_attente: number;
+  acompte_en_attente: number;
+  sans_date: number;
+  a_verifier: number;
+  a_completer: number;
+};
+
 export type CustomerStats = {
   by_status: Array<{ status: CustomerStatus; total: number }>;
+  by_filter: FilterCounts;
 };
 
 export type CustomerFilters = {
