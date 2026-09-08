@@ -340,6 +340,20 @@ function ProjectBlock({
       case "order_materials":
         onOverride({ materials_ordered_at: new Date().toISOString() });
         break;
+      case "send_plans":
+        onOverride({ plans_sent_at: new Date().toISOString() });
+        break;
+      case "invoice_balance":
+        // Le solde appartient au devis, comme l'acompte : c'est lui qui porte
+        // le règlement.
+        if (await setBalance.run("recu")) onChanged();
+        break;
+      case "ask_review":
+        onOverride({ review_requested_at: new Date().toISOString() });
+        break;
+      case "record_review":
+        onOverride({ review_received_at: new Date().toISOString() });
+        break;
       case "open_worksite":
         router.push("/chantiers");
         break;

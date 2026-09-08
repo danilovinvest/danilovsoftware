@@ -555,7 +555,11 @@ export type ActionKey =
   | "send_insurance"
   | "book_date"
   | "order_materials"
-  | "open_worksite";
+  | "open_worksite"
+  | "send_plans"
+  | "invoice_balance"
+  | "ask_review"
+  | "record_review";
 
 export type NextAction = {
   /** Le cran auquel l'action se rattache. */
@@ -738,6 +742,30 @@ export function nextAction(
     };
   }
 
+  /*
+    À partir d'ici, les deux métiers divergent.
+
+    Le bureau d'études prépare et envoie des plans ; l'entreprise de travaux
+    réserve une date et commande du béton. Les proposer à l'un ce qui appartient
+    à l'autre serait pire qu'inutile — « commander les matériaux » sur une étude
+    ferait douter de tout le reste de l'écran.
+  */
+  if (metierOf(quotes) === "etudes") {
+    const plans = at("plans");
+    if (plans.state !== "done") {
+      const days = plans.waiting ?? 0;
+      return {
+        step: "plans",
+        title: "Plans d'exécution à rendre",
+        detail: `Acompte encaissé depuis ${days} j. C'est le livrable attendu.`,
+        tone: days > PLANNING_GRACE_DAYS ? "danger" : "warning",
+        alert: days > PLANNING_GRACE_DAYS,
+        actions: [{ key: "send_plans", label: "Plans envoyés", primary: true }],
+      };
+    }
+    return soldeEtAvis(at, jalons, "plans");
+  }
+
   const chantier = at("chantier");
   if (chantier.state !== "done") {
     const days = chantier.waiting ?? 0;
@@ -767,15 +795,64 @@ export function nextAction(
     };
   }
 
+  return soldeEtAvis(at, jalons, "materiaux");
+}
+
+/**
+ * La fin de course, commune aux deux métiers : le solde, puis l'avis.
+ *
+ * **L'avis ne se demande qu'une fois l'argent rentré.** C'est la règle du
+ * dirigeant, et le CRM peut la tenir seul puisqu'il connaît le statut du solde.
+ * Réclamer un avis à un client qui n'a pas fini de payer est le meilleur moyen
+ * d'en obtenir un mauvais.
+ */
+function soldeEtAvis(
+  at: (step: CycleStep) => CyclePoint,
+  jalons: Jalons,
+  precedent: CycleStep,
+): NextAction {
+  const solde = at("solde");
+  if (solde.state !== "done") {
+    const days = solde.waiting ?? 0;
+    return {
+      step: "solde",
+      title: "Solde à facturer",
+      detail: "La prestation est rendue. Rien d'autre ne bloque l'encaissement.",
+      tone: waitingTone(days),
+      alert: days > FRESH_DAYS,
+      actions: [{ key: "invoice_balance", label: "Solde encaissé", primary: true }],
+    };
+  }
+
+  const avis = at("avis");
+  if (avis.state !== "done") {
+    if (jalons.review_requested_at === null) {
+      return {
+        step: "avis",
+        title: "Avis client à demander",
+        detail: "Le solde est encaissé — c'est le moment de le demander.",
+        tone: "info",
+        alert: false,
+        actions: [{ key: "ask_review", label: "Avis demandé", primary: true }],
+      };
+    }
+    return {
+      step: "avis",
+      title: "Avis client en attente",
+      detail: "Demandé, jamais revenu. Une relance vaut mieux qu'un silence.",
+      tone: "warning",
+      alert: false,
+      actions: [{ key: "record_review", label: "Avis reçu", primary: true }],
+    };
+  }
+
   return {
-    step: "materiaux",
-    title: "Prêt à démarrer",
-    detail: jalons.worksite_date
-      ? `Chantier le ${formatDay(jalons.worksite_date)}, matériaux commandés.`
-      : "Tout est en place.",
+    step: precedent,
+    title: "Affaire terminée",
+    detail: "Prestation rendue, solde encaissé, avis recueilli.",
     tone: "success",
     alert: false,
-    actions: [{ key: "open_worksite", label: "Ouvrir le chantier", primary: true }],
+    actions: [{ key: "open_worksite", label: "Ouvrir le chantier" }],
   };
 }
 

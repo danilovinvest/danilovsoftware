@@ -11,6 +11,7 @@ import {
   PhoneIcon,
   RotateCcwIcon,
   ShieldCheckIcon,
+  StarIcon,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,10 @@ const ICONS: Record<ActionKey, LucideIcon> = {
   book_date: CalendarPlusIcon,
   order_materials: PackageIcon,
   open_worksite: CheckCircle2Icon,
+  send_plans: FileTextIcon,
+  invoice_balance: BanknoteIcon,
+  ask_review: StarIcon,
+  record_review: StarIcon,
 };
 
 export function ProjectNextAction({
