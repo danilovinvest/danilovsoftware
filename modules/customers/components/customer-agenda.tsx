@@ -103,8 +103,8 @@ export function CustomerAgenda({
               {events === null
                 ? "Chargement…"
                 : aVenir.length === 0
-                  ? "Rien de prévu avec ce client."
-                  : `${aVenir.length} à venir`}
+                  ? "Rien de prévu. Une date passée consigne un échange qui a déjà eu lieu."
+                  : `${aVenir.length} à venir · une date passée consigne ce qui a déjà eu lieu`}
             </p>
           </div>
           {canWrite && (
