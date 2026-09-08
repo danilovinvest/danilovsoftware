@@ -10,8 +10,14 @@ import {
   startOfWeek,
   toOccurrence,
 } from "../lib/events";
-import { formatDayShort, formatMonthYear } from "../lib/labels";
-import type { Calendar, CalendarEvent, CalendarView, Occurrence } from "../lib/types";
+import { EVENT_KIND, formatDayShort, formatMonthYear } from "../lib/labels";
+import type {
+  Calendar,
+  CalendarEvent,
+  CalendarView,
+  EventKind,
+  Occurrence,
+} from "../lib/types";
 
 type Resolved<T> = { key: string; data: T | null; error: string | null };
 

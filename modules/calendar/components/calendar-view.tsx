@@ -209,6 +209,8 @@ Rendez-vous, visites de chantier et absences de l&apos;équipe.
         <CalendarSidebar
           calendars={calendar.calendars}
           onToggle={calendar.toggleCalendar}
+          kinds={calendar.kinds}
+          onToggleKind={calendar.toggleKind}
           loaded={calendar.loaded}
         />
 
