@@ -214,6 +214,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
         <TabsContent value="echanges" className="mt-4">
           <InteractionsPanel
             customerId={customer.id}
+            customerName={customer.display_name}
             interactions={customer.interactions}
             projects={customer.projects}
             onChanged={reload}

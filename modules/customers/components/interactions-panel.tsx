@@ -11,6 +11,7 @@ import { formatDateTime } from "@/shared/lib/format";
 import * as api from "../lib/api";
 import { INTERACTION_KIND, toOptions } from "../lib/labels";
 import { useAction } from "../hooks/use-customers";
+import { CustomerAgenda } from "./customer-agenda";
 import { EnumBadge } from "./enum-badge";
 import type {
   Interaction,
@@ -33,16 +34,26 @@ function emptyInteraction(): InteractionPayload {
 }
 
 /**
- * Onglet « Échanges ». Le formulaire reste replié : la page s'ouvre sur
- * l'historique, pas sur une saisie.
+ * Onglet « Échanges ».
+ *
+ * Deux moitiés, et la distinction est tout le dispositif : **ce qui est prévu**
+ * — des événements d'agenda rattachés à la fiche — puis **ce qui a eu lieu**,
+ * l'historique des interactions. Planifier un échange et en consigner un sont
+ * deux gestes différents, et les fondre en un seul aurait fait apparaître dans
+ * l'historique un rendez-vous qui n'a pas encore eu lieu.
+ *
+ * Le formulaire de saisie reste replié : la page s'ouvre sur l'historique, pas
+ * sur un champ vide.
  */
 export function InteractionsPanel({
   customerId,
+  customerName,
   interactions,
   projects,
   onChanged,
 }: {
   customerId: string;
+  customerName: string;
   interactions: Interaction[];
   projects: Project[];
   onChanged: () => void;
@@ -61,6 +72,10 @@ export function InteractionsPanel({
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Ce qui est prévu vient avant ce qui a eu lieu : on ouvre une fiche pour
+          savoir ce qu'on doit faire, pas pour relire ce qu'on a fait. */}
+      <CustomerAgenda customerId={customerId} customerName={customerName} />
+
       {canWrite && !adding && (
         <div className="flex justify-end">
           <Button

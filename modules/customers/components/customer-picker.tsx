@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { CheckIcon, SearchIcon, XIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
 import { Spinner } from "@/shared/ui/feedback";
 import { listCustomers } from "../lib/api";
 import { useDebounced } from "../hooks/use-customers";
@@ -38,23 +37,34 @@ export function CustomerPicker({
 }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
-  const [items, setItems] = useState<CustomerListItem[] | null>(null);
+  /**
+   * La réponse **et la question qui l'a produite**.
+   *
+   * Garder les seuls résultats obligerait à les effacer dès que la saisie
+   * change, donc à écrire dans l'état pendant un effet — et à afficher une
+   * fraction de seconde la réponse d'une recherche précédente sous une frappe
+   * plus récente. La question voyage avec sa réponse : ce qui ne correspond
+   * plus à ce qu'on tape n'est simplement pas affiché.
+   */
+  const [resultat, setResultat] = useState<{
+    pour: string;
+    items: CustomerListItem[];
+  } | null>(null);
   const bloc = useRef<HTMLDivElement>(null);
-  const cherche = useDebounced(query);
+  const cherche = useDebounced(query).trim();
+
+  const items = resultat?.pour === cherche ? resultat.items : null;
 
   useEffect(() => {
-    if (cherche.trim().length < 2) {
-      setItems(null);
-      return;
-    }
+    if (cherche.length < 2) return;
     const controller = new AbortController();
     listCustomers(
-      { search: cherche.trim(), sort: "name", page: 1, per_page: 8 },
+      { search: cherche, sort: "name", page: 1, per_page: 8 },
       controller.signal,
     )
-      .then((page) => setItems(page.items))
+      .then((page) => setResultat({ pour: cherche, items: page.items }))
       .catch(() => {
-        if (!controller.signal.aborted) setItems([]);
+        if (!controller.signal.aborted) setResultat({ pour: cherche, items: [] });
       });
     return () => controller.abort();
   }, [cherche]);
@@ -93,7 +103,7 @@ export function CustomerPicker({
     );
   }
 
-  const attente = cherche.trim().length >= 2 && items === null;
+  const attente = cherche.length >= 2 && items === null;
 
   return (
     <div ref={bloc} className="relative flex flex-col gap-1.5">
@@ -120,7 +130,7 @@ export function CustomerPicker({
         <ul className="bg-popover absolute top-full right-0 left-0 z-50 mt-1 max-h-56 overflow-y-auto rounded-xl border p-1 shadow-lg">
           {items.length === 0 ? (
             <li className="text-muted-foreground px-2 py-3 text-center text-xs">
-              Aucune fiche pour « {cherche.trim()} »
+              Aucune fiche pour « {cherche} »
             </li>
           ) : (
             items.map((item) => (
