@@ -56,6 +56,27 @@ export function CalendarView() {
   const [formOpen, setFormOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /**
+   * Une heure de départ proposable, sur un jour donné.
+   *
+   * Le bouton et le raccourci passaient le jour à minuit : le formulaire
+   * s'ouvrait sur « 00:00 – 00:00 », un événement de durée nulle au milieu de
+   * la nuit, qu'il fallait corriger à chaque fois. On propose le prochain quart
+   * d'heure quand c'est aujourd'hui — les créneaux de saisie sont au quart
+   * d'heure — et neuf heures pour un autre jour, qui est le début de la journée
+   * de l'entreprise.
+   */
+  function creneau(jour: Date): { from: Date; to: Date } {
+    const from = new Date(jour);
+    const maintenant = new Date();
+    if (from.toDateString() === maintenant.toDateString()) {
+      from.setHours(maintenant.getHours(), Math.ceil(maintenant.getMinutes() / 15) * 15, 0, 0);
+    } else {
+      from.setHours(9, 0, 0, 0);
+    }
+    return { from, to: new Date(from.getTime() + 3_600_000) };
+  }
+
   function openCreation(from: Date, to: Date, allDay: boolean) {
     setEditing(null);
     setTemplate(null);
@@ -161,7 +182,10 @@ export function CalendarView() {
         case "c":
           if (canWrite && calendar.ready) {
             event.preventDefault();
-            openCreation(calendar.cursor, calendar.cursor, false);
+            {
+              const { from, to } = creneau(calendar.cursor);
+              openCreation(from, to, false);
+            }
           }
           break;
         default:
@@ -198,7 +222,13 @@ Rendez-vous, visites de chantier et absences de l&apos;équipe.
         </div>
 
         {canWrite && calendar.ready && (
-          <Button size="sm" onClick={() => openCreation(calendar.today, calendar.today, false)}>
+          <Button
+            size="sm"
+            onClick={() => {
+              const { from, to } = creneau(calendar.today);
+              openCreation(from, to, false);
+            }}
+          >
             <PlusIcon />
             Nouvel événement
           </Button>

@@ -92,6 +92,36 @@ export function EventForm({
   );
 }
 
+/*
+Un abonnement de jours fériés n'est pas une destination.
+
+Google publie « Jours fériés et autres fêtes en France » comme un agenda
+ordinaire, et l'import le recopie comme les autres — à juste titre, on veut
+voir les fériés dans la grille. Mais il arrivait **en tête de la liste des
+destinations**, donc tout nouveau rendez-vous y atterrissait par défaut : un
+rendez-vous client rangé dans les jours fériés, et la seule autre entrée était
+une adresse Gmail. On ne l'y propose plus.
+
+Le suffixe est celui de Google, identique pour tous les pays
+(`fr.french#holiday@…`, `en.usa#holiday@…`) : reconnaître le nom aurait écarté
+un agenda que quelqu'un aurait appelé « Fêtes ».
+
+L'agenda de l'événement qu'on modifie reste dans la liste quoi qu'il arrive —
+sans quoi ouvrir un férié importé afficherait un champ vide, et l'enregistrer
+le déplacerait ailleurs sans qu'on l'ait demandé.
+*/
+const ABONNEMENT_FERIES = "#holiday@group.v.calendar.google.com";
+
+function destinations(calendars: Calendar[], garde?: string): Calendar[] {
+  const utiles = calendars.filter(
+    (calendar) =>
+      calendar.id === garde || !calendar.google_calendar_id.endsWith(ABONNEMENT_FERIES),
+  );
+  // Si l'entreprise n'a *que* des abonnements, mieux vaut les proposer que de
+  // rendre la création impossible.
+  return utiles.length > 0 ? utiles : calendars;
+}
+
 type Draft = {
   calendarId: string;
   /** De quoi il s'agit. Voir `EVENT_KIND`. */
@@ -127,8 +157,9 @@ function FormBody({
   template: CalendarEvent | null;
   preset: EventPreset | null;
 }) {
+  const cibles = destinations(calendars, event?.calendar_id);
   const [draft, setDraft] = useState<Draft>(() =>
-    initial(event, range, calendars, template, preset),
+    initial(event, range, cibles, template, preset),
   );
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -225,7 +256,7 @@ function FormBody({
             required
             value={draft.calendarId}
             onValueChange={(value) => set("calendarId", value)}
-            options={calendars.map((calendar) => ({
+            options={cibles.map((calendar) => ({
               value: calendar.id,
               label: calendar.name,
             }))}
