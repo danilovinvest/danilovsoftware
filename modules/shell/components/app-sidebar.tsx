@@ -28,6 +28,7 @@ import { NAV_ITEM_CLASS } from "@/shared/ui/nav";
 import { HUE } from "@/shared/ui/hue";
 import { cn } from "@/lib/utils";
 import { NAV_SECTIONS } from "../lib/navigation";
+import { ScopeSwitcher } from "@/modules/group";
 import { WorkspaceMenu } from "./workspace-menu";
 
 /**
@@ -58,9 +59,11 @@ function WorkspaceNav() {
     <>
       {/* La recherche a quitté cette colonne pour la barre du haut : elle
           sert partout, y compris dans les réglages, où cette navigation-ci
-          disparaît entièrement. */}
-      <SidebarHeader className="p-2">
+          disparaît entièrement. Le périmètre, lui, reste ici : il ne vaut que
+          pour l'espace de travail. */}
+      <SidebarHeader className="gap-1.5 p-2">
         <WorkspaceMenu />
+        <ScopeSwitcher />
       </SidebarHeader>
 
       {/* `gap-3` sépare les sections : `SidebarContent` ne met aucun espace par

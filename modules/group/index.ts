@@ -15,6 +15,15 @@ export {
   type Entity,
   type EntityRole,
 } from "./lib/entities";
+export { ScopeSwitcher } from "./components/scope-switcher";
+export {
+  SCOPES,
+  scopeName,
+  scopeParam,
+  setScope,
+  useScope,
+  type Scope,
+} from "./lib/scope";
 export {
   ACTIVITIES,
   ACTIVITY_BY_ID,
