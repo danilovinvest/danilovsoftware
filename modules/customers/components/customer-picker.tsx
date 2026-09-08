@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { CheckIcon, SearchIcon, XIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { Spinner } from "@/shared/ui/feedback";
 import { listCustomers } from "../lib/api";
 import { useDebounced } from "../hooks/use-customers";
@@ -26,14 +27,19 @@ export function CustomerPicker({
   valueName,
   onChange,
   hint,
+  placeholder = "Chercher un client ou un prospect…",
+  className,
 }: {
-  label: string;
+  /** Absent dans une barre de filtres, où le champ se lit seul. */
+  label?: string;
   /** Identifiant choisi, nul quand rien n'est rattaché. */
   value: string | null;
   /** Nom déjà connu, pour l'afficher sans interroger le serveur. */
   valueName?: string;
   onChange: (id: string | null, name: string) => void;
   hint?: string;
+  placeholder?: string;
+  className?: string;
 }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -80,8 +86,8 @@ export function CustomerPicker({
 
   if (value) {
     return (
-      <div className="flex flex-col gap-1.5">
-        <Label className="text-xs">{label}</Label>
+      <div className={cn("flex flex-col gap-1.5", className)}>
+        {label && <Label className="text-xs">{label}</Label>}
         <div className="border-input flex h-9 items-center gap-2 rounded-lg border px-3">
           <span className="min-w-0 flex-1 truncate text-sm">
             {valueName || "Fiche rattachée"}
@@ -106,13 +112,13 @@ export function CustomerPicker({
   const attente = cherche.length >= 2 && items === null;
 
   return (
-    <div ref={bloc} className="relative flex flex-col gap-1.5">
-      <Label className="text-xs">{label}</Label>
+    <div ref={bloc} className={cn("relative flex flex-col gap-1.5", className)}>
+      {label && <Label className="text-xs">{label}</Label>}
       <div className="relative">
         <SearchIcon className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2" />
         <Input
           value={query}
-          placeholder="Chercher un client ou un prospect…"
+          placeholder={placeholder}
           className="pl-8"
           onChange={(event) => {
             setQuery(event.target.value);

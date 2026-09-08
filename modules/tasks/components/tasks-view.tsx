@@ -16,6 +16,7 @@ import { useColleagues } from "../hooks/use-colleagues";
 import { TaskBoard } from "./task-board";
 import { TaskDialog } from "./task-dialog";
 import { TaskRow } from "./task-row";
+import { CustomerPicker } from "@/modules/customers";
 import type { DueFilter, Task, TaskFilters, TaskStatus } from "../lib/types";
 
 type View = "board" | "list";
@@ -34,6 +35,8 @@ export function TasksView() {
     per_page: 200,
   });
   const [search, setSearch] = useState("");
+  /** Le nom de la fiche filtrée : le filtre ne transporte que son identifiant. */
+  const [customerName, setCustomerName] = useState("");
   const [editing, setEditing] = useState<Task | null>(null);
   const [creatingIn, setCreatingIn] = useState<TaskStatus | null>(null);
 
@@ -84,7 +87,9 @@ export function TasksView() {
   }, [stats]);
 
   const mine = filters.assignee_id === "mine";
-  const filtered = Boolean(filters.search || filters.status?.length || filters.due);
+  const filtered = Boolean(
+    filters.search || filters.status?.length || filters.due || filters.customer_id,
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -196,6 +201,19 @@ export function TasksView() {
           />
         </div>
 
+        {/* Le filtre par fiche : « qu'est-ce que je dois à ce client ? » se
+            posait jusqu'ici depuis la fiche seulement, écran par écran. */}
+        <CustomerPicker
+          className="w-56"
+          placeholder="Filtrer par client…"
+          value={filters.customer_id ?? null}
+          valueName={customerName}
+          onChange={(id, name) => {
+            setCustomerName(name);
+            update({ customer_id: id ?? undefined });
+          }}
+        />
+
         {DUE_FILTERS.map((due) => {
           const active = filters.due === due.value;
           return (
@@ -216,6 +234,7 @@ export function TasksView() {
             variant="ghost"
             onClick={() => {
               setSearch("");
+              setCustomerName("");
               setFilters((current) => ({
                 assignee_id: current.assignee_id,
                 sort: current.sort,
