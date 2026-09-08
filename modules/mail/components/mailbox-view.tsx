@@ -21,6 +21,7 @@ import { Bar, ListSkeleton } from "@/shared/ui/loading";
 import { formatDateTime, initials, plural } from "@/shared/lib/format";
 import { GradientAvatar } from "@/shared/ui/gradient-avatar";
 import { cn } from "@/lib/utils";
+import { MailSyncBadge } from "./mail-sync-badge";
 import { useMailbox } from "../hooks/use-mail";
 import { useMailboxBrowse, useMailMessage } from "../hooks/use-mailbox-browse";
 import { Attachments } from "./attachments";
@@ -65,7 +66,7 @@ export function MailboxView() {
     () => params.get("message"),
   );
 
-  const { accounts } = useMailbox();
+  const { accounts, running, last, now, reload } = useMailbox();
   const browse = useMailboxBrowse();
   const opened = useMailMessage(selected);
 
@@ -98,9 +99,15 @@ export function MailboxView() {
               : "La boîte de l'entreprise."}
           </p>
         </div>
-        <Button variant="outline" size="sm" asChild>
-          <Link href="/settings/messagerie">Réglages de la boîte</Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* La fraîcheur de la boîte, à l'endroit où on la lit — et non dans
+              les réglages, où il fallait aller pour savoir si la copie avait
+              tourné. */}
+          <MailSyncBadge running={running} last={last} now={now} onDone={reload} />
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/settings/messagerie">Réglages de la boîte</Link>
+          </Button>
+        </div>
       </header>
 
       <div className="grid min-h-0 items-start gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] xl:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
