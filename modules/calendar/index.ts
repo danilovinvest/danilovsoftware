@@ -3,6 +3,10 @@
  * modules n'importent que d'ici.
  */
 export { CalendarView } from "./components/calendar-view";
+// Le formulaire d'événement sert aussi depuis une fiche client : « planifier un
+// échange » est un événement d'agenda comme un autre, et en écrire un second
+// ferait deux formulaires qui divergeraient au premier champ ajouté.
+export { EventForm, type EventPreset } from "./components/event-form";
 // Le raccordement Google s'affiche dans l'écran des réglages, mais tout ce qui
 // le compose appartient au calendrier : le bouton de marque, l'état de la copie
 // et son journal.

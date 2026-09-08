@@ -102,6 +102,11 @@ export function CalendarView() {
         description: event.description,
         location: event.location,
         all_day: event.all_day,
+        // Le rattachement et la catégorie repartent tels quels : l'écriture
+        // remplace l'événement entier, et déplacer un rendez-vous de deux
+        // heures ne doit pas le détacher de sa fiche.
+        customer_id: event.customer_id,
+        kind: event.kind,
         start: event.all_day ? dayValue(start) : start.toISOString(),
         end: event.all_day ? dayValue(end) : end.toISOString(),
       });

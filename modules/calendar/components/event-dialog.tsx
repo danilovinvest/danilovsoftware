@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import {
+  ArrowUpRightIcon,
   CalendarIcon,
   DownloadIcon,
   MapPinIcon,
@@ -20,6 +22,8 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import {
+  EVENT_KIND,
+  EVENT_KIND_TONE,
   RESPONSE,
   formatDayLong,
   formatDuration,
@@ -61,7 +65,19 @@ export function EventDialog({
                 <span
                   className={cn("mt-1.5 size-2.5 shrink-0 rounded-full", style?.dot)}
                 />
-                <span>{event.title}</span>
+                <span className="min-w-0">
+                  <span>{event.title}</span>
+                  {/* La catégorie dit *ce que c'est*, la pastille de couleur dit
+                      *où ça vit*. Deux questions, deux marques. */}
+                  <span
+                    className={cn(
+                      "ml-2 rounded-md px-1.5 py-0.5 align-middle text-[11px] font-medium",
+                      EVENT_KIND_TONE[event.kind],
+                    )}
+                  >
+                    {EVENT_KIND[event.kind]?.label ?? event.kind}
+                  </span>
+                </span>
               </DialogTitle>
               <DialogDescription className="pl-4.5">
                 {formatDayLong(occurrence.start)} ·{" "}
@@ -73,6 +89,20 @@ export function EventDialog({
             </DialogHeader>
 
             <div className="flex flex-col gap-3 text-sm">
+              {/* Le lien vers la fiche : c'est tout l'intérêt du rattachement.
+                  Un rendez-vous nommé « Mme THEUWISSEN » n'ouvrait rien. */}
+              {event.customer_id && (
+                <Row icon={UserIcon}>
+                  <Link
+                    href={`/customers/${event.customer_id}`}
+                    className="text-info inline-flex items-center gap-1 hover:underline"
+                  >
+                    {event.customer_name || "Voir la fiche"}
+                    <ArrowUpRightIcon className="size-3" />
+                  </Link>
+                </Row>
+              )}
+
               {event.location && <Row icon={MapPinIcon}>{event.location}</Row>}
 
               {event.meet_url && (
