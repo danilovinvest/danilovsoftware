@@ -18,6 +18,10 @@ export * from "./lib/labels";
 export * from "./lib/cycle";
 export { EMPTY_JALONS, JALON_ORDER, readJalons, type Jalons } from "./lib/jalons";
 export { ProjectCycle } from "./components/project-cycle";
+// Le choix d'une fiche par la recherche : l'agenda en a besoin pour rattacher
+// un rendez-vous à son client, et trois cent soixante-six fiches n'entrent pas
+// dans une liste déroulante.
+export { CustomerPicker } from "./components/customer-picker";
 // Le panneau des jalons d'après-signature sert aussi à la fiche latérale des
 // chantiers et des études : c'est la même liste de cases, sur la même affaire.
 export { ProjectJalons } from "./components/project-jalons";
