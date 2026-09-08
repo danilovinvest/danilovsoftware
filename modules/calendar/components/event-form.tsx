@@ -17,8 +17,10 @@ import { errorMessage } from "@/shared/api/errors";
 import { ErrorNotice, Spinner } from "@/shared/ui/feedback";
 import { DateField, TimeField } from "@/shared/ui/date-time-field";
 import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
+import { CustomerPicker } from "@/modules/customers";
 import * as api from "../lib/api";
-import type { Calendar, CalendarEvent } from "../lib/types";
+import { EVENT_KIND, EVENT_KIND_OPTIONS } from "../lib/labels";
+import type { Calendar, CalendarEvent, EventKind } from "../lib/types";
 
 /**
  * Créer ou modifier un rendez-vous.
@@ -78,6 +80,12 @@ export function EventForm({
 
 type Draft = {
   calendarId: string;
+  /** De quoi il s'agit. Voir `EVENT_KIND`. */
+  kind: EventKind;
+  /** La fiche concernée, nulle pour ce qui ne concerne aucun client. */
+  customerId: string | null;
+  /** Son nom, gardé pour l'afficher sans réinterroger le serveur. */
+  customerName: string;
   title: string;
   location: string;
   description: string;
@@ -122,6 +130,8 @@ function FormBody({
         location: draft.location,
         description: draft.description,
         all_day: draft.allDay,
+        customer_id: draft.customerId,
+        kind: draft.kind,
         ...bounds(draft),
       };
       if (event) await api.updateEvent(event.id, input);

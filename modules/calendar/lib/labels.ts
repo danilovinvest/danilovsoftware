@@ -1,4 +1,10 @@
-import type { Attendee, CalendarStyle, CalendarView, ResponseStatus } from "./types";
+import type {
+  Attendee,
+  CalendarStyle,
+  CalendarView,
+  EventKind,
+  ResponseStatus,
+} from "./types";
 
 /**
  * Habillage du calendrier.
@@ -60,6 +66,43 @@ export const CALENDAR_PALETTE: CalendarStyle[] = [
 export function paletteAt(index: number): CalendarStyle {
   return CALENDAR_PALETTE[index % CALENDAR_PALETTE.length];
 }
+
+/**
+ * Les cinq catégories d'un événement.
+ *
+ * Elles répondent à « de quoi s'agit-il » avant qu'on ait lu le titre, et
+ * surtout elles rendent l'agenda interrogeable : « les échanges du mois » est
+ * une question qu'on ne pouvait pas poser à une colonne de texte libre.
+ *
+ * L'ordre est celui de la fréquence — on pose dix échanges pour un congé — et
+ * c'est celui dans lequel la liste déroulante les propose.
+ */
+export const EVENT_KIND: Record<EventKind, { label: string; hint: string }> = {
+  echange: { label: "Échange", hint: "Un appel, un courriel, un point avec le client" },
+  rdv: { label: "Rendez-vous", hint: "Une visite, un rendez-vous sur place" },
+  chantier: { label: "Chantier", hint: "Une intervention, une livraison" },
+  interne: { label: "Interne", hint: "Une réunion, un congé, rien de client" },
+  autre: { label: "Autre", hint: "Tout le reste" },
+};
+
+export const EVENT_KIND_OPTIONS = (
+  Object.entries(EVENT_KIND) as Array<[EventKind, { label: string }]>
+).map(([value, { label }]) => ({ value, label }));
+
+/**
+ * La pastille d'une catégorie.
+ *
+ * Les tonalités du CRM, pas la palette des agendas : la couleur d'un agenda dit
+ * *où* vit l'événement, celle-ci dit *ce qu'il est*. Les confondre ferait deux
+ * couleurs pour deux questions dans la même case.
+ */
+export const EVENT_KIND_TONE: Record<EventKind, string> = {
+  echange: "bg-info-soft text-info",
+  rdv: "bg-success-soft text-success",
+  chantier: "bg-warning-soft text-warning",
+  interne: "bg-neutral-soft text-neutral",
+  autre: "bg-neutral-soft text-neutral",
+};
 
 export const VIEWS: Array<{ value: CalendarView; label: string }> = [
   { value: "mois", label: "Mois" },

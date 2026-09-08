@@ -9,7 +9,14 @@ export { CalendarView } from "./components/calendar-view";
 export { GoogleButton } from "./components/google-button";
 export { GoogleMark } from "./components/google-mark";
 export { SyncBadge } from "./components/sync-badge";
-export { CALENDAR_PALETTE } from "./lib/labels";
+export {
+  CALENDAR_PALETTE,
+  EVENT_KIND,
+  EVENT_KIND_OPTIONS,
+  EVENT_KIND_TONE,
+  formatRange,
+  formatDayShort,
+} from "./lib/labels";
 export { SyncLogDialog } from "./components/sync-log-dialog";
 export { ImportLogDialog } from "./components/import-log";
 export { useSyncRuns } from "./hooks/use-sync-runs";
@@ -19,7 +26,9 @@ export * from "./lib/types";
 export {
   authorizeUrl,
   createCalendar,
+  createEvent,
   deleteCalendar,
+  listCustomerEvents,
   listCalendars,
   updateCalendar,
   disconnectAccount,

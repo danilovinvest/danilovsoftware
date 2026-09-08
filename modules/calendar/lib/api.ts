@@ -41,6 +41,27 @@ export function deleteEvent(id: string) {
   return apiFetch<void>(`/v1/calendar/events/${id}`, { method: "DELETE" });
 }
 
+/**
+ * Les événements rattachés à une fiche.
+ *
+ * La route vit sous `/v1/customers/{id}/events` et non sous `/v1/calendar` :
+ * c'est une question qu'on pose à propos d'une fiche. Elle est servie par
+ * l'agenda parce que c'est lui qui sait lire ses événements — la fiche n'a pas
+ * à connaître ses tables.
+ *
+ * À venir d'abord, du plus proche au plus lointain, puis le passé récent.
+ */
+export function listCustomerEvents(
+  customerId: string,
+  limit = 20,
+  signal?: AbortSignal,
+) {
+  return apiFetch<{ items: CalendarEvent[] }>(
+    `/v1/customers/${customerId}/events?limit=${limit}`,
+    { signal },
+  );
+}
+
 /* --- Agendas ---------------------------------------------------------------- */
 
 export function listCalendars(signal?: AbortSignal) {
