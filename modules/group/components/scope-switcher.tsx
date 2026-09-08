@@ -1,6 +1,7 @@
 "use client";
 
-import { BuildingIcon, HardHatIcon, LayersIcon, type LucideIcon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SCOPES, setScope, useScope, type Scope } from "../lib/scope";
 
@@ -11,51 +12,135 @@ import { SCOPES, setScope, useScope, type Scope } from "../lib/scope";
  * jour : c'est la question « je travaille pour laquelle des deux ? », pas un
  * paramètre qu'on pose une fois.
  *
- * Un segmenté et non une liste déroulante : il n'y a que trois choix, et voir
- * lequel est actif importe plus que d'économiser trente pixels. Sur une barre
- * repliée en icônes, il ne reste que les icônes — l'infobulle porte le reste.
+ * **Une pastille qui s'ouvre, et non trois boutons côte à côte.** Le segmenté
+ * précédent étalait les trois choix en permanence : dans une colonne de deux
+ * cent trente-six pixels, les libellés se coupaient et l'on ne lisait plus
+ * lequel était actif. Ici la pastille montre **où l'on est**, et les trois
+ * choix n'apparaissent qu'au moment de choisir.
+ *
+ * Chaque société porte sa marque — deux lettres sur un aplat de sa teinte.
+ * C'est ce qui rend le périmètre reconnaissable du coin de l'œil, une fois
+ * qu'on ne lit plus le libellé.
  */
-const ICONES: Record<Scope, LucideIcon> = {
-  tous: LayersIcon,
-  "ompt-structure": BuildingIcon,
-  "ompt-groupe": HardHatIcon,
+const MARQUES: Record<Scope, { sigle: string; classe: string }> = {
+  tous: { sigle: "TG", classe: "bg-h-slate-9 text-white" },
+  "ompt-structure": { sigle: "OS", classe: "bg-h-indigo-9 text-white" },
+  "ompt-groupe": { sigle: "OG", classe: "bg-h-amber-9 text-h-amber-11" },
 };
 
 export function ScopeSwitcher() {
   const scope = useScope();
+  const [open, setOpen] = useState(false);
+  const bloc = useRef<HTMLDivElement>(null);
+
+  // Un clic ailleurs referme, comme tout menu. Le panneau étant posé dans le
+  // flux et non téléporté, il suffit de regarder si la cible est dedans.
+  useEffect(() => {
+    if (!open) return;
+    function ailleurs(event: MouseEvent) {
+      if (!bloc.current?.contains(event.target as Node)) setOpen(false);
+    }
+    function echap(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", ailleurs);
+    document.addEventListener("keydown", echap);
+    return () => {
+      document.removeEventListener("mousedown", ailleurs);
+      document.removeEventListener("keydown", echap);
+    };
+  }, [open]);
+
+  const actif = SCOPES.find((entry) => entry.id === scope) ?? SCOPES[0];
+  const marque = MARQUES[scope];
 
   return (
-    <div
-      role="radiogroup"
-      aria-label="Périmètre de travail"
-      className="bg-muted flex gap-0.5 rounded-lg p-0.5 group-data-[collapsible=icon]:flex-col"
-    >
-      {SCOPES.map((entry) => {
-        const Icon = ICONES[entry.id];
-        const actif = scope === entry.id;
-        return (
-          <button
-            key={entry.id}
-            type="button"
-            role="radio"
-            aria-checked={actif}
-            title={entry.hint}
-            onClick={() => setScope(entry.id)}
-            className={cn(
-              "flex flex-1 items-center justify-center gap-1.5 rounded-md py-1 text-[11px] transition-colors",
-              actif
-                ? "bg-background text-brand-text font-medium shadow-2xs"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            <Icon className="size-3.5 shrink-0" />
-            {/* Le libellé disparaît avec la barre repliée ; l'icône reste. */}
-            <span className="truncate group-data-[collapsible=icon]:hidden">
-              {entry.label}
-            </span>
-          </button>
-        );
-      })}
+    <div ref={bloc} className="relative">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        title={actif.hint}
+        onClick={() => setOpen((value) => !value)}
+        /*
+          Le verre dépoli : un fond translucide et un flou d'arrière-plan
+          plutôt qu'un aplat. Sur la toile teintée de la barre latérale, c'est
+          ce qui détache la pastille sans lui donner de bordure franche.
+        */
+        className="bg-card/60 hover:bg-card/80 border-border/60 flex h-10 w-full items-center gap-2 rounded-full border px-1.5 shadow-sm backdrop-blur-md transition-colors"
+      >
+        <span
+          className={cn(
+            "flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold",
+            marque.classe,
+          )}
+        >
+          {marque.sigle}
+        </span>
+        <span className="min-w-0 flex-1 text-left group-data-[collapsible=icon]:hidden">
+          <span className="block truncate text-xs font-medium">{actif.label}</span>
+        </span>
+        <ChevronsUpDownIcon className="text-muted-foreground mr-1 size-3.5 shrink-0 group-data-[collapsible=icon]:hidden" />
+      </button>
+
+      {/*
+        Le panneau reste monté et s'efface : une apparition en fondu et en
+        échelle se lit comme un mouvement, là où un montage sec fait sauter la
+        colonne. `pointer-events-none` l'empêche d'intercepter les clics quand
+        il est invisible.
+      */}
+      <ul
+        role="listbox"
+        aria-label="Périmètre de travail"
+        className={cn(
+          "bg-popover/95 border-border/60 absolute top-[calc(100%+0.375rem)] left-0 z-30 w-full origin-top overflow-hidden rounded-xl border p-1 shadow-lg backdrop-blur-md transition-[opacity,transform] duration-150",
+          open
+            ? "pointer-events-auto scale-100 opacity-100"
+            : "pointer-events-none scale-95 opacity-0",
+        )}
+      >
+        {SCOPES.map((entry) => {
+          const choisi = entry.id === scope;
+          const sien = MARQUES[entry.id];
+          return (
+            <li key={entry.id}>
+              <button
+                type="button"
+                role="option"
+                aria-selected={choisi}
+                onClick={() => {
+                  setScope(entry.id);
+                  setOpen(false);
+                }}
+                className="hover:bg-accent flex w-full items-center gap-2.5 rounded-lg px-1.5 py-1.5 text-left transition-colors"
+              >
+                <span
+                  className={cn(
+                    "flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold",
+                    sien.classe,
+                  )}
+                >
+                  {sien.sigle}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-xs font-medium">
+                    {entry.label}
+                  </span>
+                  <span className="text-muted-foreground/70 block truncate text-[10px] leading-tight">
+                    {entry.hint}
+                  </span>
+                </span>
+                <CheckIcon
+                  className={cn(
+                    "text-brand-text size-3.5 shrink-0",
+                    !choisi && "invisible",
+                  )}
+                />
+              </button>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
