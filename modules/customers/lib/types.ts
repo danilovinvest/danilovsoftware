@@ -230,6 +230,11 @@ export type Milestones = {
   materials_ordered_at: string | null;
   /** Quand reprendre une affaire reportée. */
   resume_at: string | null;
+  /** Les plans d'exécution envoyés — le jalon de rendu du bureau d'études. */
+  plans_sent_at: string | null;
+  /** L'avis client : demander n'est pas recevoir, d'où deux dates. */
+  review_requested_at: string | null;
+  review_received_at: string | null;
 };
 
 /** Réponse de GET /v1/customers/{id} : fiche + collections en un seul appel. */

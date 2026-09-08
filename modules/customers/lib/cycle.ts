@@ -38,34 +38,87 @@ import type { Jalons } from "./jalons";
 export type CycleStep =
   | "contact"
   | "rdv"
+  // Propre aux études : le rapport de visite, remis avant de chiffrer.
+  | "rapport"
   | "devis"
   | "negociation"
   | "signe"
   | "acompte"
+  // Propres aux travaux.
   | "chantier"
-  | "materiaux";
+  | "materiaux"
+  // Propre aux études : les plans d'exécution envoyés au client.
+  | "plans"
+  // Communs aux deux.
+  | "solde"
+  | "avis";
 
-export const CYCLE_ORDER: CycleStep[] = [
-  "contact",
-  "rdv",
-  "devis",
-  "negociation",
-  "signe",
-  "acompte",
-  "chantier",
-  "materiaux",
-];
+/**
+ * Les deux métiers du groupe, et leurs deux cycles.
+ *
+ * **OMPT STRUCTURE rend un document, OMPT GROUPE livre un chantier**, et cela
+ * change la moitié du cycle. Là où les travaux réservent une date et commandent
+ * du béton, l'étude remet un rapport de visite avant de chiffrer, puis prépare
+ * et envoie des plans d'exécution.
+ *
+ * Le début est commun — on parle au client, on va voir, on chiffre, on
+ * négocie, on signe, on encaisse un acompte. La fin ne l'est pas.
+ *
+ * Les deux se terminent par le **solde** puis l'**avis client** : « à la fin
+ * de chaque prestation il faut les avis, et d'abord la preuve que les sous sont
+ * payés ». Le CRM tient cette règle seul — l'avis ne se demande qu'une fois le
+ * solde encaissé.
+ */
+export type Metier = "etudes" | "travaux";
+
+const ORDRE: Record<Metier, CycleStep[]> = {
+  travaux: [
+    "contact", "rdv", "devis", "negociation", "signe",
+    "acompte", "chantier", "materiaux", "solde", "avis",
+  ],
+  etudes: [
+    "contact", "rdv", "rapport", "devis", "negociation", "signe",
+    "acompte", "plans", "solde", "avis",
+  ],
+};
+
+export function cycleOrder(metier: Metier): CycleStep[] {
+  return ORDRE[metier];
+}
+
+/** Conservé pour ce qui n'a pas besoin de distinguer : la frise des travaux. */
+export const CYCLE_ORDER: CycleStep[] = ORDRE.travaux;
 
 export const CYCLE_LABEL: Record<CycleStep, { label: string; hint: string }> = {
   contact: { label: "Contact", hint: "Appels, e-mails, premiers échanges" },
   rdv: { label: "RDV", hint: "Visite sur site — obligatoire avant tout devis" },
+  rapport: { label: "Rapport", hint: "Rapport de visite remis au client" },
   devis: { label: "Devis", hint: "Chiffrage établi et transmis" },
   negociation: { label: "Négociation", hint: "En attente de la réponse du client" },
   signe: { label: "Signé", hint: "Devis accepté" },
   acompte: { label: "Acompte", hint: "Facture d'acompte, RIB, assurance, encaissement" },
   chantier: { label: "Date", hint: "Date de chantier réservée" },
   materiaux: { label: "Matériaux", hint: "Béton, acier et fournitures commandés" },
+  plans: { label: "Plans", hint: "Plans d'exécution envoyés au client" },
+  solde: { label: "Solde", hint: "Facture de solde encaissée" },
+  avis: { label: "Avis", hint: "Avis client recueilli — après encaissement" },
 };
+
+/**
+ * Le métier d'une affaire, lu de ses devis.
+ *
+ * Il suit **le plus avancé des deux** : une affaire qui porte un devis de
+ * travaux va vers un chantier, même si une étude l'a précédée. C'est aussi la
+ * lecture la plus utile — c'est la suite qui intéresse, pas l'origine.
+ *
+ * Sans devis, on suppose des travaux : c'est le cas de la grande majorité des
+ * affaires reprises, et le cycle des travaux est le plus complet des deux.
+ */
+export function metierOf(quotes: Quote[]): Metier {
+  if (quotes.some((quote) => quote.issuer === "ompt-groupe")) return "travaux";
+  if (quotes.some((quote) => quote.issuer === "ompt-structure")) return "etudes";
+  return "travaux";
+}
 
 /**
  * L'état d'un cran.
@@ -263,10 +316,34 @@ export function readCycle(
   const deposit: PaymentStatus = signed?.deposit_status ?? lead?.deposit_status ?? "non_applicable";
   const acompteDone = deposit === "recu";
 
+  const balance: PaymentStatus = signed?.balance_status ?? lead?.balance_status ?? "non_applicable";
+  const soldeDone = balance === "recu";
+
+  const metier = metierOf(quotes);
+
+  /*
+    Le rapport de visite, propre aux études.
+
+    Il se lit d'un échange de type « rapport », et se déduit à défaut du devis :
+    on ne chiffre pas une étude sans avoir visité et rendu son compte rendu.
+    Sans cette déduction, toutes les affaires reprises afficheraient un cran
+    manquant au milieu d'une frise par ailleurs complète.
+  */
+  const rapport = lastInteraction(mine, "rapport");
+  const rapportAt = rapport?.occurred_at ?? null;
+
   // --- Chaque cran, dans l'ordre -----------------------------------------
-  const raw: Array<{ step: CycleStep; done: boolean; at: string | null; since: string | null }> = [
+  const commun: Array<{ step: CycleStep; done: boolean; at: string | null; since: string | null }> = [
     { step: "contact", done: contactDone, at: contactAt, since: contactAt ?? anchor },
     { step: "rdv", done: rdvDone, at: rdvAt, since: rdvAt ?? contactAt ?? anchor },
+    ...(metier === "etudes"
+      ? [{
+          step: "rapport" as CycleStep,
+          done: rapportAt !== null || devisDone,
+          at: rapportAt,
+          since: rdvAt ?? contactAt ?? anchor,
+        }]
+      : []),
     { step: "devis", done: devisDone, at: devisAt, since: devisAt ?? rdvAt ?? anchor },
     {
       step: "negociation",
@@ -284,17 +361,54 @@ export function readCycle(
       at: acompteDone ? jalons.deposit_paid_at : null,
       since: jalons.deposit_invoiced_at ?? signeAt,
     },
+  ];
+
+  /*
+    La queue du cycle, propre au métier.
+
+    Les travaux réservent une date et commandent du béton ; l'étude prépare et
+    envoie des plans d'exécution. Les deux finissent pareil — le solde, puis
+    l'avis client.
+  */
+  const queue: typeof commun =
+    metier === "travaux"
+      ? [
+          {
+            step: "chantier",
+            done: jalons.worksite_date !== null,
+            at: jalons.worksite_date,
+            since: jalons.deposit_paid_at ?? jalons.deposit_invoiced_at,
+          },
+          {
+            step: "materiaux",
+            done: jalons.materials_ordered_at !== null,
+            at: jalons.materials_ordered_at,
+            since: jalons.worksite_date,
+          },
+        ]
+      : [
+          {
+            step: "plans",
+            done: jalons.plans_sent_at !== null,
+            at: jalons.plans_sent_at,
+            since: jalons.deposit_paid_at ?? jalons.deposit_invoiced_at,
+          },
+        ];
+
+  const raw = [
+    ...commun,
+    ...queue,
     {
-      step: "chantier",
-      done: jalons.worksite_date !== null,
-      at: jalons.worksite_date,
-      since: jalons.deposit_paid_at ?? jalons.deposit_invoiced_at,
+      step: "solde" as CycleStep,
+      done: soldeDone,
+      at: soldeDone ? (jalons.plans_sent_at ?? jalons.materials_ordered_at) : null,
+      since: jalons.plans_sent_at ?? jalons.materials_ordered_at ?? jalons.worksite_date,
     },
     {
-      step: "materiaux",
-      done: jalons.materials_ordered_at !== null,
-      at: jalons.materials_ordered_at,
-      since: jalons.worksite_date,
+      step: "avis" as CycleStep,
+      done: jalons.review_received_at !== null,
+      at: jalons.review_received_at,
+      since: jalons.review_requested_at,
     },
   ];
 

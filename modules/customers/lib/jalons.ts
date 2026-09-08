@@ -35,6 +35,11 @@ export type Jalons = {
   materials_ordered_at: string | null;
   /** Quand reprendre une affaire reportée. */
   resume_at: string | null;
+  /** De l'affaire côté études : les plans d'exécution envoyés au client. */
+  plans_sent_at: string | null;
+  /** L'avis client, demandé puis reçu. Les deux sociétés en recueillent. */
+  review_requested_at: string | null;
+  review_received_at: string | null;
 };
 
 export const EMPTY_JALONS: Jalons = {
@@ -45,6 +50,9 @@ export const EMPTY_JALONS: Jalons = {
   worksite_date: null,
   materials_ordered_at: null,
   resume_at: null,
+  plans_sent_at: null,
+  review_requested_at: null,
+  review_received_at: null,
 };
 
 /**
@@ -80,6 +88,9 @@ export function readJalons(
     worksite_date: project?.started_at ?? null,
     materials_ordered_at: m?.materials_ordered_at ?? null,
     resume_at: m?.resume_at ?? null,
+    plans_sent_at: m?.plans_sent_at ?? null,
+    review_requested_at: m?.review_requested_at ?? null,
+    review_received_at: m?.review_received_at ?? null,
   };
 }
 
