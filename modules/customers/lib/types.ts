@@ -242,6 +242,8 @@ export type CustomerFilters = {
   cycle?: string;
   /** La relecture : ce qui reste à vérifier, ce qui reste à compléter. */
   review?: string;
+  /** Le périmètre : la société sur laquelle on travaille. */
+  issuer?: string;
   search?: string;
   status?: CustomerStatus[];
   source?: CustomerSource[];

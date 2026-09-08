@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { scopeParam, useScope } from "@/modules/group";
 import { errorMessage } from "@/shared/api/errors";
 import * as api from "../lib/api";
 import { alerts, buckets, read } from "../lib/derive";
@@ -24,6 +25,10 @@ type Resolved = { key: string; data: WorksiteResult | null; error: string | null
  */
 export function useWorksites() {
   const [city, setCity] = useState("");
+  // Le périmètre fait partie de la question posée au serveur : changer de
+  // société relance la requête, comme changer de ville.
+  const scope = useScope();
+  const issuer = scopeParam(scope) ?? "";
   // Un repère de repli, figé au montage. Il ne sert qu'avant la première
   // réponse, sur une liste vide : le lire de l'horloge à chaque rendu ferait
   // du rendu autre chose qu'une fonction de son état.
@@ -32,7 +37,7 @@ export function useWorksites() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [token, setToken] = useState(0);
 
-  const key = `worksites:${city}:${token}`;
+  const key = `worksites:${city}:${issuer}:${token}`;
   const [resolved, setResolved] = useState<Resolved>({
     key: "", data: null, error: null,
   });
@@ -40,14 +45,14 @@ export function useWorksites() {
   useEffect(() => {
     const controller = new AbortController();
     api
-      .listWorksites(city, controller.signal)
+      .listWorksites(city, issuer, controller.signal)
       .then((data) => setResolved({ key, data, error: null }))
       .catch((cause) => {
         if (controller.signal.aborted) return;
         setResolved({ key, data: null, error: errorMessage(cause) });
       });
     return () => controller.abort();
-  }, [key, city]);
+  }, [key, city, issuer]);
 
   const derived = useMemo(() => {
     // Pas encore de réponse : on dérive sur une liste vide plutôt que de rendre

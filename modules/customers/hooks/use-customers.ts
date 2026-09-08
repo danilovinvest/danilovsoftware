@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Paginated } from "@/shared/api/client";
+import { scopeParam, useScope } from "@/modules/group";
 import { errorMessage } from "@/shared/api/errors";
 import * as api from "../lib/api";
 import type { CustomerFilters, CustomerListItem, CustomerStats } from "../lib/types";
@@ -15,9 +16,18 @@ type Resolved<T> = { key: string; data: T | null; error: string | null };
  */
 export function useCustomers(filters: CustomerFilters) {
   const [reloadToken, setReloadToken] = useState(0);
+  /*
+    Le périmètre est lu ici et non passé par l'appelant.
+
+    Ce n'est pas un filtre de l'écran : il ne se remet pas à zéro avec les
+    autres, et « Réinitialiser » ne doit pas ramener silencieusement les fiches
+    de l'autre société. Il fait partie de la question, pas de la recherche.
+  */
+  const scope = useScope();
+  const question: CustomerFilters = { ...filters, issuer: scopeParam(scope) };
   // Les filtres sont sérialisés pour servir de dépendance stable : un objet
   // littéral changerait d'identité à chaque rendu et relancerait la requête.
-  const key = `${JSON.stringify(filters)}#${reloadToken}`;
+  const key = `${JSON.stringify(question)}#${reloadToken}`;
 
   const [resolved, setResolved] = useState<Resolved<Paginated<CustomerListItem>>>({
     key: "",
@@ -32,7 +42,7 @@ export function useCustomers(filters: CustomerFilters) {
     const controller = new AbortController();
 
     api
-      .listCustomers(filters, controller.signal)
+      .listCustomers(question, controller.signal)
       .then((data) => setResolved({ key, data, error: null }))
       .catch((cause) => {
         if (controller.signal.aborted) return;
@@ -40,7 +50,7 @@ export function useCustomers(filters: CustomerFilters) {
       });
 
     return () => controller.abort();
-    // `filters` est capturé via `key` : le comparer par identité relancerait
+    // `question` est capturée via `key` : la comparer par identité relancerait
     // la requête à chaque rendu.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);

@@ -33,6 +33,7 @@ export function listCustomers(filters: CustomerFilters, signal?: AbortSignal) {
       owner_id: filters.owner_id,
       cycle: filters.cycle,
       review: filters.review,
+      issuer: filters.issuer,
       sort: filters.sort,
       page: filters.page,
       per_page: filters.per_page,
