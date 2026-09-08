@@ -32,6 +32,16 @@ export function useCalendar() {
   const [cursor, setCursor] = useState(today);
   const [view, setView] = useState<CalendarView>("mois");
   const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set<string>());
+  /**
+   * Les catégories masquées, sur le modèle des agendas.
+   *
+   * Deux jeux distincts et non un seul : masquer « Échange » ne doit pas
+   * dépendre de l'agenda où l'échange a été posé, et réciproquement. Les
+   * confondre obligerait à cocher dix cases pour ne voir qu'une chose.
+   */
+  const [hiddenKinds, setHiddenKinds] = useState<ReadonlySet<EventKind>>(
+    () => new Set<EventKind>(),
+  );
   const [token, setToken] = useState(0);
 
   // Le mois du curseur, débordé d'une semaine de chaque côté : une grille
@@ -99,8 +109,14 @@ export function useCalendar() {
   );
 
   const visible = useMemo(
-    () => occurrences.filter((o) => inRange(o) && !hidden.has(o.event.calendar_id)),
-    [occurrences, inRange, hidden],
+    () =>
+      occurrences.filter(
+        (o) =>
+          inRange(o) &&
+          !hidden.has(o.event.calendar_id) &&
+          !hiddenKinds.has(o.event.kind),
+      ),
+    [occurrences, inRange, hidden, hiddenKinds],
   );
 
   const calendars = useMemo(
@@ -113,6 +129,24 @@ export function useCalendar() {
         ).length,
       })),
     [loadedCalendars, occurrences, inRange, hidden],
+  );
+
+  /**
+   * Les cinq catégories et ce qu'elles pèsent sur la période affichée.
+   *
+   * Une catégorie sans aucun événement reste dans la liste : la faire
+   * disparaître ferait chercher où sont passés les échanges le mois où il n'y
+   * en a pas eu — ce qui est précisément la réponse.
+   */
+  const kinds = useMemo(
+    () =>
+      (Object.keys(EVENT_KIND) as EventKind[]).map((kind) => ({
+        kind,
+        label: EVENT_KIND[kind].label,
+        hidden: hiddenKinds.has(kind),
+        count: occurrences.filter((o) => inRange(o) && o.event.kind === kind).length,
+      })),
+    [occurrences, inRange, hiddenKinds],
   );
 
   const reload = useCallback(() => setToken((value) => value + 1), []);
@@ -149,6 +183,15 @@ export function useCalendar() {
     });
   }, []);
 
+  const toggleKind = useCallback((kind: EventKind) => {
+    setHiddenKinds((current) => {
+      const next = new Set(current);
+      if (next.has(kind)) next.delete(kind);
+      else next.add(kind);
+      return next;
+    });
+  }, []);
+
   const step = useCallback(
     (direction: number) => {
       setCursor((current) => {
@@ -181,6 +224,8 @@ export function useCalendar() {
     /** Les agendas bruts, pour le formulaire : il lui faut `access_role`. */
     rawCalendars: loadedCalendars,
     toggleCalendar,
+    kinds,
+    toggleKind,
     reload,
     replace,
     occurrences: visible,

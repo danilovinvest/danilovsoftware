@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/shared/ui/feedback";
 import { addDays, isSameDay, occurrencesForDay, startOfDay } from "../lib/events";
-import { formatDayLong, formatRange } from "../lib/labels";
+import { EVENT_KIND_TONE, formatDayLong, formatRange } from "../lib/labels";
 import type { Occurrence } from "../lib/types";
 
 /**
@@ -65,6 +65,16 @@ export function AgendaList({
                     <span
                       className={cn("size-1.5 shrink-0 translate-y-[-1px] rounded-full", style.dot)}
                     />
+                    {/* Un liseré de catégorie plutôt qu'un mot : la file se
+                        parcourt, et cinq libellés répétés trente fois la
+                        rendraient illisible. Le mot reste dans la fiche. */}
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "h-3 w-0.5 shrink-0 translate-y-[1px] rounded-full",
+                        EVENT_KIND_TONE[occurrence.event.kind],
+                      )}
+                    />
                     <span className="text-muted-foreground w-24 shrink-0 text-[11px] tabular-nums">
                       {formatRange(occurrence.start, occurrence.end, occurrence.allDay)}
                     </span>
@@ -73,6 +83,14 @@ export function AgendaList({
                         hauteur d'une liste faite pour être parcourue. */}
                     <span className="min-w-0 flex-1 truncate text-[13px]">
                       {occurrence.event.title}
+                      {/* La fiche rattachée passe avant le lieu : « Dupont »
+                          dit à qui on a affaire, « Cannes » ne le dit pas. */}
+                      {occurrence.event.customer_name && (
+                        <span className="text-info/80">
+                          {" · "}
+                          {occurrence.event.customer_name}
+                        </span>
+                      )}
                       {occurrence.event.location && (
                         <span className="text-muted-foreground/70">
                           {" · "}
