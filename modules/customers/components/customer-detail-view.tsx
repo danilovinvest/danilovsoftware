@@ -227,7 +227,10 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
         )}
 
         <TabsContent value="taches" className="mt-4">
-          <CustomerTasksPanel customerId={customer.id} />
+          <CustomerTasksPanel
+            customerId={customer.id}
+            customerName={customer.display_name}
+          />
         </TabsContent>
 
         <TabsContent value="details" className="mt-4">

@@ -121,12 +121,33 @@ export function TaskCard({
                 </Link>
               </Badge>
             ))}
-            {projects.map((target) => (
-              <Badge key={target.id} variant="outline" className="max-w-full gap-1">
-                <BriefcaseIcon />
-                <span className="truncate">{target.label}</span>
-              </Badge>
-            ))}
+            {/* Une affaire mène à la fiche dont elle relève : c'est là qu'on
+                trouve le téléphone du client quand la tâche est « rappeler ».
+                Sans `owner_id`, l'étiquette n'ouvrait rien. */}
+            {projects.map((target) =>
+              target.owner_id ? (
+                <Badge
+                  key={target.id}
+                  asChild
+                  variant="outline"
+                  className="max-w-full gap-1"
+                >
+                  <Link
+                    href={`/customers/${target.owner_id}`}
+                    className="truncate"
+                    onPointerDown={(event) => event.stopPropagation()}
+                  >
+                    <BriefcaseIcon />
+                    <span className="truncate">{target.label}</span>
+                  </Link>
+                </Badge>
+              ) : (
+                <Badge key={target.id} variant="outline" className="max-w-full gap-1">
+                  <BriefcaseIcon />
+                  <span className="truncate">{target.label}</span>
+                </Badge>
+              ),
+            )}
           </div>
         )}
 

@@ -12,8 +12,18 @@ import { TaskDialog } from "./task-dialog";
 import { TaskRow } from "./task-row";
 import type { Task } from "../lib/types";
 
-/** Onglet « Tâches » d'une fiche client : uniquement ce qui la vise. */
-export function CustomerTasksPanel({ customerId }: { customerId: string }) {
+/**
+ * Onglet « Tâches » d'une fiche client : ce qui la vise, elle **ou l'une de ses
+ * affaires**. Une tâche posée sur un chantier appartient au client dont c'est
+ * le chantier ; le filtre serveur prend les deux branches.
+ */
+export function CustomerTasksPanel({
+  customerId,
+  customerName,
+}: {
+  customerId: string;
+  customerName: string;
+}) {
   const canWrite = usePermission("tasks:write");
   const colleagues = useColleagues();
   const { data, loading, error, reload } = useTasks({
@@ -68,6 +78,7 @@ export function CustomerTasksPanel({ customerId }: { customerId: string }) {
           onSaved={reload}
           colleagues={colleagues}
           defaultTarget={{ customer_id: customerId }}
+          defaultTargetName={customerName}
         />
       )}
       {editing && (

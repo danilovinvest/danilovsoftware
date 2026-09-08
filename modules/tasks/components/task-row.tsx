@@ -89,17 +89,20 @@ export function TaskRow({
             </span>
           )}
 
-          {task.targets.map((target) =>
-            target.customer_id ? (
+          {/* Fiche ou affaire, l'étiquette mène toujours à la fiche : une
+              affaire porte désormais celle dont elle relève. */}
+          {task.targets.map((target) => {
+            const fiche = target.customer_id ?? target.owner_id;
+            return fiche ? (
               <Badge key={target.id} variant="outline" asChild>
-                <Link href={`/customers/${target.customer_id}`}>{target.label}</Link>
+                <Link href={`/customers/${fiche}`}>{target.label}</Link>
               </Badge>
             ) : (
               <Badge key={target.id} variant="outline">
                 {target.label}
               </Badge>
-            ),
-          )}
+            );
+          })}
         </div>
       </div>
 
