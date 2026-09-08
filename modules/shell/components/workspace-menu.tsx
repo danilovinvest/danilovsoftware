@@ -27,7 +27,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { GradientAvatar } from "@/shared/ui/gradient-avatar";
-import { LogoTile, Wordmark } from "@/shared/ui/logo";
+import { LogoTile } from "@/shared/ui/logo";
 import { initials } from "@/shared/lib/format";
 import { WORKSPACE } from "@/shared/lib/workspace";
 import { cn } from "@/lib/utils";
@@ -65,29 +65,38 @@ export function WorkspaceMenu() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
-              className="text-foreground data-[state=open]:bg-sidebar-accent h-12 gap-2 px-2 font-medium group-data-[collapsible=icon]:p-0!"
-              tooltip={WORKSPACE.name}
+              className="text-foreground hover:bg-sidebar-accent/70 data-[state=open]:bg-sidebar-accent h-12 gap-2.5 rounded-xl px-1.5 font-medium group-data-[collapsible=icon]:p-0!"
+              tooltip={`${WORKSPACE.name} — ${WORKSPACE.tagline}`}
             >
               {/*
-                Le logo, et rien d'autre : écrire « OMPT » à côté d'un logo qui
-                dit déjà « OMPT » le répétait, et les deux se disputaient une
-                colonne de deux cents pixels.
+                La pastille et le nom écrit, plutôt que le bloc-marque brut.
+
+                Le bloc-marque posé seul flottait : un dessin de deux cents
+                pixels de large sur un fond sans contenant, un chevron esseulé
+                à l'autre bout, et rien qui rattache la ligne au sélecteur de
+                périmètre juste en dessous — qui est, lui, une pastille avec
+                sa marque, son libellé et son chevron. Deux langages empilés.
+
+                Ici les deux lignes se répondent : marque carrée, nom, chevron.
+                Le nom écrit ne double plus le logo, puisque la pastille ne
+                porte que le profilé — elle ne dit pas « OMPT », elle le
+                signe.
 
                 Les tailles sont forcées parce que `SidebarMenuButton` impose
-                `[&_svg]:size-4` à tout ce qu'il contient — la règle est faite
-                pour des icônes carrées, et elle écrasait le bloc-marque dans
-                un carré de seize pixels.
+                `[&_svg]:size-4` à tout ce qu'il contient : la règle est faite
+                pour des icônes carrées, et elle écrasait le profilé dans un
+                carré de seize pixels.
               */}
-              <Wordmark className="h-8! w-auto! group-data-[collapsible=icon]:hidden" />
-              {/*
-                Replié en colonne d'icônes, le nom ne tiendrait pas : reste la
-                pastille, la même que dans l'onglet du navigateur. Elle occupe
-                tout le bouton — le rembourrage du tiroir est annulé plus haut,
-                sans quoi un profilé de onze pixels flottait au milieu d'un
-                carré de trente-deux.
-              */}
-              <LogoTile className="hidden size-8 rounded-lg group-data-[collapsible=icon]:grid" />
-              <ChevronDownIcon className="text-muted-foreground ml-auto size-3.5! group-data-[collapsible=icon]:hidden" />
+              <LogoTile className="size-9 rounded-[10px] group-data-[collapsible=icon]:size-8" />
+              <span className="grid min-w-0 flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
+                <span className="truncate text-[13px] font-semibold tracking-tight">
+                  {WORKSPACE.name}
+                </span>
+                <span className="text-muted-foreground truncate text-[11px] font-normal">
+                  {WORKSPACE.short}
+                </span>
+              </span>
+              <ChevronDownIcon className="text-muted-foreground/70 size-3.5! shrink-0 group-data-[collapsible=icon]:hidden" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
 

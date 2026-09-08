@@ -14,7 +14,11 @@ import { cn } from "@/lib/utils";
  *   il est purement géométrique, et c'est l'élément qui distingue la marque
  *   avant qu'on l'ait lue.
  * - Le **bloc-marque** (`Wordmark`) sert là où il y a de la largeur : la page
- *   de connexion, l'invitation, l'en-tête du tiroir. Là, le nom se lit.
+ *   de connexion et l'invitation, deux écrans pleine page où la marque est le
+ *   sujet. Il a quitté l'en-tête du tiroir, où un dessin de deux cents pixels
+ *   posé sans contenant flottait à côté d'un chevron esseulé : là, c'est la
+ *   pastille et le nom écrit qui répondent au sélecteur de périmètre du
+ *   dessous.
  *
  * Les couleurs ne sont pas prises dans la palette mais dans `--logo-*` : une
  * marque qui vire au violet parce qu'on a changé de thème n'est plus une
@@ -96,19 +100,26 @@ export function Wordmark({ className }: { className?: string }) {
 
 /**
  * La marque sur sa pastille, là où la place est carrée : l'en-tête du tiroir,
- * y compris replié en colonne d'icônes.
+ * y compris replié en colonne d'icônes, et l'onglet du navigateur.
  *
- * La plaque est peinte de l'encre du lettrage — bleu nuit en clair, blanche en
- * sombre — et le profilé garde son orange. Elles ne suivent pas la palette :
- * une pastille qui virerait au violet ne dirait plus « OMPT », elle dirait
- * « le réglage du moment ».
+ * **L'orange remplit la plaque, le profilé est blanc** — l'inverse de ce qui
+ * était fait au départ. Un profilé orange sur une plaque bleu nuit donne, à
+ * seize pixels, une barre fine et sombre sur un fond sombre : dans une barre
+ * d'onglets ce n'est plus qu'une tache. À cette taille c'est la **masse
+ * colorée** qui identifie, et l'orange est la seule des deux couleurs de la
+ * marque qui ne ressemble à aucune autre.
+ *
+ * Les deux encres ne suivent pas la palette : une pastille qui virerait au
+ * violet ne dirait plus « OMPT », elle dirait « le réglage du moment ».
+ * `app/icon.svg` reprend exactement ces valeurs — les deux doivent bouger
+ * ensemble, sinon l'onglet et le tiroir cessent de se ressembler.
  */
 export function LogoTile({ className }: { className?: string }) {
   return (
     <span
       aria-hidden
       className={cn(
-        "bg-logo-ink text-logo-beam grid size-9 shrink-0 place-items-center rounded-lg",
+        "bg-logo-beam grid size-9 shrink-0 place-items-center rounded-lg text-white",
         className,
       )}
     >
@@ -121,7 +132,10 @@ export function LogoTile({ className }: { className?: string }) {
           retrouvait à seize pixels de large. La hauteur, elle, peut rester
           contrainte — un cadre de vue trop haut ajoute du vide au-dessus et
           au-dessous du tracé, il ne l'écrase pas. */}
-      <Logo className="w-[72%]!" />
+      {/* 82 % et non 72 : sous quarante pixels, chaque point de marge coûte
+          un pixel de trait, et le profilé est déjà six fois plus large que
+          haut. */}
+      <Logo className="w-[82%]!" />
     </span>
   );
 }

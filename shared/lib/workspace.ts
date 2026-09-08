@@ -16,4 +16,12 @@
 export const WORKSPACE = {
   name: "OMPT",
   tagline: "Bureau d'études techniques et travaux",
+  /**
+   * La version courte, pour la ligne sous le nom dans le tiroir.
+   *
+   * Deux cent trente-six pixels de colonne : la phrase complète s'y coupe au
+   * troisième mot, et « Bureau d'études techn… » ne dit rien de plus qu'un
+   * blanc. Deux métiers en trois mots, c'est tout ce que cette ligne doit.
+   */
+  short: "Études & travaux",
 } as const;
