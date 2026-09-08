@@ -180,6 +180,14 @@ export type Quote = {
   amount_ttc: string | null;
   vat_rate: string | null;
   amount_note: string;
+  /**
+   * La société qui émet ce devis.
+   *
+   * C'est le devis qui porte le SIREN, la TVA et le dossier comptable, pas
+   * l'affaire : une même affaire peut porter l'étude de STRUCTURE et les
+   * travaux de GROUPE.
+   */
+  issuer: string | null;
   deposit_status: PaymentStatus;
   /** Depuis quand l'acompte est facturé, et depuis quand il est encaissé. */
   deposit_invoiced_at: string | null;
@@ -310,6 +318,9 @@ export type StagePayload = {
 */
 export type QuotePayload = Omit<
   Quote,
+  // `issuer` reste facultatif à l'écriture : vide, le serveur le déduit de la
+  // nature de la prestation. L'écran ne le propose que pour corriger.
+  | "issuer"
   | "id"
   | "customer_id"
   | "project_id"
@@ -320,7 +331,7 @@ export type QuotePayload = Omit<
   | "updated_at"
   | "deposit_invoiced_at"
   | "deposit_paid_at"
->;
+> & { issuer?: string | null };
 
 export type InteractionPayload = {
   project_id: string | null;
