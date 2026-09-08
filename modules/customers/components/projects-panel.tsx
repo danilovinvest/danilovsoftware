@@ -20,7 +20,13 @@ import { TONE_SOFT } from "@/shared/ui/panel";
 import { formatAmount, formatDate } from "@/shared/lib/format";
 import { cn } from "@/lib/utils";
 import * as api from "../lib/api";
-import { PAYMENT_STATUS, PROJECT_STAGE, QUOTE_KIND, QUOTE_STATUS } from "../lib/labels";
+import {
+  PAYMENT_STATUS,
+  PROJECT_STAGE,
+  QUOTE_ISSUER,
+  QUOTE_KIND,
+  QUOTE_STATUS,
+} from "../lib/labels";
 import {
   hasSurvey,
   leadQuote,
@@ -579,6 +585,12 @@ function QuoteList({ quotes, onChanged }: { quotes: Quote[]; onChanged: () => vo
         return (
           <li key={quote.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5">
             <span className="font-mono text-xs">{quote.reference || quote.label || "Devis"}</span>
+            {/* La société qui émet : sur une même affaire, l'étude est à
+                STRUCTURE et les travaux à GROUPE, et la référence seule ne le
+                dit pas — les deux numérotent chacune de leur côté. */}
+            {quote.issuer && (
+              <EnumBadge value={quote.issuer} entries={QUOTE_ISSUER} />
+            )}
             <EnumBadge value={quote.kind} entries={QUOTE_KIND} />
             <EnumBadge value={quote.status} entries={QUOTE_STATUS} />
 

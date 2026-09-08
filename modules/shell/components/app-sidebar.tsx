@@ -28,7 +28,7 @@ import { NAV_ITEM_CLASS } from "@/shared/ui/nav";
 import { HUE } from "@/shared/ui/hue";
 import { cn } from "@/lib/utils";
 import { NAV_SECTIONS } from "../lib/navigation";
-import { ScopeSwitcher } from "@/modules/group";
+import { ScopeSwitcher, useScope } from "@/modules/group";
 import { WorkspaceMenu } from "./workspace-menu";
 
 /**
@@ -54,6 +54,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 function WorkspaceNav() {
   const pathname = usePathname();
   const { can } = useAuth();
+  const scope = useScope();
 
   return (
     <>
@@ -71,7 +72,13 @@ function WorkspaceNav() {
           seule liste — ce qu'on cherchait justement à défaire. */}
       <SidebarContent className="gap-3 px-2">
         {NAV_SECTIONS.map((section) => {
-          const visible = section.items.filter((item) => can(item.permission));
+          const visible = section.items.filter(
+            (item) =>
+              can(item.permission) &&
+              // Le périmètre masque ce qui n'a pas de sens pour la société
+              // choisie ; « tout le groupe » ne masque rien.
+              (scope === "tous" || !item.scopes || item.scopes.includes(scope)),
+          );
           // Une section dont rien n'est autorisé disparaît en entier : un titre
           // seul ferait deviner ce qu'on ne peut pas ouvrir.
           if (visible.length === 0) return null;

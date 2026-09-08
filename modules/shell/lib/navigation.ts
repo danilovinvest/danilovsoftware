@@ -44,6 +44,13 @@ export type NavItem = {
   icon: LucideIcon;
   /** La couleur du module, portée partout où il se montre. */
   hue: Hue;
+  /**
+   * Les périmètres où cette entrée a un sens. Absent = les deux sociétés.
+   *
+   * Un bureau d'études n'a pas de chantiers : lui montrer l'écran, filtré à
+   * vide, serait pire que de ne pas le montrer — on chercherait ce qui manque.
+   */
+  scopes?: Array<"ompt-structure" | "ompt-groupe">;
   permission: Permission;
   /** Sous-entrées dépliables ; chacune peut exiger sa propre permission. */
   items?: Array<{ href: string; label: string; permission?: Permission }>;
@@ -112,6 +119,9 @@ export const NAV_SECTIONS: NavSection[] = [
         label: "Chantiers",
         icon: HardHatIcon,
         hue: "amber",
+        // L'exécution appartient à OMPT GROUPE. STRUCTURE rend des plans, pas
+        // des chantiers — son écran à elle reste à écrire.
+        scopes: ["ompt-groupe"],
         // Les affaires signées : ce qui suit la signature. Même permission que
         // les fiches — c'est la suite de la même affaire.
         permission: "customers:read",

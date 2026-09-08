@@ -129,3 +129,15 @@ export function toOptions<T extends string>(entries: Entry<T>) {
     ([value, { label }]) => ({ value, label }),
   );
 }
+
+/**
+ * La société qui émet un devis.
+ *
+ * Deux entrées seulement : ce sont les deux seules qui facturent des devis.
+ * Les autres sociétés du groupe — l'agence, la foncière — n'en émettent pas,
+ * et leur donner une pastille laisserait croire qu'on peut leur en attribuer.
+ */
+export const QUOTE_ISSUER: Record<string, { label: string; tone: Tone }> = {
+  "ompt-structure": { label: "STRUCTURE", tone: "info" },
+  "ompt-groupe": { label: "GROUPE", tone: "warning" },
+};
