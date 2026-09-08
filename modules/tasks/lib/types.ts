@@ -11,13 +11,22 @@ export type Colleague = {
 /** Filtres d'échéance servis par l'API — jamais recalculés côté navigateur. */
 export type DueFilter = "overdue" | "today" | "week" | "none";
 
-/** Ce qu'une tâche vise : une fiche client ou une affaire, jamais les deux. */
+/**
+ * Ce qu'une tâche vise : une fiche client ou une affaire, jamais les deux.
+ *
+ * Quand c'est une affaire, `owner_id` nomme la fiche dont elle relève. Sans
+ * elle, une tâche rattachée à un chantier affichait une étiquette qui n'ouvrait
+ * rien, et la rouvrir ne savait plus de quel client il s'agissait.
+ */
 export type TaskTarget = {
   id: string;
   customer_id: string | null;
   project_id: string | null;
   label: string;
   reference: string;
+  /** La fiche d'une cible « affaire ». Nulle quand la cible est la fiche. */
+  owner_id: string | null;
+  owner_name: string;
 };
 
 export type Task = {

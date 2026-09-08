@@ -26,5 +26,9 @@ export { CustomerPicker } from "./components/customer-picker";
 // chantiers et des études : c'est la même liste de cases, sur la même affaire.
 export { ProjectJalons } from "./components/project-jalons";
 export { setMilestones, updateProject, updateQuote } from "./lib/api";
+// Les tâches ont besoin des affaires d'une fiche pour proposer à laquelle se
+// rattacher. Une route dédiée ne se justifierait pas : la fiche est déjà
+// servie en un appel, et c'est un geste explicite de l'utilisateur.
+export { getCustomer } from "./lib/api";
 export * from "./lib/types";
 export { ImportView } from "./import";
