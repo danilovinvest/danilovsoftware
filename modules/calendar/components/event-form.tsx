@@ -19,7 +19,11 @@ import { DateField, TimeField } from "@/shared/ui/date-time-field";
 import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
 import { CustomerPicker } from "@/modules/customers";
 import * as api from "../lib/api";
-import { EVENT_KIND, EVENT_KIND_OPTIONS } from "../lib/labels";
+import {
+  DEFAULT_EVENT_KIND,
+  EVENT_KIND,
+  EVENT_KIND_OPTIONS,
+} from "../lib/labels";
 import type { Calendar, CalendarEvent, EventKind } from "../lib/types";
 
 /**
@@ -47,6 +51,14 @@ export function EventForm({
   range,
   /** Événement dont on repart pour en créer un nouveau. */
   template,
+  /**
+   * Ce que l'écran appelant sait déjà : la fiche concernée, la catégorie.
+   *
+   * C'est ce qui permet à une fiche client d'ouvrir ce formulaire-ci plutôt
+   * que d'en écrire un second — le rattachement et la catégorie sont posés,
+   * le reste est le même formulaire, et les deux ne divergeront pas.
+   */
+  preset,
 }: {
   open: boolean;
   onClose: () => void;
@@ -55,10 +67,11 @@ export function EventForm({
   event?: CalendarEvent | null;
   range?: Range | null;
   template?: CalendarEvent | null;
+  preset?: EventPreset | null;
 }) {
   // Le formulaire est remonté à chaque ouverture : la clé change avec la cible,
   // et l'état initial se calcule une fois, dans l'initialiseur du useState.
-  const key = `${open}:${event?.id ?? template?.id ?? "nouveau"}:${range?.from.toISOString() ?? ""}:${range?.to.toISOString() ?? ""}`;
+  const key = `${open}:${event?.id ?? template?.id ?? "nouveau"}:${range?.from.toISOString() ?? ""}:${range?.to.toISOString() ?? ""}:${preset?.customerId ?? ""}:${preset?.kind ?? ""}`;
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="sm:max-w-lg">
@@ -71,6 +84,7 @@ export function EventForm({
             event={event ?? null}
             range={range ?? null}
             template={template ?? null}
+            preset={preset ?? null}
           />
         )}
       </DialogContent>
@@ -103,6 +117,7 @@ function FormBody({
   event,
   range,
   template,
+  preset,
 }: {
   onClose: () => void;
   onSaved: () => void;
@@ -110,9 +125,10 @@ function FormBody({
   event: CalendarEvent | null;
   range: Range | null;
   template: CalendarEvent | null;
+  preset: EventPreset | null;
 }) {
   const [draft, setDraft] = useState<Draft>(() =>
-    initial(event, range, calendars, template),
+    initial(event, range, calendars, template, preset),
   );
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -203,15 +219,45 @@ function FormBody({
           placeholder="Visite de chantier — Villa Roquefort"
         />
 
-        <SelectField
-          label="Agenda"
-          required
-          value={draft.calendarId}
-          onValueChange={(value) => set("calendarId", value)}
-          options={calendars.map((calendar) => ({
-            value: calendar.id,
-            label: calendar.name,
-          }))}
+        <div className="grid grid-cols-2 gap-3">
+          <SelectField
+            label="Agenda"
+            required
+            value={draft.calendarId}
+            onValueChange={(value) => set("calendarId", value)}
+            options={calendars.map((calendar) => ({
+              value: calendar.id,
+              label: calendar.name,
+            }))}
+          />
+          {/* La catégorie et l'agenda répondent à deux questions différentes —
+              *ce que c'est* et *où ça vit* — et c'est pour cela qu'elles sont
+              côte à côte plutôt que confondues en une seule liste. */}
+          <SelectField
+            label="Catégorie"
+            required
+            value={draft.kind}
+            onValueChange={(value) => set("kind", value as EventKind)}
+            options={EVENT_KIND_OPTIONS}
+            hint={EVENT_KIND[draft.kind].hint}
+          />
+        </div>
+
+        {/* Le rattachement à une fiche : c'est lui qui fait apparaître
+            l'événement dans l'onglet « Échanges » du client. Facultatif — une
+            réunion interne ne concerne personne. */}
+        <CustomerPicker
+          label="Client ou prospect"
+          value={draft.customerId}
+          valueName={draft.customerName}
+          hint="Facultatif. L'événement apparaîtra dans sa fiche."
+          onChange={(id, name) =>
+            setDraft((current) => ({
+              ...current,
+              customerId: id,
+              customerName: name,
+            }))
+          }
         />
 
         <div className="flex items-center gap-2">
@@ -354,12 +400,33 @@ function timeValue(date: Date) {
 /** Bornes tracées à la souris dans une grille. */
 export type Range = { from: Date; to: Date; allDay: boolean };
 
+/**
+ * Ce que l'écran appelant sait déjà d'un événement à créer.
+ *
+ * Une fiche client sait pour qui et de quoi il s'agit ; le formulaire n'a pas à
+ * le redemander. Le rattachement reste modifiable — on peut s'être trompé de
+ * fiche, et le verrouiller obligerait à supprimer pour recommencer.
+ */
+export type EventPreset = {
+  kind?: EventKind;
+  customerId?: string | null;
+  customerName?: string;
+  title?: string;
+};
+
 function initial(
   event: CalendarEvent | null,
   range: Range | null,
   calendars: Calendar[],
   template: CalendarEvent | null = null,
+  preset: EventPreset | null = null,
 ): Draft {
+  const rattachement = {
+    kind: preset?.kind ?? DEFAULT_EVENT_KIND,
+    customerId: preset?.customerId ?? null,
+    customerName: preset?.customerName ?? "",
+  };
+
   if (event) {
     const from = new Date(event.starts_at);
     const to = new Date(event.ends_at);
@@ -371,6 +438,9 @@ function initial(
       last.setDate(last.getDate() - 1);
       return {
         calendarId: event.calendar_id,
+        kind: event.kind,
+        customerId: event.customer_id,
+        customerName: event.customer_name,
         title: event.title,
         location: event.location,
         description: event.description,
@@ -383,6 +453,9 @@ function initial(
     }
     return {
       calendarId: event.calendar_id,
+      kind: event.kind,
+      customerId: event.customer_id,
+      customerName: event.customer_name,
       title: event.title,
       location: event.location,
       description: event.description,
@@ -399,6 +472,9 @@ function initial(
   const copy = template
     ? {
         calendarId: template.calendar_id,
+        kind: template.kind,
+        customerId: template.customer_id,
+        customerName: template.customer_name,
         title: `${template.title} (copie)`,
         location: template.location,
         description: template.description,
@@ -417,7 +493,10 @@ function initial(
     last.setDate(last.getDate() - 1);
     return {
       calendarId: copy?.calendarId ?? calendars[0]?.id ?? "",
-      title: copy?.title ?? "",
+      kind: preset?.kind ?? copy?.kind ?? rattachement.kind,
+      customerId: preset?.customerId ?? copy?.customerId ?? null,
+      customerName: preset?.customerName ?? copy?.customerName ?? "",
+      title: preset?.title ?? copy?.title ?? "",
       location: copy?.location ?? "",
       description: copy?.description ?? "",
       allDay: true,
@@ -430,7 +509,10 @@ function initial(
 
   return {
     calendarId: copy?.calendarId ?? calendars[0]?.id ?? "",
-    title: copy?.title ?? "",
+    kind: preset?.kind ?? copy?.kind ?? rattachement.kind,
+    customerId: preset?.customerId ?? copy?.customerId ?? null,
+    customerName: preset?.customerName ?? copy?.customerName ?? "",
+    title: preset?.title ?? copy?.title ?? "",
     location: copy?.location ?? "",
     description: copy?.description ?? "",
     allDay: false,

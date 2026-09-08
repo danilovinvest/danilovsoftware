@@ -74,16 +74,21 @@ export function paletteAt(index: number): CalendarStyle {
  * surtout elles rendent l'agenda interrogeable : « les échanges du mois » est
  * une question qu'on ne pouvait pas poser à une colonne de texte libre.
  *
- * L'ordre est celui de la fréquence — on pose dix échanges pour un congé — et
- * c'est celui dans lequel la liste déroulante les propose.
+ * L'ordre est celui de la fréquence mesurée sur l'agenda repris — cent seize
+ * rendez-vous, treize chantiers — et c'est celui dans lequel la liste
+ * déroulante les propose.
  */
 export const EVENT_KIND: Record<EventKind, { label: string; hint: string }> = {
-  echange: { label: "Échange", hint: "Un appel, un courriel, un point avec le client" },
   rdv: { label: "Rendez-vous", hint: "Une visite, un rendez-vous sur place" },
+  echange: { label: "Échange", hint: "Un appel, un courriel, un point avec le client" },
   chantier: { label: "Chantier", hint: "Une intervention, une livraison" },
   interne: { label: "Interne", hint: "Une réunion, un congé, rien de client" },
   autre: { label: "Autre", hint: "Tout le reste" },
 };
+
+/** La catégorie d'un événement neuf. Cent seize rendez-vous pour treize
+ * chantiers dans l'agenda repris : c'est le défaut honnête. */
+export const DEFAULT_EVENT_KIND: EventKind = "rdv";
 
 export const EVENT_KIND_OPTIONS = (
   Object.entries(EVENT_KIND) as Array<[EventKind, { label: string }]>

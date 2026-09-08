@@ -11,6 +11,7 @@ export { GoogleMark } from "./components/google-mark";
 export { SyncBadge } from "./components/sync-badge";
 export {
   CALENDAR_PALETTE,
+  DEFAULT_EVENT_KIND,
   EVENT_KIND,
   EVENT_KIND_OPTIONS,
   EVENT_KIND_TONE,
