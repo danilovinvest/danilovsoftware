@@ -1,4 +1,5 @@
 import {
+  CopyIcon,
   BotIcon,
   CalendarIcon,
   CloudIcon,
@@ -71,6 +72,14 @@ export const SETTINGS_NAVIGATION: SettingsSection[] = [
         label: "Messagerie",
         icon: MailIcon,
         permission: "mail:read",
+      },
+      {
+        href: "/settings/doublons",
+        label: "Doublons",
+        icon: CopyIcon,
+        // Même permission que les fiches pour *voir* les paires ; la fusion,
+        // qui retire une fiche, est vérifiée route par route côté API.
+        permission: "customers:read",
       },
       {
         href: "/settings/fichiers",

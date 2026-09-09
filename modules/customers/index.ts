@@ -18,6 +18,9 @@ export * from "./lib/labels";
 export * from "./lib/cycle";
 export { EMPTY_JALONS, JALON_ORDER, readJalons, type Jalons } from "./lib/jalons";
 export { ProjectCycle } from "./components/project-cycle";
+// L'écran des doublons vit dans les réglages, mais tout ce qu'il manipule — la
+// ressemblance de deux fiches, la fusion — appartient aux fiches.
+export { DuplicatesPanel } from "./components/duplicates-panel";
 // Le choix d'une fiche par la recherche : l'agenda en a besoin pour rattacher
 // un rendez-vous à son client, et trois cent soixante-six fiches n'entrent pas
 // dans une liste déroulante.
