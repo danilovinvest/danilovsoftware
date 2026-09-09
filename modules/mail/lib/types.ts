@@ -62,6 +62,13 @@ export type BrowseMessage = MailMessage & {
   customer_name: string;
   matched: boolean;
   has_body: boolean;
+  /**
+   * L'adresse de la boîte qui a reçu le message.
+   *
+   * Elle ne sert que lorsqu'il y en a plusieurs — avec une seule, la répéter
+   * sur chaque ligne n'apprendrait rien.
+   */
+  account: string;
 };
 
 export type MailPage = {

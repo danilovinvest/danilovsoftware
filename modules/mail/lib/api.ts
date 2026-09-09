@@ -28,10 +28,18 @@ export function listUnknownSenders(minimum = 2, limit = 50, signal?: AbortSignal
 
 /** Parcourir la boîte entière, et non plus seulement le courrier d'une fiche. */
 export function browseMail(
-  params: { search?: string; scope?: MailScope; from?: string; page?: number },
+  params: {
+    search?: string;
+    scope?: MailScope;
+    from?: string;
+    page?: number;
+    /** Absent = toutes les boîtes raccordées. */
+    account?: string;
+  },
   signal?: AbortSignal,
 ) {
   const query = new URLSearchParams();
+  if (params.account) query.set("account", params.account);
   if (params.search) query.set("search", params.search);
   if (params.scope && params.scope !== "tous") query.set("scope", params.scope);
   if (params.from) query.set("from", params.from);

@@ -84,13 +84,27 @@ export function SettingsRow({
   hint?: string;
   children: React.ReactNode;
 }) {
+  /*
+    Le libellé garde sa colonne, la valeur prend le reste et **passe à la
+    ligne**.
+
+    `shrink-0` sur la valeur partait du principe qu'elle est courte — un nombre,
+    un interrupteur. Dès qu'elle est une phrase, elle réclamait toute la largeur
+    et écrasait le libellé : « À l'ouverture d'un message » se rendait sur
+    quatre lignes d'un mot, sous une valeur qui débordait de la carte. C'est
+    l'inverse qu'il faut, le libellé étant le seul des deux dont on connaisse la
+    longueur.
+
+    En dessous de `sm`, les deux s'empilent : côte à côte sur un téléphone, il
+    ne resterait ni l'un ni l'autre.
+  */
   return (
-    <div className="flex items-center justify-between gap-4 px-3 py-2.5">
-      <div className="min-w-0">
+    <div className="flex flex-col gap-1 px-3 py-2.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-6">
+      <div className="min-w-0 sm:w-56 sm:shrink-0">
         <p className="text-sm">{label}</p>
         {hint && <p className="text-muted-foreground mt-0.5 text-xs">{hint}</p>}
       </div>
-      <div className="text-muted-foreground shrink-0 text-right text-sm">
+      <div className="text-muted-foreground min-w-0 text-sm sm:flex-1 sm:text-right">
         {children}
       </div>
     </div>

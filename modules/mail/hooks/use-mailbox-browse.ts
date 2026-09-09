@@ -17,19 +17,21 @@ export function useMailboxBrowse() {
   const [search, setSearch] = useState("");
   const [scope, setScope] = useState<MailScope>("tous");
   const [from, setFrom] = useState("");
+  /** La boîte lue. Vide = toutes, ce qui est le défaut. */
+  const [account, setAccount] = useState("");
   const [page, setPage] = useState(1);
 
   // La recherche attend qu'on cesse de taper : neuf mille lignes se cherchent
   // vite, mais une requête par frappe reste une requête par frappe.
   const debounced = useDebounced(search, 300);
-  const key = JSON.stringify({ debounced, scope, from, page });
+  const key = JSON.stringify({ debounced, scope, from, account, page });
 
   const [resolved, setResolved] = useState<Resolved>({ key: "", page: null, error: null });
 
   useEffect(() => {
     const controller = new AbortController();
     api
-      .browseMail({ search: debounced, scope, from, page }, controller.signal)
+      .browseMail({ search: debounced, scope, from, account, page }, controller.signal)
       .then((result) => setResolved({ key, page: result, error: null }))
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
@@ -40,7 +42,7 @@ export function useMailboxBrowse() {
         });
       });
     return () => controller.abort();
-  }, [key, debounced, scope, from, page]);
+  }, [key, debounced, scope, from, account, page]);
 
   return {
     page: resolved.page,
@@ -59,6 +61,11 @@ export function useMailboxBrowse() {
     from,
     setFrom: (value: string) => {
       setFrom(value);
+      setPage(1);
+    },
+    account,
+    setAccount: (value: string) => {
+      setAccount(value);
       setPage(1);
     },
     pageNumber: page,

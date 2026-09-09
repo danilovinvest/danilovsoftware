@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   DownloadIcon,
   MailIcon,
+  PlusIcon,
   RefreshCwIcon,
   TriangleAlertIcon,
   UserPlusIcon,
@@ -35,6 +36,14 @@ export function MailPanel() {
     useMailbox();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  /**
+   * Le formulaire est déplié d'office tant qu'aucune boîte n'est raccordée —
+   * il n'y a rien d'autre à faire sur cet écran — et à la demande ensuite : une
+   * seconde boîte s'ajoute une fois, pas tous les jours, et le formulaire posé
+   * en permanence sous la liste laisserait croire qu'il reste quelque chose à
+   * remplir.
+   */
+  const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({
     email: "", password: "", host: "imap.gmail.com", port: 993, months: 18,
   });
@@ -57,6 +66,7 @@ export function MailPanel() {
   const connect = guard(async () => {
     await api.connectMailbox(form);
     setForm({ ...form, email: "", password: "" });
+    setAdding(false);
   });
 
   return (
@@ -89,66 +99,12 @@ export function MailPanel() {
       </SettingsSection>
 
       <SettingsSection
-        title="Boîte raccordée"
-        description="Une seule suffit : celle que tout le monde partage."
+        title="Boîtes raccordées"
+        description="Celles que l'entreprise partage. Une par adresse, autant qu'il en faut."
       >
-        {loading ? (
-          <Skeleton className="h-24 w-full" />
-        ) : accounts.length === 0 ? (
-          <div className="flex flex-col gap-3 rounded-lg border p-4">
-            <p className="text-warning bg-warning-soft/50 rounded-lg px-3 py-2 text-xs leading-relaxed">
-              Gmail veut un <strong>mot de passe d&apos;application</strong>, pas
-              celui du compte. Compte Google → Sécurité → Validation en deux
-              étapes (à activer si ce n&apos;est pas fait) → Mots de passe des
-              applications. Il ouvre toute la boîte : il est chiffré dans la base
-              et ne quitte jamais le serveur.
-            </p>
+        {loading && <Skeleton className="h-24 w-full" />}
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <TextField
-                label="Adresse"
-                required
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="omptgroupe@gmail.com"
-              />
-              <TextField
-                label="Mot de passe d'application"
-                required
-                type="password"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                placeholder="abcd efgh ijkl mnop"
-                className="font-mono"
-              />
-              <TextField
-                label="Serveur IMAP"
-                value={form.host}
-                onChange={(e) => setForm({ ...form, host: e.target.value })}
-              />
-              <SelectField
-                label="Historique à rapatrier"
-                value={String(form.months)}
-                onValueChange={(value) => setForm({ ...form, months: Number(value) })}
-                options={[
-                  { value: "6", label: "6 mois" },
-                  { value: "12", label: "1 an" },
-                  { value: "18", label: "18 mois" },
-                  { value: "36", label: "3 ans" },
-                ]}
-              />
-            </div>
-
-            <Button
-              className="self-start"
-              onClick={connect}
-              disabled={pending || !form.email.trim() || !form.password.trim()}
-            >
-              {pending ? <Spinner /> : <MailIcon className="size-4" />}
-              Raccorder la boîte
-            </Button>
-          </div>
-        ) : (
+        {!loading && accounts.length > 0 && (
           <div className="flex flex-col gap-3 rounded-lg border p-3">
             {accounts.map((account) => (
               <div key={account.id} className="flex flex-wrap items-center gap-3">
@@ -244,8 +200,82 @@ export function MailPanel() {
                 <span>{accounts.find((a) => a.last_error)?.last_error}</span>
               </p>
             )}
+
+            {!adding && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="self-start"
+                onClick={() => setAdding(true)}
+              >
+                <PlusIcon className="size-3.5" />
+                Ajouter une boîte
+              </Button>
+            )}
           </div>
         )}
+        {!loading && (accounts.length === 0 || adding) && (
+          <div className="flex flex-col gap-3 rounded-lg border p-4">
+            <p className="text-warning bg-warning-soft/50 rounded-lg px-3 py-2 text-xs leading-relaxed">
+              Gmail veut un <strong>mot de passe d&apos;application</strong>, pas
+              celui du compte. Compte Google → Sécurité → Validation en deux
+              étapes (à activer si ce n&apos;est pas fait) → Mots de passe des
+              applications. Il ouvre toute la boîte : il est chiffré dans la base
+              et ne quitte jamais le serveur.
+            </p>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <TextField
+                label="Adresse"
+                required
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                placeholder="omptgroupe@gmail.com"
+              />
+              <TextField
+                label="Mot de passe d'application"
+                required
+                type="password"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                placeholder="abcd efgh ijkl mnop"
+                className="font-mono"
+              />
+              <TextField
+                label="Serveur IMAP"
+                value={form.host}
+                onChange={(e) => setForm({ ...form, host: e.target.value })}
+              />
+              <SelectField
+                label="Historique à rapatrier"
+                value={String(form.months)}
+                onValueChange={(value) => setForm({ ...form, months: Number(value) })}
+                options={[
+                  { value: "6", label: "6 mois" },
+                  { value: "12", label: "1 an" },
+                  { value: "18", label: "18 mois" },
+                  { value: "36", label: "3 ans" },
+                ]}
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={connect}
+                disabled={pending || !form.email.trim() || !form.password.trim()}
+              >
+                {pending ? <Spinner /> : <MailIcon className="size-4" />}
+                Raccorder la boîte
+              </Button>
+              {accounts.length > 0 && (
+                <Button variant="ghost" onClick={() => setAdding(false)} disabled={pending}>
+                  Annuler
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
       </SettingsSection>
 
       {unknown.length > 0 && (

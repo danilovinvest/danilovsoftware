@@ -70,7 +70,10 @@ export function MailboxView() {
   const browse = useMailboxBrowse();
   const opened = useMailMessage(selected);
 
-  const account = accounts[0] ?? null;
+  // Les totaux couvrent toutes les boîtes : deux comptes raccordés donnaient
+  // sinon le compte du premier sous un écran qui montre les deux.
+  const total = accounts.reduce((n, a) => n + a.message_count, 0);
+  const rapproches = accounts.reduce((n, a) => n + a.matched_count, 0);
 
   if (accounts.length === 0) {
     return (
@@ -94,9 +97,9 @@ export function MailboxView() {
         <div>
           <h1 className="text-base font-semibold">Messagerie</h1>
           <p className="text-muted-foreground mt-0.5 text-sm">
-            {account
-              ? `${account.email} · ${account.message_count.toLocaleString("fr-FR")} messages, ${plural(account.matched_count, "rapproché")} d'une fiche.`
-              : "La boîte de l'entreprise."}
+            {accounts.length === 0
+              ? "La boîte de l'entreprise."
+              : `${accounts.length === 1 ? accounts[0].email : `${accounts.length} boîtes`} · ${total.toLocaleString("fr-FR")} messages, ${plural(rapproches, "rapproché")} d'une fiche.`}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -122,6 +125,30 @@ export function MailboxView() {
                 onChange={(event) => browse.setSearch(event.target.value)}
               />
             </div>
+
+            {/* Le choix de la boîte ne s'affiche qu'à partir de deux : avec une
+                seule, un sélecteur à une entrée est une case qu'on lit pour
+                rien. « Toutes » est le défaut — on ouvre cet écran pour lire le
+                courrier de l'entreprise, pas celui d'un compte. */}
+            {accounts.length > 1 && (
+              <div className="flex flex-wrap items-center gap-1">
+                {[{ id: "", email: "Toutes les boîtes" }, ...accounts].map((entry) => (
+                  <button
+                    key={entry.id || "toutes"}
+                    type="button"
+                    onClick={() => browse.setAccount(entry.id)}
+                    className={cn(
+                      "rounded-md px-2 py-1 text-xs transition-colors",
+                      browse.account === entry.id
+                        ? "bg-selected text-brand-text font-medium"
+                        : "text-muted-foreground hover:bg-muted",
+                    )}
+                  >
+                    {entry.email}
+                  </button>
+                ))}
+              </div>
+            )}
 
             <div className="flex flex-wrap items-center gap-1">
               {SCOPES.map((entry) => (
@@ -169,6 +196,7 @@ export function MailboxView() {
             <ol className="divide-y">
               {browse.page?.items.map((message) => (
                 <MessageRow
+                  showAccount={accounts.length > 1}
                   key={message.id}
                   message={message}
                   active={message.id === selected}
@@ -225,10 +253,13 @@ function MessageRow({
   message,
   active,
   onSelect,
+  /** Vrai dès que deux boîtes sont raccordées : sinon la répéter n'apprend rien. */
+  showAccount,
 }: {
   message: BrowseMessage;
   active: boolean;
   onSelect: () => void;
+  showAccount: boolean;
 }) {
   const who = message.outgoing ? "Envoyé" : message.from_name || message.from_email;
 
@@ -268,6 +299,11 @@ function MessageRow({
           )}
 
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+            {showAccount && message.account && (
+              <span className="bg-muted text-muted-foreground rounded-sm px-1.5 py-0.5 text-[0.65rem]">
+                {message.account}
+              </span>
+            )}
             {message.matched && message.customer_name && (
               <span className="bg-success-soft text-success rounded-sm px-1.5 py-0.5 text-[0.65rem]">
                 {message.customer_name}
