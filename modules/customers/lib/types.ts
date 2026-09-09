@@ -414,3 +414,29 @@ export type EnrichResult = {
   /** Les messages retenus, prêts à être rattachés à la fiche. */
   retained: RetainedMail[];
 };
+
+/**
+ * Deux fiches qui se ressemblent, et de quoi choisir laquelle garder.
+ *
+ * Les compteurs voyagent avec les noms : personne ne décide laquelle survit
+ * sans savoir laquelle porte les affaires, les devis et les courriels.
+ */
+export type DuplicateSide = {
+  id: string;
+  name: string;
+  status: CustomerStatus;
+  email: string;
+  phone: string;
+  city: string;
+  projects: number;
+  quotes: number;
+  mail: number;
+  created_at: string;
+};
+
+export type DuplicatePair = {
+  left: DuplicateSide;
+  right: DuplicateSide;
+  /** Similarité des deux intitulés, entre 0 et 1. */
+  score: number;
+};

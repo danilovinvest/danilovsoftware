@@ -3,6 +3,7 @@ import type {
   Contact,
   ContactPayload,
   Customer,
+  DuplicatePair,
   CustomerDetail,
   CustomerFilters,
   CustomerListItem,
@@ -76,6 +77,34 @@ export function createCustomer(payload: CustomerPayload) {
 
 export function updateCustomer(id: string, payload: CustomerPayload) {
   return apiFetch<Customer>(`/v1/customers/${id}`, { method: "PATCH", body: payload });
+}
+
+/**
+ * Les fiches qui se ressemblent, deux à deux.
+ *
+ * Le seuil est bas par défaut — les vrais doublons du CRM le sont : « Mamakina
+ * Olga » et « Olga Mamakina Eze » se ressemblent moins qu'on ne l'imagine. Le
+ * prix est du bruit, et le bruit se relit ; l'inverse laisse des doublons
+ * invisibles.
+ */
+export function listDuplicates(minimum = 0.45, signal?: AbortSignal) {
+  return apiFetch<{ items: DuplicatePair[] }>(
+    `/v1/customers/duplicates?minimum=${minimum}`,
+    { signal },
+  );
+}
+
+/**
+ * Verse `absorbed` dans `keep`, et retire `absorbed`.
+ *
+ * C'est `keep` qui est dans le chemin parce que c'est la fiche sur laquelle on
+ * agit — celle qui reste. Tout ou rien côté serveur.
+ */
+export function mergeCustomers(keep: string, absorbed: string) {
+  return apiFetch<Customer>(`/v1/customers/${keep}/merge`, {
+    method: "POST",
+    body: { absorbed },
+  });
 }
 
 export function deleteCustomer(id: string) {
