@@ -93,7 +93,11 @@ export type RolePayload = {
 export type McpToken = {
   id: string;
   name: string;
-  /** Le prototype est en lecture seule : toujours faux pour l'instant. */
+  /**
+   * Le consentement à l'écriture, donné à la création et jamais modifié
+   * ensuite : une adresse installée en lecture ne doit pas devenir une porte
+   * d'écriture sans qu'on l'ait rebranchée.
+   */
   can_write: boolean;
   last_used_at: string | null;
   expires_at: string;

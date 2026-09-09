@@ -128,8 +128,20 @@ export function listMcpTokens(signal?: AbortSignal) {
   return apiFetch<{ items: McpToken[] }>("/v1/mcp/tokens", { signal });
 }
 
-export function createMcpToken(name: string) {
-  return apiFetch<McpTokenCreated>("/v1/mcp/tokens", { method: "POST", body: { name } });
+/**
+ * Crée une adresse de connecteur.
+ *
+ * `canWrite` est le **consentement**, distinct des permissions du compte :
+ * écrire depuis l'assistant demande les deux. Il est figé à la création — une
+ * adresse déjà installée dans ChatGPT ne doit pas changer de nature en cours de
+ * route, sinon le connecteur qu'on a branché en lecture pourrait modifier des
+ * fiches sans qu'on l'ait rebranché.
+ */
+export function createMcpToken(name: string, canWrite: boolean) {
+  return apiFetch<McpTokenCreated>("/v1/mcp/tokens", {
+    method: "POST",
+    body: { name, can_write: canWrite },
+  });
 }
 
 export function revokeMcpToken(id: string) {
