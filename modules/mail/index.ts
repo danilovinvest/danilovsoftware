@@ -7,5 +7,5 @@ export { CustomerMail } from "./components/customer-mail";
 // La boîte entière, et non plus seulement le courrier d'une fiche : sur
 // vingt-sept fiches portant une adresse, une seule a écrit dans cette boîte.
 export { MailboxView } from "./components/mailbox-view";
-export { useMailbox } from "./hooks/use-mail";
+export { useMailbox, useLastMailRun } from "./hooks/use-mail";
 export * from "./lib/types";

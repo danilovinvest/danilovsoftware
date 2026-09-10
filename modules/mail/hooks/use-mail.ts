@@ -85,6 +85,27 @@ export function useMailbox() {
   };
 }
 
+/**
+ * La dernière relecture de la boîte, et rien d'autre.
+ *
+ * `useMailbox` charge les comptes, le journal et les expéditeurs inconnus, et
+ * sonde toutes les quatre secondes pendant une copie : c'est ce qu'il faut à
+ * l'écran Messagerie, pas à une ligne « boîte relue il y a 2 min » au pied
+ * d'une fiche. Un appel, une valeur.
+ */
+export function useLastMailRun() {
+  const [last, setLast] = useState<MailRun | null>(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    api
+      .listRuns(5, controller.signal)
+      .then((data) => setLast(data.items.find((run) => run.finished_at !== null) ?? null))
+      .catch(() => {});
+    return () => controller.abort();
+  }, []);
+  return last;
+}
+
 /** Les courriels d'une fiche. Chargés à l'ouverture de l'onglet, pas avant :
  * la plupart des visites d'une fiche ne les regardent pas. */
 export function useCustomerMail(customerId: string, enabled: boolean) {

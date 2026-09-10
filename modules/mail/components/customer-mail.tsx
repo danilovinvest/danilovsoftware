@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronRightIcon, MailIcon, PaperclipIcon, Unlink2Icon } from "lucide-react";
+import { ChevronRightIcon, PaperclipIcon, Unlink2Icon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePermission } from "@/modules/auth";
 import { Button } from "@/components/ui/button";
@@ -266,14 +266,6 @@ export function CustomerMail({ customerId }: { customerId: string }) {
         </p>
       )}
 
-      <p className="text-muted-foreground/70 mt-2 flex items-start gap-1.5 text-[11px] leading-relaxed">
-        <MailIcon className="mt-px size-3 shrink-0" />
-        <span>
-          Copiés depuis la boîte raccordée parce qu&apos;une adresse de cette
-          fiche y figure. Le CRM lit la messagerie, il n&apos;y écrit jamais —
-          retirer un courriel le sort de la fiche, pas de la boîte.
-        </span>
-      </p>
     </div>
   );
 }

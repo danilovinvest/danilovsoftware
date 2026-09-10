@@ -33,6 +33,7 @@ import { DetailsPanel } from "./details-panel";
 import { EnumBadge } from "./enum-badge";
 import { InteractionsPanel } from "./interactions-panel";
 import { ProjectsPanel } from "./projects-panel";
+import { SyncFooter } from "./sync-footer";
 
 /**
  * Fiche client en trois onglets plutôt qu'en une page dense : les affaires (le
@@ -225,6 +226,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
         {canReadMail && (
           <TabsContent value="courriels" className="mt-4">
             <CustomerMail customerId={customer.id} />
+            <SyncFooter />
           </TabsContent>
         )}
 
@@ -236,6 +238,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
         */}
         <TabsContent value="documents" className="mt-4">
           <CustomerDocuments projects={customer.projects} />
+          <SyncFooter />
         </TabsContent>
 
         <TabsContent value="taches" className="mt-4">
