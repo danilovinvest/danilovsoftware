@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { CheckIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useImportRuns } from "../hooks/use-import-runs";
 import { useSyncRuns } from "../hooks/use-sync-runs";
 import { EVENT_KIND_TONE, paletteAt } from "../lib/labels";
 import type { Calendar, EventKind } from "../lib/types";
-import { SyncBadge } from "./sync-badge";
+import { ImportLogDialog } from "./import-log";
+import { SyncBadge, agendaVerdict } from "./sync-badge";
 import { SyncLogDialog } from "./sync-log-dialog";
 
 type Entry = Calendar & { hidden: boolean; count: number };
@@ -42,16 +44,38 @@ export function CalendarSidebar({
   loaded: number;
 }) {
   const journal = useSyncRuns(60);
+  const imports = useImportRuns(20);
   const [journalOpen, setJournalOpen] = useState(false);
+  const [importLogOpen, setImportLogOpen] = useState(false);
+
+  /*
+    Le badge de la grille rend compte de ce que la grille affiche.
+
+    Il lisait le miroir, qui se tient à jour toutes les cinq minutes — et il
+    affichait donc « à jour » au-dessus d'un agenda auquel il manquait onze
+    rendez-vous, parce que l'import, lui, attendait un clic. Ce qu'on voit ici
+    vient de l'import ; c'est sa fraîcheur qu'il faut lire, et le miroir ne
+    reprend la parole que lorsqu'il est en panne.
+  */
+  const verdict = agendaVerdict(journal, imports, imports.now);
 
   return (
     <aside className="flex w-full flex-col gap-4 lg:w-60">
       <div className="bg-card flex flex-col items-start gap-2 rounded-xl border p-3">
         <SyncBadge
-          running={journal.running}
-          last={journal.last}
-          now={journal.now}
-          onClick={() => setJournalOpen(true)}
+          state={verdict.state}
+          label={verdict.label}
+          title={
+            verdict.blame === "miroir"
+              ? "Voir le journal de la copie Google"
+              : "Voir le journal des imports"
+          }
+          // On ouvre le journal qui explique le problème, pas celui qui se
+          // trouve être le plus proche : un badge rouge qui mène à un écran
+          // vert ferait chercher la panne là où elle n'est pas.
+          onClick={() =>
+            verdict.blame === "miroir" ? setJournalOpen(true) : setImportLogOpen(true)
+          }
         />
         <p className="text-muted-foreground/70 text-[11px]">
           {loaded} événement{loaded > 1 ? "s" : ""} sur la période affichée
@@ -148,6 +172,7 @@ export function CalendarSidebar({
       </p>
 
       <SyncLogDialog open={journalOpen} onClose={() => setJournalOpen(false)} />
+      <ImportLogDialog open={importLogOpen} onOpenChange={setImportLogOpen} />
     </aside>
   );
 }

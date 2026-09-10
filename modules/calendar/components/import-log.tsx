@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
   AlertTriangleIcon,
   CalendarClockIcon,
+  EyeOffIcon,
   PencilIcon,
   PlusIcon,
   Trash2Icon,
@@ -31,10 +32,11 @@ import type { ImportChange, ImportRun } from "../lib/types";
  * compteur ne dit pas *lequel* a bougé, et c'est justement ce qu'on veut savoir
  * quand un rendez-vous se déplace dans Google.
  *
- * Les cinq natures de changement se distinguent par leur couleur : un conflit —
+ * Les natures de changement se distinguent par leur couleur : un conflit —
  * modifié chez Google **et** corrigé ici — n'est pas une mise à jour, c'est
  * quelque chose que l'import a délibérément laissé de côté et qu'il faut
- * trancher à la main.
+ * trancher à la main. « Non repris » dit la même chose d'un autre problème :
+ * l'événement existe chez Google et le CRM ne sait pas le placer.
  */
 const NATURE: Record<
   ImportChange["kind"],
@@ -64,6 +66,11 @@ const NATURE: Record<
     label: "Conflit",
     icon: AlertTriangleIcon,
     className: "bg-warning-soft text-warning",
+  },
+  ignore: {
+    label: "Non repris",
+    icon: EyeOffIcon,
+    className: "bg-neutral-soft text-neutral",
   },
 };
 
@@ -130,8 +137,19 @@ function Run({ run, now }: { run: ImportRun; now: number }) {
         <span className="text-sm font-medium">{formatDateTime(run.started_at)}</span>
         <span className="text-muted-foreground text-[11px]">
           {formatAgo(run.started_at, now)}
-          {run.author_name && ` · ${run.author_name}`}
+          {/*
+            Qui l'a mené, ou à défaut que personne ne l'a mené. Un import
+            automatique n'a pas d'auteur, et laisser la place vide ferait
+            croire à une information perdue plutôt qu'à une information qui
+            n'existe pas.
+          */}
+          {run.author_name ? ` · ${run.author_name}` : ` · ${run.origin}`}
         </span>
+        {run.finished_at === null && (
+          <span className="text-info bg-info-soft/60 rounded-sm px-1.5 py-0.5 text-[11px] font-medium">
+            en cours
+          </span>
+        )}
         <span className="ml-auto flex flex-wrap items-center gap-1.5 text-[11px]">
           <Compteur value={run.added} label="ajouté" tone="bg-success-soft text-success" />
           <Compteur value={run.updated} label="repris" tone="bg-info-soft text-info" />

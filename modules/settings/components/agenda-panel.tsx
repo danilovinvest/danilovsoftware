@@ -18,6 +18,7 @@ import {
   GoogleButton,
   GoogleMark,
   SyncBadge,
+  mirrorVerdict,
   ImportLogDialog,
   SyncLogDialog,
   authorizeUrl,
@@ -240,9 +241,7 @@ export function AgendaPanel() {
                 </div>
 
                 <SyncBadge
-                  running={journal.running}
-                  last={journal.last}
-                  now={journal.now}
+                  {...mirrorVerdict(journal.running, journal.last, journal.now)}
                   onClick={() => setJournalOpen(true)}
                 />
 

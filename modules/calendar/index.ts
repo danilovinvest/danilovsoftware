@@ -12,7 +12,7 @@ export { EventForm, type EventPreset } from "./components/event-form";
 // et son journal.
 export { GoogleButton } from "./components/google-button";
 export { GoogleMark } from "./components/google-mark";
-export { SyncBadge } from "./components/sync-badge";
+export { SyncBadge, mirrorVerdict, agendaVerdict } from "./components/sync-badge";
 export {
   CALENDAR_PALETTE,
   DEFAULT_EVENT_KIND,
@@ -25,6 +25,7 @@ export {
 export { SyncLogDialog } from "./components/sync-log-dialog";
 export { ImportLogDialog } from "./components/import-log";
 export { useSyncRuns } from "./hooks/use-sync-runs";
+export { useImportRuns } from "./hooks/use-import-runs";
 export * from "./lib/types";
 // Le raccordement du compte Google se pilote depuis l'écran des réglages, qui
 // n'a pas à connaître les chemins d'API du calendrier.
