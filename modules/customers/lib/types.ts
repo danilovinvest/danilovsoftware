@@ -232,6 +232,10 @@ export type Milestones = {
   resume_at: string | null;
   /** Les plans d'exécution envoyés — le jalon de rendu du bureau d'études. */
   plans_sent_at: string | null;
+  pv_sent_at: string | null;
+  pv_signed_at: string | null;
+  visit_report_sent_at: string | null;
+  survey_report_sent_at: string | null;
   /** L'avis client : demander n'est pas recevoir, d'où deux dates. */
   review_requested_at: string | null;
   review_received_at: string | null;

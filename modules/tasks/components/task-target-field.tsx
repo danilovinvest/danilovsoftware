@@ -1,15 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { BriefcaseIcon } from "lucide-react";
-import {
-  CustomerPicker,
-  getCustomer,
-  PROJECT_STAGE,
-  type Project,
-} from "@/modules/customers";
-import { SelectField } from "@/shared/ui/form";
-import { Spinner } from "@/shared/ui/feedback";
+import { CustomerPicker, ProjectPicker } from "@/modules/customers";
 
 /**
  * À quoi une tâche se rattache : une fiche, ou l'une de ses affaires.
@@ -39,24 +30,6 @@ export function TaskTargetField({
     projectId: string | null;
   }) => void;
 }) {
-  const [affaires, setAffaires] = useState<{
-    pour: string;
-    items: Project[];
-  } | null>(null);
-
-  useEffect(() => {
-    if (!customerId) return;
-    const controller = new AbortController();
-    getCustomer(customerId, controller.signal)
-      .then((fiche) => setAffaires({ pour: customerId, items: fiche.projects }))
-      .catch(() => {
-        if (!controller.signal.aborted) setAffaires({ pour: customerId, items: [] });
-      });
-    return () => controller.abort();
-  }, [customerId]);
-
-  const charge = affaires?.pour === customerId ? affaires.items : null;
-
   return (
     <div className="flex flex-col gap-3">
       <CustomerPicker
@@ -72,36 +45,13 @@ export function TaskTargetField({
         }
       />
 
-      {customerId && charge === null && (
-        <p className="text-muted-foreground flex items-center gap-1.5 text-[11px]">
-          <Spinner className="size-3" />
-          Chargement des affaires…
-        </p>
-      )}
+      <ProjectPicker
+        customerId={customerId}
+        value={projectId}
+        hint="Préciser une affaire range la tâche sur ce chantier ou cette étude."
+        onChange={(next) => onChange({ customerId, customerName, projectId: next })}
+      />
 
-      {customerId && charge !== null && charge.length > 0 && (
-        <SelectField
-          label="Affaire"
-          placeholder="Toute la fiche"
-          emptyLabel="Toute la fiche"
-          hint="Préciser une affaire range la tâche sur ce chantier ou cette étude."
-          options={charge.map((project) => ({
-            value: project.id,
-            label: `${project.label} — ${PROJECT_STAGE[project.stage]?.label ?? project.stage}`,
-          }))}
-          value={projectId ?? ""}
-          onValueChange={(value) =>
-            onChange({ customerId, customerName, projectId: value || null })
-          }
-        />
-      )}
-
-      {customerId && charge !== null && charge.length === 0 && (
-        <p className="text-muted-foreground flex items-center gap-1.5 text-[11px]">
-          <BriefcaseIcon className="size-3" />
-          Cette fiche n&apos;a aucune affaire : la tâche vise la fiche entière.
-        </p>
-      )}
     </div>
   );
 }

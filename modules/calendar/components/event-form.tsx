@@ -18,13 +18,15 @@ import { ErrorNotice, Spinner } from "@/shared/ui/feedback";
 import { DateField, TimeField } from "@/shared/ui/date-time-field";
 import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
 import { CustomerPicker } from "@/modules/customers";
+import { EventJalonsField } from "./event-jalons-field";
 import * as api from "../lib/api";
 import {
   DEFAULT_EVENT_KIND,
   EVENT_KIND,
   EVENT_KIND_OPTIONS,
 } from "../lib/labels";
-import type { Calendar, CalendarEvent, EventKind } from "../lib/types";
+import type { Calendar, CalendarEvent, EventJalons, EventKind } from "../lib/types";
+import { EMPTY_JALONS } from "../lib/types";
 
 /**
  * Créer ou modifier un rendez-vous.
@@ -130,6 +132,10 @@ type Draft = {
   customerId: string | null;
   /** Son nom, gardé pour l'afficher sans réinterroger le serveur. */
   customerName: string;
+  /** L'affaire concernée : c'est elle qui porte les jalons. */
+  projectId: string | null;
+  /** Ce que l'événement inscrit dans la fiche. Voir `EVENT_KIND_JALONS`. */
+  jalons: EventJalons;
   title: string;
   location: string;
   description: string;
@@ -178,7 +184,9 @@ function FormBody({
         description: draft.description,
         all_day: draft.allDay,
         customer_id: draft.customerId,
+        project_id: draft.projectId,
         kind: draft.kind,
+        jalons: draft.jalons,
         ...bounds(draft),
       };
       if (event) await api.updateEvent(event.id, input);
@@ -287,8 +295,27 @@ function FormBody({
               ...current,
               customerId: id,
               customerName: name,
+              // L'affaire repart à zéro : une affaire d'un autre client n'a
+              // aucun sens, et la garder inscrirait un jalon sur le dossier de
+              // quelqu'un d'autre sans que rien à l'écran ne le signale.
+              projectId: null,
             }))
           }
+        />
+
+        {/*
+          Les champs de la catégorie, et ce qu'ils inscrivent dans la fiche.
+          Le bloc se tait pour les catégories qui n'ont aucun jalon à poser —
+          une échéance, un congé — plutôt que d'afficher une section vide.
+        */}
+        <EventJalonsField
+          kind={draft.kind}
+          customerId={draft.customerId}
+          projectId={draft.projectId}
+          jalons={draft.jalons}
+          passe={debut(draft) < new Date()}
+          onProject={(projectId) => set("projectId", projectId)}
+          onJalons={(jalons) => set("jalons", jalons)}
         />
 
         <div className="flex items-center gap-2">
@@ -458,6 +485,17 @@ function initial(
     customerName: preset?.customerName ?? "",
   };
 
+  /*
+    Les jalons repartent **toujours** vides, même en modification.
+
+    C'est le pendant du « un champ vide n'efface rien » : le formulaire n'affiche
+    pas l'état de l'affaire, il propose de l'affirmer. Recharger les dates déjà
+    inscrites laisserait croire qu'on les édite ici — alors qu'un second
+    événement de chantier sur la même affaire les afficherait tout aussi bien, et
+    que les corriger se fait sur la fiche, où l'on voit l'état complet.
+  */
+  const vierge = { projectId: event?.project_id ?? null, jalons: { ...EMPTY_JALONS } };
+
   if (event) {
     const from = new Date(event.starts_at);
     const to = new Date(event.ends_at);
@@ -469,6 +507,7 @@ function initial(
       last.setDate(last.getDate() - 1);
       return {
         calendarId: event.calendar_id,
+        ...vierge,
         kind: event.kind,
         customerId: event.customer_id,
         customerName: event.customer_name,
@@ -484,6 +523,7 @@ function initial(
     }
     return {
       calendarId: event.calendar_id,
+      ...vierge,
       kind: event.kind,
       customerId: event.customer_id,
       customerName: event.customer_name,
@@ -524,6 +564,10 @@ function initial(
     last.setDate(last.getDate() - 1);
     return {
       calendarId: copy?.calendarId ?? calendars[0]?.id ?? "",
+      // Une duplication ne reprend ni l'affaire ni les jalons : recopier un
+      // « PV signé » sur un événement neuf inscrirait deux fois le même fait.
+      projectId: null,
+      jalons: { ...EMPTY_JALONS },
       kind: preset?.kind ?? copy?.kind ?? rattachement.kind,
       customerId: preset?.customerId ?? copy?.customerId ?? null,
       customerName: preset?.customerName ?? copy?.customerName ?? "",
@@ -540,6 +584,8 @@ function initial(
 
   return {
     calendarId: copy?.calendarId ?? calendars[0]?.id ?? "",
+    projectId: null,
+    jalons: { ...EMPTY_JALONS },
     kind: preset?.kind ?? copy?.kind ?? rattachement.kind,
     customerId: preset?.customerId ?? copy?.customerId ?? null,
     customerName: preset?.customerName ?? copy?.customerName ?? "",
@@ -552,6 +598,19 @@ function initial(
     startTime: timeValue(from),
     endTime: timeValue(to),
   };
+}
+
+/*
+debut rend l'instant de départ du brouillon.
+
+Il sert à une seule question — l'événement a-t-il eu lieu ? — dont dépend le
+compte rendu : planifier et consigner restent deux gestes, et un rendez-vous de
+mardi prochain n'a rien à faire dans l'historique de ce qui s'est passé.
+*/
+function debut(draft: Draft): Date {
+  return draft.allDay
+    ? new Date(`${draft.date}T00:00:00`)
+    : new Date(`${draft.date}T${draft.startTime}:00`);
 }
 
 function bounds(draft: Draft): { start: string; end: string } {

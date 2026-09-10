@@ -14,6 +14,7 @@ import { updateEvent } from "../lib/api";
 import { useCalendar } from "../hooks/use-calendar";
 import { VIEWS } from "../lib/labels";
 import type { Occurrence } from "../lib/types";
+import { EMPTY_JALONS } from "../lib/types";
 import type { Range } from "./event-form";
 
 /** AAAA-MM-JJ en heure locale : ce que l'API attend d'une journée entière. */
@@ -127,7 +128,12 @@ export function CalendarView() {
         // remplace l'événement entier, et déplacer un rendez-vous de deux
         // heures ne doit pas le détacher de sa fiche.
         customer_id: event.customer_id,
+        project_id: event.project_id,
         kind: event.kind,
+        // Aucun jalon : glisser un événement ne dit rien de neuf sur l'affaire.
+        // Les champs vides n'effacent rien, c'est ce qui rend ce geste sûr —
+        // déplacer « Début Toiture » d'un jour ne doit pas décocher son PV.
+        jalons: EMPTY_JALONS,
         start: event.all_day ? dayValue(start) : start.toISOString(),
         end: event.all_day ? dayValue(end) : end.toISOString(),
       });

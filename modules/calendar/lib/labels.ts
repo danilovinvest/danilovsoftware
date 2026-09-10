@@ -79,10 +79,14 @@ export function paletteAt(index: number): CalendarStyle {
  * déroulante les propose.
  */
 export const EVENT_KIND: Record<EventKind, { label: string; hint: string }> = {
-  rdv: { label: "Rendez-vous", hint: "Une visite, un rendez-vous sur place" },
-  echange: { label: "Échange", hint: "Un appel, un courriel, un point avec le client" },
-  chantier: { label: "Chantier", hint: "Une intervention, une livraison" },
-  interne: { label: "Interne", hint: "Une réunion, un congé, rien de client" },
+  rdv: { label: "Rendez-vous", hint: "Une visite, un rendez-vous sur place, une AG" },
+  chantier: { label: "Chantier", hint: "Une intervention, un coulage, une mise en sécurité" },
+  sondage: { label: "Sondage", hint: "Un sondage, un diagnostic sur place" },
+  echange: { label: "Échange", hint: "Un appel, un courriel, un rappel à faire" },
+  echeance: { label: "Échéance", hint: "Un paiement, un prélèvement, une assurance qui expire" },
+  interne: { label: "Interne", hint: "Une réunion, un entretien, une formation" },
+  absence: { label: "Absence", hint: "Un congé, une indisponibilité" },
+  perso: { label: "Perso", hint: "Un jour férié, un anniversaire, un rendez-vous privé" },
   autre: { label: "Autre", hint: "Tout le reste" },
 };
 
@@ -102,12 +106,57 @@ export const EVENT_KIND_OPTIONS = (
  * couleurs pour deux questions dans la même case.
  */
 export const EVENT_KIND_TONE: Record<EventKind, string> = {
-  echange: "bg-info-soft text-info",
   rdv: "bg-success-soft text-success",
   chantier: "bg-warning-soft text-warning",
+  sondage: "bg-warning-soft text-warning",
+  echange: "bg-info-soft text-info",
+  echeance: "bg-danger-soft text-danger",
   interne: "bg-neutral-soft text-neutral",
+  absence: "bg-neutral-soft text-neutral",
+  perso: "bg-neutral-soft text-neutral",
   autre: "bg-neutral-soft text-neutral",
 };
+
+/**
+ * Ce qu'une catégorie inscrit dans la fiche du client.
+ *
+ * C'est la table de vérité du formulaire : elle dit quel bloc afficher, et
+ * l'API applique **la même** règle avant d'écrire — un client qui enverrait un
+ * PV de réception sur un rendez-vous ne doit pas pouvoir l'inscrire.
+ *
+ * Quatre catégories sur neuf portent des jalons, et les cinq autres n'en
+ * portent aucun parce qu'aucune colonne du CRM ne les attend : un prélèvement
+ * LOXAM ne concerne aucune affaire, un congé aucun client. Leur inventer un
+ * champ serait pire que de n'en proposer aucun.
+ */
+export const EVENT_KIND_JALONS: Record<EventKind, JalonChamp[]> = {
+  chantier: ["debut", "fin", "pv_envoye", "pv_signe"],
+  rdv: ["rapport_visite", "compte_rendu"],
+  sondage: ["rapport_sondage", "compte_rendu"],
+  echange: ["moyen", "compte_rendu"],
+  echeance: [],
+  interne: [],
+  absence: [],
+  perso: [],
+  autre: [],
+};
+
+export type JalonChamp =
+  | "debut"
+  | "fin"
+  | "pv_envoye"
+  | "pv_signe"
+  | "rapport_visite"
+  | "rapport_sondage"
+  | "compte_rendu"
+  | "moyen";
+
+/** Le moyen d'un échange, dans le vocabulaire de l'historique de la fiche. */
+export const MOYEN_OPTIONS = [
+  { value: "appel", label: "Appel" },
+  { value: "email", label: "Courriel" },
+  { value: "note", label: "Note" },
+];
 
 export const VIEWS: Array<{ value: CalendarView; label: string }> = [
   { value: "mois", label: "Mois" },

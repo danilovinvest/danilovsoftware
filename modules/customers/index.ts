@@ -25,6 +25,7 @@ export { DuplicatesPanel } from "./components/duplicates-panel";
 // un rendez-vous à son client, et trois cent soixante-six fiches n'entrent pas
 // dans une liste déroulante.
 export { CustomerPicker } from "./components/customer-picker";
+export { ProjectPicker } from "./components/project-picker";
 // Le panneau des jalons d'après-signature sert aussi à la fiche latérale des
 // chantiers et des études : c'est la même liste de cases, sur la même affaire.
 export { ProjectJalons } from "./components/project-jalons";

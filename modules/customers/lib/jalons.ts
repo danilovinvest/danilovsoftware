@@ -40,6 +40,20 @@ export type Jalons = {
   /** L'avis client, demandé puis reçu. Les deux sociétés en recueillent. */
   review_requested_at: string | null;
   review_received_at: string | null;
+  /**
+   * Le procès-verbal de réception, envoyé puis signé. Il clôt un chantier et
+   * débloque le solde. Posé depuis la fiche **ou** depuis l'événement de
+   * chantier de l'agenda : deux chemins, une seule colonne.
+   */
+  pv_sent_at: string | null;
+  pv_signed_at: string | null;
+  /**
+   * Les deux rapports du bureau d'études. Le rapport de visite est le premier
+   * livrable, remis après le rendez-vous et avant de chiffrer ; celui de
+   * sondage vient du sondage. Une affaire peut porter les deux.
+   */
+  visit_report_sent_at: string | null;
+  survey_report_sent_at: string | null;
 };
 
 export const EMPTY_JALONS: Jalons = {
@@ -53,6 +67,10 @@ export const EMPTY_JALONS: Jalons = {
   plans_sent_at: null,
   review_requested_at: null,
   review_received_at: null,
+  pv_sent_at: null,
+  pv_signed_at: null,
+  visit_report_sent_at: null,
+  survey_report_sent_at: null,
 };
 
 /**
@@ -89,6 +107,10 @@ export function readJalons(
     materials_ordered_at: m?.materials_ordered_at ?? null,
     resume_at: m?.resume_at ?? null,
     plans_sent_at: m?.plans_sent_at ?? null,
+    pv_sent_at: m?.pv_sent_at ?? null,
+    pv_signed_at: m?.pv_signed_at ?? null,
+    visit_report_sent_at: m?.visit_report_sent_at ?? null,
+    survey_report_sent_at: m?.survey_report_sent_at ?? null,
     review_requested_at: m?.review_requested_at ?? null,
     review_received_at: m?.review_received_at ?? null,
   };
@@ -186,6 +208,18 @@ const TRAVAUX: Jalon[] = [
     hint: "Béton, acier et fournitures",
     picks: false,
   },
+  {
+    key: "pv_sent_at",
+    label: "PV envoyé",
+    hint: "Le procès-verbal de réception transmis au client",
+    picks: false,
+  },
+  {
+    key: "pv_signed_at",
+    label: "PV signé",
+    hint: "Il clôt le chantier et débloque le solde",
+    picks: false,
+  },
   ...FIN,
 ];
 
@@ -195,6 +229,18 @@ const ETUDES: Jalon[] = [
     key: "deposit_paid_at",
     label: "Acompte encaissé",
     hint: "L'étude démarre à l'encaissement",
+    picks: false,
+  },
+  {
+    key: "visit_report_sent_at",
+    label: "Rapport de visite",
+    hint: "Le premier livrable, remis avant de chiffrer",
+    picks: false,
+  },
+  {
+    key: "survey_report_sent_at",
+    label: "Rapport de sondage",
+    hint: "Quand un sondage a été fait — distinct du rapport de visite",
     picks: false,
   },
   {

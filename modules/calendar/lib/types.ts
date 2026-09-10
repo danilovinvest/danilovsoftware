@@ -29,7 +29,59 @@ export type Attendee = {
  * qui n'est aucune des quatre, y compris ce qu'un import a rapporté sans qu'on
  * sache le classer.
  */
-export type EventKind = "echange" | "rdv" | "chantier" | "interne" | "autre";
+/**
+ * Les neuf catégories d'un événement.
+ *
+ * Cinq ne suffisaient pas : quatre cent vingt et un événements sur sept cent
+ * quatre-vingt-cinq tombaient dans « autre », qui avait cessé d'être une
+ * catégorie pour devenir un dépotoir. Les neuf sont **mesurées** sur l'agenda
+ * réel de l'entreprise, jamais imaginées — cent soixante-dix échéances,
+ * quatre-vingt-dix lignes personnelles, une douzaine d'absences.
+ */
+export type EventKind =
+  | "echange"
+  | "rdv"
+  | "sondage"
+  | "chantier"
+  | "echeance"
+  | "absence"
+  | "interne"
+  | "perso"
+  | "autre";
+
+/**
+ * Ce qu'un événement inscrit dans la fiche du client.
+ *
+ * Un champ vide **n'efface rien** : une affaire porte plusieurs événements de
+ * chantier, et si chacun faisait autorité, « Coulage Chape » effacerait le PV
+ * saisi sur « Début Toiture ». Pour retirer une date, c'est la fiche, où l'on
+ * voit l'état complet.
+ */
+export type EventJalons = {
+  /** Cet événement est le démarrage du chantier. La date est celle de l'événement. */
+  is_worksite_start: boolean;
+  is_worksite_end: boolean;
+  /** Dates ISO (AAAA-MM-JJ), vides quand il n'y a rien à inscrire. */
+  pv_sent_at: string;
+  pv_signed_at: string;
+  visit_report_sent_at: string;
+  survey_report_sent_at: string;
+  /** Le compte rendu. Consigné dans l'historique seulement si l'événement est passé. */
+  summary: string;
+  /** Le moyen d'un échange : appel, email, note. */
+  means: string;
+};
+
+export const EMPTY_JALONS: EventJalons = {
+  is_worksite_start: false,
+  is_worksite_end: false,
+  pv_sent_at: "",
+  pv_signed_at: "",
+  visit_report_sent_at: "",
+  survey_report_sent_at: "",
+  summary: "",
+  means: "appel",
+};
 
 export type CalendarEvent = {
   id: string;
@@ -57,6 +109,13 @@ export type CalendarEvent = {
   customer_id: string | null;
   customer_name: string;
   kind: EventKind;
+  /**
+   * L'affaire concernée, quand on la connaît. Deux précisions successives : la
+   * fiche dit pour **qui**, l'affaire dit sur **quoi**. Sans elle, un événement
+   * de chantier ne peut rien inscrire — une fiche porte plusieurs affaires.
+   */
+  project_id: string | null;
+  project_name: string;
   updated_at: string;
 };
 
@@ -87,6 +146,10 @@ export type EventInput = {
    * catégorie qu'on venait de choisir.
    */
   kind: EventKind;
+  /** L'affaire concernée. Nulle pour ce qui ne porte sur aucune affaire. */
+  project_id: string | null;
+  /** Ce que l'événement inscrit dans la fiche. Toujours envoyé, jamais omis. */
+  jalons: EventJalons;
 };
 
 /**
