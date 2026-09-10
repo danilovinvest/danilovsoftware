@@ -52,5 +52,11 @@ export function hasMaterial(list: string[], item: string): boolean {
   return list.some((entry) => entry.toLowerCase() === key);
 }
 
-/** Le plafond que l'API applique : l'écran le dit avant d'être refusé. */
+/*
+  Les deux plafonds que l'API applique — et qu'elle **refuse** au lieu de
+  tronquer, parce qu'une commande silencieusement coupée serait pire qu'un
+  refus. L'écran les tient donc à la saisie : la route remplace la ligne
+  entière, et un seul matériau trop long ferait rejeter toute l'écriture.
+*/
 export const MATERIALS_MAX = 40;
+export const MATERIAL_LENGTH_MAX = 120;

@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { EmptyState } from "@/shared/ui/feedback";
+import { EmptyState, ErrorNotice } from "@/shared/ui/feedback";
 import { TONE_SOFT } from "@/shared/ui/panel";
 import { formatAmount, formatDate } from "@/shared/lib/format";
 import { cn } from "@/lib/utils";
@@ -183,15 +183,23 @@ export function ProjectsPanel({
     },
   );
 
-  /** Applique le geste tout de suite, l'enregistre, et se dédit s'il échoue. */
-  async function poserJalon(project: Project, patch: Partial<Jalons & StepMarks>) {
+  /**
+   * Applique le geste tout de suite, l'enregistre, et se dédit s'il échoue.
+   *
+   * Rend la réussite : un panneau de saisie ne doit se refermer que sur un
+   * succès, sans quoi le brouillon disparaît au moment où l'on en a besoin.
+   */
+  async function poserJalon(
+    project: Project,
+    patch: Partial<Jalons & StepMarks>,
+  ): Promise<boolean> {
     setOptimiste((current) => ({
       ...current,
       [project.id]: { ...current[project.id], ...patch },
     }));
     if (await saveJalons.run(project, patch)) {
       onChanged();
-      return;
+      return true;
     }
     setOptimiste((current) => {
       const suivant = { ...current };
@@ -200,6 +208,7 @@ export function ProjectsPanel({
       suivant[project.id] = propre;
       return suivant;
     });
+    return false;
   }
 
   if (projects.length === 0) {
@@ -230,6 +239,14 @@ export function ProjectsPanel({
           <NewProjectButton onClick={() => setProjectOpen(true)} />
         </div>
       )}
+
+      {/*
+        L'échec d'une écriture de jalon se lisait nulle part : la surcouche
+        optimiste se défaisait, la case revenait où elle était, et rien ne
+        disait pourquoi. Tant qu'un jalon n'était qu'une date, l'écriture ne
+        pouvait guère échouer ; une liste de matériaux, elle, peut être refusée.
+      */}
+      {saveJalons.error && <ErrorNotice message={saveJalons.error} />}
 
       {projects.map((project, index) => {
         const etat = etatDe(project);
@@ -325,7 +342,7 @@ function ProjectBlock({
   canWrite: boolean;
   canWriteQuotes: boolean;
   defaultOpen: boolean;
-  onOverride: (patch: Partial<Jalons>) => void | Promise<void>;
+  onOverride: (patch: Partial<Jalons & StepMarks>) => Promise<boolean>;
   onAddQuote: () => void;
   onChanged: () => void;
 }) {
@@ -441,7 +458,7 @@ function ProjectBlock({
    * La date déjà posée est **conservée** : compléter la liste trois jours plus
    * tard ne doit pas faire croire qu'on a commandé aujourd'hui.
    */
-  function commanderMateriaux(list: string[] | null): void | Promise<void> {
+  function commanderMateriaux(list: string[] | null): Promise<boolean> {
     if (list === null) return onOverride({ materials: [], materials_ordered_at: null });
     return onOverride({
       materials: list,

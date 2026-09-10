@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import {
   MATERIALS_MAX,
   MATERIAL_FAMILIES,
+  MATERIAL_LENGTH_MAX,
   hasMaterial,
   withMaterial,
   withoutMaterial,
@@ -44,7 +45,9 @@ export function MaterialsTags({
       {items.map((item) => (
         <span
           key={item}
-          className="bg-muted text-muted-foreground rounded-md px-1.5 py-0.5 text-[0.65rem]"
+          // `max-w-full break-words` parce qu'une référence collée sans espace
+          // n'offre aucun point de coupure et déborderait du panneau.
+          className="bg-muted text-muted-foreground max-w-full rounded-md px-1.5 py-0.5 text-[0.65rem] break-words"
         >
           {item}
         </span>
@@ -67,20 +70,40 @@ export function MaterialsEditor({
   pending,
   onSave,
   onRemove,
+  onClose,
   note,
 }: {
   value: string[];
   /** La date déjà posée, s'il y en a une. Elle décide des libellés. */
   marked: string | null;
   pending?: boolean;
-  onSave: (list: string[]) => void | Promise<void>;
-  onRemove: () => void | Promise<void>;
+  /*
+    Les deux gestes rendent la réussite de l'écriture, et non rien.
+
+    Le panneau ne doit se fermer que sur un succès : en cas d'échec, un
+    brouillon de six lignes cochées et tapées disparaîtrait sans un mot, sur un
+    cran qui redevient gris.
+  */
+  onSave: (list: string[]) => boolean | Promise<boolean>;
+  onRemove: () => boolean | Promise<boolean>;
+  /** Referme le panneau. Appelé sur un succès, et sur lui seul. */
+  onClose: () => void;
   /** Ce que l'enregistrement va écrire, dit avant le clic. */
   note: string;
 }) {
   const [draft, setDraft] = useState<string[]>(value);
   const [libre, setLibre] = useState("");
   const plein = draft.length >= MATERIALS_MAX;
+
+  /*
+    La règle vit ici, une fois, et non chez les deux appelants : le panneau ne
+    se referme que si l'écriture a réussi. Les deux écrans qui portent cet
+    éditeur auraient sinon tenu deux copies de la même règle, qui auraient
+    divergé au premier ajustement.
+  */
+  async function envoyer(action: () => boolean | Promise<boolean>) {
+    if (await action()) onClose();
+  }
 
   function ajouterLibre() {
     setDraft((current) => withMaterial(current, libre));
@@ -129,6 +152,7 @@ export function MaterialsEditor({
           disabled={pending || plein}
           placeholder="3 IPE 200 · 4,20 m"
           aria-label="Ajouter un matériau"
+          maxLength={MATERIAL_LENGTH_MAX}
           className="h-8 text-xs"
           onChange={(event) => setLibre(event.target.value)}
           onKeyDown={(event) => {
@@ -171,16 +195,35 @@ export function MaterialsEditor({
       )}
 
       <p className="text-muted-foreground/70 text-[11px]">
-        {plein ? `Pas plus de ${MATERIALS_MAX} matériaux sur une affaire.` : note}
+        {plein
+          ? `Pas plus de ${MATERIALS_MAX} matériaux sur une affaire.`
+          : draft.length === 0
+            ? /*
+                Dit avant le clic, parce que c'est précisément ce qui était
+                reproché : franchir le cran sans dire quoi. Le geste reste
+                permis — un chef de chantier peut n'avoir que la date, et le
+                CRM a vécu ainsi jusqu'ici — mais il ne se prend plus par
+                mégarde. Les deux cas ne se disent pas pareil : marquer une
+                commande vide n'est pas vider une commande déjà datée.
+              */
+              marked === null
+              ? "Aucun matériau listé : le cran sera franchi sans dire quoi."
+              : "La commande restera datée, sans détail. « Retirer » enlève les deux."
+            : note}
       </p>
 
       <div className="flex items-center justify-end gap-2">
         {marked !== null && (
-          <Button size="xs" variant="ghost" disabled={pending} onClick={() => onRemove()}>
+          <Button
+            size="xs"
+            variant="ghost"
+            disabled={pending}
+            onClick={() => void envoyer(onRemove)}
+          >
             Retirer
           </Button>
         )}
-        <Button size="xs" disabled={pending} onClick={() => onSave(draft)}>
+        <Button size="xs" disabled={pending} onClick={() => void envoyer(() => onSave(draft))}>
           {marked === null ? "Marquer commandés" : "Enregistrer"}
         </Button>
       </div>

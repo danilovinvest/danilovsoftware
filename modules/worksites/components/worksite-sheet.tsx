@@ -140,7 +140,7 @@ function Body({
    * trois jours plus tard ne doit pas faire croire qu'on a commandé
    * aujourd'hui.
    */
-  function commanderMateriaux(list: string[] | null) {
+  function commanderMateriaux(list: string[] | null): Promise<boolean> {
     return appliquer(
       list === null
         ? { materials: [], materials_ordered_at: null }
@@ -158,7 +158,7 @@ function Body({
    * la fois — la liste et sa date. Deux appels sur une route qui remplace la
    * ligne entière se seraient écrasés l'un l'autre.
    */
-  async function appliquer(patch: Partial<Jalons>) {
+  async function appliquer(patch: Partial<Jalons>): Promise<boolean> {
     setOptimiste((current) => ({ ...current, ...patch }));
     setEnCours(true);
     setEchec(null);
@@ -231,6 +231,7 @@ function Body({
         });
       }
       onChanged();
+      return true;
     } catch (cause) {
       setOptimiste((current) => {
         const copie = { ...current };
@@ -238,6 +239,7 @@ function Body({
         return copie;
       });
       setEchec(errorMessage(cause));
+      return false;
     } finally {
       setEnCours(false);
     }

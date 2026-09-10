@@ -45,7 +45,7 @@ export function ProjectJalons({
    * élargir leur signature à une liste aurait obligé chaque appelant à traiter
    * un cas qui ne concerne qu'une ligne sur quinze.
    */
-  onMaterials: (list: string[] | null) => void | Promise<void>;
+  onMaterials: (list: string[] | null) => boolean | Promise<boolean>;
   disabled?: boolean;
   className?: string;
 }) {
@@ -166,7 +166,7 @@ function MaterialsButton({
   marked: string | null;
   materials: string[];
   disabled?: boolean;
-  onSave: (list: string[] | null) => void | Promise<void>;
+  onSave: (list: string[] | null) => boolean | Promise<boolean>;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -184,14 +184,9 @@ function MaterialsButton({
           marked={marked}
           pending={disabled}
           note="Écrit la commande et sa date dans les jalons de l'affaire."
-          onSave={async (list) => {
-            await onSave(list);
-            setOpen(false);
-          }}
-          onRemove={async () => {
-            await onSave(null);
-            setOpen(false);
-          }}
+          onSave={(list) => onSave(list)}
+          onRemove={() => onSave(null)}
+          onClose={() => setOpen(false)}
         />
       </PopoverContent>
     </Popover>

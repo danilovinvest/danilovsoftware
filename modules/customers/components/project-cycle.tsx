@@ -67,8 +67,13 @@ export type CycleEdit = {
    * panneau fait saisir autre chose qu'un instant.
    */
   materials: string[];
-  /** Enregistre la commande et sa date. `null` retire les deux. */
-  onMaterials: (list: string[] | null) => void | Promise<void>;
+  /**
+   * Enregistre la commande et sa date. `null` retire les deux.
+   *
+   * Rend la réussite de l'écriture : le panneau ne se ferme que sur un succès,
+   * faute de quoi un brouillon de plusieurs lignes disparaîtrait sans un mot.
+   */
+  onMaterials: (list: string[] | null) => boolean | Promise<boolean>;
   pending?: boolean;
 };
 
@@ -315,14 +320,9 @@ function StepDot({
                 marked={marked}
                 pending={edit.pending}
                 note={write.note}
-                onSave={async (list) => {
-                  await edit.onMaterials(list);
-                  setOpen(false);
-                }}
-                onRemove={async () => {
-                  await edit.onMaterials(null);
-                  setOpen(false);
-                }}
+                onSave={(list) => edit.onMaterials(list)}
+                onRemove={() => edit.onMaterials(null)}
+                onClose={() => setOpen(false)}
               />
             ) : (
               <DateCran
