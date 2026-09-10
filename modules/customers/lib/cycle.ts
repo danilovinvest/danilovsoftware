@@ -138,6 +138,15 @@ export type CyclePoint = {
   waiting: number | null;
   /** Une phrase, pour l'infobulle et pour la lecture d'ensemble. */
   detail: string;
+  /**
+   * Le cran est-il franchi par autre chose que ce qu'il sait écrire ?
+   *
+   * Un rendez-vous consigné franchit « RDV », un devis accepté franchit
+   * « Signé » : décocher la marque n'y changerait rien, et l'écran doit le
+   * dire au lieu d'offrir un bouton qui ne retire rien. N'a de sens que sur un
+   * cran franchi.
+   */
+  byFact: boolean;
 };
 
 // ---------------------------------------------------------------------------
@@ -314,29 +323,36 @@ export function readCycle(
   date n'est qu'un ornement, absente quand on ne la connaît pas.
   */
   const anchor = earliest(project.created_at, project.started_at);
-  const contactDone =
-    mine.length > 0 || stage !== "demande_recue" || marks.contact_at !== null;
+  /*
+    Le fait et la marque se comptent séparément.
+
+    Pas par goût de la nuance : l'écran doit savoir si retirer la marque
+    changerait quelque chose. Un cran franchi par un devis reste franchi quand
+    on décoche sa marque, et proposer « Retirer » y serait un bouton qui ne
+    retire rien — deux vues de la même affaire se contrediraient au clic
+    suivant.
+  */
+  const contactFait = mine.length > 0 || stage !== "demande_recue";
+  const contactDone = contactFait || marks.contact_at !== null;
   const contactAt = earliest(
     firstContact?.occurred_at,
     marks.contact_at ?? undefined,
     contactDone ? anchor : undefined,
   );
 
-  const rdvDone =
+  const rdvFait =
     (rdv !== null && rdv.occurred_at <= new Date(now).toISOString()) ||
-    afterStage(stage, "rdv_planifie") ||
-    marks.rdv_at !== null;
+    afterStage(stage, "rdv_planifie");
+  const rdvDone = rdvFait || marks.rdv_at !== null;
   const rdvAt = rdv?.occurred_at ?? marks.rdv_at ?? (rdvDone ? project.started_at : null);
 
   const devisFactAt = sent?.issued_at ?? signed?.issued_at ?? (lead?.issued_at ?? null);
   // « Devis envoyé » veut dire envoyé : le cran est franchi à cette étape, pas
   // à la suivante. Utiliser `afterStage` laisserait le devis « à faire » sur
   // toutes les affaires dont c'est justement l'étape courante.
-  const devisDone =
-    devisFactAt !== null ||
-    atOrAfterStage(stage, "devis_envoye") ||
-    signed !== null ||
-    marks.quote_sent_at !== null;
+  const devisFait =
+    devisFactAt !== null || atOrAfterStage(stage, "devis_envoye") || signed !== null;
+  const devisDone = devisFait || marks.quote_sent_at !== null;
   const devisAt = devisFactAt ?? marks.quote_sent_at;
 
   /*
@@ -376,33 +392,49 @@ export function readCycle(
   // Le jalon compte autant que l'échange : c'est lui que pose la fiche, et que
   // pose un événement de rendez-vous depuis l'agenda.
   const rapportAt = rapport?.occurred_at ?? jalons.visit_report_sent_at;
+  // Ce qui le franchit **sans** son jalon : l'échange qui le consigne, ou le
+  // devis, puisqu'on ne chiffre pas une étude sans avoir visité.
+  const rapportFait = rapport !== null || devisDone;
 
   // --- Chaque cran, dans l'ordre -----------------------------------------
-  const commun: Array<{ step: CycleStep; done: boolean; at: string | null; since: string | null }> = [
-    { step: "contact", done: contactDone, at: contactAt, since: contactAt ?? anchor },
-    { step: "rdv", done: rdvDone, at: rdvAt, since: rdvAt ?? contactAt ?? anchor },
+  const commun: Array<{
+    step: CycleStep;
+    done: boolean;
+    /** Franchi par autre chose que ce que le cran sait écrire. */
+    fact: boolean;
+    at: string | null;
+    since: string | null;
+  }> = [
+    { step: "contact", done: contactDone, fact: contactFait, at: contactAt, since: contactAt ?? anchor },
+    { step: "rdv", done: rdvDone, fact: rdvFait, at: rdvAt, since: rdvAt ?? contactAt ?? anchor },
     ...(metier === "etudes"
       ? [{
           step: "rapport" as CycleStep,
           done: rapportAt !== null || devisDone,
+          fact: rapportFait,
           at: rapportAt,
           since: rdvAt ?? contactAt ?? anchor,
         }]
       : []),
-    { step: "devis", done: devisDone, at: devisAt, since: devisAt ?? rdvAt ?? anchor },
+    { step: "devis", done: devisDone, fact: devisFait, at: devisAt, since: devisAt ?? rdvAt ?? anchor },
     {
       step: "negociation",
       done: negoDone,
+      fact: signeFait,
       at: negoAt,
       // L'attente de la négociation court depuis la dernière relance, pas
       // depuis l'envoi : relancer remet le compteur à zéro, sans quoi le
       // chiffre resterait rouge alors qu'on vient d'agir.
       since: project.last_reminder_at ?? devisAt ?? project.started_at ?? anchor,
     },
-    { step: "signe", done: signeDone, at: signeAt, since: signeAt ?? devisAt },
+    { step: "signe", done: signeDone, fact: signeFait, at: signeAt, since: signeAt ?? devisAt },
     {
       step: "acompte",
       done: acompteDone,
+      // L'acompte, la date de chantier, les jalons, le solde, l'avis : leur
+      // cran écrit dans ce qui les porte. Ce qui les franchit est donc
+      // exactement ce que le cran sait retirer.
+      fact: false,
       at: acompteDone ? jalons.deposit_paid_at : null,
       since: jalons.deposit_invoiced_at ?? signeAt,
     },
@@ -421,12 +453,14 @@ export function readCycle(
           {
             step: "chantier",
             done: jalons.worksite_date !== null,
+            fact: false,
             at: jalons.worksite_date,
             since: jalons.deposit_paid_at ?? jalons.deposit_invoiced_at,
           },
           {
             step: "materiaux",
             done: jalons.materials_ordered_at !== null,
+            fact: false,
             at: jalons.materials_ordered_at,
             since: jalons.worksite_date,
           },
@@ -435,6 +469,7 @@ export function readCycle(
           {
             step: "plans",
             done: jalons.plans_sent_at !== null,
+            fact: false,
             at: jalons.plans_sent_at,
             since: jalons.deposit_paid_at ?? jalons.deposit_invoiced_at,
           },
@@ -446,12 +481,14 @@ export function readCycle(
     {
       step: "solde" as CycleStep,
       done: soldeDone,
+      fact: false,
       at: soldeDone ? (jalons.plans_sent_at ?? jalons.materials_ordered_at) : null,
       since: jalons.plans_sent_at ?? jalons.materials_ordered_at ?? jalons.worksite_date,
     },
     {
       step: "avis" as CycleStep,
       done: jalons.review_received_at !== null,
+      fact: false,
       at: jalons.review_received_at,
       since: jalons.review_requested_at,
     },
@@ -493,6 +530,7 @@ export function readCycle(
       at: entry.done ? entry.at : null,
       waiting,
       detail: describe(entry.step, state, entry.at, waiting, project.outcome),
+      byFact: entry.done && entry.fact,
     };
   });
 }
@@ -863,6 +901,34 @@ export function nextAction(
       detail: relaunched
         ? `Relancé ${agoWords(days)}.${revisions(quotes).length > 1 ? " Devis révisé." : ""}`
         : `Devis envoyé ${agoWords(days)}, jamais relancé.`,
+      tone: waitingTone(days),
+      alert: days > FRESH_DAYS,
+      actions: [
+        { key: "relance", label: "Relancer par e-mail", primary: true },
+        { key: "refuse", label: "Refusé" },
+        { key: "postpone", label: "Reporté" },
+      ],
+    };
+  }
+
+  /*
+    La signature, qui ne suit plus mécaniquement la négociation.
+
+    Tant que les deux crans se franchissaient ensemble, tester la négociation
+    suffisait. Depuis qu'une marque ne franchit que son cran, on peut cocher
+    « Négociation » sans cocher « Signé » — et sans cette branche, l'écran
+    proposait « Facture d'acompte à émettre » sur une affaire que la frise
+    montre, juste au-dessus, comme non signée. Proposer d'encaisser avant de
+    savoir si le client a dit oui est la pire des trois erreurs possibles.
+  */
+  const signe = at("signe");
+  if (signe.state !== "done") {
+    const days = signe.waiting ?? 0;
+    return {
+      step: "signe",
+      title: "En attente de signature",
+      detail:
+        "La négociation est faite ; rien ne dit encore que le devis est accepté.",
       tone: waitingTone(days),
       alert: days > FRESH_DAYS,
       actions: [

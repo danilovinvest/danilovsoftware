@@ -142,11 +142,15 @@ export function updateProject(id: string, payload: ProjectPayload) {
 }
 
 /**
- * Les quatre jalons d'après-signature d'une affaire.
+ * Les jalons d'une affaire : ceux d'après-signature, et les crans cochés à la
+ * main.
  *
- * Les quatre dates partent ensemble : l'écran envoie l'état complet des cases
- * après un clic, et une écriture partielle obligerait le serveur à distinguer
- * « pas coché » de « pas envoyé » sur chaque champ.
+ * **Toutes les dates partent ensemble**, et la route remplace la ligne :
+ * l'écran envoie l'état complet, parce qu'une écriture partielle obligerait le
+ * serveur à distinguer « pas coché » de « pas envoyé » sur chaque champ. Le
+ * revers est qu'un appelant qui oublie un champ l'efface — c'est pourquoi la
+ * fiche latérale des chantiers renvoie les cinq marques telles quelles, sans
+ * jamais les afficher.
  *
  * La date de chantier n'est pas ici : elle vit dans `Project.started_at` et
  * s'écrit par `updateProject`.

@@ -241,6 +241,17 @@ export function ProjectsPanel({
             interactions={interactions.filter((entry) => entry.project_id === project.id)}
             jalons={etat}
             marks={etat}
+            /*
+              Une écriture en vol verrouille les crans.
+
+              La route remplace la ligne entière : deux clics rapides sur deux
+              crans différents envoient deux instantanés, et si le premier
+              arrive en dernier — le réseau ne garantit pas l'ordre — il écrase
+              le cran que le second venait d'inscrire, sans un mot. Un cran
+              coché qui redevient gris au rechargement est exactement ce qu'on
+              cherchait à éviter.
+            */
+            saving={saveJalons.pending}
             now={now}
             canWrite={canWrite}
             canWriteQuotes={canWriteQuotes}
@@ -291,6 +302,7 @@ function ProjectBlock({
   interactions,
   jalons,
   marks,
+  saving,
   now,
   canWrite,
   canWriteQuotes,
@@ -306,6 +318,8 @@ function ProjectBlock({
   jalons: Jalons;
   /** Les crans cochés à la main, ceux que rien ne date. */
   marks: StepMarks;
+  /** Une écriture de jalons est en vol : plus un cran ne se coche. */
+  saving: boolean;
   now: number;
   canWrite: boolean;
   canWriteQuotes: boolean;
@@ -385,22 +399,32 @@ function ProjectBlock({
     d'avant : c'est ce qui permet de poser « signé » sur une affaire dont aucun
     rendez-vous n'a été saisi, ce que la frise déduite refusait de dire.
   */
-  async function marquerCran(step: CycleStep, at: string | null) {
+  function marquerCran(step: CycleStep, at: string | null): void | Promise<void> {
     const write = stepWrite(step);
     switch (write.target) {
       case "mark":
       case "jalon":
-        await onOverride({ [write.field]: at } as Partial<Jalons & StepMarks>);
+        // `poserJalon` peint avant d'écrire : rien à attendre pour voir le
+        // résultat, et le panneau peut se fermer sur un cran déjà vert.
+        void onOverride({ [write.field]: at } as Partial<Jalons & StepMarks>);
         return;
       case "worksite_date":
-        await onOverride({ worksite_date: at });
+        void onOverride({ worksite_date: at });
         return;
       case "quote": {
-        // L'acompte et le solde sont portés par le devis : le CRM n'en tient
-        // pas une seconde copie, et le serveur horodate d'après le statut.
+        /*
+          L'acompte et le solde sont portés par le devis : le CRM n'en tient
+          pas une seconde copie, et le serveur horodate d'après le statut.
+
+          Il n'y a donc **aucun aperçu local possible** — le cran se lit du
+          devis, que seul l'aller-retour peut changer. C'est la raison de la
+          promesse rendue : le panneau reste ouvert, son bouton désactivé, au
+          lieu de disparaître sur un point resté gris.
+        */
         const action = write.field === "deposit" ? setDeposit : setBalance;
-        if (await action.run(at ? "recu" : "en_attente")) onChanged();
-        return;
+        return action.run(at ? "recu" : "en_attente").then((ok) => {
+          if (ok) onChanged();
+        });
       }
     }
   }
@@ -538,7 +562,7 @@ function ProjectBlock({
                       onMark: marquerCran,
                       hasQuote: lead !== null,
                       onAddQuote,
-                      pending: setDeposit.pending || setBalance.pending,
+                      pending: saving || setDeposit.pending || setBalance.pending,
                     }
                   : undefined
               }
@@ -548,7 +572,7 @@ function ProjectBlock({
               <ProjectNextAction
                 action={action}
                 onAct={act}
-                pending={reopen.pending || setDeposit.pending}
+                pending={reopen.pending || setDeposit.pending || setBalance.pending || saving}
               />
             )}
 
@@ -616,7 +640,9 @@ function ProjectBlock({
                 <ProjectJalons
                   metier={metierOf(quotes)}
                   jalons={jalons}
-                  disabled={!canWrite || setDeposit.pending}
+                  // Même verrou que la frise : ces cases écrivent par la
+                  // même route, qui remplace la ligne entière.
+                  disabled={!canWrite || saving || setDeposit.pending}
                   onToggle={async (key, value) => {
                     /*
                       L'acompte appartient au devis : cocher « facturé » ou

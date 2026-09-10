@@ -46,8 +46,15 @@ export type CycleSize = "full" | "compact" | "mini";
 export type CycleEdit = {
   /** La date que le clic retirerait, ou rien — voir `stepMarkedAt`. */
   markedAt: (step: CycleStep) => string | null;
-  /** Écrit ou retire ce cran. `null` retire. */
-  onMark: (step: CycleStep, at: string | null) => void;
+  /**
+   * Écrit ou retire ce cran. `null` retire.
+   *
+   * Rend une promesse **seulement** quand le cran n'a pas d'aperçu local — les
+   * deux qui se lisent du devis. Le panneau attend alors la réponse avant de se
+   * fermer, faute de quoi il disparaîtrait sur un point resté gris. Les autres
+   * se peignent tout de suite et se ferment tout de suite.
+   */
+  onMark: (step: CycleStep, at: string | null) => void | Promise<void>;
   /** L'affaire porte-t-elle un devis ? L'acompte et le solde y vivent. */
   hasQuote: boolean;
   /** Ouvre la création d'un devis, quand il en manque un. */
@@ -216,9 +223,17 @@ function StepDot({
   const marked = edit.markedAt(point.step);
   const entry = CYCLE_LABEL[point.step];
 
-  // Franchi par un fait qu'on ne tient pas ici : le clic ne pourrait rien
-  // retirer, et marquer par-dessus n'ajouterait rien.
-  const parLeFait = point.state === "done" && marked === null;
+  /*
+    Franchi par un fait qu'on ne tient pas ici : le clic ne pourrait rien
+    retirer, et marquer par-dessus n'ajouterait rien.
+
+    `byFact` compte autant que l'absence de marque, et c'est le cas le plus
+    traître : un rapport de visite marqué sur une affaire qui a déjà un devis
+    est franchi *deux fois*. Retirer le jalon écrirait bien en base, mais le
+    cran resterait vert — un bouton qui ne retire rien, et deux écrans de la
+    même affaire qui se contredisent.
+  */
+  const parLeFait = point.state === "done" && (point.byFact || marked === null);
   // L'acompte et le solde vivent sur le devis. Sans devis, il n'y a pas où
   // écrire, et le dire vaut mieux qu'un bouton qui échoue.
   const sansDevis = write.target === "quote" && !edit.hasQuote;
@@ -246,10 +261,14 @@ function StepDot({
 
           {write.target === "worksite_date" && !parLeFait ? (
             <DateCran
+              // La resynchronisation du brouillon est explicite : sans cette
+              // clé, elle ne tiendrait qu'au démontage du contenu du Popover
+              // par Radix, qui n'est pas une promesse de son API.
+              key={marked ?? "vide"}
               value={marked}
               pending={edit.pending}
-              onPick={(at) => {
-                edit.onMark(point.step, at);
+              onPick={async (at) => {
+                await edit.onMark(point.step, at);
                 setOpen(false);
               }}
             />
@@ -270,8 +289,8 @@ function StepDot({
                   size="xs"
                   variant="ghost"
                   disabled={edit.pending}
-                  onClick={() => {
-                    edit.onMark(point.step, null);
+                  onClick={async () => {
+                    await edit.onMark(point.step, null);
                     setOpen(false);
                   }}
                 >
@@ -294,8 +313,8 @@ function StepDot({
                   <Button
                     size="xs"
                     disabled={edit.pending}
-                    onClick={() => {
-                      edit.onMark(point.step, new Date().toISOString());
+                    onClick={async () => {
+                      await edit.onMark(point.step, new Date().toISOString());
                       setOpen(false);
                     }}
                   >
@@ -324,7 +343,7 @@ function DateCran({
 }: {
   value: string | null;
   pending?: boolean;
-  onPick: (at: string | null) => void;
+  onPick: (at: string | null) => void | Promise<void>;
 }) {
   const [draft, setDraft] = useState(() => value?.slice(0, 10) ?? lundiProchain());
 
