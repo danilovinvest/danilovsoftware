@@ -592,14 +592,29 @@ function atOrAfterStage(stage: ProjectStage, reference: ProjectStage): boolean {
  * Ne reçoivent une **marque** que les cinq crans dont personne ne tient la
  * date. Voir `StepMarks`.
  */
-export type StepWrite = {
-  /** Où va l'écriture. */
-  target: "mark" | "jalon" | "worksite_date" | "quote";
-  /** Le champ visé, quand la cible en a un. */
-  field: keyof StepMarks | keyof Jalons | "deposit" | "balance" | null;
-  /** Ce que le clic fait, dit à l'utilisateur avant qu'il clique. */
-  note: string;
-};
+/**
+ * Les jalons qu'un cran de la frise peut poser.
+ *
+ * Quatre sur les onze de la table : les autres — RIB, assurance, PV, avis
+ * demandé — sont des étapes *dans* un cran, pas des crans. Ils se posent dans
+ * l'onglet « Après-signature », qui les montre tous.
+ */
+type JalonColumn =
+  | "visit_report_sent_at"
+  | "materials_ordered_at"
+  | "plans_sent_at"
+  | "review_received_at";
+
+/** Ce que le clic fait, dit à l'utilisateur avant qu'il clique. */
+type StepNote = { note: string };
+
+export type StepWrite = StepNote &
+  (
+    | { target: "mark"; field: keyof StepMarks }
+    | { target: "jalon"; field: JalonColumn }
+    | { target: "worksite_date" }
+    | { target: "quote"; field: "deposit" | "balance" }
+  );
 
 const WRITE: Record<CycleStep, StepWrite> = {
   contact: {
@@ -639,7 +654,6 @@ const WRITE: Record<CycleStep, StepWrite> = {
   },
   chantier: {
     target: "worksite_date",
-    field: null,
     note: "Écrit la date de démarrage de l'affaire, celle que lit l'écran Chantiers.",
   },
   materiaux: {
@@ -685,9 +699,9 @@ export function stepMarkedAt(
   const write = WRITE[step];
   switch (write.target) {
     case "mark":
-      return marks[write.field as keyof StepMarks];
+      return marks[write.field];
     case "jalon":
-      return jalons[write.field as keyof Jalons];
+      return jalons[write.field];
     case "worksite_date":
       return jalons.worksite_date;
     case "quote":

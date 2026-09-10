@@ -34,10 +34,12 @@ import {
   nextAction,
   readCycle,
   revisions,
-
+  stepMarkedAt,
+  stepWrite,
   type ActionKey,
+  type CycleStep,
 } from "../lib/cycle";
-import { readJalons, type Jalons } from "../lib/jalons";
+import { readJalons, readMarks, type Jalons, type StepMarks } from "../lib/jalons";
 import { useAction } from "../hooks/use-customers";
 import { EnumBadge } from "./enum-badge";
 import { InteractionDialog } from "./interaction-dialog";
@@ -108,10 +110,33 @@ export function ProjectsPanel({
     l'erreur s'affiche. C'est le seul moment où l'écran ment brièvement, et il
     se dédit.
   */
-  const [optimiste, setOptimiste] = useState<Record<string, Partial<Jalons>>>({});
+  const [optimiste, setOptimiste] = useState<Record<string, Partial<Jalons & StepMarks>>>(
+    {},
+  );
+
+  /*
+    L'état complet d'une affaire : ses jalons, ses marques, et le geste en
+    cours.
+
+    Les deux se lisent ensemble parce qu'ils s'écrivent ensemble — une même
+    ligne en base, une même requête — et parce que la frise a besoin des deux
+    pour dire d'un cran s'il est franchi. Leurs clés sont disjointes : les
+    jalons datent des faits, les marques n'existent que pour les crans que rien
+    ne date.
+  */
+  const etatDe = (project: Project) => ({
+    ...readJalons(
+      project.id,
+      quotes.filter((quote) => quote.project_id === project.id),
+      customer.milestones,
+      project,
+    ),
+    ...readMarks(project.id, customer.milestones),
+    ...optimiste[project.id],
+  });
 
   const saveJalons = useAction(
-    async (project: Project, patch: Partial<Jalons>) => {
+    async (project: Project, patch: Partial<Jalons & StepMarks>) => {
       // La date de chantier est `started_at` de l'affaire, pas un jalon à
       // part : c'est la colonne que l'écran Chantiers lit déjà.
       if ("worksite_date" in patch) {
@@ -131,16 +156,7 @@ export function ProjectsPanel({
         return;
       }
 
-      const actuels = {
-        ...readJalons(
-          project.id,
-          quotes.filter((quote) => quote.project_id === project.id),
-          customer.milestones,
-          project,
-        ),
-        ...optimiste[project.id],
-      };
-      const suivant = { ...actuels, ...patch };
+      const suivant = { ...etatDe(project), ...patch };
       await api.setMilestones(project.id, {
         rib_sent_at: suivant.rib_sent_at,
         insurance_sent_at: suivant.insurance_sent_at,
@@ -153,6 +169,11 @@ export function ProjectsPanel({
         pv_signed_at: suivant.pv_signed_at,
         visit_report_sent_at: suivant.visit_report_sent_at,
         survey_report_sent_at: suivant.survey_report_sent_at,
+        contact_at: suivant.contact_at,
+        rdv_at: suivant.rdv_at,
+        quote_sent_at: suivant.quote_sent_at,
+        negotiation_at: suivant.negotiation_at,
+        signed_at: suivant.signed_at,
       });
       // `useAction` rend ce que l'action renvoie, et l'appelant s'en sert pour
       // décider s'il recharge. Sans ce `true`, l'écriture réussissait et la
@@ -162,7 +183,7 @@ export function ProjectsPanel({
   );
 
   /** Applique le geste tout de suite, l'enregistre, et se dédit s'il échoue. */
-  async function poserJalon(project: Project, patch: Partial<Jalons>) {
+  async function poserJalon(project: Project, patch: Partial<Jalons & StepMarks>) {
     setOptimiste((current) => ({
       ...current,
       [project.id]: { ...current[project.id], ...patch },
@@ -174,7 +195,7 @@ export function ProjectsPanel({
     setOptimiste((current) => {
       const suivant = { ...current };
       const propre = { ...suivant[project.id] };
-      for (const cle of Object.keys(patch)) delete propre[cle as keyof Jalons];
+      for (const cle of Object.keys(patch)) delete propre[cle as keyof (Jalons & StepMarks)];
       suivant[project.id] = propre;
       return suivant;
     });
@@ -209,22 +230,17 @@ export function ProjectsPanel({
         </div>
       )}
 
-      {projects.map((project, index) => (
+      {projects.map((project, index) => {
+        const etat = etatDe(project);
+        return (
         <ProjectBlock
           key={project.id}
           customer={customer}
           project={project}
           quotes={quotes.filter((quote) => quote.project_id === project.id)}
           interactions={interactions.filter((entry) => entry.project_id === project.id)}
-          jalons={{
-            ...readJalons(
-              project.id,
-              quotes.filter((quote) => quote.project_id === project.id),
-              customer.milestones,
-              project,
-            ),
-            ...optimiste[project.id],
-          }}
+          jalons={etat}
+          marks={etat}
           now={now}
           canWrite={canWrite}
           canWriteQuotes={canWriteQuotes}
@@ -235,7 +251,8 @@ export function ProjectsPanel({
           onAddQuote={() => setQuoteFor(project)}
           onChanged={onChanged}
         />
-      ))}
+        );
+      })}
 
       <ProjectDialog
         key={projectOpen ? "project-open" : "project-closed"}
