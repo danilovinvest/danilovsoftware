@@ -233,24 +233,24 @@ export function ProjectsPanel({
       {projects.map((project, index) => {
         const etat = etatDe(project);
         return (
-        <ProjectBlock
-          key={project.id}
-          customer={customer}
-          project={project}
-          quotes={quotes.filter((quote) => quote.project_id === project.id)}
-          interactions={interactions.filter((entry) => entry.project_id === project.id)}
-          jalons={etat}
-          marks={etat}
-          now={now}
-          canWrite={canWrite}
-          canWriteQuotes={canWriteQuotes}
-          // La première affaire s'ouvre : sur la majorité des fiches il n'y en
-          // a qu'une, et la refermer d'office ferait un clic pour rien.
-          defaultOpen={index === 0}
-          onOverride={(patch) => poserJalon(project, patch)}
-          onAddQuote={() => setQuoteFor(project)}
-          onChanged={onChanged}
-        />
+          <ProjectBlock
+            key={project.id}
+            customer={customer}
+            project={project}
+            quotes={quotes.filter((quote) => quote.project_id === project.id)}
+            interactions={interactions.filter((entry) => entry.project_id === project.id)}
+            jalons={etat}
+            marks={etat}
+            now={now}
+            canWrite={canWrite}
+            canWriteQuotes={canWriteQuotes}
+            // La première affaire s'ouvre : sur la majorité des fiches il n'y en
+            // a qu'une, et la refermer d'office ferait un clic pour rien.
+            defaultOpen={index === 0}
+            onOverride={(patch) => poserJalon(project, patch)}
+            onAddQuote={() => setQuoteFor(project)}
+            onChanged={onChanged}
+          />
         );
       })}
 
@@ -290,6 +290,7 @@ function ProjectBlock({
   quotes,
   interactions,
   jalons,
+  marks,
   now,
   canWrite,
   canWriteQuotes,
@@ -303,6 +304,8 @@ function ProjectBlock({
   quotes: Quote[];
   interactions: Interaction[];
   jalons: Jalons;
+  /** Les crans cochés à la main, ceux que rien ne date. */
+  marks: StepMarks;
   now: number;
   canWrite: boolean;
   canWriteQuotes: boolean;
@@ -318,7 +321,7 @@ function ProjectBlock({
   const [outcome, setOutcome] = useState<"refuse" | "postpone" | null>(null);
   const [logging, setLogging] = useState<InteractionKind | null>(null);
 
-  const points = readCycle(project, quotes, interactions, jalons, now);
+  const points = readCycle(project, quotes, interactions, jalons, now, undefined, marks);
   const action = nextAction(points, project, quotes, jalons, now);
   const lead = leadQuote(quotes);
 
