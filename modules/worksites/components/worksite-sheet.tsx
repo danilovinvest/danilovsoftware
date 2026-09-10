@@ -117,6 +117,10 @@ function Body({
     plans_sent_at: w.plans_sent_at,
     review_requested_at: w.review_requested_at,
     review_received_at: w.review_received_at,
+    pv_sent_at: w.pv_sent_at,
+    pv_signed_at: w.pv_signed_at,
+    visit_report_sent_at: w.visit_report_sent_at,
+    survey_report_sent_at: w.survey_report_sent_at,
     ...optimiste,
   };
 
@@ -176,6 +180,10 @@ function Body({
           plans_sent_at: suivant.plans_sent_at,
           review_requested_at: suivant.review_requested_at,
           review_received_at: suivant.review_received_at,
+          pv_sent_at: suivant.pv_sent_at,
+          pv_signed_at: suivant.pv_signed_at,
+          visit_report_sent_at: suivant.visit_report_sent_at,
+          survey_report_sent_at: suivant.survey_report_sent_at,
         });
       }
       onChanged();

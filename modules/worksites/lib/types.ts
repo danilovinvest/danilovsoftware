@@ -65,6 +65,12 @@ export type Worksite = {
   /** L'avis client, demandé puis reçu. Les deux métiers en recueillent. */
   review_requested_at: string | null;
   review_received_at: string | null;
+  /** Le PV de réception, envoyé puis signé : il clôt le chantier. */
+  pv_sent_at: string | null;
+  pv_signed_at: string | null;
+  /** Les deux rapports du bureau d'études, distincts l'un de l'autre. */
+  visit_report_sent_at: string | null;
+  survey_report_sent_at: string | null;
   quotes: WorksiteQuote[];
 };
 

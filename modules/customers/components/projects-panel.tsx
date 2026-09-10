@@ -149,6 +149,10 @@ export function ProjectsPanel({
         plans_sent_at: suivant.plans_sent_at,
         review_requested_at: suivant.review_requested_at,
         review_received_at: suivant.review_received_at,
+        pv_sent_at: suivant.pv_sent_at,
+        pv_signed_at: suivant.pv_signed_at,
+        visit_report_sent_at: suivant.visit_report_sent_at,
+        survey_report_sent_at: suivant.survey_report_sent_at,
       });
       // `useAction` rend ce que l'action renvoie, et l'appelant s'en sert pour
       // décider s'il recharge. Sans ce `true`, l'écriture réussissait et la
