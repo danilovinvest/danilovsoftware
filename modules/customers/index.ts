@@ -16,7 +16,15 @@ export * from "./lib/labels";
 // porte, et une seule définition évite que « à relancer » ne veuille pas dire
 // la même chose d'un écran à l'autre.
 export * from "./lib/cycle";
-export { EMPTY_JALONS, JALON_ORDER, readJalons, type Jalons } from "./lib/jalons";
+export {
+  EMPTY_JALONS,
+  EMPTY_MARKS,
+  JALON_ORDER,
+  readJalons,
+  readMarks,
+  type Jalons,
+  type StepMarks,
+} from "./lib/jalons";
 export { ProjectCycle } from "./components/project-cycle";
 // L'écran des doublons vit dans les réglages, mais tout ce qu'il manipule — la
 // ressemblance de deux fiches, la fusion — appartient aux fiches.
