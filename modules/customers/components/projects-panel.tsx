@@ -43,6 +43,7 @@ import { readJalons, readMarks, type Jalons, type StepMarks } from "../lib/jalon
 import { useAction } from "../hooks/use-customers";
 import { EnumBadge } from "./enum-badge";
 import { InteractionDialog } from "./interaction-dialog";
+import { MaterialsDialog } from "./materials-field";
 import { OutcomeDialog } from "./outcome-dialog";
 import { ProjectCycle } from "./project-cycle";
 import { ProjectJalons } from "./project-jalons";
@@ -352,6 +353,8 @@ function ProjectBlock({
   const [relance, setRelance] = useState(false);
   const [outcome, setOutcome] = useState<"refuse" | "postpone" | null>(null);
   const [logging, setLogging] = useState<InteractionKind | null>(null);
+  /** La saisie des matériaux, ouverte depuis « à faire maintenant ». */
+  const [materiaux, setMateriaux] = useState(false);
 
   const points = readCycle(project, quotes, interactions, jalons, now, undefined, marks);
   const action = nextAction(points, project, quotes, jalons, now);
@@ -513,12 +516,14 @@ function ProjectBlock({
         break;
       case "order_materials":
         /*
-          Commander demande de dire **quoi**, pas de cocher. Le bouton posait
-          la date du jour d'un clic et l'affaire n'en gardait rien : on emmène
-          donc là où la liste se saisit, comme pour la date de chantier.
+          Commander demande de dire **quoi**, pas de cocher.
+
+          Basculer l'onglet « Après-signature » ne suffisait pas : il vit tout
+          en bas de l'affaire dépliée, si bien que cliquer ne faisait rien de
+          visible et qu'il fallait deviner qu'il fallait descendre. La saisie
+          vient donc à l'écran.
         */
-        setOpen(true);
-        setTab("apres");
+        setMateriaux(true);
         break;
       case "send_plans":
         onOverride({ plans_sent_at: new Date().toISOString() });
@@ -711,6 +716,15 @@ function ProjectBlock({
           </div>
         </CollapsibleContent>
       </Collapsible>
+
+      <MaterialsDialog
+        open={materiaux}
+        onOpenChange={setMateriaux}
+        materials={jalons.materials}
+        marked={jalons.materials_ordered_at}
+        pending={saving}
+        onSave={commanderMateriaux}
+      />
 
       {relance && (
         <RelanceDialog

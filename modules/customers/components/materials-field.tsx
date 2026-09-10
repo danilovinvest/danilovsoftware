@@ -3,6 +3,13 @@
 import { useState } from "react";
 import { CheckIcon, PlusIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
@@ -228,5 +235,61 @@ export function MaterialsEditor({
         </Button>
       </div>
     </div>
+  );
+}
+
+/**
+ * La saisie appelée depuis « à faire maintenant ».
+ *
+ * Le bouton « Matériaux commandés » n'ouvrait rien : il basculait l'onglet
+ * « Après-signature », qui vit tout en bas de l'affaire dépliée. À l'écran,
+ * cliquer ne faisait donc **rien** — il fallait deviner qu'il fallait
+ * descendre. Une boîte de dialogue arrive là où l'œil est déjà, et c'est le
+ * seul endroit du cycle où ce bouton mène désormais.
+ *
+ * Le même éditeur que les deux panneaux, pour la même raison qu'eux : trois
+ * saisies pour une seule colonne auraient divergé au premier ajustement.
+ */
+export function MaterialsDialog({
+  open,
+  onOpenChange,
+  materials,
+  marked,
+  pending,
+  onSave,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  materials: string[];
+  marked: string | null;
+  pending?: boolean;
+  onSave: (list: string[] | null) => boolean | Promise<boolean>;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Matériaux commandés</DialogTitle>
+          <DialogDescription>
+            Ce qui a été commandé, et pas seulement qu&apos;on a commandé. Les
+            familles sont des raccourcis : la ligne libre porte la section et la
+            quantité.
+          </DialogDescription>
+        </DialogHeader>
+
+        <MaterialsEditor
+          // Le brouillon se resynchronise sur ce que porte l'affaire à
+          // l'ouverture, comme dans les deux panneaux.
+          key={`${open}·${marked ?? "vide"}·${materials.join("|")}`}
+          value={materials}
+          marked={marked}
+          pending={pending}
+          note="Écrit la commande et sa date dans les jalons de l'affaire."
+          onSave={(list) => onSave(list)}
+          onRemove={() => onSave(null)}
+          onClose={() => onOpenChange(false)}
+        />
+      </DialogContent>
+    </Dialog>
   );
 }
