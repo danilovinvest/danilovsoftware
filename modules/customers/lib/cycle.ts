@@ -651,6 +651,12 @@ export type StepWrite = StepNote &
     | { target: "mark"; field: keyof StepMarks }
     | { target: "jalon"; field: JalonColumn }
     | { target: "worksite_date" }
+    /*
+      Les matériaux se distinguent des autres jalons : le cran ne pose pas
+      seulement une date, il enregistre **ce qui a été commandé**. Une date
+      seule ne dit pas ce qu'on attend à la livraison.
+    */
+    | { target: "materials"; field: "materials_ordered_at" }
     | { target: "quote"; field: "deposit" | "balance" }
   );
 
@@ -695,9 +701,9 @@ const WRITE: Record<CycleStep, StepWrite> = {
     note: "Écrit la date de démarrage de l'affaire, celle que lit l'écran Chantiers.",
   },
   materiaux: {
-    target: "jalon",
+    target: "materials",
     field: "materials_ordered_at",
-    note: "Écrit « matériaux commandés » dans les jalons de l'affaire.",
+    note: "Écrit la commande et sa date dans les jalons de l'affaire.",
   },
   plans: {
     target: "jalon",
@@ -739,6 +745,8 @@ export function stepMarkedAt(
     case "mark":
       return marks[write.field];
     case "jalon":
+      return jalons[write.field];
+    case "materials":
       return jalons[write.field];
     case "worksite_date":
       return jalons.worksite_date;

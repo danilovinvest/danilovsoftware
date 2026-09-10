@@ -161,6 +161,7 @@ export function setMilestones(
     rib_sent_at: string | null;
     insurance_sent_at: string | null;
     materials_ordered_at: string | null;
+    materials: string[];
     resume_at: string | null;
     plans_sent_at: string | null;
     review_requested_at: string | null;

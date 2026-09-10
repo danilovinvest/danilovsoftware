@@ -59,6 +59,8 @@ export type Worksite = {
   rib_sent_at: string | null;
   insurance_sent_at: string | null;
   materials_ordered_at: string | null;
+  /** Ce qui a été commandé. La fiche latérale le montre et le complète. */
+  materials: string[];
   resume_at: string | null;
   /** Les plans d'exécution envoyés — le rendu du bureau d'études. */
   plans_sent_at: string | null;

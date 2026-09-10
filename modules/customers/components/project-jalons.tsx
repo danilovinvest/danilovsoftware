@@ -8,6 +8,7 @@ import { DateField } from "@/shared/ui/date-time-field";
 import { formatDate } from "@/shared/lib/format";
 import { cn } from "@/lib/utils";
 import { jalonOrder, type Jalons } from "../lib/jalons";
+import { MaterialsEditor, MaterialsTags } from "./materials-field";
 import type { Metier } from "../lib/cycle";
 
 /**
@@ -18,15 +19,18 @@ import type { Metier } from "../lib/cycle";
  * encore de colonne en base et le disent, plutôt que de faire croire qu'ils
  * sont suivis.
  *
- * « Date de chantier » se distingue des cinq autres : elle ne se coche pas, elle
- * se choisit. Cocher poserait la date du jour, alors qu'on réserve un chantier
- * pour dans six semaines. C'est aussi le seul jalon qui alerte quand il manque,
- * parce que c'est là que tout attend.
+ * **Deux lignes ne se cochent pas, elles se saisissent.** « Date de chantier »
+ * se choisit au calendrier : cocher poserait la date du jour, alors qu'on
+ * réserve un chantier pour dans six semaines — et c'est le seul jalon qui
+ * alerte quand il manque, parce que c'est là que tout attend. « Matériaux
+ * commandés » se liste : une date seule ne dit pas ce qu'on attend à la
+ * livraison, et c'était la demande du dirigeant.
  */
 export function ProjectJalons({
   metier,
   jalons,
   onToggle,
+  onMaterials,
   disabled,
   className,
 }: {
@@ -34,6 +38,14 @@ export function ProjectJalons({
   metier: Metier;
   jalons: Jalons;
   onToggle: (key: keyof Jalons, value: string | null) => void;
+  /**
+   * La commande de matériaux, listée. `null` retire la liste et sa date.
+   *
+   * Elle ne passe pas par `onToggle` : les autres jalons sont des instants, et
+   * élargir leur signature à une liste aurait obligé chaque appelant à traiter
+   * un cas qui ne concerne qu'une ligne sur quinze.
+   */
+  onMaterials: (list: string[] | null) => void | Promise<void>;
   disabled?: boolean;
   className?: string;
 }) {
@@ -84,13 +96,27 @@ export function ProjectJalons({
                   <div className="text-muted-foreground/70 text-xs">
                     {done ? formatDate(at) : jalon.hint}
                   </div>
+                  {/*
+                    La commande se lit sous sa date : « commandés le 12 sept. »
+                    sans dire quoi ne permet pas de vérifier la livraison.
+                  */}
+                  {jalon.picks === "materials" && (
+                    <MaterialsTags items={jalons.materials} className="mt-1" />
+                  )}
                 </div>
 
-                {jalon.picks ? (
+                {jalon.picks === "date" ? (
                   <DatePickerButton
                     value={at}
                     disabled={disabled}
                     onPick={(value) => onToggle(jalon.key, value)}
+                  />
+                ) : jalon.picks === "materials" ? (
+                  <MaterialsButton
+                    marked={at}
+                    materials={jalons.materials}
+                    disabled={disabled}
+                    onSave={onMaterials}
                   />
                 ) : (
                   <Button
@@ -121,6 +147,54 @@ export function ProjectJalons({
         </span>
       </p>
     </div>
+  );
+}
+
+/**
+ * La commande de matériaux, saisie depuis la ligne du jalon.
+ *
+ * Le même éditeur que le cran de la frise, et c'est voulu : deux saisies pour
+ * une même colonne auraient divergé au premier ajustement, et la liste cochée
+ * ici doit être exactement celle qu'on retrouve là.
+ */
+function MaterialsButton({
+  marked,
+  materials,
+  disabled,
+  onSave,
+}: {
+  marked: string | null;
+  materials: string[];
+  disabled?: boolean;
+  onSave: (list: string[] | null) => void | Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button size="xs" variant={marked ? "ghost" : "outline"} disabled={disabled}>
+          {marked ? "Modifier" : "Commander"}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80" align="end">
+        <MaterialsEditor
+          key={`${marked ?? "vide"}·${materials.join("|")}`}
+          value={materials}
+          marked={marked}
+          pending={disabled}
+          note="Écrit la commande et sa date dans les jalons de l'affaire."
+          onSave={async (list) => {
+            await onSave(list);
+            setOpen(false);
+          }}
+          onRemove={async () => {
+            await onSave(null);
+            setOpen(false);
+          }}
+        />
+      </PopoverContent>
+    </Popover>
   );
 }
 

@@ -116,6 +116,7 @@ function Body({
     insurance_sent_at: w.insurance_sent_at,
     worksite_date: w.started_at,
     materials_ordered_at: w.materials_ordered_at,
+    materials: w.materials,
     resume_at: w.resume_at,
     plans_sent_at: w.plans_sent_at,
     review_requested_at: w.review_requested_at,
@@ -127,13 +128,45 @@ function Body({
     ...optimiste,
   };
 
-  async function poser(key: keyof Jalons, value: string | null) {
-    setOptimiste((current) => ({ ...current, [key]: value }));
+  function poser(key: keyof Jalons, value: string | null) {
+    return appliquer({ [key]: value } as Partial<Jalons>);
+  }
+
+  /**
+   * La commande de matériaux : ce qui a été commandé, et quand.
+   *
+   * `null` retire les deux — une liste de ce qui a été commandé n'a aucun sens
+   * sans la commande. La date déjà posée est conservée : compléter la liste
+   * trois jours plus tard ne doit pas faire croire qu'on a commandé
+   * aujourd'hui.
+   */
+  function commanderMateriaux(list: string[] | null) {
+    return appliquer(
+      list === null
+        ? { materials: [], materials_ordered_at: null }
+        : {
+            materials: list,
+            materials_ordered_at: jalons.materials_ordered_at ?? new Date().toISOString(),
+          },
+    );
+  }
+
+  /**
+   * Applique un lot de jalons : peint, écrit, se dédit s'il échoue.
+   *
+   * Un lot et non un champ, parce que la commande de matériaux en écrit deux à
+   * la fois — la liste et sa date. Deux appels sur une route qui remplace la
+   * ligne entière se seraient écrasés l'un l'autre.
+   */
+  async function appliquer(patch: Partial<Jalons>) {
+    setOptimiste((current) => ({ ...current, ...patch }));
     setEnCours(true);
     setEchec(null);
-    const suivant = { ...jalons, [key]: value };
+    const suivant = { ...jalons, ...patch };
     try {
-      if (key === "deposit_invoiced_at" || key === "deposit_paid_at") {
+      if ("deposit_invoiced_at" in patch || "deposit_paid_at" in patch) {
+        const paid = "deposit_paid_at" in patch;
+        const value = paid ? patch.deposit_paid_at : patch.deposit_invoiced_at;
         // L'acompte appartient au devis : c'est lui qui porte le règlement.
         const cible = signedQuote(w);
         if (!cible) throw new Error("Aucun devis à mettre à jour sur cette affaire.");
@@ -151,20 +184,20 @@ function Body({
           issued_at: cible.issued_at,
           amount_ht: cible.amount_ht, amount_ttc: cible.amount_ttc,
           vat_rate: null, amount_note: cible.amount_note,
-          deposit_status:
-            key === "deposit_paid_at"
-              ? value
-                ? "recu"
-                : "en_attente"
-              : value
-                ? "en_attente"
-                : "non_applicable",
+          deposit_status: paid
+            ? value
+              ? "recu"
+              : "en_attente"
+            : value
+              ? "en_attente"
+              : "non_applicable",
           balance_status: cible.balance_status as PaymentStatus,
           comment: "",
         });
-      } else if (key === "worksite_date") {
+      } else if ("worksite_date" in patch) {
         // Réserver une date, c'est renseigner `started_at` de l'affaire : la
         // colonne que cet écran lit déjà pour classer ses colonnes.
+        const value = patch.worksite_date ?? null;
         await updateProject(w.id, {
           label: w.label, stage: w.stage,
           outcome: (w.outcome || null) as ProjectPayload["outcome"],
@@ -179,6 +212,7 @@ function Body({
           rib_sent_at: suivant.rib_sent_at,
           insurance_sent_at: suivant.insurance_sent_at,
           materials_ordered_at: suivant.materials_ordered_at,
+          materials: suivant.materials,
           resume_at: suivant.resume_at,
           plans_sent_at: suivant.plans_sent_at,
           review_requested_at: suivant.review_requested_at,
@@ -200,7 +234,7 @@ function Body({
     } catch (cause) {
       setOptimiste((current) => {
         const copie = { ...current };
-        delete copie[key];
+        for (const cle of Object.keys(patch)) delete copie[cle as keyof Jalons];
         return copie;
       });
       setEchec(errorMessage(cause));
@@ -265,6 +299,7 @@ function Body({
             jalons={jalons}
             disabled={!canWrite || enCours}
             onToggle={poser}
+            onMaterials={commanderMateriaux}
           />
         </div>
 

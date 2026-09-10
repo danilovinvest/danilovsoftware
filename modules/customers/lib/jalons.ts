@@ -42,6 +42,15 @@ export type Jalons = {
   /** De l'affaire : `started_at`, la date réservée au planning. */
   worksite_date: string | null;
   materials_ordered_at: string | null;
+  /**
+   * Ce qui a été commandé.
+   *
+   * La date dit qu'on a commandé, la liste dit quoi. Les deux vivent dans la
+   * même ligne parce qu'elles décrivent un fait unique : une commande sans
+   * date n'existe pas, et une liste tenue ailleurs serait une seconde vérité
+   * sur la même chose.
+   */
+  materials: string[];
   /** Quand reprendre une affaire reportée. */
   resume_at: string | null;
   /** De l'affaire côté études : les plans d'exécution envoyés au client. */
@@ -73,6 +82,7 @@ export const EMPTY_JALONS: Jalons = {
   insurance_sent_at: null,
   worksite_date: null,
   materials_ordered_at: null,
+  materials: [],
   resume_at: null,
   plans_sent_at: null,
   review_requested_at: null,
@@ -117,6 +127,7 @@ export function readJalons(
     insurance_sent_at: m?.insurance_sent_at ?? null,
     worksite_date: project?.started_at ?? null,
     materials_ordered_at: m?.materials_ordered_at ?? null,
+    materials: m?.materials ?? [],
     resume_at: m?.resume_at ?? null,
     plans_sent_at: m?.plans_sent_at ?? null,
     pv_sent_at: m?.pv_sent_at ?? null,
@@ -213,11 +224,23 @@ export { depositOf };
  * du reste de l'écran.
  */
 export type Jalon = {
-  key: keyof Jalons;
+  /*
+    La clé est une **date**, jamais la liste des matériaux : celle-ci qualifie
+    le jalon « matériaux commandés », elle n'en est pas un. Sans cette
+    exclusion, chaque ligne de l'écran devrait se demander si elle affiche un
+    instant ou un tableau.
+  */
+  key: Exclude<keyof Jalons, "materials">;
   label: string;
   hint: string;
-  /** Une date choisie au calendrier, et non la date du jour. */
-  picks: boolean;
+  /**
+   * Ce que la ligne fait saisir, au lieu de cocher la date du jour.
+   *
+   * `"date"` — une date choisie au calendrier : un chantier se réserve pour
+   * dans six semaines. `"materials"` — la liste de ce qui a été commandé, et
+   * la date suit. `false` — une case, et c'est tout.
+   */
+  picks: false | "date" | "materials";
 };
 
 const ACOMPTE: Jalon[] = [
@@ -268,13 +291,13 @@ const TRAVAUX: Jalon[] = [
     key: "worksite_date",
     label: "Date de chantier",
     hint: "La date réservée au planning, partagée avec l'écran Chantiers",
-    picks: true,
+    picks: "date",
   },
   {
     key: "materials_ordered_at",
     label: "Matériaux commandés",
     hint: "Béton, acier et fournitures",
-    picks: false,
+    picks: "materials",
   },
   {
     key: "pv_sent_at",

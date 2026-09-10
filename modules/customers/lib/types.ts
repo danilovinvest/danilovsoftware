@@ -230,6 +230,14 @@ export type Milestones = {
   rib_sent_at: string | null;
   insurance_sent_at: string | null;
   materials_ordered_at: string | null;
+  /**
+   * Ce qui a été commandé, et pas seulement qu'on a commandé.
+   *
+   * Des textes libres — « 3 IPE 200 · 4,20 m » — parce que la section et la
+   * quantité sont ce qu'on vérifie à la livraison. Les familles proposées à
+   * l'écran ne sont que des raccourcis de saisie.
+   */
+  materials: string[];
   /** Quand reprendre une affaire reportée. */
   resume_at: string | null;
   /** Les plans d'exécution envoyés — le jalon de rendu du bureau d'études. */

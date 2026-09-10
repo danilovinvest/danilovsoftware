@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DateField } from "@/shared/ui/date-time-field";
 import { cn } from "@/lib/utils";
+import { MaterialsEditor } from "./materials-field";
 import {
   CYCLE_LABEL,
   stepWrite,
@@ -59,6 +60,15 @@ export type CycleEdit = {
   hasQuote: boolean;
   /** Ouvre la création d'un devis, quand il en manque un. */
   onAddQuote: () => void;
+  /**
+   * Ce qui a déjà été commandé, pour le cran des matériaux.
+   *
+   * Il porte une liste et pas seulement une date : c'est le seul cran dont le
+   * panneau fait saisir autre chose qu'un instant.
+   */
+  materials: string[];
+  /** Enregistre la commande et sa date. `null` retire les deux. */
+  onMaterials: (list: string[] | null) => void | Promise<void>;
   pending?: boolean;
 };
 
@@ -259,6 +269,12 @@ function StepDot({
   // L'acompte et le solde vivent sur le devis. Sans devis, il n'y a pas où
   // écrire, et le dire vaut mieux qu'un bouton qui échoue.
   const sansDevis = write.target === "quote" && !edit.hasQuote;
+  /*
+    Deux crans ne se cochent pas, ils se saisissent : la date de chantier se
+    réserve pour dans six semaines, et les matériaux se listent. Leur panneau
+    porte donc ses propres boutons, et non le « Marquer franchi » commun.
+  */
+  const saisi = write.target === "worksite_date" || write.target === "materials";
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -288,19 +304,40 @@ function StepDot({
 
           <p className="text-xs">{point.detail}</p>
 
-          {write.target === "worksite_date" && !parLeFait ? (
-            <DateCran
-              // La resynchronisation du brouillon est explicite : sans cette
-              // clé, elle ne tiendrait qu'au démontage du contenu du Popover
-              // par Radix, qui n'est pas une promesse de son API.
-              key={marked ?? "vide"}
-              value={marked}
-              pending={edit.pending}
-              onPick={async (at) => {
-                await edit.onMark(point.step, at);
-                setOpen(false);
-              }}
-            />
+          {saisi && !parLeFait ? (
+            write.target === "materials" ? (
+              <MaterialsEditor
+                // Même raison que pour la date : la resynchronisation du
+                // brouillon est explicite, et ne tient pas au démontage du
+                // contenu par Radix, qui n'est pas une promesse de son API.
+                key={`${marked ?? "vide"}·${edit.materials.join("|")}`}
+                value={edit.materials}
+                marked={marked}
+                pending={edit.pending}
+                note={write.note}
+                onSave={async (list) => {
+                  await edit.onMaterials(list);
+                  setOpen(false);
+                }}
+                onRemove={async () => {
+                  await edit.onMaterials(null);
+                  setOpen(false);
+                }}
+              />
+            ) : (
+              <DateCran
+                // La resynchronisation du brouillon est explicite : sans cette
+                // clé, elle ne tiendrait qu'au démontage du contenu du Popover
+                // par Radix, qui n'est pas une promesse de son API.
+                key={marked ?? "vide"}
+                value={marked}
+                pending={edit.pending}
+                onPick={async (at) => {
+                  await edit.onMark(point.step, at);
+                  setOpen(false);
+                }}
+              />
+            )
           ) : (
             <p className="text-muted-foreground/70 text-[11px]">
               {parLeFait
@@ -311,7 +348,7 @@ function StepDot({
             </p>
           )}
 
-          {!parLeFait && write.target !== "worksite_date" && (
+          {!parLeFait && !saisi && (
             <div className="flex items-center justify-end gap-2">
               {marked !== null && (
                 <Button

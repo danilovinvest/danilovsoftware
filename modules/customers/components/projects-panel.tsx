@@ -161,6 +161,7 @@ export function ProjectsPanel({
         rib_sent_at: suivant.rib_sent_at,
         insurance_sent_at: suivant.insurance_sent_at,
         materials_ordered_at: suivant.materials_ordered_at,
+        materials: suivant.materials,
         resume_at: suivant.resume_at,
         plans_sent_at: suivant.plans_sent_at,
         review_requested_at: suivant.review_requested_at,
@@ -404,6 +405,7 @@ function ProjectBlock({
     switch (write.target) {
       case "mark":
       case "jalon":
+      case "materials":
         // `poserJalon` peint avant d'écrire : rien à attendre pour voir le
         // résultat, et le panneau peut se fermer sur un cran déjà vert.
         void onOverride({ [write.field]: at } as Partial<Jalons & StepMarks>);
@@ -427,6 +429,24 @@ function ProjectBlock({
         });
       }
     }
+  }
+
+  /**
+   * La commande de matériaux : ce qui a été commandé, et quand.
+   *
+   * Les deux partent ensemble parce qu'elles décrivent un fait unique, et
+   * `null` les retire toutes les deux — une liste de ce qui a été commandé n'a
+   * aucun sens sans la commande.
+   *
+   * La date déjà posée est **conservée** : compléter la liste trois jours plus
+   * tard ne doit pas faire croire qu'on a commandé aujourd'hui.
+   */
+  function commanderMateriaux(list: string[] | null): void | Promise<void> {
+    if (list === null) return onOverride({ materials: [], materials_ordered_at: null });
+    return onOverride({
+      materials: list,
+      materials_ordered_at: jalons.materials_ordered_at ?? new Date().toISOString(),
+    });
   }
 
   async function act(key: ActionKey) {
@@ -475,7 +495,13 @@ function ProjectBlock({
         setTab("apres");
         break;
       case "order_materials":
-        onOverride({ materials_ordered_at: new Date().toISOString() });
+        /*
+          Commander demande de dire **quoi**, pas de cocher. Le bouton posait
+          la date du jour d'un clic et l'affaire n'en gardait rien : on emmène
+          donc là où la liste se saisit, comme pour la date de chantier.
+        */
+        setOpen(true);
+        setTab("apres");
         break;
       case "send_plans":
         onOverride({ plans_sent_at: new Date().toISOString() });
@@ -562,6 +588,8 @@ function ProjectBlock({
                       onMark: marquerCran,
                       hasQuote: lead !== null,
                       onAddQuote,
+                      materials: jalons.materials,
+                      onMaterials: commanderMateriaux,
                       pending: saving || setDeposit.pending || setBalance.pending,
                     }
                   : undefined
@@ -640,6 +668,7 @@ function ProjectBlock({
                 <ProjectJalons
                   metier={metierOf(quotes)}
                   jalons={jalons}
+                  onMaterials={commanderMateriaux}
                   // Même verrou que la frise : ces cases écrivent par la
                   // même route, qui remplace la ligne entière.
                   disabled={!canWrite || saving || setDeposit.pending}
