@@ -64,7 +64,14 @@ export function CustomerAgenda({
 
   const charger = useCallback(() => {
     listCustomerEvents(customerId, 20)
-      .then((page) => setCharge({ items: page.items, a: Date.now() }))
+      .then((page) => {
+        // Une lecture réussie efface l'erreur de la précédente. Sans cela, un
+        // échec passager — une coupure de réseau, un jeton renouvelé au mauvais
+        // moment — laissait le bandeau rouge à l'écran pour de bon, y compris
+        // au-dessus d'une liste correctement chargée.
+        setError(null);
+        setCharge({ items: page.items, a: Date.now() });
+      })
       .catch((cause) => {
         setError(errorMessage(cause));
         setCharge({ items: [], a: Date.now() });
@@ -130,8 +137,22 @@ export function CustomerAgenda({
 
         {events === null ? (
           <div className="flex flex-col gap-2 border-t px-5 py-3">
-            <Bar hue="crimson" className="h-4 w-2/3" />
-            <Bar hue="crimson" className="h-4 w-1/2" />
+            {/*
+              La teinte est celle de **l'écran**, pas celle de la donnée.
+
+              Ces événements viennent de l'agenda, dont la teinte est
+              cramoisie, et l'attente était donc cramoisie ici : deux barres
+              rose pâle qui apparaissent une demi-seconde en changeant
+              d'onglet, et qui se lisent comme un bandeau d'erreur. « Une
+              banner rouge qui spawn », dit le dirigeant, et il a raison de le
+              lire ainsi — le rose pâle du CRM est celui du danger.
+
+              Une silhouette d'attente dit *où l'on arrive*. On arrive dans une
+              fiche client : indigo, comme toutes les autres attentes de cet
+              écran.
+            */}
+            <Bar hue="indigo" className="h-4 w-2/3" />
+            <Bar hue="indigo" className="h-4 w-1/2" />
           </div>
         ) : (
           events.length > 0 && (
