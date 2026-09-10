@@ -6,7 +6,7 @@ import type {
   Quote,
 } from "./types";
 import { isPaused, PROJECT_OUTCOME, type Tone } from "./labels";
-import type { Jalons } from "./jalons";
+import { EMPTY_MARKS, type Jalons, type StepMarks } from "./jalons";
 
 /**
  * Le cycle d'une affaire, de la demande au chantier.
@@ -284,6 +284,15 @@ export function readCycle(
     mode STRUCTURE, ce sont des études qu'on regarde.
   */
   metierForce?: Metier,
+  /*
+    Les crans cochés à la main.
+
+    Facultatifs, et vides par défaut : la liste des fiches et le tableau de
+    bord lisent une frise sans les avoir chargés, et une frise sans marque
+    reste juste — simplement déduite, comme avant. Seule la fiche, qui les
+    reçoit avec les jalons, les passe.
+  */
+  marks: StepMarks = EMPTY_MARKS,
 ): CyclePoint[] {
   const mine = interactions.filter((i) => i.project_id === project.id);
   const lead = leadQuote(quotes);
@@ -305,22 +314,47 @@ export function readCycle(
   date n'est qu'un ornement, absente quand on ne la connaît pas.
   */
   const anchor = earliest(project.created_at, project.started_at);
-  const contactDone = mine.length > 0 || stage !== "demande_recue";
-  const contactAt = earliest(firstContact?.occurred_at, contactDone ? anchor : undefined);
+  const contactDone =
+    mine.length > 0 || stage !== "demande_recue" || marks.contact_at !== null;
+  const contactAt = earliest(
+    firstContact?.occurred_at,
+    marks.contact_at ?? undefined,
+    contactDone ? anchor : undefined,
+  );
 
   const rdvDone =
     (rdv !== null && rdv.occurred_at <= new Date(now).toISOString()) ||
-    afterStage(stage, "rdv_planifie");
-  const rdvAt = rdv?.occurred_at ?? (rdvDone ? project.started_at : null);
+    afterStage(stage, "rdv_planifie") ||
+    marks.rdv_at !== null;
+  const rdvAt = rdv?.occurred_at ?? marks.rdv_at ?? (rdvDone ? project.started_at : null);
 
-  const devisAt = sent?.issued_at ?? signed?.issued_at ?? (lead?.issued_at ?? null);
+  const devisFactAt = sent?.issued_at ?? signed?.issued_at ?? (lead?.issued_at ?? null);
   // « Devis envoyé » veut dire envoyé : le cran est franchi à cette étape, pas
   // à la suivante. Utiliser `afterStage` laisserait le devis « à faire » sur
   // toutes les affaires dont c'est justement l'étape courante.
-  const devisDone = devisAt !== null || atOrAfterStage(stage, "devis_envoye") || signed !== null;
+  const devisDone =
+    devisFactAt !== null ||
+    atOrAfterStage(stage, "devis_envoye") ||
+    signed !== null ||
+    marks.quote_sent_at !== null;
+  const devisAt = devisFactAt ?? marks.quote_sent_at;
 
-  const signeAt = signed?.issued_at ?? (stage === "gagne" || stage === "realise" ? project.started_at : null);
-  const signeDone = signed !== null || stage === "gagne" || stage === "realise";
+  /*
+    « Négociation » et « Signé » se cochent séparément.
+
+    Le fait franchit les deux d'un coup — on ne signe pas sans avoir négocié, et
+    un devis accepté prouve les deux. Une **marque** ne franchit que son cran :
+    cocher « Signé » ne coche pas « Négociation », sans quoi la frise
+    redeviendrait ordonnée et l'on ne pourrait plus laisser un cran gris
+    derrière un cran vert. C'est exactement ce qui était demandé.
+  */
+  const signeFactAt =
+    signed?.issued_at ?? (stage === "gagne" || stage === "realise" ? project.started_at : null);
+  const signeFait = signed !== null || stage === "gagne" || stage === "realise";
+  const signeDone = signeFait || marks.signed_at !== null;
+  const signeAt = signeFactAt ?? marks.signed_at;
+  const negoDone = signeFait || marks.negotiation_at !== null;
+  const negoAt = signeFactAt ?? marks.negotiation_at;
 
   const deposit: PaymentStatus = signed?.deposit_status ?? lead?.deposit_status ?? "non_applicable";
   const acompteDone = deposit === "recu";
@@ -339,7 +373,9 @@ export function readCycle(
     manquant au milieu d'une frise par ailleurs complète.
   */
   const rapport = lastInteraction(mine, "rapport");
-  const rapportAt = rapport?.occurred_at ?? null;
+  // Le jalon compte autant que l'échange : c'est lui que pose la fiche, et que
+  // pose un événement de rendez-vous depuis l'agenda.
+  const rapportAt = rapport?.occurred_at ?? jalons.visit_report_sent_at;
 
   // --- Chaque cran, dans l'ordre -----------------------------------------
   const commun: Array<{ step: CycleStep; done: boolean; at: string | null; since: string | null }> = [
@@ -356,8 +392,8 @@ export function readCycle(
     { step: "devis", done: devisDone, at: devisAt, since: devisAt ?? rdvAt ?? anchor },
     {
       step: "negociation",
-      done: signeDone,
-      at: signeAt,
+      done: negoDone,
+      at: negoAt,
       // L'attente de la négociation court depuis la dernière relance, pas
       // depuis l'envoi : relancer remet le compteur à zéro, sans quoi le
       // chiffre resterait rouge alors qu'on vient d'agir.
@@ -538,6 +574,125 @@ function afterStage(stage: ProjectStage, reference: ProjectStage): boolean {
 /** L'étape a-t-elle atteint la référence, ou l'a-t-elle dépassée ? */
 function atOrAfterStage(stage: ProjectStage, reference: ProjectStage): boolean {
   return STAGE_RANK.indexOf(stage) >= STAGE_RANK.indexOf(reference);
+}
+
+// ---------------------------------------------------------------------------
+// Cocher un cran à la main
+// ---------------------------------------------------------------------------
+
+/**
+ * Ce qu'écrit le clic sur un cran de la frise.
+ *
+ * Un cran franchi n'est pas une case dans une table de crans : c'est une
+ * conséquence. Cliquer « Date de chantier » écrit `started_at` de l'affaire —
+ * la colonne que l'écran Chantiers lit déjà — et cliquer « Acompte » change le
+ * statut du devis, qui porte le règlement. Tenir une seconde vérité par cran
+ * ferait diverger la frise de tous les autres écrans au premier oubli.
+ *
+ * Ne reçoivent une **marque** que les cinq crans dont personne ne tient la
+ * date. Voir `StepMarks`.
+ */
+export type StepWrite = {
+  /** Où va l'écriture. */
+  target: "mark" | "jalon" | "worksite_date" | "quote";
+  /** Le champ visé, quand la cible en a un. */
+  field: keyof StepMarks | keyof Jalons | "deposit" | "balance" | null;
+  /** Ce que le clic fait, dit à l'utilisateur avant qu'il clique. */
+  note: string;
+};
+
+const WRITE: Record<CycleStep, StepWrite> = {
+  contact: {
+    target: "mark",
+    field: "contact_at",
+    note: "Un échange enregistré franchit ce cran tout seul.",
+  },
+  rdv: {
+    target: "mark",
+    field: "rdv_at",
+    note: "Un rendez-vous noté dans l'agenda franchit ce cran tout seul.",
+  },
+  rapport: {
+    target: "jalon",
+    field: "visit_report_sent_at",
+    note: "Écrit « rapport de visite remis » dans les jalons de l'affaire.",
+  },
+  devis: {
+    target: "mark",
+    field: "quote_sent_at",
+    note: "Un devis au dossier franchit ce cran tout seul.",
+  },
+  negociation: {
+    target: "mark",
+    field: "negotiation_at",
+    note: "Un devis accepté franchit ce cran tout seul.",
+  },
+  signe: {
+    target: "mark",
+    field: "signed_at",
+    note: "Un devis accepté franchit ce cran tout seul.",
+  },
+  acompte: {
+    target: "quote",
+    field: "deposit",
+    note: "L'acompte vit sur le devis : c'est son statut qui change.",
+  },
+  chantier: {
+    target: "worksite_date",
+    field: null,
+    note: "Écrit la date de démarrage de l'affaire, celle que lit l'écran Chantiers.",
+  },
+  materiaux: {
+    target: "jalon",
+    field: "materials_ordered_at",
+    note: "Écrit « matériaux commandés » dans les jalons de l'affaire.",
+  },
+  plans: {
+    target: "jalon",
+    field: "plans_sent_at",
+    note: "Écrit « plans envoyés » dans les jalons de l'affaire.",
+  },
+  solde: {
+    target: "quote",
+    field: "balance",
+    note: "Le solde vit sur le devis : c'est son statut qui change.",
+  },
+  avis: {
+    target: "jalon",
+    field: "review_received_at",
+    note: "Écrit « avis reçu » dans les jalons de l'affaire.",
+  },
+};
+
+export function stepWrite(step: CycleStep): StepWrite {
+  return WRITE[step];
+}
+
+/**
+ * La date que le clic retirerait, ou rien.
+ *
+ * Elle répond à une question que l'écran doit poser avant d'afficher un
+ * bouton : ce cran est-il franchi **par ce qu'on peut retirer ici**, ou par un
+ * fait qui vit ailleurs ? Un cran vert sans date retirable est franchi par un
+ * devis ou un échange, et proposer « Retirer » mentirait — le clic n'aurait
+ * aucun effet visible.
+ */
+export function stepMarkedAt(
+  step: CycleStep,
+  jalons: Jalons,
+  marks: StepMarks,
+): string | null {
+  const write = WRITE[step];
+  switch (write.target) {
+    case "mark":
+      return marks[write.field as keyof StepMarks];
+    case "jalon":
+      return jalons[write.field as keyof Jalons];
+    case "worksite_date":
+      return jalons.worksite_date;
+    case "quote":
+      return write.field === "deposit" ? jalons.deposit_paid_at : jalons.balance_paid_at;
+  }
 }
 
 // ---------------------------------------------------------------------------

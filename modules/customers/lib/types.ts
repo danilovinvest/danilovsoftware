@@ -239,6 +239,20 @@ export type Milestones = {
   /** L'avis client : demander n'est pas recevoir, d'où deux dates. */
   review_requested_at: string | null;
   review_received_at: string | null;
+  /*
+    Les cinq crans cochés à la main.
+
+    Ce ne sont pas des jalons d'exécution : ce sont les crans que **rien ne
+    date** — premier contact, rendez-vous, envoi du devis, négociation,
+    signature — et qu'on ne pouvait donc franchir qu'en produisant la pièce
+    correspondante. Une marque n'efface pas le fait qui la double : un devis
+    accepté garde « Signé » franchi même sans marque.
+  */
+  contact_at: string | null;
+  rdv_at: string | null;
+  quote_sent_at: string | null;
+  negotiation_at: string | null;
+  signed_at: string | null;
 };
 
 /** Réponse de GET /v1/customers/{id} : fiche + collections en un seul appel. */

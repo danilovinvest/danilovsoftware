@@ -28,6 +28,15 @@ export type Jalons = {
   deposit_invoiced_at: string | null;
   /** Du devis : l'acompte est encaissé. */
   deposit_paid_at: string | null;
+  /*
+    Du devis : le solde est encaissé.
+
+    Aucune colonne ne le date — le devis n'en porte que le statut — donc la
+    date est celle de l'émission, faute de mieux, exactement comme pour un
+    acompte d'avant les colonnes de dates. Ce qui compte ici est le franchi ;
+    la date n'est qu'un ornement, et l'écran ne la promet pas.
+  */
+  balance_paid_at: string | null;
   rib_sent_at: string | null;
   insurance_sent_at: string | null;
   /** De l'affaire : `started_at`, la date réservée au planning. */
@@ -59,6 +68,7 @@ export type Jalons = {
 export const EMPTY_JALONS: Jalons = {
   deposit_invoiced_at: null,
   deposit_paid_at: null,
+  balance_paid_at: null,
   rib_sent_at: null,
   insurance_sent_at: null,
   worksite_date: null,
@@ -101,6 +111,8 @@ export function readJalons(
       signed && signed.deposit_status === "recu"
         ? (signed.deposit_paid_at ?? signed.issued_at)
         : null,
+    balance_paid_at:
+      signed && signed.balance_status === "recu" ? signed.issued_at : null,
     rib_sent_at: m?.rib_sent_at ?? null,
     insurance_sent_at: m?.insurance_sent_at ?? null,
     worksite_date: project?.started_at ?? null,
@@ -113,6 +125,62 @@ export function readJalons(
     survey_report_sent_at: m?.survey_report_sent_at ?? null,
     review_requested_at: m?.review_requested_at ?? null,
     review_received_at: m?.review_received_at ?? null,
+  };
+}
+
+/**
+ * Les crans cochés à la main.
+ *
+ * Cinq crans du cycle ne sont datés par rien : le premier contact, le
+ * rendez-vous, l'envoi du devis, la négociation, la signature. Ils se
+ * *déduisaient* — d'un échange enregistré, d'un devis parti, d'un devis
+ * accepté — et tant que la réalité suit cet ordre, la déduction suffit.
+ *
+ * Elle ne le suit pas toujours : un client signe sans qu'aucun rendez-vous
+ * n'ait été saisi, une affaire reprise porte un devis qui vit dans un dossier
+ * OneDrive et nulle part ailleurs. Le cran est franchi dans la vie, et l'écran
+ * refusait de le dire faute de la pièce qui l'aurait prouvé.
+ *
+ * **Une marque n'est pas un jalon**, et c'est pourquoi elle a son propre type.
+ * Un jalon est un fait daté que le CRM détient — le RIB est parti, les plans
+ * sont envoyés. Une marque est ce qu'un humain affirme d'un cran, et elle
+ * cohabite avec le fait sans le remplacer : un cran est franchi si le fait le
+ * dit **ou** si la marque le dit, et retirer l'une ne retire pas l'autre.
+ *
+ * Les crans qui ont déjà un propriétaire n'en reçoivent pas : l'acompte et le
+ * solde vivent sur le devis, la date de chantier sur l'affaire, les rapports et
+ * l'avis dans les jalons. Leur donner une marque ferait deux vérités pour un
+ * même fait.
+ */
+export type StepMarks = {
+  contact_at: string | null;
+  rdv_at: string | null;
+  quote_sent_at: string | null;
+  negotiation_at: string | null;
+  signed_at: string | null;
+};
+
+export const EMPTY_MARKS: StepMarks = {
+  contact_at: null,
+  rdv_at: null,
+  quote_sent_at: null,
+  negotiation_at: null,
+  signed_at: null,
+};
+
+/** Les marques d'une affaire, lues de ce que l'API a servi avec la fiche. */
+export function readMarks(
+  projectId: string,
+  milestones: Milestones[] | undefined,
+): StepMarks {
+  const m = milestones?.find((entry) => entry.project_id === projectId);
+  if (!m) return EMPTY_MARKS;
+  return {
+    contact_at: m.contact_at ?? null,
+    rdv_at: m.rdv_at ?? null,
+    quote_sent_at: m.quote_sent_at ?? null,
+    negotiation_at: m.negotiation_at ?? null,
+    signed_at: m.signed_at ?? null,
   };
 }
 

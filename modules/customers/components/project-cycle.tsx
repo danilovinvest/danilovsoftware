@@ -1,8 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import { CheckIcon, PauseIcon, XIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DateField } from "@/shared/ui/date-time-field";
 import { cn } from "@/lib/utils";
-import { CYCLE_LABEL, type CyclePoint, type StepState } from "../lib/cycle";
+import {
+  CYCLE_LABEL,
+  stepWrite,
+  type CyclePoint,
+  type CycleStep,
+  type StepState,
+} from "../lib/cycle";
 
 /**
  * La frise du cycle : huit crans, d'un coup d'œil.
@@ -14,9 +24,36 @@ import { CYCLE_LABEL, type CyclePoint, type StepState } from "../lib/cycle";
  * Les couleurs sortent toutes de la couche sémantique du thème. Aucune valeur
  * littérale : le mode sombre ne redéfinit que l'échelle, et une couleur en dur
  * casserait cette propriété.
+ *
+ * **Les crans se cochent, et dans n'importe quel ordre.** La frise ne faisait
+ * que lire : un cran franchi dans la vie mais dépourvu de la pièce qui l'aurait
+ * prouvé — un client qui signe sans qu'aucun rendez-vous n'ait été saisi —
+ * restait gris, et rien ne permettait de le dire. Chaque cran ouvre donc un
+ * panneau qui annonce **ce que le clic va écrire, et où**, parce qu'aucun cran
+ * n'écrit chez lui : la date de chantier va sur l'affaire, l'acompte sur le
+ * devis, les jalons dans leur table. Un cran n'attend jamais celui d'avant.
  */
 
 export type CycleSize = "full" | "compact" | "mini";
+
+/**
+ * De quoi rendre un cran cliquable.
+ *
+ * Un seul accessoire plutôt que cinq : la frise se lit dans quatre écrans et
+ * n'est modifiable que dans un — la fiche, où l'affaire est ouverte. Ailleurs,
+ * `edit` est absent et la frise reste ce qu'elle était.
+ */
+export type CycleEdit = {
+  /** La date que le clic retirerait, ou rien — voir `stepMarkedAt`. */
+  markedAt: (step: CycleStep) => string | null;
+  /** Écrit ou retire ce cran. `null` retire. */
+  onMark: (step: CycleStep, at: string | null) => void;
+  /** L'affaire porte-t-elle un devis ? L'acompte et le solde y vivent. */
+  hasQuote: boolean;
+  /** Ouvre la création d'un devis, quand il en manque un. */
+  onAddQuote: () => void;
+  pending?: boolean;
+};
 
 const DOT: Record<StepState, string> = {
   done: "bg-success border-success",
@@ -46,10 +83,13 @@ export function ProjectCycle({
   points,
   size = "full",
   className,
+  edit,
 }: {
   points: CyclePoint[];
   size?: CycleSize;
   className?: string;
+  /** Absent, la frise se lit seulement. */
+  edit?: CycleEdit;
 }) {
   if (size === "mini") return <MiniCycle points={points} className={className} />;
 
@@ -73,7 +113,11 @@ export function ProjectCycle({
             title={point.detail}
           >
             <div className="flex items-center">
-              <Dot state={point.state} compact={compact} />
+              {edit ? (
+                <StepDot point={point} edit={edit} compact={compact} />
+              ) : (
+                <Dot state={point.state} compact={compact} />
+              )}
               {!last && (
                 <span
                   aria-hidden
@@ -115,24 +159,205 @@ function caption(point: CyclePoint): string {
   return "";
 }
 
-function Dot({ state, compact }: { state: StepState; compact: boolean }) {
+function Dot({
+  state,
+  compact,
+  interactive,
+}: {
+  state: StepState;
+  compact: boolean;
+  /** Le cran est cliquable : il le montre au survol, sans changer de taille. */
+  interactive?: boolean;
+}) {
   const size = compact ? "size-2.5" : "size-3.5";
   const icon = compact ? null : glyph(state);
 
   return (
     <span
       className={cn(
-        "flex shrink-0 items-center justify-center rounded-full border-2",
+        "flex shrink-0 items-center justify-center rounded-full border-2 transition-shadow",
         size,
         DOT[state],
         // Le cran courant respire : un halo le distingue sans ajouter de
         // couleur, ce qui reste lisible pour qui ne les perçoit pas toutes.
         state === "current" && "ring-info/25 ring-3",
+        interactive && "group-hover/cran:ring-foreground/20 group-hover/cran:ring-3",
       )}
     >
       {icon}
     </span>
   );
+}
+
+/**
+ * Un cran qu'on peut cocher, et le panneau qui dit ce que ça écrit.
+ *
+ * Le panneau annonce trois choses avant tout clic : où en est le cran, **où va
+ * l'écriture**, et ce qui le franchirait tout seul. C'est ce qui empêche la
+ * frise de devenir une seconde vérité : cocher « Date de chantier » ici et
+ * ouvrir l'écran Chantiers montre la même date, parce que c'est la même
+ * colonne.
+ *
+ * Un cran déjà franchi par une pièce de l'affaire — un devis accepté, un
+ * échange enregistré — ne propose rien : il n'y a rien à retirer ici, et un
+ * bouton sans effet est pire qu'un bouton absent. Le panneau le dit.
+ */
+function StepDot({
+  point,
+  edit,
+  compact,
+}: {
+  point: CyclePoint;
+  edit: CycleEdit;
+  compact: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const write = stepWrite(point.step);
+  const marked = edit.markedAt(point.step);
+  const entry = CYCLE_LABEL[point.step];
+
+  // Franchi par un fait qu'on ne tient pas ici : le clic ne pourrait rien
+  // retirer, et marquer par-dessus n'ajouterait rien.
+  const parLeFait = point.state === "done" && marked === null;
+  // L'acompte et le solde vivent sur le devis. Sans devis, il n'y a pas où
+  // écrire, et le dire vaut mieux qu'un bouton qui échoue.
+  const sansDevis = write.target === "quote" && !edit.hasQuote;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="group/cran focus-visible:ring-ring shrink-0 cursor-pointer rounded-full focus-visible:ring-2 focus-visible:outline-none"
+          aria-label={`${entry.label} — ${point.detail}`}
+        >
+          <Dot state={point.state} compact={compact} interactive />
+        </button>
+      </PopoverTrigger>
+
+      <PopoverContent className="w-72" align="start">
+        <div className="flex flex-col gap-3">
+          <div>
+            <p className="text-sm font-medium">{entry.label}</p>
+            <p className="text-muted-foreground text-xs">{entry.hint}</p>
+          </div>
+
+          <p className="text-xs">{point.detail}</p>
+
+          {write.target === "worksite_date" && !parLeFait ? (
+            <DateCran
+              value={marked}
+              pending={edit.pending}
+              onPick={(at) => {
+                edit.onMark(point.step, at);
+                setOpen(false);
+              }}
+            />
+          ) : (
+            <p className="text-muted-foreground/70 text-[11px]">
+              {parLeFait
+                ? "Déjà franchi par ce que porte l'affaire — un devis, un échange, une étape. Rien à retirer ici."
+                : sansDevis
+                  ? `${write.note} Cette affaire n'en porte aucun.`
+                  : write.note}
+            </p>
+          )}
+
+          {!parLeFait && write.target !== "worksite_date" && (
+            <div className="flex items-center justify-end gap-2">
+              {marked !== null && (
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  disabled={edit.pending}
+                  onClick={() => {
+                    edit.onMark(point.step, null);
+                    setOpen(false);
+                  }}
+                >
+                  Retirer
+                </Button>
+              )}
+              {sansDevis ? (
+                <Button
+                  size="xs"
+                  disabled={edit.pending}
+                  onClick={() => {
+                    edit.onAddQuote();
+                    setOpen(false);
+                  }}
+                >
+                  Nouveau devis
+                </Button>
+              ) : (
+                marked === null && (
+                  <Button
+                    size="xs"
+                    disabled={edit.pending}
+                    onClick={() => {
+                      edit.onMark(point.step, new Date().toISOString());
+                      setOpen(false);
+                    }}
+                  >
+                    Marquer franchi
+                  </Button>
+                )
+              )}
+            </div>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/**
+ * Le cran qui se choisit au lieu de se cocher.
+ *
+ * Une date de chantier se réserve pour dans six semaines : poser la date du
+ * jour d'un clic serait faux neuf fois sur dix.
+ */
+function DateCran({
+  value,
+  pending,
+  onPick,
+}: {
+  value: string | null;
+  pending?: boolean;
+  onPick: (at: string | null) => void;
+}) {
+  const [draft, setDraft] = useState(() => value?.slice(0, 10) ?? lundiProchain());
+
+  return (
+    <div className="flex flex-col gap-3">
+      <DateField label="Date de démarrage" value={draft} onChange={setDraft} />
+      <p className="text-muted-foreground/70 text-[11px]">
+        Écrit la date de démarrage de l&apos;affaire, celle que lit l&apos;écran
+        Chantiers.
+      </p>
+      <div className="flex items-center justify-end gap-2">
+        {value !== null && (
+          <Button size="xs" variant="ghost" disabled={pending} onClick={() => onPick(null)}>
+            Retirer
+          </Button>
+        )}
+        <Button
+          size="xs"
+          disabled={pending || draft === ""}
+          onClick={() => onPick(new Date(`${draft}T08:00:00`).toISOString())}
+        >
+          {value ? "Changer" : "Réserver"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/** Un chantier démarre un lundi. C'est le défaut le moins surprenant. */
+function lundiProchain(): string {
+  const at = new Date();
+  at.setDate(at.getDate() + ((8 - at.getDay()) % 7 || 7));
+  return at.toISOString().slice(0, 10);
 }
 
 function glyph(state: StepState) {

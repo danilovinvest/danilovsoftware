@@ -165,6 +165,11 @@ export function setMilestones(
     pv_signed_at: string | null;
     visit_report_sent_at: string | null;
     survey_report_sent_at: string | null;
+    contact_at: string | null;
+    rdv_at: string | null;
+    quote_sent_at: string | null;
+    negotiation_at: string | null;
+    signed_at: string | null;
   },
 ) {
   return apiFetch<Milestones>(`/v1/projects/${projectId}/milestones`, {

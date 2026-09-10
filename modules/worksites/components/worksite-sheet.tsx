@@ -109,6 +109,9 @@ function Body({
       ? (w.started_at ?? w.created_at)
       : null,
     deposit_paid_at: read.depositReceived ? (w.started_at ?? w.created_at) : null,
+    // Aucune colonne ne date le solde : le devis n'en porte que le statut.
+    balance_paid_at:
+      signedQuote(w)?.balance_status === "recu" ? (w.started_at ?? w.created_at) : null,
     rib_sent_at: w.rib_sent_at,
     insurance_sent_at: w.insurance_sent_at,
     worksite_date: w.started_at,
