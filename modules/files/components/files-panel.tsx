@@ -160,7 +160,14 @@ export function FilesPanel() {
                   Copie automatique
                   {account.sync_enabled && (
                     <span className="text-muted-foreground/70 block">
-                      toutes les 5 minutes · {account.sync_root}
+                      toutes les 5 minutes
+                      {account.last_sync_at &&
+                        ` · dernière lecture ${formatAgo(account.last_sync_at, now)}`}
+                      {account.sync_roots.map((root) => (
+                        <span key={root.path} className="block truncate">
+                          {root.path}
+                        </span>
+                      ))}
                     </span>
                   )}
                 </span>

@@ -18,8 +18,17 @@ export type DriveAccount = {
   /** Vrai quand la copie tourne toutes les cinq minutes. */
   sync_enabled: boolean;
   last_sync_at: string | null;
-  /** La racine surveillée. Le reste du disque est ignoré. */
-  sync_root: string;
+  /**
+   * Les racines surveillées, une par société. Le reste du disque est ignoré.
+   * C'est là que l'émetteur d'un devis se lit : « DE2026-0048 » existe des
+   * deux côtés.
+   */
+  sync_roots: DriveRoot[];
+};
+
+export type DriveRoot = {
+  path: string;
+  issuer: string;
 };
 
 /**
