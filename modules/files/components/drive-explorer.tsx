@@ -18,7 +18,7 @@ import { EmptyState, ErrorNotice } from "@/shared/ui/feedback";
 import { formatDate, plural } from "@/shared/lib/format";
 import { useListing } from "../hooks/use-drive";
 import { looksLikeDeal, parseFolder } from "../lib/parse";
-import type { DriveItem } from "../lib/types";
+import type { DriveItem, DriveRoot } from "../lib/types";
 
 /**
  * L'arborescence OneDrive, telle qu'elle est.
@@ -32,11 +32,13 @@ import type { DriveItem } from "../lib/types";
  * L'écran lit donc chaque nom de dossier et en extrait la date et le client,
  * pour préparer le rapprochement. Il ne crée rien : c'est de la matière à
  * regarder avant de décider.
+ *
+ * Les racines viennent du compte, pas d'une constante : l'écran démarrait sur
+ * GROUPE en dur alors que la copie relit STRUCTURE depuis la migration 37, et
+ * il fallait remonter à la racine du disque à la main pour y arriver.
  */
-const START = "PARTAGE/3. OMPT GROUPE";
-
-export function DriveExplorer() {
-  const [path, setPath] = useState(START);
+export function DriveExplorer({ roots }: { roots: DriveRoot[] }) {
+  const [path, setPath] = useState(roots[0]?.path ?? "");
   const [filter, setFilter] = useState("");
   const { listing, loading, error } = useListing(path);
 
@@ -68,16 +70,21 @@ export function DriveExplorer() {
               </Button>
             </span>
           ))}
-          {path !== START && (
-            <Button
-              size="xs"
-              variant="outline"
-              className="ml-auto"
-              onClick={() => setPath(START)}
-            >
-              Revenir à OMPT GROUPE
-            </Button>
-          )}
+          {/* Un raccourci par société, hors de celle où l'on est déjà. */}
+          <span className="ml-auto flex items-center gap-1">
+            {roots
+              .filter((root) => root.path !== path)
+              .map((root) => (
+                <Button
+                  key={root.path}
+                  size="xs"
+                  variant="outline"
+                  onClick={() => setPath(root.path)}
+                >
+                  {rootLabel(root)}
+                </Button>
+              ))}
+          </span>
         </nav>
 
         <div className="relative">
@@ -194,6 +201,15 @@ function FileRow({ item }: { item: DriveItem }) {
       </Button>
     </li>
   );
+}
+
+/** « OMPT GROUPE » pour `PARTAGE/3. OMPT GROUPE`, « PROJETS » pour la
+ * racine de STRUCTURE : le segment le plus parlant est le dernier qui porte un
+ * nom, débarrassé de son numéro d'ordre. */
+function rootLabel(root: DriveRoot): string {
+  const segments = root.path.split("/").filter(Boolean);
+  const named = segments.find((segment) => /OMPT/i.test(segment)) ?? segments.at(-1) ?? root.path;
+  return named.replace(/^\d+\.\s*/, "");
 }
 
 /** « 214 ko », « 1,3 Mo » — la taille telle qu'on la dit. */

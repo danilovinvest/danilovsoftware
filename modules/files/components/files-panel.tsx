@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { errorMessage } from "@/shared/api/errors";
-import { formatDateTime } from "@/shared/lib/format";
+import { formatAgo, formatDateTime } from "@/shared/lib/format";
 import { ErrorNotice, Skeleton, Spinner } from "@/shared/ui/feedback";
 import { Switch } from "@/components/ui/switch";
 import { SettingsPage, SettingsRow, SettingsRows, SettingsSection } from "@/modules/settings";
@@ -32,6 +32,9 @@ export function FilesPanel() {
   const params = useSearchParams();
   const { accounts, configured, loading, error, reload } = useDrive();
   const { runs, syncing, reload: reloadRuns } = useDriveRuns();
+  // Figée au montage : « il y a 3 min » n'a pas à se repeindre seul ici, le
+  // panneau se recharge après chaque action.
+  const [now] = useState(() => Date.now());
   const [pending, setPending] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 

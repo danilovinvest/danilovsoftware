@@ -76,7 +76,7 @@ export function OneDriveView() {
             />
           </Card>
         ) : (
-          <DriveExplorer />
+          <DriveExplorer roots={accounts[0].sync_roots} />
         )}
       </section>
     </div>
