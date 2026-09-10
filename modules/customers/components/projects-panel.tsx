@@ -377,6 +377,34 @@ function ProjectBlock({
 
   const remove = useAction(() => api.deleteProject(project.id));
 
+  /*
+    Cocher un cran de la frise.
+
+    Chaque cran écrit là où le fait vit déjà — l'affaire, le devis, les jalons —
+    et `stepWrite` est le seul endroit qui le dit. Un cran n'attend jamais celui
+    d'avant : c'est ce qui permet de poser « signé » sur une affaire dont aucun
+    rendez-vous n'a été saisi, ce que la frise déduite refusait de dire.
+  */
+  async function marquerCran(step: CycleStep, at: string | null) {
+    const write = stepWrite(step);
+    switch (write.target) {
+      case "mark":
+      case "jalon":
+        await onOverride({ [write.field]: at } as Partial<Jalons & StepMarks>);
+        return;
+      case "worksite_date":
+        await onOverride({ worksite_date: at });
+        return;
+      case "quote": {
+        // L'acompte et le solde sont portés par le devis : le CRM n'en tient
+        // pas une seconde copie, et le serveur horodate d'après le statut.
+        const action = write.field === "deposit" ? setDeposit : setBalance;
+        if (await action.run(at ? "recu" : "en_attente")) onChanged();
+        return;
+      }
+    }
+  }
+
   async function act(key: ActionKey) {
     switch (key) {
       case "interaction":
@@ -496,7 +524,25 @@ function ProjectBlock({
 
         <CollapsibleContent>
           <div className="flex flex-col gap-4 border-t px-4 py-4">
-            <ProjectCycle points={points} />
+            {/*
+              La frise se coche ici, et seulement ici : c'est le seul écran où
+              l'affaire est ouverte, donc le seul où l'on sait de quelle affaire
+              on parle. Dans la liste et le tableau de bord, elle se lit.
+            */}
+            <ProjectCycle
+              points={points}
+              edit={
+                canWrite
+                  ? {
+                      markedAt: (step) => stepMarkedAt(step, jalons, marks),
+                      onMark: marquerCran,
+                      hasQuote: lead !== null,
+                      onAddQuote,
+                      pending: setDeposit.pending || setBalance.pending,
+                    }
+                  : undefined
+              }
+            />
 
             {canWrite && (
               <ProjectNextAction
