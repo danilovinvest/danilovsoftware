@@ -25,6 +25,7 @@ import { MailSyncBadge } from "./mail-sync-badge";
 import { useMailbox } from "../hooks/use-mail";
 import { useMailboxBrowse, useMailMessage } from "../hooks/use-mailbox-browse";
 import { Attachments } from "./attachments";
+import { MATCHED_BY } from "../lib/labels";
 import type { BrowseMessage, MailScope } from "../lib/types";
 
 /**
@@ -305,8 +306,14 @@ function MessageRow({
               </span>
             )}
             {message.matched && message.customer_name && (
-              <span className="bg-success-soft text-success rounded-sm px-1.5 py-0.5 text-[0.65rem]">
+              <span
+                className="bg-success-soft text-success rounded-sm px-1.5 py-0.5 text-[0.65rem]"
+                title={MATCHED_BY[message.matched_by] ?? undefined}
+              >
                 {message.customer_name}
+                {message.matched_by === "fil" && (
+                  <span className="text-success/70"> · par le fil</span>
+                )}
               </span>
             )}
             {message.attachment_count > 0 && (

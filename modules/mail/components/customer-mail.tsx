@@ -192,6 +192,9 @@ export function CustomerMail({ customerId }: { customerId: string }) {
                     <span className="text-muted-foreground/70 block truncate text-[11px]">
                       {message.outgoing ? "à " : "de "}
                       {message.from_name || message.from_email}
+                      {/* Un rattachement par le fil se dit : c'est celui qu'on
+                          ne voit pas venir, et celui qu'on veut pouvoir vérifier. */}
+                      {message.matched_by === "fil" && " · rattaché par le fil"}
                       {" · "}
                       {message.snippet}
                     </span>

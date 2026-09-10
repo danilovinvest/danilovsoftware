@@ -41,6 +41,12 @@ export type MailMessage = {
   snippet: string;
   body: string;
   attachment_count: number;
+  /**
+   * Comment le message a rejoint sa fiche : « adresse », « fil », « manuel »,
+   * « modele ». Vide quand il n'en a pas. C'est ce qui se mesure pour savoir
+   * ce que chaque rapprochement apporte.
+   */
+  matched_by: string;
 };
 
 export type MailAttachment = {
@@ -103,5 +109,8 @@ export type MailRun = {
   attachments: number;
   /** Corps rattrapés sur des messages déjà copiés. */
   bodies: number;
+  /** En-têtes de fil relus, et messages rattachés par leur fil. */
+  threads: number;
+  linked: number;
   error: string;
 };

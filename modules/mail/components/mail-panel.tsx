@@ -333,6 +333,18 @@ export function MailPanel() {
                   ) : (
                     <span className="text-muted-foreground">
                       {run.fetched} lus · <span className="text-success">{run.matched} rapprochés</span>
+                      {run.linked > 0 && (
+                        <>
+                          {" · "}
+                          <span className="text-success">{run.linked} par le fil</span>
+                        </>
+                      )}
+                      {run.threads > 0 && (
+                        <>
+                          {" · "}
+                          <span className="text-info">{run.threads} fils relus</span>
+                        </>
+                      )}
                       {run.bodies > 0 && (
                         <>
                           {" · "}
