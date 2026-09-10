@@ -22,6 +22,25 @@ export const MATERIAL_FAMILIES = [
   "Climatisation et gaines",
 ] as const;
 
+/**
+ * « 3 » et « IPE 200 · 4,20 m » deviennent « 3 × IPE 200 · 4,20 m ».
+ *
+ * La quantité n'a pas de colonne à elle, et n'en veut pas : ce qu'on commande
+ * se compte en pièces, en mètres cubes ou en palettes selon le matériau, et
+ * un nombre nu obligerait à tenir une unité à côté — donc à en choisir la
+ * liste, qu'aucune donnée du CRM ne porte. Elle est libre, elle vit dans le
+ * texte, et le « × » la sépare sans ambiguïté de ce qu'elle compte.
+ *
+ * Sans quantité, la désignation seule : on ne sait pas toujours combien, et
+ * « 0 × Béton » serait faux là où « Béton » est juste.
+ */
+export function joinMaterial(quantity: string, label: string): string {
+  const q = cleanMaterial(quantity);
+  const l = cleanMaterial(label);
+  if (l === "") return "";
+  return q === "" ? l : `${q} × ${l}`;
+}
+
 /** Un matériau tel qu'il entre en base : espaces réduits, bords coupés. */
 export function cleanMaterial(raw: string): string {
   return raw.trim().split(/\s+/).join(" ");
@@ -45,11 +64,6 @@ export function withMaterial(list: string[], raw: string): string[] {
 export function withoutMaterial(list: string[], item: string): string[] {
   const key = item.toLowerCase();
   return list.filter((entry) => entry.toLowerCase() !== key);
-}
-
-export function hasMaterial(list: string[], item: string): boolean {
-  const key = item.toLowerCase();
-  return list.some((entry) => entry.toLowerCase() === key);
 }
 
 /*

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import { CheckIcon, PlusIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +16,7 @@ import {
   MATERIALS_MAX,
   MATERIAL_FAMILIES,
   MATERIAL_LENGTH_MAX,
-  hasMaterial,
+  joinMaterial,
   withMaterial,
   withoutMaterial,
 } from "../lib/materiaux";
@@ -99,8 +99,18 @@ export function MaterialsEditor({
   note: string;
 }) {
   const [draft, setDraft] = useState<string[]>(value);
+  const [qte, setQte] = useState("");
   const [libre, setLibre] = useState("");
   const plein = draft.length >= MATERIALS_MAX;
+  const champQte = useRef<HTMLInputElement>(null);
+  const id = useId();
+  /*
+    Ce qui reste de place pour la désignation, la quantité et son « × » étant
+    déjà comptés. L'API refuse un matériau de plus de 120 caractères et refuse
+    alors **toute** l'écriture : mieux vaut ne pas laisser taper au-delà que de
+    faire rejeter une commande entière.
+  */
+  const placeDesignation = MATERIAL_LENGTH_MAX - (qte.trim() === "" ? 0 : qte.trim().length + 3);
 
   /*
     La règle vit ici, une fois, et non chez les deux appelants : le panneau ne
@@ -112,68 +122,104 @@ export function MaterialsEditor({
     if (await action()) onClose();
   }
 
-  function ajouterLibre() {
-    setDraft((current) => withMaterial(current, libre));
+  function ajouter() {
+    setDraft((current) => withMaterial(current, joinMaterial(qte, libre)));
+    setQte("");
     setLibre("");
+    champQte.current?.focus();
   }
 
   return (
     <div className="flex flex-col gap-3">
+      {/*
+        Les familles **remplissent la désignation**, elles ne s'ajoutent plus
+        d'un clic.
+
+        Elles le faisaient, et il n'y avait alors aucun endroit où dire combien
+        — c'est ce qui a été rapporté. Un raccourci qui pose l'article et rend
+        la main sur la quantité décrit le geste réel : « du béton… combien ? ».
+      */}
       <div className="flex flex-wrap gap-1">
-        {MATERIAL_FAMILIES.map((famille) => {
-          const coche = hasMaterial(draft, famille);
-          return (
-            <button
-              key={famille}
-              type="button"
-              disabled={pending || (!coche && plein)}
-              onClick={() =>
-                setDraft((current) =>
-                  coche ? withoutMaterial(current, famille) : withMaterial(current, famille),
-                )
-              }
-              aria-pressed={coche}
-              className={cn(
-                "flex cursor-pointer items-center gap-1 rounded-md border px-1.5 py-0.5 text-[0.7rem] transition-colors disabled:cursor-default disabled:opacity-50",
-                coche
-                  ? "border-success/40 bg-success-soft text-success"
-                  : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30",
-              )}
-            >
-              {coche && <CheckIcon className="size-3 shrink-0" strokeWidth={3} />}
-              {famille}
-            </button>
-          );
-        })}
+        {MATERIAL_FAMILIES.map((famille) => (
+          <button
+            key={famille}
+            type="button"
+            disabled={pending || plein}
+            onClick={() => {
+              setLibre(famille);
+              champQte.current?.focus();
+            }}
+            className={cn(
+              "flex cursor-pointer items-center gap-1 rounded-md border px-1.5 py-0.5 text-[0.7rem] transition-colors disabled:cursor-default disabled:opacity-50",
+              libre === famille
+                ? "border-success/40 bg-success-soft text-success"
+                : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30",
+            )}
+          >
+            {libre === famille && <CheckIcon className="size-3 shrink-0" strokeWidth={3} />}
+            {famille}
+          </button>
+        ))}
       </div>
 
       {/*
-        La saisie libre porte la section et la quantité, que la famille ne dit
-        pas. « Entrée » ajoute : c'est ce qu'on fait sans y penser après avoir
-        tapé une ligne, et l'obliger à viser un bouton pour chacune des huit
-        lignes d'une commande serait huit gestes de trop.
+        Deux champs et non un.
+
+        Le champ unique portait tout — « 3 IPE 200 · 4,20 m » — et son exemple
+        en gris se lisait comme une valeur déjà saisie : on ne voyait pas où
+        mettre une quantité, et c'est exactement ce qui a été rapporté. Deux
+        libellés au-dessus des champs disent où l'on tape, et lequel compte.
+
+        « Entrée » ajoute depuis l'un comme depuis l'autre : c'est ce qu'on fait
+        sans y penser après avoir tapé une ligne, et viser un bouton pour
+        chacune des huit lignes d'une commande serait huit gestes de trop.
       */}
       <div className="flex items-end gap-1.5">
-        <Input
-          value={libre}
-          disabled={pending || plein}
-          placeholder="3 IPE 200 · 4,20 m"
-          aria-label="Ajouter un matériau"
-          maxLength={MATERIAL_LENGTH_MAX}
-          className="h-8 text-xs"
-          onChange={(event) => setLibre(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key !== "Enter") return;
-            event.preventDefault();
-            ajouterLibre();
-          }}
-        />
+        <div className="w-16 shrink-0">
+          <label htmlFor={`${id}-qte`} className="text-muted-foreground mb-1 block text-[11px]">
+            Quantité
+          </label>
+          <Input
+            id={`${id}-qte`}
+            ref={champQte}
+            value={qte}
+            disabled={pending || plein}
+            placeholder="3"
+            maxLength={16}
+            className="h-8 text-xs"
+            onChange={(event) => setQte(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter") return;
+              event.preventDefault();
+              ajouter();
+            }}
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <label htmlFor={`${id}-quoi`} className="text-muted-foreground mb-1 block text-[11px]">
+            Matériau
+          </label>
+          <Input
+            id={`${id}-quoi`}
+            value={libre}
+            disabled={pending || plein}
+            placeholder="IPE 200 · 4,20 m"
+            maxLength={placeDesignation}
+            className="h-8 text-xs"
+            onChange={(event) => setLibre(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter") return;
+              event.preventDefault();
+              ajouter();
+            }}
+          />
+        </div>
         <Button
           size="xs"
           variant="outline"
           className="h-8"
           disabled={pending || plein || libre.trim() === ""}
-          onClick={ajouterLibre}
+          onClick={ajouter}
         >
           <PlusIcon />
         </Button>
@@ -271,9 +317,9 @@ export function MaterialsDialog({
         <DialogHeader>
           <DialogTitle>Matériaux commandés</DialogTitle>
           <DialogDescription>
-            Ce qui a été commandé, et pas seulement qu&apos;on a commandé. Les
-            familles sont des raccourcis : la ligne libre porte la section et la
-            quantité.
+            Une famille remplit le matériau, la quantité reste à vous. Les deux
+            se tapent aussi à la main, et la quantité est facultative — on ne
+            sait pas toujours combien.
           </DialogDescription>
         </DialogHeader>
 
