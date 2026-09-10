@@ -79,6 +79,20 @@ export function CalendarView() {
   }
 
   function openCreation(from: Date, to: Date, allDay: boolean) {
+    /*
+      Un clic sur un jour ne dit pas une heure.
+
+      La grille du mois rend `from === to` — le jour à minuit, deux fois — et le
+      formulaire s'ouvrait sur « 00:00 → 00:00 », un événement de durée nulle au
+      milieu de la nuit qu'il fallait corriger à chaque fois. La correction est
+      ici et non dans la grille : `openCreation` est le seul passage obligé, et
+      la poser dans chaque vue reviendrait à l'oublier dans la prochaine.
+    */
+    if (!allDay && to.getTime() <= from.getTime()) {
+      const creneau_ = creneau(from);
+      from = creneau_.from;
+      to = creneau_.to;
+    }
     setEditing(null);
     setTemplate(null);
     setCreating({ from, to, allDay });

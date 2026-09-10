@@ -32,21 +32,13 @@ export function ProjectPicker({
   value,
   onChange,
   hint,
-  /**
-   * Ce que « aucune affaire » veut dire ici. Sur une tâche c'est « toute la
-   * fiche » ; sur un événement de chantier, ne pas préciser l'affaire empêche
-   * d'inscrire quoi que ce soit — et l'écran doit le dire, pas le laisser
-   * découvrir.
-   */
   emptyLabel = "Toute la fiche",
-  required = false,
 }: {
   customerId: string | null;
   value: string | null;
   onChange: (projectId: string | null) => void;
   hint?: string;
   emptyLabel?: string;
-  required?: boolean;
 }) {
   const [affaires, setAffaires] = useState<{ pour: string; items: Project[] } | null>(
     null,
@@ -81,7 +73,6 @@ export function ProjectPicker({
       <p className="text-muted-foreground flex items-center gap-1.5 text-[11px]">
         <BriefcaseIcon className="size-3" />
         Cette fiche n&apos;a aucune affaire.
-        {required && " Créez-en une pour pouvoir y inscrire un jalon."}
       </p>
     );
   }

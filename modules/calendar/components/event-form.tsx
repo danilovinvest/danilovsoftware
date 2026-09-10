@@ -17,7 +17,7 @@ import { errorMessage } from "@/shared/api/errors";
 import { ErrorNotice, Spinner } from "@/shared/ui/feedback";
 import { DateField, TimeField } from "@/shared/ui/date-time-field";
 import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
-import { CustomerPicker } from "@/modules/customers";
+import { CustomerPicker, ProjectPicker } from "@/modules/customers";
 import { EventJalonsField } from "./event-jalons-field";
 import * as api from "../lib/api";
 import {
@@ -76,7 +76,19 @@ export function EventForm({
   const key = `${open}:${event?.id ?? template?.id ?? "nouveau"}:${range?.from.toISOString() ?? ""}:${range?.to.toISOString() ?? ""}:${preset?.customerId ?? ""}:${preset?.kind ?? ""}`;
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="sm:max-w-lg">
+      {/*
+        Le formulaire est plus haut que l'écran, et il ne défilait pas : sur un
+        portable, la moitié des champs — dont la date — étaient hors d'atteinte
+        et rien ne le laissait voir. Le contenu est donc une colonne bornée à la
+        hauteur du viewport, dont seul le milieu défile : l'en-tête dit ce qu'on
+        fait, le pied porte « Enregistrer », et ces deux-là ne doivent jamais
+        partir vers le haut.
+
+        `dvh` et non `vh` : sur mobile, la barre d'adresse mange une part de
+        `vh` qui change au défilement, et le pied du formulaire se retrouvait
+        sous le bord de l'écran.
+      */}
+      <DialogContent className="flex max-h-[90dvh] flex-col gap-4 sm:max-w-lg">
         {open && (
           <FormBody
             key={key}
@@ -248,7 +260,7 @@ function FormBody({
 
       {error && <ErrorNotice message={error} />}
 
-      <div className="flex flex-col gap-3">
+      <div className="-mx-1 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-1">
         <TextField
           label="Titre"
           required
@@ -281,42 +293,6 @@ function FormBody({
             hint={EVENT_KIND[draft.kind].hint}
           />
         </div>
-
-        {/* Le rattachement à une fiche : c'est lui qui fait apparaître
-            l'événement dans l'onglet « Échanges » du client. Facultatif — une
-            réunion interne ne concerne personne. */}
-        <CustomerPicker
-          label="Client ou prospect"
-          value={draft.customerId}
-          valueName={draft.customerName}
-          hint="Facultatif. L'événement apparaîtra dans sa fiche."
-          onChange={(id, name) =>
-            setDraft((current) => ({
-              ...current,
-              customerId: id,
-              customerName: name,
-              // L'affaire repart à zéro : une affaire d'un autre client n'a
-              // aucun sens, et la garder inscrirait un jalon sur le dossier de
-              // quelqu'un d'autre sans que rien à l'écran ne le signale.
-              projectId: null,
-            }))
-          }
-        />
-
-        {/*
-          Les champs de la catégorie, et ce qu'ils inscrivent dans la fiche.
-          Le bloc se tait pour les catégories qui n'ont aucun jalon à poser —
-          une échéance, un congé — plutôt que d'afficher une section vide.
-        */}
-        <EventJalonsField
-          kind={draft.kind}
-          customerId={draft.customerId}
-          projectId={draft.projectId}
-          jalons={draft.jalons}
-          passe={debut(draft) < new Date()}
-          onProject={(projectId) => set("projectId", projectId)}
-          onJalons={(jalons) => set("jalons", jalons)}
-        />
 
         <div className="flex items-center gap-2">
           <Switch
@@ -378,6 +354,51 @@ function FormBody({
           value={draft.location}
           onChange={(e) => set("location", e.target.value)}
           placeholder="Cannes, chemin des Colles"
+        />
+
+        {/* Le rattachement à une fiche : c'est lui qui fait apparaître
+            l'événement dans l'onglet « Échanges » du client. Facultatif — une
+            réunion interne ne concerne personne. */}
+        <CustomerPicker
+          label="Client ou prospect"
+          value={draft.customerId}
+          valueName={draft.customerName}
+          hint="Facultatif. L'événement apparaîtra dans sa fiche."
+          onChange={(id, name) =>
+            setDraft((current) => ({
+              ...current,
+              customerId: id,
+              customerName: name,
+              // L'affaire repart à zéro : une affaire d'un autre client n'a
+              // aucun sens, et la garder inscrirait un jalon sur le dossier de
+              // quelqu'un d'autre sans que rien à l'écran ne le signale.
+              projectId: null,
+            }))
+          }
+        />
+
+        {/*
+          L'affaire se choisit juste sous la fiche, comme un champ ordinaire.
+
+          Elle vivait dans une carte teintée intitulée « ce que ça inscrit dans
+          la fiche », posée avant les dates : une section décorée pour un simple
+          menu déroulant, qui repoussait la date de l'événement hors de l'écran.
+          Le rattachement est une paire — pour qui, sur quoi — et il se lit comme
+          telle.
+        */}
+        <ProjectPicker
+          customerId={draft.customerId}
+          value={draft.projectId}
+          hint="Facultatif. Préciser l'affaire permet d'y inscrire les dates et les jalons."
+          onChange={(projectId) => set("projectId", projectId)}
+        />
+
+        <EventJalonsField
+          kind={draft.kind}
+          projectId={draft.projectId}
+          jalons={draft.jalons}
+          passe={debut(draft) < new Date()}
+          onJalons={(jalons) => set("jalons", jalons)}
         />
 
         <TextAreaField
