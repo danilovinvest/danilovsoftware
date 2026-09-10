@@ -187,6 +187,13 @@ function Body({
           pv_signed_at: suivant.pv_signed_at,
           visit_report_sent_at: suivant.visit_report_sent_at,
           survey_report_sent_at: suivant.survey_report_sent_at,
+          // Rendus tels quels : cet écran ne les modifie pas, et la requête
+          // remplace la ligne entière.
+          contact_at: w.contact_at,
+          rdv_at: w.rdv_at,
+          quote_sent_at: w.quote_sent_at,
+          negotiation_at: w.negotiation_at,
+          signed_at: w.signed_at,
         });
       }
       onChanged();

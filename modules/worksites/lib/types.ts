@@ -71,6 +71,17 @@ export type Worksite = {
   /** Les deux rapports du bureau d'études, distincts l'un de l'autre. */
   visit_report_sent_at: string | null;
   survey_report_sent_at: string | null;
+  /*
+    Les crans cochés à la main sur la frise de la fiche client.
+
+    Cet écran ne les montre pas, il les **rend** : il renvoie l'état complet des
+    jalons à chaque clic, et les omettre effacerait ce qui a été coché ailleurs.
+  */
+  contact_at: string | null;
+  rdv_at: string | null;
+  quote_sent_at: string | null;
+  negotiation_at: string | null;
+  signed_at: string | null;
   quotes: WorksiteQuote[];
 };
 
