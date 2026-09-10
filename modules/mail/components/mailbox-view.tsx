@@ -9,6 +9,7 @@ import {
   CornerUpLeftIcon,
   MailIcon,
   PaperclipIcon,
+  Link2Icon,
   SearchIcon,
   UserPlusIcon,
 } from "lucide-react";
@@ -25,8 +26,9 @@ import { MailSyncBadge } from "./mail-sync-badge";
 import { useMailbox } from "../hooks/use-mail";
 import { useMailboxBrowse, useMailMessage } from "../hooks/use-mailbox-browse";
 import { Attachments } from "./attachments";
+import { AttachDialog } from "./attach-dialog";
 import { MATCHED_BY } from "../lib/labels";
-import type { BrowseMessage, MailScope } from "../lib/types";
+import type { AttachResult, BrowseMessage, MailScope } from "../lib/types";
 
 /**
  * La boîte de l'entreprise, en entier.
@@ -243,6 +245,11 @@ export function MailboxView() {
             error={opened.error}
             message={opened.message}
             onFilterSender={(email) => browse.setFrom(email)}
+            onAttached={() => {
+              // Le message ouvert change de fiche, et la liste ses pastilles.
+              opened.reload();
+              browse.reload();
+            }}
           />
         </Card>
       </div>
@@ -334,12 +341,19 @@ function Reader({
   error,
   message,
   onFilterSender,
+  onAttached,
 }: {
   loading: boolean;
   error: string | null;
   message: BrowseMessage | null;
   onFilterSender: (email: string) => void;
+  onAttached: () => void;
 }) {
+  const [attaching, setAttaching] = useState(false);
+  // Ce que le dernier rattachement a fait, dit sous le message qu'il visait —
+  // et pas sous le suivant qu'on ouvre.
+  const [notice, setNotice] = useState<{ id: string; text: string } | null>(null);
+
   if (error) {
     return (
       <div className="p-4">
@@ -410,14 +424,25 @@ function Reader({
                 <Link href={`/customers/${message.customer_id}`}>{message.customer_name}</Link>
               </Button>
             ) : (
-              // Créer la fiche avec cette adresse suffit : la copie suivante
-              // rapprochera d'elle-même les messages passés.
-              <Button size="xs" variant="outline" asChild>
-                <Link href="/customers/nouveau">
-                  <UserPlusIcon />
-                  Créer la fiche
-                </Link>
-              </Button>
+              <>
+                {/*
+                  Rattacher à une fiche qui existe, en retenant l'adresse :
+                  c'est le geste qui apprend. Un clic par interlocuteur, et
+                  son passé comme son avenir suivent par clé exacte.
+                */}
+                <Button size="xs" variant="outline" onClick={() => setAttaching(true)}>
+                  <Link2Icon />
+                  Rattacher à une fiche
+                </Button>
+                {/* Créer la fiche avec cette adresse suffit : la copie
+                    suivante rapprochera d'elle-même les messages passés. */}
+                <Button size="xs" variant="ghost" asChild>
+                  <Link href={`/customers/nouveau?email=${encodeURIComponent(message.from_email)}`}>
+                    <UserPlusIcon />
+                    Créer la fiche
+                  </Link>
+                </Button>
+              </>
             )}
             <Button size="xs" variant="ghost" onClick={() => onFilterSender(message.from_email)}>
               <MailIcon />
@@ -425,6 +450,22 @@ function Reader({
             </Button>
           </div>
         </div>
+
+        {notice?.id === message.id && (
+          <p className="text-success mt-2 text-xs">{notice.text}</p>
+        )}
+
+        {attaching && (
+          <AttachDialog
+            message={message}
+            open={attaching}
+            onOpenChange={setAttaching}
+            onDone={(result) => {
+              setNotice({ id: message.id, text: describeAttach(result) });
+              onAttached();
+            }}
+          />
+        )}
       </header>
 
       <div className="min-w-0 p-4">
@@ -450,4 +491,20 @@ function Reader({
       )}
     </div>
   );
+}
+
+/** « 1 rattaché · adresse retenue · 12 courriels plus anciens ont suivi ». */
+function describeAttach(result: AttachResult): string {
+  const parts = [plural(result.attached, "rattaché")];
+  if (result.remembered.length > 0) {
+    parts.push(
+      result.email_set && result.remembered.length === 1
+        ? "adresse retenue sur la fiche"
+        : plural(result.remembered.length, "adresse retenue", "adresses retenues"),
+    );
+  }
+  if (result.rematched > 0) {
+    parts.push(`${plural(result.rematched, "courriel")} de plus ${result.rematched > 1 ? "ont" : "a"} suivi`);
+  }
+  return parts.join(" · ");
 }

@@ -20,11 +20,14 @@ export function useMailboxBrowse() {
   /** La boîte lue. Vide = toutes, ce qui est le défaut. */
   const [account, setAccount] = useState("");
   const [page, setPage] = useState(1);
+  // Relire la même page après un geste — un rattachement — sans changer de
+  // filtre : le jeton entre dans la clé, et la clé décide de la requête.
+  const [token, setToken] = useState(0);
 
   // La recherche attend qu'on cesse de taper : neuf mille lignes se cherchent
   // vite, mais une requête par frappe reste une requête par frappe.
   const debounced = useDebounced(search, 300);
-  const key = JSON.stringify({ debounced, scope, from, account, page });
+  const key = JSON.stringify({ debounced, scope, from, account, page, token });
 
   const [resolved, setResolved] = useState<Resolved>({ key: "", page: null, error: null });
 
@@ -48,6 +51,7 @@ export function useMailboxBrowse() {
     page: resolved.page,
     loading: resolved.key !== key,
     error: resolved.error,
+    reload: () => setToken((value) => value + 1),
     search,
     setSearch: (value: string) => {
       setSearch(value);
@@ -81,6 +85,8 @@ export function useMailboxBrowse() {
  * existe ici et pas seulement dans la liste.
  */
 export function useMailMessage(id: string | null) {
+  const [token, setToken] = useState(0);
+  const key = id ? `${id}#${token}` : "";
   const [resolved, setResolved] = useState<{
     key: string;
     message: BrowseMessage | null;
@@ -92,26 +98,28 @@ export function useMailMessage(id: string | null) {
     const controller = new AbortController();
     api
       .getMessage(id, controller.signal)
-      .then((message) => setResolved({ key: id, message, error: null }))
+      .then((message) => setResolved({ key, message, error: null }))
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
         setResolved({
-          key: id,
+          key,
           message: null,
           error: error instanceof Error ? error.message : "Message illisible.",
         });
       });
     return () => controller.abort();
-  }, [id]);
+  }, [id, key]);
 
   // Le résultat n'est rendu que s'il porte sur le message demandé. Vider l'état
   // à la fermeture serait un `setState` dans l'effet, que le compilateur React
   // refuse — et qui coûterait un rendu de plus pour le même affichage.
-  const current = resolved.key === id;
+  const current = key !== "" && resolved.key === key;
   return {
     message: current ? resolved.message : null,
     loading: id !== null && !current,
     error: current ? resolved.error : null,
+    // Relire le message après un geste qui le change — un rattachement.
+    reload: () => setToken((value) => value + 1),
   };
 }
 

@@ -8,8 +8,7 @@ import type {
   MailPage,
   MailRun,
   MailScope,
-  UnknownSender,
-} from "./types";
+  UnknownSender,, AttachResult } from "./types";
 
 export function listAccounts(signal?: AbortSignal) {
   return apiFetch<{ items: MailAccount[]; syncing: boolean }>("/v1/mail/accounts", { signal });
@@ -79,6 +78,18 @@ export function listCustomerMail(customerId: string, limit = 100, signal?: Abort
  * Messagerie. Ce qui disparaît, c'est le rapprochement, et le serveur le note
  * pour que la copie suivante ne le refasse pas toute seule.
  */
+/**
+ * Rattache des courriels à une fiche, et retient l'adresse de l'expéditeur si
+ * on le demande. C'est le geste qui apprend : un clic par interlocuteur, et
+ * son passé comme son avenir suivent par clé exacte.
+ */
+export function attachCustomerMail(customerId: string, ids: string[], rememberSender: boolean) {
+  return apiFetch<AttachResult>(`/v1/customers/${customerId}/mail/attach`, {
+    method: "POST",
+    body: { ids, remember_sender: rememberSender },
+  });
+}
+
 export function detachCustomerMail(customerId: string, messageId: string) {
   return apiFetch<void>(`/v1/customers/${customerId}/mail/${messageId}`, {
     method: "DELETE",

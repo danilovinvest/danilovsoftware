@@ -114,3 +114,13 @@ export type MailRun = {
   linked: number;
   error: string;
 };
+
+/** Ce qu'un rattachement à la main a fait, pour le dire à qui a cliqué. */
+export type AttachResult = {
+  attached: number;
+  /** Les adresses retenues sur la fiche, comme fiche ou comme interlocuteur. */
+  remembered: string[];
+  email_set: boolean;
+  /** Ce que ces adresses ont rattaché en plus, passé et fils compris. */
+  rematched: number;
+};
