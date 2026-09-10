@@ -5,7 +5,7 @@ import { AlertTriangleIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TONE_SOFT, TONE_TEXT } from "@/shared/ui/panel";
 import { leadProject, nextAction, readCycle } from "../lib/cycle";
-import { readJalons } from "../lib/jalons";
+import { readJalons, readMarks } from "../lib/jalons";
 import { ProjectCycle } from "./project-cycle";
 import type { CustomerDetail } from "../lib/types";
 
@@ -32,7 +32,11 @@ export function CustomerHeadline({
     const quotes = customer.quotes.filter((quote) => quote.project_id === project.id);
     const interactions = customer.interactions.filter((entry) => entry.project_id === project.id);
     const jalons = readJalons(project.id, quotes, customer.milestones, project);
-    const points = readCycle(project, quotes, interactions, jalons, now);
+    // Les crans cochés à la main comptent ici aussi : l'en-tête et la frise
+    // sont sur le même écran, et les laisser lire deux vérités les ferait se
+    // contredire à un clic d'intervalle.
+    const marks = readMarks(project.id, customer.milestones);
+    const points = readCycle(project, quotes, interactions, jalons, now, undefined, marks);
     return { project, quotes, action: nextAction(points, project, quotes, jalons, now), points };
   });
 
