@@ -67,6 +67,8 @@ export type DriveItem = {
 
 export type DriveListing = {
   path: string;
+  /** Le dossier lui-même — son lien, sa date. Nul quand il vit dans un partage. */
+  folder: DriveItem | null;
   items: DriveItem[];
 };
 

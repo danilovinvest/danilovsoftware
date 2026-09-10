@@ -14,6 +14,7 @@ import {
 import { usePermission } from "@/modules/auth";
 import { useSetPageTitle } from "@/modules/shell";
 import { CustomerMail } from "@/modules/mail";
+import { CustomerDocuments } from "@/modules/files";
 import { CustomerTasksPanel } from "@/modules/tasks";
 import { Button } from "@/components/ui/button";
 import { Bar, ListSkeleton } from "@/shared/ui/loading";
@@ -198,6 +199,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
           </TabsTrigger>
           <TabsTrigger value="taches">Tâches</TabsTrigger>
           {canReadMail && <TabsTrigger value="courriels">Courriels</TabsTrigger>}
+          <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="details">Détails</TabsTrigger>
         </TabsList>
 
@@ -225,6 +227,16 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
             <CustomerMail customerId={customer.id} />
           </TabsContent>
         )}
+
+        {/*
+          Le dossier OneDrive de chaque affaire, lu en direct à l'ouverture de
+          l'onglet. Sans compteur : on ne sait combien il y a de fichiers
+          qu'en demandant à Microsoft, et on ne le demande pas avant qu'on
+          regarde.
+        */}
+        <TabsContent value="documents" className="mt-4">
+          <CustomerDocuments projects={customer.projects} />
+        </TabsContent>
 
         <TabsContent value="taches" className="mt-4">
           <CustomerTasksPanel

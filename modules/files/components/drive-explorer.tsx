@@ -18,6 +18,7 @@ import { EmptyState, ErrorNotice } from "@/shared/ui/feedback";
 import { formatDate, plural } from "@/shared/lib/format";
 import { useListing } from "../hooks/use-drive";
 import { looksLikeDeal, parseFolder } from "../lib/parse";
+import { weight } from "../lib/weight";
 import type { DriveItem, DriveRoot } from "../lib/types";
 
 /**
@@ -210,11 +211,4 @@ function rootLabel(root: DriveRoot): string {
   const segments = root.path.split("/").filter(Boolean);
   const named = segments.find((segment) => /OMPT/i.test(segment)) ?? segments.at(-1) ?? root.path;
   return named.replace(/^\d+\.\s*/, "");
-}
-
-/** « 214 ko », « 1,3 Mo » — la taille telle qu'on la dit. */
-function weight(bytes: number): string {
-  if (bytes < 1024) return `${bytes} o`;
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} ko`;
-  return `${(bytes / 1024 / 1024).toFixed(1).replace(".", ",")} Mo`;
 }

@@ -159,6 +159,8 @@ export type Project = {
   notes: string;
   started_at: string | null;
   closed_at: string | null;
+  /** Le dossier OneDrive relié par la copie ; vide sinon. */
+  drive_path: string;
   quote_count: number;
   total_amount_ttc: string;
   last_reminder_at: string | null;
@@ -335,6 +337,8 @@ export type ProjectPayload = Omit<
   | "total_amount_ttc"
   | "last_reminder_at"
   | "source_status"
+  // Posé par la copie OneDrive, jamais par un formulaire.
+  | "drive_path"
 >;
 
 export type StagePayload = {
