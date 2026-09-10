@@ -8,7 +8,9 @@ import type {
   MailPage,
   MailRun,
   MailScope,
-  UnknownSender,, AttachResult } from "./types";
+  UnknownSender,
+  AttachResult,
+} from "./types";
 
 export function listAccounts(signal?: AbortSignal) {
   return apiFetch<{ items: MailAccount[]; syncing: boolean }>("/v1/mail/accounts", { signal });
