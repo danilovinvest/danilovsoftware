@@ -149,7 +149,14 @@ export type MirrorCalendar = {
  * c'est justement ce qu'on veut savoir quand un rendez-vous se déplace.
  */
 export type ImportChange = {
-  kind: "ajout" | "maj" | "conflit" | "suppression" | "conflit_suppression";
+  kind:
+    | "ajout"
+    | "maj"
+    | "conflit"
+    | "suppression"
+    | "conflit_suppression"
+    /** Présent chez Google, inaffichable ici — une durée nulle, par exemple. */
+    | "ignore";
   calendar: string;
   title: string;
   starts_at: string;
@@ -175,6 +182,16 @@ export type ImportReport = {
 export type ImportRun = ImportReport & {
   id: string;
   started_at: string;
+  /**
+   * Nul veut dire « en cours », comme pour le miroir. Sans cette date, une
+   * exécution tuée en cours de route serait indiscernable d'une exécution
+   * parfaite à zéro changement — et c'est exactement ce qu'on veut voir quand
+   * l'agenda décroche.
+   */
+  finished_at: string | null;
+  /** « automatique » ou « manuelle ». */
+  origin: string;
+  /** Vide pour un import automatique : personne ne l'a mené. */
   author_name: string;
   error: string;
 };
