@@ -116,40 +116,69 @@ export function ProjectCycle({
         return (
           <li
             key={point.step}
-            className={cn("flex min-w-0 flex-col gap-1", last ? "shrink-0" : "flex-1")}
+            className={cn("relative flex min-w-0 flex-col", last ? "shrink-0" : "flex-1")}
             title={point.detail}
           >
-            <div className="flex items-center">
-              {edit ? (
-                <StepDot point={point} edit={edit} compact={compact} />
-              ) : (
-                <Dot state={point.state} compact={compact} />
-              )}
-              {!last && (
-                <span
-                  aria-hidden
-                  className={cn(
-                    "h-0.5 min-w-2 flex-1",
-                    BAR[linkState === "todo" ? "todo" : point.state],
-                  )}
-                />
-              )}
-            </div>
+            {/*
+              La barre est posée derrière, en absolu, et non entre le point et
+              son libellé.
 
-            {!compact && (
-              <div className="min-w-0 pr-2">
-                <div className={cn("truncate text-[0.7rem] leading-tight", TEXT[point.state])}>
-                  {CYCLE_LABEL[point.step].label}
-                </div>
-                <div className="text-muted-foreground/70 truncate text-[0.65rem] leading-tight">
-                  {caption(point)}
-                </div>
-              </div>
+              C'est ce qui permet au **cran entier** — le point et son
+              libellé — d'être un seul bouton. Tant qu'elle vivait dans le flux,
+              elle séparait les deux et le clic ne portait que sur le point, large
+              de quatorze pixels : viser le mot « Signé » ne faisait que
+              sélectionner le mot. Un cran qu'on ne peut cocher qu'en visant une
+              pastille n'est pas cochable.
+            */}
+            {!last && (
+              <span
+                aria-hidden
+                className={cn(
+                  "absolute right-0 h-0.5",
+                  compact ? "top-1 left-2.5" : "top-1.5 left-3.5",
+                  BAR[linkState === "todo" ? "todo" : point.state],
+                )}
+              />
+            )}
+
+            {edit ? (
+              <StepDot point={point} edit={edit} compact={compact} />
+            ) : (
+              <Cran point={point} compact={compact} />
             )}
           </li>
         );
       })}
     </ol>
+  );
+}
+
+/**
+ * Le contenu d'un cran : son point, son libellé, sa date.
+ *
+ * Un seul rendu pour la frise qui se lit et celle qui se coche — sans quoi le
+ * cran cliquable finirait par ne plus ressembler au cran affiché ailleurs.
+ */
+function Cran({ point, compact }: { point: CyclePoint; compact: boolean }) {
+  return (
+    <>
+      <Dot state={point.state} compact={compact} />
+      {!compact && (
+        <div className="min-w-0 pt-1 pr-2">
+          <div
+            className={cn(
+              "group-hover/cran:text-foreground truncate text-[0.7rem] leading-tight",
+              TEXT[point.state],
+            )}
+          >
+            {CYCLE_LABEL[point.step].label}
+          </div>
+          <div className="text-muted-foreground/70 truncate text-[0.65rem] leading-tight">
+            {caption(point)}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -166,16 +195,7 @@ function caption(point: CyclePoint): string {
   return "";
 }
 
-function Dot({
-  state,
-  compact,
-  interactive,
-}: {
-  state: StepState;
-  compact: boolean;
-  /** Le cran est cliquable : il le montre au survol, sans changer de taille. */
-  interactive?: boolean;
-}) {
+function Dot({ state, compact }: { state: StepState; compact: boolean }) {
   const size = compact ? "size-2.5" : "size-3.5";
   const icon = compact ? null : glyph(state);
 
@@ -188,7 +208,9 @@ function Dot({
         // Le cran courant respire : un halo le distingue sans ajouter de
         // couleur, ce qui reste lisible pour qui ne les perçoit pas toutes.
         state === "current" && "ring-info/25 ring-3",
-        interactive && "group-hover/cran:ring-foreground/20 group-hover/cran:ring-3",
+        // Le halo au survol suit le bouton, pas le point : c'est tout le cran
+        // qui répond au clic, y compris son libellé.
+        "group-hover/cran:ring-foreground/20 group-hover/cran:ring-3",
       )}
     >
       {icon}
@@ -243,10 +265,17 @@ function StepDot({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="group/cran focus-visible:ring-ring shrink-0 cursor-pointer rounded-full focus-visible:ring-2 focus-visible:outline-none"
+          /*
+            Le cran entier, libellé compris.
+
+            `select-none` parce qu'un clic sur un mot sélectionnait le mot au
+            lieu d'ouvrir le panneau — c'est ce qu'on a vu à l'écran, et c'est
+            ce qui donnait l'impression qu'on ne pouvait pas sauter d'étape.
+          */
+          className="group/cran focus-visible:ring-ring flex min-w-0 cursor-pointer flex-col items-start rounded-md text-left select-none focus-visible:ring-2 focus-visible:outline-none"
           aria-label={`${entry.label} — ${point.detail}`}
         >
-          <Dot state={point.state} compact={compact} interactive />
+          <Cran point={point} compact={compact} />
         </button>
       </PopoverTrigger>
 
