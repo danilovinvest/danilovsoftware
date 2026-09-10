@@ -12,9 +12,22 @@ import {
 import { ErrorNotice } from "@/shared/ui/feedback";
 import { SelectField, TextField } from "@/shared/ui/form";
 import * as api from "../lib/api";
-import { PAYMENT_STATUS, PROJECT_STAGE, QUOTE_KIND, QUOTE_STATUS, toOptions } from "../lib/labels";
+import {
+  PAYMENT_STATUS,
+  PROJECT_STAGE,
+  QUOTE_ISSUER,
+  QUOTE_KIND,
+  QUOTE_STATUS,
+  toOptions,
+} from "../lib/labels";
 import { useAction } from "../hooks/use-customers";
-import type { Project, ProjectPayload, ProjectStage, QuotePayload } from "../lib/types";
+import type {
+  Project,
+  ProjectPayload,
+  ProjectStage,
+  Quote,
+  QuotePayload,
+} from "../lib/types";
 
 const EMPTY_PROJECT: ProjectPayload = {
   label: "",
@@ -141,24 +154,73 @@ export function ProjectDialog({
   );
 }
 
+/**
+ * Un devis existant, tel que le formulaire l'attend.
+ *
+ * `PATCH /v1/quotes/{id}` **remplace le devis entier** : un champ omis est un
+ * champ effacé, sans erreur. Tous voyagent donc, y compris ceux que le
+ * formulaire ne montre pas — le taux de TVA, que rien n'affiche.
+ */
+function toPayload(quote: Quote): QuotePayload {
+  return {
+    reference: quote.reference,
+    kind: quote.kind,
+    label: quote.label,
+    status: quote.status,
+    issued_at: quote.issued_at,
+    amount_ht: quote.amount_ht,
+    amount_ttc: quote.amount_ttc,
+    vat_rate: quote.vat_rate,
+    amount_note: quote.amount_note,
+    deposit_status: quote.deposit_status,
+    balance_status: quote.balance_status,
+    comment: quote.comment,
+    issuer: quote.issuer,
+  };
+}
+
+/**
+ * Le devis, créé ou corrigé.
+ *
+ * Un même formulaire pour les deux, parce qu'un devis se décrit une fois : en
+ * tenir un second pour la correction l'aurait fait diverger au premier champ
+ * ajouté, et c'est précisément ce qui manquait — trois sources ont peuplé le
+ * CRM sans se connaître, et un devis repris d'un export de devis peut porter
+ * une référence, un montant ou une société à corriger. Jusqu'ici on ne pouvait
+ * que le supprimer.
+ *
+ * La copie OneDrive ne réécrit jamais un devis qu'elle connaît déjà : elle n'y
+ * rattache que son document. Une correction faite ici tient donc.
+ */
 export function QuoteDialog({
   project,
+  quote = null,
   onOpenChange,
   onSaved,
 }: {
   project: Project | null;
+  /** Présent, on corrige ce devis au lieu d'en créer un. */
+  quote?: Quote | null;
   onOpenChange: (open: boolean) => void;
   onSaved: () => void;
 }) {
-  const [values, setValues] = useState<QuotePayload>(EMPTY_QUOTE);
-  const create = useAction(() => api.createQuote(project?.id ?? "", values));
+  const [values, setValues] = useState<QuotePayload>(() =>
+    quote ? toPayload(quote) : EMPTY_QUOTE,
+  );
+  const create = useAction(() =>
+    quote ? api.updateQuote(quote.id, values) : api.createQuote(project?.id ?? "", values),
+  );
 
   return (
-    <Dialog open={project !== null} onOpenChange={onOpenChange}>
+    <Dialog open={quote !== null || project !== null} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>
-            {project ? `Nouveau devis — ${project.label}` : "Nouveau devis"}
+            {quote
+              ? `Modifier ${quote.reference || "le devis"}`
+              : project
+                ? `Nouveau devis — ${project.label}`
+                : "Nouveau devis"}
           </DialogTitle>
         </DialogHeader>
 
@@ -234,6 +296,21 @@ export function QuoteDialog({
               setValues({ ...values, status: value as QuotePayload["status"] })
             }
           />
+          {/*
+            L'émetteur ne se propose que pour **corriger** : à la création, le
+            serveur le déduit de la nature de la prestation, et le laisser
+            choisir d'emblée ferait saisir une évidence neuf fois sur dix.
+            C'est le devis qui porte le SIREN et la TVA, donc c'est là que
+            l'erreur se répare.
+          */}
+          {quote && (
+            <SelectField
+              label="Société qui émet"
+              options={toOptions(QUOTE_ISSUER)}
+              value={values.issuer ?? ""}
+              onValueChange={(value) => setValues({ ...values, issuer: value || null })}
+            />
+          )}
           <SelectField
             label="Acompte"
             options={toOptions(PAYMENT_STATUS)}
@@ -242,6 +319,17 @@ export function QuoteDialog({
               setValues({
                 ...values,
                 deposit_status: value as QuotePayload["deposit_status"],
+              })
+            }
+          />
+          <SelectField
+            label="Solde"
+            options={toOptions(PAYMENT_STATUS)}
+            value={values.balance_status}
+            onValueChange={(value) =>
+              setValues({
+                ...values,
+                balance_status: value as QuotePayload["balance_status"],
               })
             }
           />
@@ -258,7 +346,7 @@ export function QuoteDialog({
             Annuler
           </Button>
           <Button form="quote-form" type="submit" disabled={create.pending}>
-            Créer
+            {quote ? "Enregistrer" : "Créer"}
           </Button>
         </DialogFooter>
       </DialogContent>

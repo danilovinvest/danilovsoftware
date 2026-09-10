@@ -7,6 +7,7 @@ import {
   FilePlusIcon,
   FileTextIcon,
   PlusIcon,
+  PencilIcon,
   Trash2Icon,
 } from "lucide-react";
 import { usePermission } from "@/modules/auth";
@@ -794,7 +795,17 @@ function ProjectBlock({
  */
 function QuoteList({ quotes, onChanged }: { quotes: Quote[]; onChanged: () => void }) {
   const canDelete = usePermission("quotes:delete");
+  const canWrite = usePermission("quotes:write");
   const remove = useAction((id: string) => api.deleteQuote(id));
+  /*
+    Le devis qu'on corrige.
+
+    Trois sources ont peuplé le CRM sans se connaître — le classeur, l'export de
+    devis, les deux arborescences OneDrive — et un devis repris de l'une d'elles
+    peut porter une référence, un montant, une date ou une société à corriger.
+    On ne pouvait que le supprimer, ce qui perdait aussi ce qu'il avait de juste.
+  */
+  const [editing, setEditing] = useState<Quote | null>(null);
 
   if (quotes.length === 0) {
     return (
@@ -808,108 +819,136 @@ function QuoteList({ quotes, onChanged }: { quotes: Quote[]; onChanged: () => vo
   const ordered = revisions(quotes);
 
   return (
-    <ul className="divide-y">
-      {ordered.map((quote, index) => {
-        const previous = ordered
-          .slice(0, index)
-          .filter((other) => other.kind === quote.kind)
-          .at(-1);
-        const delta = previous ? amount(quote) - amount(previous) : 0;
-        const revision = previous ? ordered.slice(0, index).filter((o) => o.kind === quote.kind).length + 1 : 0;
+    <>
+      <ul className="divide-y">
+        {ordered.map((quote, index) => {
+          const previous = ordered
+            .slice(0, index)
+            .filter((other) => other.kind === quote.kind)
+            .at(-1);
+          const delta = previous ? amount(quote) - amount(previous) : 0;
+          const revision = previous ? ordered.slice(0, index).filter((o) => o.kind === quote.kind).length + 1 : 0;
 
-        return (
-          <li key={quote.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5">
-            <span className="font-mono text-xs">{quote.reference || quote.label || "Devis"}</span>
-            {/* La société qui émet : sur une même affaire, l'étude est à
-                STRUCTURE et les travaux à GROUPE, et la référence seule ne le
-                dit pas — les deux numérotent chacune de leur côté. */}
-            {quote.issuer && (
-              <EnumBadge value={quote.issuer} entries={QUOTE_ISSUER} />
-            )}
-            <EnumBadge value={quote.kind} entries={QUOTE_KIND} />
-            <EnumBadge value={quote.status} entries={QUOTE_STATUS} />
+          return (
+            <li key={quote.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5">
+              <span className="font-mono text-xs">{quote.reference || quote.label || "Devis"}</span>
+              {/* La société qui émet : sur une même affaire, l'étude est à
+                  STRUCTURE et les travaux à GROUPE, et la référence seule ne le
+                  dit pas — les deux numérotent chacune de leur côté. */}
+              {quote.issuer && (
+                <EnumBadge value={quote.issuer} entries={QUOTE_ISSUER} />
+              )}
+              <EnumBadge value={quote.kind} entries={QUOTE_KIND} />
+              <EnumBadge value={quote.status} entries={QUOTE_STATUS} />
 
-            {revision > 1 && (
-              <span className="text-muted-foreground bg-muted rounded-md px-1.5 py-0.5 text-[0.65rem]">
-                révision {revision}
-              </span>
-            )}
-
-            {quote.deposit_status !== "non_applicable" && (
-              <span className="text-muted-foreground text-xs">
-                acompte {PAYMENT_STATUS[quote.deposit_status].label.toLowerCase()}
-              </span>
-            )}
-
-            <span className="text-muted-foreground text-xs">{formatDate(quote.issued_at)}</span>
-
-            <span className="ml-auto flex items-center gap-2">
-              {delta !== 0 && (
-                <span
-                  className={cn(
-                    "text-xs tabular-nums",
-                    delta < 0 ? "text-success" : "text-warning",
-                  )}
-                  title={`Écart avec ${previous?.reference || "le devis précédent"}`}
-                >
-                  {delta > 0 ? "+" : ""}
-                  {Math.round(delta).toLocaleString("fr-FR")} €
+              {revision > 1 && (
+                <span className="text-muted-foreground bg-muted rounded-md px-1.5 py-0.5 text-[0.65rem]">
+                  révision {revision}
                 </span>
               )}
-              <span className="text-sm font-medium tabular-nums">
-                {quote.amount_ttc || quote.amount_ht
-                  ? formatAmount(quote.amount_ttc ?? quote.amount_ht)
-                  : quote.amount_note || "—"}
+
+              {quote.deposit_status !== "non_applicable" && (
+                <span className="text-muted-foreground text-xs">
+                  acompte {PAYMENT_STATUS[quote.deposit_status].label.toLowerCase()}
+                </span>
+              )}
+
+              <span className="text-muted-foreground text-xs">{formatDate(quote.issued_at)}</span>
+
+              <span className="ml-auto flex items-center gap-2">
+                {delta !== 0 && (
+                  <span
+                    className={cn(
+                      "text-xs tabular-nums",
+                      delta < 0 ? "text-success" : "text-warning",
+                    )}
+                    title={`Écart avec ${previous?.reference || "le devis précédent"}`}
+                  >
+                    {delta > 0 ? "+" : ""}
+                    {Math.round(delta).toLocaleString("fr-FR")} €
+                  </span>
+                )}
+                <span className="text-sm font-medium tabular-nums">
+                  {quote.amount_ttc || quote.amount_ht
+                    ? formatAmount(quote.amount_ttc ?? quote.amount_ht)
+                    : quote.amount_note || "—"}
+                </span>
               </span>
-            </span>
 
-            {/*
-              Le devis lui-même, quand la copie OneDrive en connaît l'adresse.
-              Le fichier n'est pas dans le CRM : le lien l'ouvre chez Microsoft,
-              et c'est ce qui évite de faire entrer trois cents PDF en base.
-            */}
-            {quote.drive_url && (
-              <a
-                href={quote.drive_url}
-                target="_blank"
-                rel="noreferrer"
-                title={quote.drive_name}
-                className="text-muted-foreground hover:text-primary hover:border-primary/40 flex w-full min-w-0 items-center gap-1.5 rounded-md border border-dashed px-2 py-1.5 text-xs transition-colors"
-              >
-                <FileTextIcon className="size-3.5 shrink-0" />
-                <span className="truncate">{quote.drive_name || "Ouvrir le devis"}</span>
-              </a>
-            )}
+              {/*
+                Le devis lui-même, quand la copie OneDrive en connaît l'adresse.
+                Le fichier n'est pas dans le CRM : le lien l'ouvre chez Microsoft,
+                et c'est ce qui évite de faire entrer trois cents PDF en base.
+              */}
+              {quote.drive_url && (
+                <a
+                  href={quote.drive_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  title={quote.drive_name}
+                  className="text-muted-foreground hover:text-primary hover:border-primary/40 flex w-full min-w-0 items-center gap-1.5 rounded-md border border-dashed px-2 py-1.5 text-xs transition-colors"
+                >
+                  <FileTextIcon className="size-3.5 shrink-0" />
+                  <span className="truncate">{quote.drive_name || "Ouvrir le devis"}</span>
+                </a>
+              )}
 
-            {quote.comment && (
-              <p className="text-muted-foreground w-full text-xs">{quote.comment}</p>
-            )}
+              {quote.comment && (
+                <p className="text-muted-foreground w-full text-xs">{quote.comment}</p>
+              )}
 
-            {/*
-              Un devis peut être faux : deux fois le même repris d'un dossier
-              OneDrive, un montant lu de travers, une référence attribuée à la
-              mauvaise affaire. On le supprime ici, à la ligne où on le voit.
-            */}
-            {canDelete && (
-              <Button
-                size="icon-sm"
-                variant="ghost"
-                className="text-muted-foreground/50 hover:text-danger -my-1"
-                aria-label="Supprimer le devis"
-                disabled={remove.pending}
-                onClick={async () => {
-                  const nom = quote.reference || quote.label || "ce devis";
-                  if (!confirm(`Supprimer le devis « ${nom} » ?`)) return;
-                  if (await remove.run(quote.id)) onChanged();
-                }}
-              >
-                <Trash2Icon />
-              </Button>
-            )}
-          </li>
-        );
-      })}
-    </ul>
+              {/*
+                Un devis peut être faux : deux fois le même repris d'un dossier
+                OneDrive, un montant lu de travers, une référence attribuée à la
+                mauvaise affaire. On le corrige ou on le supprime ici, à la ligne
+                où on le voit.
+              */}
+              {canWrite && (
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  className="text-muted-foreground/50 hover:text-foreground -my-1"
+                  aria-label="Modifier le devis"
+                  onClick={() => setEditing(quote)}
+                >
+                  <PencilIcon />
+                </Button>
+              )}
+              {canDelete && (
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  className="text-muted-foreground/50 hover:text-danger -my-1"
+                  aria-label="Supprimer le devis"
+                  disabled={remove.pending}
+                  onClick={async () => {
+                    const nom = quote.reference || quote.label || "ce devis";
+                    if (!confirm(`Supprimer le devis « ${nom} » ?`)) return;
+                    if (await remove.run(quote.id)) onChanged();
+                  }}
+                >
+                  <Trash2Icon />
+                </Button>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+
+      {/* La boîte vit hors de la liste : une liste ne porte que ses lignes. */}
+      <QuoteDialog
+        // Remontée à chaque devis : le formulaire part de ce que porte
+        // celui-ci, et non de ce que portait le précédent.
+        key={editing?.id ?? "quote-closed"}
+        project={null}
+        quote={editing}
+        onOpenChange={(open) => !open && setEditing(null)}
+        onSaved={() => {
+          setEditing(null);
+          onChanged();
+        }}
+      />
+    </>
   );
 }
 
