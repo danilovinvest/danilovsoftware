@@ -392,6 +392,10 @@ Rendez-vous, visites de chantier et absences de l&apos;équipe.
         event={editing?.event ?? null}
         range={creating}
         template={template?.event ?? null}
+        // Ce que l'agenda porte déjà : le calendrier de la date le montre, jour
+        // par jour, pour qu'un créneau se choisisse en voyant ce qu'il y a
+        // autour plutôt qu'en refermant le formulaire pour aller vérifier.
+        occurrences={calendar.occurrences}
       />
     </div>
   );

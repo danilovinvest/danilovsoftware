@@ -104,6 +104,9 @@ function dateInputValue(date: Date): string {
  * pour une journée entière, et cela évite qu'un fuseau ne décale le jour à la
  * traversée.
  */
+/** Ce qu'un jour porte déjà : l'heure, le titre, et la teinte de l'événement. */
+export type DayEntry = { time: string; title: string; dot?: string };
+
 export function DateField({
   label,
   value,
@@ -111,6 +114,7 @@ export function DateField({
   hint,
   error,
   wrapperClassName,
+  agenda,
 }: {
   label?: string;
   /** AAAA-MM-JJ. */
@@ -119,9 +123,27 @@ export function DateField({
   hint?: string;
   error?: string;
   wrapperClassName?: string;
+  /**
+   * Ce que chaque jour porte déjà, par date AAAA-MM-JJ.
+   *
+   * Facultatif : une échéance de tâche n'a pas de journée à regarder. Quand il
+   * est là, le calendrier cesse d'être une grille de nombres — les jours
+   * occupés portent un point, et le jour survolé montre ses rendez-vous. On
+   * choisit alors un créneau en voyant ce qu'il y a autour, au lieu de poser
+   * une date puis d'aller vérifier ailleurs.
+   */
+  agenda?: Map<string, DayEntry[]>;
 }) {
   const id = useId();
   const [open, setOpen] = useState(false);
+  /*
+    Le jour qu'on regarde, qui n'est pas encore celui qu'on choisit.
+
+    Survoler suffit : demander un clic pour voir, puis un second pour choisir,
+    ferait deux gestes là où le doute se lève en passant la souris. Le clavier
+    n'est pas oublié — la sélection sert de repli quand rien n'est survolé.
+  */
+  const [survole, setSurvole] = useState<string | null>(null);
 
   const parsed = value ? new Date(`${value}T00:00:00`) : null;
   const selected = parsed && !Number.isNaN(parsed.getTime()) ? parsed : null;
@@ -168,8 +190,24 @@ export function DateField({
               onChange(dateInputValue(date));
               setOpen(false);
             }}
+            onDayMouseEnter={(date) => setSurvole(dateInputValue(date))}
+            /*
+              Le point sous un jour occupé.
+
+              Posé sur la case et non sur le bouton : la case est le seul
+              élément que `modifiersClassNames` habille. `relative` est donc
+              redonné ici, le bouton par-dessus étant transparent tant qu'il
+              n'est pas choisi.
+            */
+            modifiers={agenda ? { charge: (date) => (agenda.get(dateInputValue(date))?.length ?? 0) > 0 } : undefined}
+            modifiersClassNames={{
+              charge:
+                "relative font-medium after:bg-info after:absolute after:bottom-1 after:left-1/2 after:size-1 after:-translate-x-1/2 after:rounded-full after:content-['']",
+            }}
             autoFocus
           />
+
+          {agenda && <JourneeVue agenda={agenda} jour={survole ?? value} />}
         </PopoverContent>
       </Popover>
 
@@ -178,6 +216,46 @@ export function DateField({
       ) : hint ? (
         <p className="text-muted-foreground text-xs">{hint}</p>
       ) : null}
+    </div>
+  );
+}
+
+/**
+ * Ce que porte le jour qu'on regarde, sous le calendrier.
+ *
+ * Un jour libre le dit aussi : le panneau garde sa place au lieu d'apparaître
+ * et de disparaître, ce qui ferait sauter la grille sous la souris.
+ */
+function JourneeVue({ agenda, jour }: { agenda: Map<string, DayEntry[]>; jour: string }) {
+  const entrees = jour ? (agenda.get(jour) ?? []) : [];
+  const date = jour ? new Date(`${jour}T00:00:00`) : null;
+
+  return (
+    <div className="max-h-44 min-h-24 w-full overflow-y-auto border-t p-2">
+      <p className="text-muted-foreground mb-1.5 text-[11px] first-letter:uppercase">
+        {date && !Number.isNaN(date.getTime())
+          ? longDate.format(date)
+          : "Passez sur un jour"}
+        {entrees.length > 0 && ` · ${entrees.length}`}
+      </p>
+      {entrees.length === 0 ? (
+        <p className="text-muted-foreground/60 text-xs">Aucun rendez-vous ce jour-là.</p>
+      ) : (
+        <ul className="flex flex-col gap-1">
+          {entrees.map((entree, index) => (
+            <li key={`${entree.time}-${index}`} className="flex items-center gap-1.5 text-xs">
+              <span
+                aria-hidden
+                className={cn("size-1.5 shrink-0 rounded-full", entree.dot ?? "bg-info")}
+              />
+              <span className="text-muted-foreground w-10 shrink-0 tabular-nums">
+                {entree.time}
+              </span>
+              <span className="min-w-0 flex-1 truncate">{entree.title}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

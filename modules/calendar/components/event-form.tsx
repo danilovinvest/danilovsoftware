@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { errorMessage } from "@/shared/api/errors";
 import { ErrorNotice, Spinner } from "@/shared/ui/feedback";
-import { DateField, TimeField } from "@/shared/ui/date-time-field";
+import { type DayEntry, DateField, TimeField } from "@/shared/ui/date-time-field";
 import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
 import { CustomerPicker, ProjectPicker } from "@/modules/customers";
 import { EventJalonsField } from "./event-jalons-field";
@@ -27,7 +27,13 @@ import {
   EVENT_PALETTE,
   EVENT_KIND_OPTIONS,
 } from "../lib/labels";
-import type { Calendar, CalendarEvent, EventJalons, EventKind } from "../lib/types";
+import type {
+  Calendar,
+  CalendarEvent,
+  EventJalons,
+  EventKind,
+  Occurrence,
+} from "../lib/types";
 import { EMPTY_JALONS } from "../lib/types";
 
 /**
@@ -63,11 +69,20 @@ export function EventForm({
    * le reste est le même formulaire, et les deux ne divergeront pas.
    */
   preset,
+  occurrences,
 }: {
   open: boolean;
   onClose: () => void;
   onSaved: () => void;
   calendars: Calendar[];
+  /**
+   * Ce que l'agenda porte déjà, pour choisir une date en le voyant.
+   *
+   * Le formulaire ne les charge pas : l'écran qui l'ouvre les a sous la main,
+   * et les redemander au serveur pour les afficher sous un calendrier serait un
+   * second chargement de la même chose.
+   */
+  occurrences?: Occurrence[];
   event?: CalendarEvent | null;
   range?: Range | null;
   template?: CalendarEvent | null;
@@ -101,6 +116,7 @@ export function EventForm({
             range={range ?? null}
             template={template ?? null}
             preset={preset ?? null}
+            occurrences={occurrences ?? []}
           />
         )}
       </DialogContent>
@@ -170,10 +186,12 @@ function FormBody({
   range,
   template,
   preset,
+  occurrences,
 }: {
   onClose: () => void;
   onSaved: () => void;
   calendars: Calendar[];
+  occurrences: Occurrence[];
   event: CalendarEvent | null;
   range: Range | null;
   template: CalendarEvent | null;
@@ -188,6 +206,33 @@ function FormBody({
 
   const set = <K extends keyof Draft>(field: K, value: Draft[K]) =>
     setDraft((current) => ({ ...current, [field]: value }));
+
+  /*
+    L'agenda replié par jour, une fois.
+
+    Le calendrier de la date le lit pour marquer les jours occupés et montrer
+    ce que porte celui qu'on survole. L'événement qu'on est en train de
+    modifier s'exclut lui-même : se voir comme un obstacle à l'endroit où l'on
+    est déjà ferait douter d'un créneau qu'on occupe soi-même.
+  */
+  const agenda = useMemo(() => {
+    const parJour = new Map<string, DayEntry[]>();
+    for (const occurrence of occurrences) {
+      if (event && occurrence.event.id === event.id) continue;
+      const jour = dateValue(occurrence.start);
+      const liste = parJour.get(jour) ?? [];
+      liste.push({
+        time: occurrence.allDay ? "jour" : timeValue(occurrence.start),
+        title: occurrence.event.title,
+        dot: occurrence.style.dot,
+      });
+      parJour.set(jour, liste);
+    }
+    for (const liste of parJour.values()) {
+      liste.sort((a, b) => a.time.localeCompare(b.time));
+    }
+    return parJour;
+  }, [occurrences, event]);
 
   async function save() {
     setPending(true);
@@ -373,6 +418,7 @@ function FormBody({
             <DateField
               label="Date"
               value={draft.date}
+              agenda={agenda}
               onChange={(value) => set("date", value)}
             />
             <TimeField
