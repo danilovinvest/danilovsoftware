@@ -102,6 +102,8 @@ export function ProjectsPanel({
   const canWriteQuotes = usePermission("quotes:write");
 
   const [projectOpen, setProjectOpen] = useState(false);
+  /** L'affaire qu'on modifie. Le même formulaire que la création. */
+  const [editing, setEditing] = useState<Project | null>(null);
   const [quoteFor, setQuoteFor] = useState<Project | null>(null);
 
   // L'instant est figé au montage : sinon « 12 jours sans réponse » se
@@ -314,6 +316,7 @@ export function ProjectsPanel({
             defaultOpen={index === 0}
             onOverride={(patch) => poserJalon(project, patch)}
             onAddQuote={() => setQuoteFor(project)}
+            onEdit={() => setEditing(project)}
             onChanged={onChanged}
           />
         );
@@ -325,6 +328,18 @@ export function ProjectsPanel({
         open={projectOpen}
         onOpenChange={setProjectOpen}
         onSaved={onChanged}
+      />
+      <ProjectDialog
+        // Remontée à chaque affaire : le formulaire part de celle-ci.
+        key={editing?.id ?? "project-edit-closed"}
+        customerId={customer.id}
+        project={editing}
+        open={editing !== null}
+        onOpenChange={(open) => !open && setEditing(null)}
+        onSaved={() => {
+          setEditing(null);
+          onChanged();
+        }}
       />
       <QuoteDialog
         key={quoteFor?.id ?? "quote-closed"}
@@ -389,6 +404,7 @@ function ProjectBlock({
   defaultOpen,
   onOverride,
   onAddQuote,
+  onEdit,
   onChanged,
 }: {
   customer: CustomerDetail;
@@ -406,6 +422,7 @@ function ProjectBlock({
   defaultOpen: boolean;
   onOverride: (patch: Partial<Jalons & StepMarks>) => Promise<boolean>;
   onAddQuote: () => void;
+  onEdit: () => void;
   onChanged: () => void;
 }) {
   const router = useRouter();
@@ -637,6 +654,7 @@ function ProjectBlock({
             </div>
             <div className="text-muted-foreground truncate text-xs">
               {site || "Chantier non renseigné"}
+              {project.manager_name && ` · ${project.manager_name}`}
             </div>
           </div>
 
@@ -734,6 +752,16 @@ function ProjectBlock({
                     <Button size="xs" variant="outline" onClick={onAddQuote}>
                       <FilePlusIcon />
                       Devis
+                    </Button>
+                  )}
+                  {canWrite && (
+                    <Button
+                      size="xs"
+                      variant="outline"
+                      onClick={onEdit}
+                      title="Intitulé, type, responsable, intervenants"
+                    >
+                      <PencilIcon />
                     </Button>
                   )}
                   {canWrite && (

@@ -67,26 +67,61 @@ const EMPTY_QUOTE: QuotePayload = {
  * remontage est provoqué par une `key` posée à l'appel plutôt que par un effet
  * de réinitialisation, qui déclencherait un rendu en cascade.
  */
+/** Une affaire existante, telle que le formulaire l'attend. */
+function projectToPayload(project: Project): ProjectPayload {
+  return {
+    label: project.label,
+    stage: project.stage,
+    scope: project.scope,
+    outcome: project.outcome,
+    outcome_note: project.outcome_note,
+    site_address: project.site_address,
+    site_postal_code: project.site_postal_code,
+    site_city: project.site_city,
+    notes: project.notes,
+    started_at: project.started_at,
+    closed_at: project.closed_at,
+    manager_id: project.manager_id,
+    engineer_id: project.engineer_id,
+    drafter_id: project.drafter_id,
+  };
+}
+
+/**
+ * L'affaire, créée ou modifiée.
+ *
+ * Le même formulaire pour les deux : une affaire se décrit une fois. Il ne
+ * savait que créer, si bien que les 514 affaires déjà en base n'avaient aucun
+ * endroit où recevoir un responsable — le champ existait et rien ne pouvait le
+ * remplir.
+ */
 export function ProjectDialog({
   customerId,
+  project = null,
   open,
   onOpenChange,
   onSaved,
 }: {
   customerId: string;
+  /** Présente, on la modifie au lieu d'en créer une. */
+  project?: Project | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSaved: () => void;
 }) {
-  const [values, setValues] = useState<ProjectPayload>(EMPTY_PROJECT);
-  const create = useAction(() => api.createProject(customerId, values));
+  const [values, setValues] = useState<ProjectPayload>(() =>
+    project ? projectToPayload(project) : EMPTY_PROJECT,
+  );
+  const create = useAction(() =>
+    project ? api.updateProject(project.id, values) : api.createProject(customerId, values),
+  );
   const colleagues = useColleagues();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Nouvelle affaire</DialogTitle>
+          <DialogTitle>{project ? "Modifier le projet" : "Nouveau projet"}</DialogTitle>
         </DialogHeader>
 
         <form
@@ -189,7 +224,7 @@ export function ProjectDialog({
             Annuler
           </Button>
           <Button form="project-form" type="submit" disabled={create.pending}>
-            Créer
+            {project ? "Enregistrer" : "Créer"}
           </Button>
         </DialogFooter>
       </DialogContent>
