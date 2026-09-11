@@ -32,6 +32,7 @@ import type {
 const EMPTY_PROJECT: ProjectPayload = {
   label: "",
   stage: "demande_recue",
+  scope: null,
   outcome: null,
   outcome_note: "",
   site_address: "",

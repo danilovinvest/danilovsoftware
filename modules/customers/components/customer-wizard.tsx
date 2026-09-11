@@ -54,6 +54,7 @@ function emptyProject(): ProjectPayload {
   return {
     label: "",
     stage: "demande_recue",
+    scope: null,
     outcome: null,
     outcome_note: "",
     site_address: "",

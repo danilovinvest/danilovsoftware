@@ -45,6 +45,11 @@ import { useAction } from "../hooks/use-customers";
 import { EnumBadge } from "./enum-badge";
 import { InteractionDialog } from "./interaction-dialog";
 import { MaterialsDialog } from "./materials-field";
+import {
+  ProjectOnboardingButton,
+  ProjectOnboardingDrawer,
+  projetIncomplet,
+} from "./project-onboarding";
 import { OutcomeDialog } from "./outcome-dialog";
 import { ProjectCycle } from "./project-cycle";
 import { ProjectJalons } from "./project-jalons";
@@ -146,6 +151,9 @@ export function ProjectsPanel({
         await api.updateProject(project.id, {
           label: project.label,
           stage: project.stage,
+          // Renvoyé tel quel : réserver une date ne doit pas effacer le type
+          // d'intervention, que cet appel n'affiche pas.
+          scope: project.scope,
           outcome: project.outcome,
           outcome_note: project.outcome_note,
           site_address: project.site_address,
@@ -356,6 +364,8 @@ function ProjectBlock({
   const [logging, setLogging] = useState<InteractionKind | null>(null);
   /** La saisie des matériaux, ouverte depuis « à faire maintenant ». */
   const [materiaux, setMateriaux] = useState(false);
+  /** Le tiroir qui complète l'affaire, ouvert depuis l'alerte du dessus. */
+  const [completer, setCompleter] = useState(false);
 
   const points = readCycle(project, quotes, interactions, jalons, now, undefined, marks);
   const action = nextAction(points, project, quotes, jalons, now);
@@ -619,6 +629,18 @@ function ProjectBlock({
               }
             />
 
+            {/*
+              L'affaire ne dit pas de quoi il s'agit.
+
+              Elle passe avant « à faire maintenant » parce qu'elle passe avant
+              dans le temps : on ne chiffre pas ce qu'on n'a pas nommé. Elle
+              disparaît dès que le type est posé — une alerte permanente cesse
+              d'être une alerte.
+            */}
+            {canWrite && projetIncomplet(project) && (
+              <ProjectOnboardingButton onClick={() => setCompleter(true)} />
+            )}
+
             {canWrite && (
               <ProjectNextAction
                 action={action}
@@ -717,6 +739,19 @@ function ProjectBlock({
           </div>
         </CollapsibleContent>
       </Collapsible>
+
+      {completer && (
+        <ProjectOnboardingDrawer
+          customer={customer}
+          project={project}
+          milestones={customer.milestones?.find(
+            (entry) => entry.project_id === project.id,
+          )}
+          open={completer}
+          onOpenChange={setCompleter}
+          onSaved={onChanged}
+        />
+      )}
 
       <MaterialsDialog
         open={materiaux}

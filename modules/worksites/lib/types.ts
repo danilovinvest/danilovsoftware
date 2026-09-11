@@ -12,6 +12,8 @@
  */
 
 /** Un devis ou une facture de l'affaire, avec son fichier sur OneDrive. */
+import type { InterventionScope } from "@/modules/customers";
+
 export type WorksiteQuote = {
   id: string;
   reference: string;
@@ -59,6 +61,8 @@ export type Worksite = {
   rib_sent_at: string | null;
   insurance_sent_at: string | null;
   materials_ordered_at: string | null;
+  /** Le type d'intervention, renvoyé tel quel par la fiche latérale. */
+  scope: InterventionScope | null;
   /** Ce qui a été commandé. La fiche latérale le montre et le complète. */
   materials: string[];
   resume_at: string | null;
