@@ -412,7 +412,16 @@ function FormBody({
           label="Client ou prospect"
           value={draft.customerId}
           valueName={draft.customerName}
-          hint="Facultatif. L'événement apparaîtra dans sa fiche."
+          /*
+            La fiche se crée d'ici, sans quitter le formulaire.
+
+            C'est cet écran que le secrétariat remplit **pendant** l'appel : un
+            inconnu demande un rendez-vous, on le note et on raccroche. Aller
+            créer la fiche ailleurs, puis revenir et rechercher ce qu'on venait
+            de taper, c'est trois écrans pendant qu'un client attend en ligne.
+          */
+          allowCreate
+          hint="Facultatif. Créez la fiche d'ici si elle n'existe pas encore."
           onChange={(id, name) =>
             setDraft((current) => ({
               ...current,
