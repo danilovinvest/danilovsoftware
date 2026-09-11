@@ -100,4 +100,13 @@ export const VARIABLES: Array<{ name: string; description: string; perEvent?: bo
   { name: "telephone_lien", description: "L'adresse tel: du même numéro", perEvent: true },
   { name: "description", description: "La note de l'événement, abrégée", perEvent: true },
   { name: "agenda", description: "Le nom de l'agenda d'origine", perEvent: true },
+  // Le client et sa fiche : c'est ce qui fait du récapitulatif du soir un point
+  // de départ. On lit « RDV BET Mme Theuwissen » et on arrive sur son dossier,
+  // au lieu de rouvrir le CRM et de rechercher le nom qu'on vient de lire.
+  { name: "client", description: "Le client concerné, s'il y en a un", perEvent: true },
+  {
+    name: "client_lien",
+    description: "L'adresse de sa fiche dans le CRM",
+    perEvent: true,
+  },
 ];
