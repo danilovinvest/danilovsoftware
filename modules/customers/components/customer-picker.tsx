@@ -2,14 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CheckIcon, PlusIcon, SearchIcon, XIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { usePermission } from "@/modules/auth";
 import { Spinner } from "@/shared/ui/feedback";
-import { createCustomer, listCustomers } from "../lib/api";
+import { createCustomer, deleteCustomer, listCustomers, updateCustomer } from "../lib/api";
 import { useDebounced } from "../hooks/use-customers";
-import type { CustomerListItem, CustomerPayload } from "../lib/types";
+import type { Customer, CustomerListItem, CustomerPayload } from "../lib/types";
 
 /**
  * Choisir une fiche client, par la recherche.
@@ -77,6 +78,16 @@ export function CustomerPicker({
   const peutEcrire = usePermission("customers:write");
   const [creation, setCreation] = useState(false);
   const [echec, setEchec] = useState<string | null>(null);
+  /*
+    La fiche **créée d'ici**, gardée entière.
+
+    Deux choses en dépendent, et aucune ne vaudrait pour une fiche choisie dans
+    la liste : la croix la supprime au lieu de la détacher — c'est une erreur de
+    frappe qu'on annule, pas un client qu'on écarte — et les deux champs de
+    contact s'affichent, parce qu'on sait qu'ils sont vides. La garder entière
+    évite un aller-retour pour reconstituer ce que l'écriture doit renvoyer.
+  */
+  const [creee, setCreee] = useState<Customer | null>(null);
 
   const items = resultat?.pour === cherche ? resultat.items : null;
 
@@ -103,6 +114,9 @@ export function CustomerPicker({
     return () => document.removeEventListener("mousedown", ailleurs);
   }, [open]);
 
+  // La fiche affichée est-elle celle qu'on vient de créer ici ?
+  const nouvelle = creee !== null && creee.id === value ? creee : null;
+
   if (value) {
     return (
       <div className={cn("flex flex-col gap-1.5", className)}>
@@ -111,19 +125,61 @@ export function CustomerPicker({
           <span className="min-w-0 flex-1 truncate text-sm">
             {valueName || "Fiche rattachée"}
           </span>
+          {/*
+            La croix retire la fiche — et **supprime** celle qu'on vient de
+            créer ici.
+
+            Une fiche née d'une faute de frappe n'a rien à faire dans la base :
+            « katia tes 3 » restait à côté de « katia test », et il fallait
+            aller la chercher dans la liste pour l'effacer. Sur une fiche
+            choisie, la croix ne fait que détacher : on n'efface pas un client
+            en fermant un rendez-vous.
+          */}
           <button
             type="button"
-            aria-label="Retirer la fiche"
-            onClick={() => {
+            disabled={creation}
+            aria-label={nouvelle ? "Supprimer la fiche créée" : "Retirer la fiche"}
+            title={
+              nouvelle
+                ? "Supprime la fiche qui vient d'être créée"
+                : "Retire la fiche de cet événement"
+            }
+            onClick={async () => {
+              if (nouvelle) {
+                setCreation(true);
+                try {
+                  await deleteCustomer(nouvelle.id);
+                } catch {
+                  setEchec("La fiche n'a pas pu être supprimée.");
+                } finally {
+                  setCreation(false);
+                }
+                setCreee(null);
+              }
               onChange(null, "");
               setQuery("");
             }}
-            className="text-muted-foreground hover:text-foreground"
+            className={cn(
+              "text-muted-foreground",
+              nouvelle ? "hover:text-destructive" : "hover:text-foreground",
+            )}
           >
             <XIcon className="size-3.5" />
           </button>
         </div>
-        {hint && <p className="text-muted-foreground text-[11px]">{hint}</p>}
+
+        {nouvelle && (
+          <ContactRapide
+            fiche={nouvelle}
+            onSaved={(maj) => setCreee(maj)}
+            onError={setEchec}
+          />
+        )}
+
+        {echec && <p className="text-danger text-[11px]">{echec}</p>}
+        {hint && !nouvelle && (
+          <p className="text-muted-foreground text-[11px]">{hint}</p>
+        )}
       </div>
     );
   }
@@ -148,6 +204,7 @@ export function CustomerPicker({
     setEchec(null);
     try {
       const cree = await createCustomer(nouvelleFiche(cherche));
+      setCreee(cree);
       onChange(cree.id, cree.display_name);
       setOpen(false);
       setQuery("");
@@ -275,4 +332,106 @@ function nouvelleFiche(nom: string): CustomerPayload {
     notes: "",
     owner_id: null,
   };
+}
+
+/**
+ * Le téléphone et l'adresse, saisis sans quitter l'écran.
+ *
+ * Une fiche née d'un appel n'a qu'un nom, et c'est pendant l'appel qu'on a le
+ * numéro — pas dix minutes plus tard, devant la liste des fiches. Deux champs,
+ * un bouton, et l'on revient à ce qu'on était en train de faire. Le reste — le
+ * type de projet, l'adresse du chantier — se complète depuis la fiche, où le
+ * bandeau d'alerte le réclame déjà.
+ *
+ * Ils n'apparaissent que pour une fiche **créée ici** : sur une fiche
+ * existante, deux champs vides à côté d'un nom se liraient comme une invitation
+ * à écraser ce qu'elle porte déjà.
+ */
+function ContactRapide({
+  fiche,
+  onSaved,
+  onError,
+}: {
+  fiche: Customer;
+  onSaved: (fiche: Customer) => void;
+  onError: (message: string | null) => void;
+}) {
+  const [phone, setPhone] = useState(fiche.phone);
+  const [email, setEmail] = useState(fiche.email);
+  const [pending, setPending] = useState(false);
+  const [fait, setFait] = useState(false);
+
+  const change = phone.trim() !== fiche.phone || email.trim() !== fiche.email;
+
+  async function enregistrer() {
+    setPending(true);
+    onError(null);
+    try {
+      const maj = await updateCustomer(fiche.id, {
+        display_name: fiche.display_name,
+        kind: fiche.kind,
+        status: fiche.status,
+        source: fiche.source,
+        company_name: fiche.company_name,
+        email: email.trim(),
+        phone: phone.trim(),
+        address_line: fiche.address_line,
+        postal_code: fiche.postal_code,
+        city: fiche.city,
+        country: fiche.country,
+        requested_at: fiche.requested_at,
+        notes: fiche.notes,
+        owner_id: fiche.owner_id,
+      });
+      onSaved(maj);
+      setFait(true);
+    } catch {
+      onError("Le contact n'a pas pu être enregistré.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <div className="bg-muted/30 flex flex-col gap-2 rounded-lg border border-dashed p-2">
+      <p className="text-muted-foreground text-[11px]">
+        Fiche créée. Son numéro et son adresse, tant que vous l&apos;avez en
+        ligne.
+      </p>
+      <div className="flex items-end gap-1.5">
+        <Input
+          value={phone}
+          type="tel"
+          inputMode="tel"
+          placeholder="06 12 34 56 78"
+          aria-label="Téléphone"
+          className="h-8 text-xs"
+          onChange={(event) => {
+            setPhone(event.target.value);
+            setFait(false);
+          }}
+        />
+        <Input
+          value={email}
+          type="email"
+          placeholder="client@exemple.fr"
+          aria-label="Adresse e-mail"
+          className="h-8 text-xs"
+          onChange={(event) => {
+            setEmail(event.target.value);
+            setFait(false);
+          }}
+        />
+        <Button
+          size="xs"
+          variant={change ? "default" : "outline"}
+          className="h-8 shrink-0"
+          disabled={pending || !change}
+          onClick={enregistrer}
+        >
+          {fait && !change ? <CheckIcon /> : "Noter"}
+        </Button>
+      </div>
+    </div>
+  );
 }
