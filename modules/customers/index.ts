@@ -26,6 +26,9 @@ export {
   type StepMarks,
 } from "./lib/jalons";
 export { ProjectCycle } from "./components/project-cycle";
+// « Mes dossiers » : l'autre moitié de l'assignation. Une affaire qui porte un
+// responsable a besoin d'un endroit où celui-ci la retrouve.
+export { MyProjectsView } from "./components/my-projects-view";
 // L'écran des doublons vit dans les réglages, mais tout ce qu'il manipule — la
 // ressemblance de deux fiches, la fusion — appartient aux fiches.
 export { DuplicatesPanel } from "./components/duplicates-panel";

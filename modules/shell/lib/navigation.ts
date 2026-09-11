@@ -1,6 +1,7 @@
 import {
   CalendarIcon,
   CheckSquareIcon,
+  FolderOpenIcon,
   FileTextIcon,
   HardHatIcon,
   LayoutDashboardIcon,
@@ -162,6 +163,21 @@ export const NAV_SECTIONS: NavSection[] = [
     label: "Au quotidien",
     hint: "Ce qu'on ouvre pour travailler",
     items: [
+      {
+        /*
+          « Mes dossiers » ouvre la section du quotidien, avant les tâches.
+
+          C'est la question qu'on se pose en arrivant le matin — qu'est-ce qui
+          m'attend — et elle précède « qu'est-ce que j'ai noté ». Sous
+          `customers:read` et non une permission à elle : on n'y lit que des
+          affaires qu'on a déjà le droit de lire.
+        */
+        href: "/mes-dossiers",
+        label: "Mes dossiers",
+        icon: FolderOpenIcon,
+        hue: "indigo",
+        permission: "customers:read",
+      },
       {
         href: "/tasks",
         label: "Tâches",
