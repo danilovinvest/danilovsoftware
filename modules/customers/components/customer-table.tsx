@@ -193,7 +193,7 @@ export function CustomerTable({
                             size="mini"
                           />
                         ) : (
-                          <span className="text-muted-foreground/50 text-xs">aucune affaire</span>
+                          <span className="text-muted-foreground/50 text-xs">aucun projet</span>
                         )}
                       </TableCell>
 

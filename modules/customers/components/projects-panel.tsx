@@ -227,8 +227,8 @@ export function ProjectsPanel({
         {canWrite && <NewProjectButton onClick={() => setProjectOpen(true)} />}
         <Card>
           <EmptyState
-            title="Aucune affaire"
-            description="Créez une affaire pour y suivre le cycle, du premier appel à la commande des matériaux."
+            title="Aucun projet"
+            description="Créez un projet pour y suivre le cycle, du premier appel à la commande des matériaux."
           />
         </Card>
         <ProjectDialog
