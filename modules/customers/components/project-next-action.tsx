@@ -16,7 +16,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { TONE_SOFT, TONE_TEXT } from "@/shared/ui/panel";
+import { TONE_BUTTON, TONE_BUTTON_SOFT, TONE_SOFT, TONE_TEXT } from "@/shared/ui/panel";
 import type { ActionKey, NextAction } from "../lib/cycle";
 
 /**
@@ -99,6 +99,17 @@ export function ProjectNextAction({
               key={entry.key}
               size="xs"
               variant={entry.primary ? "default" : "outline"}
+              /*
+                Le bouton prend la teinte du bandeau, et seulement quand il y en
+                a une : hors alerte, le bloc est gris et ses boutons restent
+                ceux de tout le CRM. Teinter aussi le cas ordinaire ferait de la
+                couleur un décor, et plus un signal — c'est la règle du fond,
+                elle vaut pour ce qui s'y pose.
+              */
+              className={cn(
+                action.alert &&
+                  (entry.primary ? TONE_BUTTON[action.tone] : TONE_BUTTON_SOFT[action.tone]),
+              )}
               disabled={pending}
               onClick={() => onAct(entry.key)}
             >

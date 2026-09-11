@@ -29,6 +29,41 @@ export const TONE_SOFT: Record<Tone, string> = {
   danger: "bg-danger-soft text-danger",
 };
 
+/**
+ * Un bouton qui remplit à la teinte de son alerte.
+ *
+ * Un bandeau teinté portait un bouton noir : deux voix pour un seul message,
+ * et le bouton avait l'air posé là par un autre écran. Il prend donc la couleur
+ * qui l'entoure — une alerte rouge appelle un bouton rouge.
+ *
+ * **L'encre est `--background`, pas du blanc.** Les teintes sont le cran 11 de
+ * Radix, assez sombre sur fond clair pour y être lu ; en thème sombre, l'échelle
+ * bascule et le même cran devient clair. Du blanc en dur y disparaîtrait.
+ * `--background` suit le thème et reste le contraire du fond, toujours.
+ */
+export const TONE_BUTTON: Record<Tone, string> = {
+  neutral: "bg-neutral text-background hover:bg-neutral/85",
+  info: "bg-info text-background hover:bg-info/85",
+  success: "bg-success text-background hover:bg-success/85",
+  warning: "bg-warning text-background hover:bg-warning/85",
+  danger: "bg-danger text-background hover:bg-danger/85",
+};
+
+/**
+ * Le même en retrait : contour et texte à la teinte, fond transparent.
+ *
+ * Le bandeau ne propose jamais plus de trois gestes, et un seul est principal.
+ * Les autres doivent se distinguer du premier sans changer de famille, sinon le
+ * bandeau redevient bariolé.
+ */
+export const TONE_BUTTON_SOFT: Record<Tone, string> = {
+  neutral: "border-neutral/40 bg-transparent text-neutral hover:bg-neutral-soft",
+  info: "border-info/40 bg-transparent text-info hover:bg-info-soft",
+  success: "border-success/40 bg-transparent text-success hover:bg-success-soft",
+  warning: "border-warning/40 bg-transparent text-warning hover:bg-warning-soft",
+  danger: "border-danger/40 bg-transparent text-danger hover:bg-danger-soft",
+};
+
 export const TONE_FILL: Record<Tone, string> = {
   neutral: "bg-neutral",
   info: "bg-info",
