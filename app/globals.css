@@ -455,6 +455,16 @@
   --popover: var(--t-gray-1);
   --popover-foreground: var(--t-gray-12);
   --muted: var(--t-gray-3);
+  /*
+   * Le sol sur lequel l'application est posée.
+   *
+   * L'application flotte dans un cadre, et un cadre ne se voit que si ce qu'il
+   * y a derrière en diffère. `--muted` ne convenait pas : sur les palettes
+   * chaudes, le gris prend la température de l'accent et se confond avec la
+   * barre latérale, si bien que la gouttière existait sans se voir. Le cran 4
+   * est le premier à se distinguer des deux.
+   */
+  --app-ground: var(--t-gray-4);
   --muted-foreground: var(--t-gray-11);
   --border: var(--t-gray-5);
   /* border.color.light de Twenty : le liseré discret des zones secondaires. */
@@ -645,6 +655,8 @@
   --color-e-basil: var(--t-basil-9);
   --color-e-red: var(--t-red-9);
   --color-e-ink: var(--t-ink-on-bright);
+
+  --color-app-ground: var(--app-ground);
 
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);

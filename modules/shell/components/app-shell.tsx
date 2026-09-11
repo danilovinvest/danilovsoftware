@@ -53,7 +53,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           colonne portaient la même teinte, et un cadre qu'on ne distingue pas
           n'est pas un cadre.
         */}
-        <div className="bg-muted min-h-svh sm:p-3 lg:p-4">
+        <div className="bg-app-ground min-h-svh sm:p-3 lg:p-4">
           <div className="bg-background ring-border/60 min-h-svh overflow-hidden sm:min-h-[calc(100svh-1.5rem)] sm:rounded-2xl sm:shadow-sm sm:ring-1 lg:min-h-[calc(100svh-2rem)]">
         <SidebarProvider
           className="min-h-svh sm:min-h-[calc(100svh-1.25rem)]"
