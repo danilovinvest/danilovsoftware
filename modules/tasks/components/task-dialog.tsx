@@ -15,9 +15,17 @@ import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
 import { DateTimeField } from "@/shared/ui/date-time-field";
 import { errorMessage } from "@/shared/api/errors";
 import * as api from "../lib/api";
-import { TASK_STATUS, toOptions } from "../lib/labels";
+import { TASK_PRIORITY,
+  TASK_STATUS, toOptions } from "../lib/labels";
 import { TaskTargetField } from "./task-target-field";
-import type { Colleague, Task, TaskPayload, TaskStatus, TaskTargetPayload } from "../lib/types";
+import type {
+  Colleague,
+  Task,
+  TaskPayload,
+  TaskPriority,
+  TaskStatus,
+  TaskTargetPayload,
+} from "../lib/types";
 
 export function TaskDialog({
   task,
@@ -69,6 +77,7 @@ export function TaskDialog({
   );
   const [body, setBody] = useState(task?.body ?? "");
   const [status, setStatus] = useState<TaskStatus>(task?.status ?? initialStatus ?? "a_faire");
+  const [priority, setPriority] = useState<TaskPriority>(task?.priority ?? "normale");
   const [assigneeId, setAssigneeId] = useState(task?.assignee_id ?? "");
   const [dueAt, setDueAt] = useState<string | null>(task?.due_at ?? null);
   const [error, setError] = useState<string | null>(null);
@@ -99,6 +108,7 @@ export function TaskDialog({
       title,
       body,
       status,
+      priority,
       due_at: dueAt,
       assignee_id: assigneeId || null,
       targets,
@@ -164,6 +174,17 @@ export function TaskDialog({
             value={status}
             error={fields.status}
             onValueChange={(value) => setStatus(value as TaskStatus)}
+          />
+          {/*
+            L'urgence à côté du statut, et non sous le titre : les deux disent
+            où en est la tâche, l'un dans le temps, l'autre dans l'ordre de
+            passage. Les lire ensemble évite de les chercher séparément.
+          */}
+          <SelectField
+            label="Priorité"
+            options={toOptions(TASK_PRIORITY)}
+            value={priority}
+            onValueChange={(value) => setPriority(value as TaskPriority)}
           />
           <DateTimeField label="Échéance" value={dueAt} onChange={setDueAt} />
           <SelectField

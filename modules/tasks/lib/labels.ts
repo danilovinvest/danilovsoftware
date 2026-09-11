@@ -73,7 +73,12 @@ export const DUE_TEXT: Record<string, string> = {
 };
 
 /** Ordre des colonnes du tableau de bord, du plus ouvert au plus clos. */
-export const STATUS_ORDER: TaskStatus[] = ["a_faire", "en_cours", "terminee"];
+/*
+  L'ordre des colonnes suit l'avancement, et « en attente » se place **après**
+  « en cours » : on n'attend pas avant d'avoir commencé, on attend parce qu'on a
+  commencé et qu'il manque quelque chose.
+*/
+export const STATUS_ORDER: TaskStatus[] = ["a_faire", "en_cours", "en_attente", "terminee"];
 
 export const DUE_FILTERS: Array<{ value: DueFilter; label: string }> = [
   { value: "overdue", label: "En retard" },

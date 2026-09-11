@@ -875,6 +875,8 @@ function ProjectBlock({
               title: `Reprendre « ${project.label} »`,
               body: note ? `Reportée : ${note}` : "Affaire reportée, à revoir.",
               status: "a_faire",
+              // Une affaire reportée se reprend, elle n'urge pas.
+              priority: "normale",
               due_at: new Date(`${date}T09:00:00`).toISOString(),
               assignee_id: null,
               targets: [{ project_id: project.id }],

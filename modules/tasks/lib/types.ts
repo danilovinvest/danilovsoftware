@@ -42,6 +42,8 @@ export type Task = {
   title: string;
   body: string;
   status: TaskStatus;
+  /** L'urgence. Toujours servie : le serveur ramène l'inconnu à « normale ». */
+  priority: TaskPriority;
   due_at: string | null;
   completed_at: string | null;
   position: number;
@@ -80,6 +82,7 @@ export type TaskPayload = {
   title: string;
   body: string;
   status: TaskStatus;
+  priority: TaskPriority;
   due_at: string | null;
   assignee_id: string | null;
   targets: TaskTargetPayload[];

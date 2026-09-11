@@ -14,7 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { describeDue, formatRelative } from "@/shared/lib/format";
-import { DUE_ACCENT, DUE_TEXT } from "../lib/labels";
+import { DUE_ACCENT, DUE_TEXT, TASK_PRIORITY } from "../lib/labels";
 import { AssigneePicker } from "./assignee-picker";
 import type { Colleague, Task } from "../lib/types";
 
@@ -148,6 +148,29 @@ export function TaskCard({
                 </Badge>
               ),
             )}
+          </div>
+        )}
+
+        {/*
+          L'urgence ne se montre que lorsqu'elle l'est.
+
+          Une pastille « Normale » sur chaque carte remplirait le tableau d'une
+          information qui ne fait rien changer, et il n'y aurait plus de place
+          pour celles qui en font. « Basse » se montre aussi : elle dit qu'on
+          peut passer devant.
+        */}
+        {task.priority !== "normale" && !done && (
+          <div className="mt-2.5">
+            <span
+              className={cn(
+                "rounded-md px-1.5 py-0.5 text-[0.65rem] font-medium",
+                task.priority === "haute"
+                  ? "bg-danger-soft text-danger"
+                  : "bg-neutral-soft text-neutral",
+              )}
+            >
+              {TASK_PRIORITY[task.priority].label}
+            </span>
           </div>
         )}
 
