@@ -178,8 +178,16 @@ function Cran({ point, compact }: { point: CyclePoint; compact: boolean }) {
   return (
     <>
       <Dot state={point.state} compact={compact} />
+      {/*
+        Les libellés disparaissent sous 640 pixels.
+
+        Dix crans sur 390 pixels donnaient « ContaRtDV Devis NégociSaitgioné » :
+        les mots se chevauchaient et la frise ne disait plus rien. Les points
+        restent, la barre reste, et le nom du cran s'obtient en le touchant —
+        le panneau le dit déjà.
+      */}
       {!compact && (
-        <div className="min-w-0 pt-1 pr-2">
+        <div className="hidden min-w-0 pt-1 pr-2 sm:block">
           <div
             className={cn(
               "group-hover/cran:text-foreground truncate text-[0.7rem] leading-tight",

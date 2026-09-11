@@ -32,7 +32,13 @@ export function RealisationCard({
     <button
       type="button"
       onClick={() => onOpen(realisation.project_id)}
-      className="bg-card hover:bg-accent/40 flex flex-col gap-2.5 rounded-xl border p-3 text-left transition-colors"
+      /*
+        `min-w-0` parce qu'un élément de grille refuse par défaut de descendre
+        sous la largeur de son contenu. Sans lui, la carte s'élargissait jusqu'à
+        son plus long intitulé et sortait de l'écran sur un téléphone, alors que
+        tout son contenu sait déjà se tronquer.
+      */
+      className="bg-card hover:bg-accent/40 flex min-w-0 flex-col gap-2.5 rounded-xl border p-3 text-left transition-colors"
     >
       <div className="flex items-start justify-between gap-2">
         <span className="min-w-0">

@@ -149,7 +149,15 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
           />
         </div>
 
-        <div className="flex gap-2">
+        {/*
+          Les actions passent à la ligne.
+
+          Quatre boutons sur une seule rangée sortaient de l'écran de 182 pixels
+          sur un téléphone : « Supprimer » était hors d'atteinte, et la page
+          entière défilait latéralement. `flex-wrap` suffit, et sur grand écran
+          rien ne change puisque la rangée tient.
+        */}
+        <div className="flex flex-wrap gap-2">
           {/*
             Chercher dans la messagerie demande `mail:read` côté serveur : faire
             lire vingt-cinq courriels par un modèle est aussi intrusif que les
@@ -229,7 +237,15 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
       {purge.error && <ErrorNotice message={purge.error} />}
 
       <Tabs defaultValue="affaires">
-        <TabsList>
+        {/*
+          Six onglets font 484 pixels, l'écran d'un téléphone en fait 390.
+
+          La barre défile donc dans son propre cadre plutôt que de pousser la
+          page entière : c'est la règle qui vaut déjà pour les tableaux larges.
+          `justify-start` pour que « Affaires » reste à gauche au lieu d'être
+          centré dans une largeur qu'on ne voit pas en entier.
+        */}
+        <TabsList className="max-w-full justify-start overflow-x-auto">
           <TabsTrigger value="affaires">
             Affaires
             <span className="text-muted-foreground ml-1.5">{customer.projects.length}</span>

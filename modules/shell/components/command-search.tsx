@@ -165,10 +165,18 @@ export function CommandSearch() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="bg-background text-muted-foreground hover:border-brand-text/40 hover:text-foreground focus-visible:ring-ring flex h-7 w-full max-w-72 items-center gap-2 rounded-lg border px-2.5 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+        aria-label="Rechercher"
+        /*
+          Sur un téléphone, le déclencheur se replie en icône.
+
+          À 390 pixels, un champ de 288 ne laissait plus rien au fil d'Ariane,
+          qui se lisait « Mar… » au-dessus d'une barre de recherche démesurée.
+          L'icône seule dit la même chose et rend la largeur au reste.
+        */
+        className="bg-background text-muted-foreground hover:border-brand-text/40 hover:text-foreground focus-visible:ring-ring flex size-7 shrink-0 items-center justify-center gap-2 rounded-lg border text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none sm:h-7 sm:w-full sm:max-w-72 sm:justify-start sm:px-2.5"
       >
         <SearchIcon className="size-3.5 shrink-0" />
-        <span className="truncate">Rechercher</span>
+        <span className="hidden truncate sm:inline">Rechercher</span>
         <kbd className="border-border bg-muted text-muted-foreground ml-auto hidden rounded-sm border px-1 py-px font-sans text-[10px] leading-4 sm:inline-block">
           ⌘K
         </kbd>
