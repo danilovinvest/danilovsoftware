@@ -223,9 +223,27 @@ export const EVENT_KIND: Record<EventKind, { label: string; hint: string }> = {
  * chantiers dans l'agenda repris : c'est le défaut honnête. */
 export const DEFAULT_EVENT_KIND: EventKind = "rdv";
 
+/**
+ * Les catégories **retirées du choix**, sans être retirées du modèle.
+ *
+ * « Premier appel » a existé le temps d'une demi-journée : créer une fiche
+ * pendant l'appel se fait très bien depuis le sélecteur de client, et une
+ * catégorie de plus pour le même geste était une deuxième façon de faire la
+ * même chose. Elle n'est plus proposée.
+ *
+ * Elle garde pourtant son libellé et sa teinte, et ce n'est pas de la
+ * complaisance : un événement la porte déjà en production, et PostgreSQL ne
+ * sait pas retirer une valeur d'énumération. Une catégorie absente de la table
+ * des libellés ferait planter l'écran sur cette ligne-là — ce qui est bien pire
+ * que de l'afficher.
+ */
+const CATEGORIES_RETIREES: EventKind[] = ["premier_appel"];
+
 export const EVENT_KIND_OPTIONS = (
   Object.entries(EVENT_KIND) as Array<[EventKind, { label: string }]>
-).map(([value, { label }]) => ({ value, label }));
+)
+  .filter(([value]) => !CATEGORIES_RETIREES.includes(value))
+  .map(([value, { label }]) => ({ value, label }));
 
 /**
  * La pastille d'une catégorie.

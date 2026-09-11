@@ -189,35 +189,6 @@ function FormBody({
   const set = <K extends keyof Draft>(field: K, value: Draft[K]) =>
     setDraft((current) => ({ ...current, [field]: value }));
 
-  /** Un appel se pose à une heure, il ne s'étale pas sur une plage. */
-  const instantane = draft.kind === "premier_appel";
-
-  /*
-    Choisir « premier appel » met la date et l'heure **de maintenant**.
-
-    Le formulaire proposait mardi prochain à 9h, parce que c'est le bon défaut
-    d'un rendez-vous qu'on planifie. Un premier appel, lui, est en train d'avoir
-    lieu : on le note pendant qu'on décroche, et corriger la date après coup
-    était le premier geste de chaque saisie. Les autres catégories gardent leur
-    défaut — on ne redate pas un rendez-vous parce qu'on s'est trompé de
-    catégorie une seconde.
-  */
-  function choisirCategorie(valeur: EventKind) {
-    if (valeur !== "premier_appel") {
-      set("kind", valeur);
-      return;
-    }
-    const maintenant = new Date();
-    setDraft((current) => ({
-      ...current,
-      kind: valeur,
-      allDay: false,
-      date: dateValue(maintenant),
-      startTime: timeValue(maintenant),
-      endTime: quartDHeureApres(timeValue(maintenant)),
-    }));
-  }
-
   async function save() {
     setPending(true);
     setError(null);
@@ -233,7 +204,7 @@ function FormBody({
         kind: draft.kind,
         color: draft.color,
         jalons: draft.jalons,
-        ...bounds(instantane ? { ...draft, allDay: false, endTime: quartDHeureApres(draft.startTime) } : draft),
+        ...bounds(draft),
       };
       if (event) await api.updateEvent(event.id, input);
       else await api.createEvent(input);
@@ -322,7 +293,7 @@ function FormBody({
             label="Catégorie"
             required
             value={draft.kind}
-            onValueChange={(value) => choisirCategorie(value as EventKind)}
+            onValueChange={(value) => set("kind", value as EventKind)}
             options={EVENT_KIND_OPTIONS}
             hint={EVENT_KIND[draft.kind].hint}
           />
@@ -383,28 +354,7 @@ function FormBody({
           </Label>
         </div>
 
-        {instantane ? (
-          /*
-            Un appel est un instant, pas une plage.
-
-            Demander une heure de fin pour un coup de téléphone, c'est une
-            question à laquelle personne n'a la réponse au moment où il la
-            pose — et la contrainte de la base exige pourtant une fin. On la
-            pose à un quart d'heure, et l'écran le dit plutôt que de le cacher.
-          */
-          <div className="grid grid-cols-[1fr_7rem] gap-3">
-            <DateField
-              label="Date"
-              value={draft.date}
-              onChange={(value) => set("date", value)}
-            />
-            <TimeField
-              label="Heure"
-              value={draft.startTime}
-              onChange={(value) => set("startTime", value)}
-            />
-          </div>
-        ) : draft.allDay ? (
+        {draft.allDay ? (
           <div className="grid grid-cols-2 gap-3">
             <DateField
               label="Du"
@@ -449,7 +399,7 @@ function FormBody({
         )}
 
         <TextField
-          label={instantane ? "Adresse du client" : "Lieu"}
+          label="Lieu"
           value={draft.location}
           onChange={(e) => set("location", e.target.value)}
           placeholder="Cannes, chemin des Colles"
@@ -746,17 +696,6 @@ function debut(draft: Draft): Date {
   return draft.allDay
     ? new Date(`${draft.date}T00:00:00`)
     : new Date(`${draft.date}T${draft.startTime}:00`);
-}
-
-/**
- * Un quart d'heure après, sans dépasser minuit.
- *
- * La contrainte `calendar_events_bounds` refuse une durée nulle : un appel doit
- * donc durer quelque chose, et quinze minutes est la durée qu'on note quand on
- * ne compte pas.
- */
-function quartDHeureApres(heure: string): string {
-  return clock(Math.min(minutes(heure) + 15, 23 * 60 + 45));
 }
 
 function bounds(draft: Draft): { start: string; end: string } {
