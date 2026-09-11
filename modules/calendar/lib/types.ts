@@ -89,6 +89,13 @@ export type CalendarEvent = {
   calendar_name: string;
   /** Rang dans la palette du thème, jamais une couleur littérale. */
   color: number;
+  /**
+   * La couleur de l'événement lui-même, 1 à 11 comme chez Google.
+   *
+   * Zéro veut dire « aucune » : il retombe alors sur la teinte de son agenda,
+   * qui est le défaut de Google et ce que faisait le CRM jusqu'ici.
+   */
+  event_color: number;
   title: string;
   description: string;
   location: string;
@@ -146,6 +153,13 @@ export type EventInput = {
    * catégorie qu'on venait de choisir.
    */
   kind: EventKind;
+  /**
+   * La couleur, 1 à 11, ou 0 pour celle de l'agenda.
+   *
+   * Toujours envoyée pour la même raison que la catégorie : l'écriture remplace
+   * l'événement entier, et un champ absent le repeindrait en gris.
+   */
+  color: number;
   /** L'affaire concernée. Nulle pour ce qui ne porte sur aucune affaire. */
   project_id: string | null;
   /** Ce que l'événement inscrit dans la fiche. Toujours envoyé, jamais omis. */

@@ -61,6 +61,131 @@ export const CALENDAR_PALETTE: CalendarStyle[] = [
   },
 ];
 
+/**
+ * Les onze couleurs d'événement de Google, dites en teintes du thème.
+ *
+ * L'agenda du CRM peignait chaque événement à la couleur de **son agenda**, et
+ * il n'y en a que deux : les jours fériés et la boîte de l'entreprise. Sept
+ * cent trente-deux rendez-vous d'une seule teinte, là où le dirigeant en
+ * distingue huit dans Google — il les colorie à la main, et ce codage est une
+ * information qu'il relit tous les matins.
+ *
+ * **Les noms sont ceux de Google**, parce que c'est là qu'il choisit : dire
+ * « Tomate » dans le CRM et « Tomato » dans Google désignerait la même couleur
+ * sous deux noms, et il faudrait deviner la correspondance.
+ *
+ * Les valeurs, elles, ne sont pas celles de Google : ses pastels sont choisis
+ * sur fond blanc et plusieurs disparaissent en thème sombre. Chaque couleur
+ * passe donc par une teinte du thème, et **ne bascule pas** avec lui — une
+ * pastille rouge doit rester la même rouge de jour comme de nuit, sans quoi le
+ * codage cesserait d'être reconnaissable. Seule la banane porte une encre
+ * sombre : du blanc y tombe sous 1,5 de contraste.
+ *
+ * Les classes sont écrites en toutes lettres : Tailwind ne voit pas `bg-e-${n}`.
+ */
+export const EVENT_PALETTE: (CalendarStyle & { name: string })[] = [
+  {
+    name: "Lavande",
+    dot: "bg-e-violet",
+    soft: "bg-e-violet/10 hover:bg-e-violet/20",
+    text: "text-e-violet",
+    solid: "bg-e-violet text-white",
+    rail: "border-l-e-violet",
+  },
+  {
+    name: "Sauge",
+    dot: "bg-e-green",
+    soft: "bg-e-green/10 hover:bg-e-green/20",
+    text: "text-e-green",
+    solid: "bg-e-green text-white",
+    rail: "border-l-e-green",
+  },
+  {
+    name: "Raisin",
+    dot: "bg-e-purple",
+    soft: "bg-e-purple/10 hover:bg-e-purple/20",
+    text: "text-e-purple",
+    solid: "bg-e-purple text-white",
+    rail: "border-l-e-purple",
+  },
+  {
+    name: "Flamant",
+    dot: "bg-e-pink",
+    soft: "bg-e-pink/10 hover:bg-e-pink/20",
+    text: "text-e-pink",
+    solid: "bg-e-pink text-white",
+    rail: "border-l-e-pink",
+  },
+  {
+    name: "Banane",
+    dot: "bg-e-yellow",
+    soft: "bg-e-yellow/10 hover:bg-e-yellow/20",
+    text: "text-e-yellow",
+    solid: "bg-e-yellow text-e-ink",
+    rail: "border-l-e-yellow",
+  },
+  {
+    name: "Mandarine",
+    dot: "bg-e-orange",
+    soft: "bg-e-orange/10 hover:bg-e-orange/20",
+    text: "text-e-orange",
+    solid: "bg-e-orange text-white",
+    rail: "border-l-e-orange",
+  },
+  {
+    name: "Paon",
+    dot: "bg-e-turquoise",
+    soft: "bg-e-turquoise/10 hover:bg-e-turquoise/20",
+    text: "text-e-turquoise",
+    solid: "bg-e-turquoise text-white",
+    rail: "border-l-e-turquoise",
+  },
+  {
+    name: "Graphite",
+    dot: "bg-e-gray",
+    soft: "bg-e-gray/10 hover:bg-e-gray/20",
+    text: "text-e-gray",
+    solid: "bg-e-gray text-white",
+    rail: "border-l-e-gray",
+  },
+  {
+    name: "Myrtille",
+    dot: "bg-e-blue",
+    soft: "bg-e-blue/10 hover:bg-e-blue/20",
+    text: "text-e-blue",
+    solid: "bg-e-blue text-white",
+    rail: "border-l-e-blue",
+  },
+  {
+    name: "Basilic",
+    dot: "bg-e-basil",
+    soft: "bg-e-basil/10 hover:bg-e-basil/20",
+    text: "text-e-basil",
+    solid: "bg-e-basil text-white",
+    rail: "border-l-e-basil",
+  },
+  {
+    name: "Tomate",
+    dot: "bg-e-red",
+    soft: "bg-e-red/10 hover:bg-e-red/20",
+    text: "text-e-red",
+    solid: "bg-e-red text-white",
+    rail: "border-l-e-red",
+  },
+];
+
+/**
+ * La couleur d'un événement, ou rien.
+ *
+ * Zéro n'est pas une couleur : c'est « celle de mon agenda », le défaut de
+ * Google lui-même. Rendre `null` plutôt qu'une teinte par défaut laisse
+ * l'appelant retomber sur `paletteAt`, et garde une seule règle de repli.
+ */
+export function eventPaletteAt(color: number): CalendarStyle | null {
+  if (color < 1 || color > EVENT_PALETTE.length) return null;
+  return EVENT_PALETTE[color - 1];
+}
+
 /** Au-delà de cinq agendas les teintes se répètent — mieux vaut deux agendas
  * de même couleur qu'une sixième teinte inventée hors du thème. */
 export function paletteAt(index: number): CalendarStyle {

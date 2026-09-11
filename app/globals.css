@@ -109,6 +109,33 @@
   --t-turquoise-9: #12a594;
 
   /*
+   * Quatre teintes de plus, pour les couleurs d'événement de Google.
+   *
+   * Google en propose onze et le dirigeant en emploie huit ; le thème n'en
+   * portait que sept. Celles-ci comblent l'écart — lavande, flamant, banane et
+   * basilic — sans quoi deux couleurs qu'il distingue à l'œil finiraient
+   * identiques dans le CRM.
+   *
+   * Elles ne sont données qu'en sRGB, contrairement aux autres : une valeur P3
+   * inventée serait pire qu'une absence, et sans surcharge la déclaration sRGB
+   * s'applique telle quelle sur les écrans larges.
+   */
+  --t-violet-9: #6e56cf;
+  --t-pink-9: #d6409f;
+  --t-yellow-9: #ffe629;
+  --t-basil-9: #218358;
+
+  /*
+   * L'encre d'une pastille claire.
+   *
+   * Les couleurs d'événement sont **fixes** dans les deux thèmes, à la
+   * différence des tonalités de statut : `--background` n'y conviendrait donc
+   * pas, il basculerait alors que la pastille, elle, reste jaune. Le jaune et
+   * lui seul réclame une encre sombre — du blanc y tombe sous 1,5 de contraste.
+   */
+  --t-ink-on-bright: #1c2024;
+
+  /*
    * Le voile qui balaie une barre d'attente. Un blanc translucide en clair ; en
    * sombre il faut l'inverse d'une ombre, donc un blanc très dilué. Il vit dans
    * l'échelle et non dans la couche sémantique pour la même raison que les
@@ -236,6 +263,14 @@
 
   --t-purple-9: #8e4ec6;
   --t-turquoise-9: #12a594;
+
+  /* Les couleurs d'événement ne basculent pas : une pastille rouge chez Google
+   * doit rester la même rouge ici, de jour comme de nuit. */
+  --t-violet-9: #6e56cf;
+  --t-pink-9: #d6409f;
+  --t-yellow-9: #ffe629;
+  --t-basil-9: #218358;
+  --t-ink-on-bright: #1c2024;
 
   /* En sombre, le voile est l'inverse d'une ombre : un blanc très dilué. */
   --t-veil: oklch(1 0 0 / 0.06);
@@ -596,6 +631,20 @@
   --color-h-slate-4: var(--h-slate-4);
   --color-h-slate-9: var(--h-slate-9);
   --color-h-slate-11: var(--h-slate-11);
+
+  /* Les onze couleurs d'événement de Google, dites en teintes du thème. */
+  --color-e-violet: var(--t-violet-9);
+  --color-e-green: var(--t-green-9);
+  --color-e-purple: var(--t-purple-9);
+  --color-e-pink: var(--t-pink-9);
+  --color-e-yellow: var(--t-yellow-9);
+  --color-e-orange: var(--t-orange-9);
+  --color-e-turquoise: var(--t-turquoise-9);
+  --color-e-gray: var(--t-gray-9);
+  --color-e-blue: var(--t-blue-9);
+  --color-e-basil: var(--t-basil-9);
+  --color-e-red: var(--t-red-9);
+  --color-e-ink: var(--t-ink-on-bright);
 
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);

@@ -1,4 +1,4 @@
-import { paletteAt } from "./labels";
+import { eventPaletteAt, paletteAt } from "./labels";
 import type { CalendarEvent, Occurrence } from "./types";
 
 /**
@@ -67,7 +67,14 @@ export function toOccurrence(event: CalendarEvent): Occurrence {
     end: new Date(event.ends_at),
     allDay: event.all_day,
     calendarName: event.calendar_name,
-    style: paletteAt(event.color),
+    /*
+      La couleur de l'événement l'emporte sur celle de son agenda.
+
+      Elle est plus précise : deux agendas ne distinguaient rien, là où le
+      dirigeant code huit choses à la main. Sans couleur propre, on retombe sur
+      l'agenda, exactement comme avant.
+    */
+    style: eventPaletteAt(event.event_color) ?? paletteAt(event.color),
   };
 }
 

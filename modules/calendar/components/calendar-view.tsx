@@ -143,6 +143,9 @@ export function CalendarView() {
         // heures ne doit pas le détacher de sa fiche.
         customer_id: event.customer_id,
         project_id: event.project_id,
+        // La couleur aussi : glisser un bloc de deux heures ne doit pas le
+        // repeindre en gris.
+        color: event.event_color,
         kind: event.kind,
         // Aucun jalon : glisser un événement ne dit rien de neuf sur l'affaire.
         // Les champs vides n'effacent rien, c'est ce qui rend ce geste sûr —

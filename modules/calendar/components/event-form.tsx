@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { errorMessage } from "@/shared/api/errors";
 import { ErrorNotice, Spinner } from "@/shared/ui/feedback";
 import { DateField, TimeField } from "@/shared/ui/date-time-field";
@@ -23,6 +24,7 @@ import * as api from "../lib/api";
 import {
   DEFAULT_EVENT_KIND,
   EVENT_KIND,
+  EVENT_PALETTE,
   EVENT_KIND_OPTIONS,
 } from "../lib/labels";
 import type { Calendar, CalendarEvent, EventJalons, EventKind } from "../lib/types";
@@ -148,6 +150,8 @@ type Draft = {
   projectId: string | null;
   /** Ce que l'événement inscrit dans la fiche. Voir `EVENT_KIND_JALONS`. */
   jalons: EventJalons;
+  /** La couleur, 1 à 11. Zéro : celle de l'agenda. Voir `EVENT_PALETTE`. */
+  color: number;
   title: string;
   location: string;
   description: string;
@@ -198,6 +202,7 @@ function FormBody({
         customer_id: draft.customerId,
         project_id: draft.projectId,
         kind: draft.kind,
+        color: draft.color,
         jalons: draft.jalons,
         ...bounds(draft),
       };
@@ -292,6 +297,50 @@ function FormBody({
             options={EVENT_KIND_OPTIONS}
             hint={EVENT_KIND[draft.kind].hint}
           />
+        </div>
+
+        {/*
+          La couleur : douze pastilles, pas une liste déroulante.
+
+          C'est une couleur qu'on choisit, et une liste de noms obligerait à
+          traduire « Tomate » en rouge de tête. Les noms restent en infobulle,
+          parce que ce sont ceux de Google et qu'ils permettent de retrouver la
+          même couleur là-bas.
+        */}
+        <div>
+          <Label className="mb-1.5 block text-sm font-normal">Couleur</Label>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              title="Celle de l'agenda"
+              aria-label="Couleur de l'agenda"
+              aria-pressed={draft.color === 0}
+              onClick={() => set("color", 0)}
+              className={cn(
+                "border-border text-muted-foreground size-6 cursor-pointer rounded-full border-2 border-dashed text-[10px]",
+                draft.color === 0 && "ring-ring ring-2 ring-offset-1",
+              )}
+            />
+            {EVENT_PALETTE.map((couleur, index) => (
+              <button
+                key={couleur.name}
+                type="button"
+                title={couleur.name}
+                aria-label={couleur.name}
+                aria-pressed={draft.color === index + 1}
+                onClick={() => set("color", index + 1)}
+                className={cn(
+                  "size-6 cursor-pointer rounded-full",
+                  couleur.dot,
+                  draft.color === index + 1 && "ring-ring ring-2 ring-offset-1",
+                )}
+              />
+            ))}
+          </div>
+          <p className="text-muted-foreground/70 mt-1 text-xs">
+            Celle de Google, reprise à l&apos;import. La changer ici la garde :
+            Google ne reprend plus un événement corrigé dans le CRM.
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -530,6 +579,7 @@ function initial(
         calendarId: event.calendar_id,
         ...vierge,
         kind: event.kind,
+        color: event.event_color,
         customerId: event.customer_id,
         customerName: event.customer_name,
         title: event.title,
@@ -546,6 +596,7 @@ function initial(
       calendarId: event.calendar_id,
       ...vierge,
       kind: event.kind,
+      color: event.event_color,
       customerId: event.customer_id,
       customerName: event.customer_name,
       title: event.title,
@@ -565,6 +616,7 @@ function initial(
     ? {
         calendarId: template.calendar_id,
         kind: template.kind,
+        color: template.event_color,
         customerId: template.customer_id,
         customerName: template.customer_name,
         title: `${template.title} (copie)`,
@@ -590,6 +642,8 @@ function initial(
       projectId: null,
       jalons: { ...EMPTY_JALONS },
       kind: preset?.kind ?? copy?.kind ?? rattachement.kind,
+      // Une duplication reprend la couleur : c'est ce qui fait qu'on duplique.
+      color: copy?.color ?? 0,
       customerId: preset?.customerId ?? copy?.customerId ?? null,
       customerName: preset?.customerName ?? copy?.customerName ?? "",
       title: preset?.title ?? copy?.title ?? "",
@@ -608,6 +662,7 @@ function initial(
     projectId: null,
     jalons: { ...EMPTY_JALONS },
     kind: preset?.kind ?? copy?.kind ?? rattachement.kind,
+    color: copy?.color ?? 0,
     customerId: preset?.customerId ?? copy?.customerId ?? null,
     customerName: preset?.customerName ?? copy?.customerName ?? "",
     title: preset?.title ?? copy?.title ?? "",
