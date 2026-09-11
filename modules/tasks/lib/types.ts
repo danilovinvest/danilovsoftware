@@ -1,4 +1,14 @@
-export type TaskStatus = "a_faire" | "en_cours" | "terminee";
+/**
+ * Les quatre états d'une tâche.
+ *
+ * « En attente » n'est pas « en cours » : une tâche qui attend un document du
+ * client n'avance pas, et la compter comme avançante fausse la charge de
+ * travail que le responsable vient lire.
+ */
+export type TaskStatus = "a_faire" | "en_cours" | "en_attente" | "terminee";
+
+/** L'urgence, à trois niveaux. « Normale » est le défaut. */
+export type TaskPriority = "basse" | "normale" | "haute";
 
 /**
  * Collègue assignable. Le type vit dans le transverse : trois modules le lisent

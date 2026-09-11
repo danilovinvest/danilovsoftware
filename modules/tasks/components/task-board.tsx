@@ -31,7 +31,7 @@ import type { Colleague, Task, TaskStatus } from "../lib/types";
 type Columns = Record<TaskStatus, Task[]>;
 
 function group(tasks: Task[]): Columns {
-  const columns: Columns = { a_faire: [], en_cours: [], terminee: [] };
+  const columns: Columns = { a_faire: [], en_cours: [], en_attente: [], terminee: [] };
   for (const task of tasks) columns[task.status]?.push(task);
   for (const status of STATUS_ORDER) {
     columns[status].sort((a, b) => a.position - b.position);

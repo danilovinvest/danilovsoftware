@@ -1,4 +1,4 @@
-import type { DueFilter, TaskStatus } from "./types";
+import type { DueFilter, TaskPriority, TaskStatus } from "./types";
 
 /** Tonalité d'une pastille, résolue en classes par <EnumBadge>. */
 export type Tone = "neutral" | "info" | "success" | "warning" | "danger";
@@ -8,7 +8,21 @@ type Entry<T extends string> = Record<T, { label: string; tone: Tone }>;
 export const TASK_STATUS: Entry<TaskStatus> = {
   a_faire: { label: "À faire", tone: "neutral" },
   en_cours: { label: "En cours", tone: "info" },
+  en_attente: { label: "En attente", tone: "warning" },
   terminee: { label: "Terminée", tone: "success" },
+};
+
+/**
+ * L'urgence d'une tâche.
+ *
+ * « Normale » reste neutre : une tâche ordinaire n'est pas un problème, et la
+ * peindre laisserait le tableau sans place pour signaler celles qui en sont un.
+ * C'est la règle des statuts de facture, appliquée ici.
+ */
+export const TASK_PRIORITY: Entry<TaskPriority> = {
+  haute: { label: "Haute", tone: "danger" },
+  normale: { label: "Normale", tone: "neutral" },
+  basse: { label: "Basse", tone: "neutral" },
 };
 
 /**
@@ -28,6 +42,11 @@ export const COLUMN_STYLE: Record<
     accent: "bg-info",
     dot: "bg-info",
     ring: "data-[over=true]:border-info/50 data-[over=true]:bg-info-soft/60",
+  },
+  en_attente: {
+    accent: "bg-warning",
+    dot: "bg-warning",
+    ring: "data-[over=true]:border-warning/50 data-[over=true]:bg-warning-soft/60",
   },
   terminee: {
     accent: "bg-success",
