@@ -739,7 +739,9 @@ function ProjectBlock({
                       disabled={remove.pending}
                       onClick={async () => {
                         if (!confirm(`Supprimer l'affaire « ${project.label} » et ses devis ?`)) return;
-                        if (await remove.run()) onChanged();
+                        // Même raison qu'ailleurs : 204 rend `undefined`, qui
+                        // est faux. Seul `null` dit l'échec.
+                        if ((await remove.run()) !== null) onChanged();
                       }}
                     >
                       <Trash2Icon />
@@ -1006,7 +1008,7 @@ function QuoteList({ quotes, onChanged }: { quotes: Quote[]; onChanged: () => vo
                   onClick={async () => {
                     const nom = quote.reference || quote.label || "ce devis";
                     if (!confirm(`Supprimer le devis « ${nom} » ?`)) return;
-                    if (await remove.run(quote.id)) onChanged();
+                    if ((await remove.run(quote.id)) !== null) onChanged();
                   }}
                 >
                   <Trash2Icon />

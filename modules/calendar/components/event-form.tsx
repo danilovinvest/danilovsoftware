@@ -192,6 +192,32 @@ function FormBody({
   /** Un appel se pose à une heure, il ne s'étale pas sur une plage. */
   const instantane = draft.kind === "premier_appel";
 
+  /*
+    Choisir « premier appel » met la date et l'heure **de maintenant**.
+
+    Le formulaire proposait mardi prochain à 9h, parce que c'est le bon défaut
+    d'un rendez-vous qu'on planifie. Un premier appel, lui, est en train d'avoir
+    lieu : on le note pendant qu'on décroche, et corriger la date après coup
+    était le premier geste de chaque saisie. Les autres catégories gardent leur
+    défaut — on ne redate pas un rendez-vous parce qu'on s'est trompé de
+    catégorie une seconde.
+  */
+  function choisirCategorie(valeur: EventKind) {
+    if (valeur !== "premier_appel") {
+      set("kind", valeur);
+      return;
+    }
+    const maintenant = new Date();
+    setDraft((current) => ({
+      ...current,
+      kind: valeur,
+      allDay: false,
+      date: dateValue(maintenant),
+      startTime: timeValue(maintenant),
+      endTime: quartDHeureApres(timeValue(maintenant)),
+    }));
+  }
+
   async function save() {
     setPending(true);
     setError(null);
@@ -296,7 +322,7 @@ function FormBody({
             label="Catégorie"
             required
             value={draft.kind}
-            onValueChange={(value) => set("kind", value as EventKind)}
+            onValueChange={(value) => choisirCategorie(value as EventKind)}
             options={EVENT_KIND_OPTIONS}
             hint={EVENT_KIND[draft.kind].hint}
           />

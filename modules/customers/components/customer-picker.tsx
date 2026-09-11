@@ -10,6 +10,7 @@ import { usePermission } from "@/modules/auth";
 import { Spinner } from "@/shared/ui/feedback";
 import {
   createCustomer,
+  createInteraction,
   createProject,
   deleteCustomer,
   listCustomers,
@@ -234,6 +235,21 @@ export function CustomerPicker({
       // Le premier contact, c'est cet appel. Le laisser gris obligerait à le
       // cocher à la main juste après avoir raccroché.
       await setMilestones(ne.id, jalonsDuPremierContact());
+      /*
+        Et la chronologie le dit.
+
+        Le cran « Contact » devenait vert au-dessus d'un onglet « Chronologie »
+        vide : la frise affirmait un échange dont l'historique ne gardait aucune
+        trace, et c'est exactement le genre d'écart qui fait douter du reste de
+        l'écran. La ligne porte l'heure et la minute de l'appel.
+      */
+      await createInteraction(cree.id, {
+        project_id: ne.id,
+        kind: "appel",
+        occurred_at: new Date().toISOString(),
+        summary: "Premier appel",
+        details: "",
+      });
       setCreee(cree);
       setProjet(ne);
       onChange(cree.id, cree.display_name);

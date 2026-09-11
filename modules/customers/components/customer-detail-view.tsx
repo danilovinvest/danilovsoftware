@@ -176,7 +176,14 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
                 if (!confirm("Archiver cette fiche ? Elle n'apparaîtra plus dans la liste.")) {
                   return;
                 }
-                if (await remove.run()) router.push("/customers");
+                /*
+                  `!== null` et non une vérité : `useAction.run` rend `null` en
+                  cas d'échec, et l'API rend **204 sans corps** en cas de succès
+                  — donc `undefined`, qui est faux. Tester la vérité faisait
+                  échouer silencieusement toute suite d'une suppression réussie,
+                  et l'écran restait sur une fiche qui n'existait plus.
+                */
+                if ((await remove.run()) !== null) router.push("/customers");
               }}
             >
               <ArchiveIcon />
@@ -208,7 +215,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
                 ) {
                   return;
                 }
-                if (await purge.run()) router.push("/customers");
+                if ((await purge.run()) !== null) router.push("/customers");
               }}
             >
               <Trash2Icon />
