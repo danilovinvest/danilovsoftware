@@ -8,9 +8,24 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { usePermission } from "@/modules/auth";
 import { Spinner } from "@/shared/ui/feedback";
-import { createCustomer, deleteCustomer, listCustomers, updateCustomer } from "../lib/api";
+import {
+  createCustomer,
+  createProject,
+  deleteCustomer,
+  listCustomers,
+  setMilestones,
+  updateCustomer,
+  updateProject,
+} from "../lib/api";
+import { INTERVENTION_SCOPE } from "../lib/labels";
 import { useDebounced } from "../hooks/use-customers";
-import type { Customer, CustomerListItem, CustomerPayload } from "../lib/types";
+import type {
+  Customer,
+  CustomerListItem,
+  CustomerPayload,
+  InterventionScope,
+  Project,
+} from "../lib/types";
 
 /**
  * Choisir une fiche client, par la recherche.
@@ -88,6 +103,15 @@ export function CustomerPicker({
     évite un aller-retour pour reconstituer ce que l'écriture doit renvoyer.
   */
   const [creee, setCreee] = useState<Customer | null>(null);
+  /*
+    Le projet né avec elle.
+
+    Une fiche sans projet n'a pas de cycle : son onglet affiche « Aucun projet »
+    et la frise n'a rien à lire. Puisqu'on crée la fiche parce qu'un client
+    appelle **pour quelque chose**, ce quelque chose naît avec elle, et son
+    premier contact est daté du jour.
+  */
+  const [projet, setProjet] = useState<Project | null>(null);
 
   const items = resultat?.pour === cherche ? resultat.items : null;
 
@@ -169,9 +193,11 @@ export function CustomerPicker({
         </div>
 
         {nouvelle && (
-          <ContactRapide
+          <NouvelleFiche
             fiche={nouvelle}
+            projet={projet}
             onSaved={(maj) => setCreee(maj)}
+            onProjet={(maj) => setProjet(maj)}
             onError={setEchec}
           />
         )}
@@ -204,7 +230,12 @@ export function CustomerPicker({
     setEchec(null);
     try {
       const cree = await createCustomer(nouvelleFiche(cherche));
+      const ne = await createProject(cree.id, nouveauProjet());
+      // Le premier contact, c'est cet appel. Le laisser gris obligerait à le
+      // cocher à la main juste après avoir raccroché.
+      await setMilestones(ne.id, jalonsDuPremierContact());
       setCreee(cree);
+      setProjet(ne);
       onChange(cree.id, cree.display_name);
       setOpen(false);
       setQuery("");
@@ -347,13 +378,17 @@ function nouvelleFiche(nom: string): CustomerPayload {
  * existante, deux champs vides à côté d'un nom se liraient comme une invitation
  * à écraser ce qu'elle porte déjà.
  */
-function ContactRapide({
+function NouvelleFiche({
   fiche,
+  projet,
   onSaved,
+  onProjet,
   onError,
 }: {
   fiche: Customer;
+  projet: Project | null;
   onSaved: (fiche: Customer) => void;
+  onProjet: (projet: Project) => void;
   onError: (message: string | null) => void;
 }) {
   const [phone, setPhone] = useState(fiche.phone);
@@ -392,12 +427,63 @@ function ContactRapide({
     }
   }
 
+  /*
+    Le type de projet, coché ici plutôt que dans la fiche.
+
+    Le client dit *pourquoi* il appelle avant de donner son numéro : c'est la
+    première chose qu'on sait de lui, et la dernière qu'on aurait renseignée
+    s'il fallait rouvrir sa fiche après avoir raccroché. Choisir renomme le
+    projet, qui s'appelait « Nouveau projet ».
+  */
+  async function choisirType(valeur: InterventionScope) {
+    if (!projet) return;
+    onError(null);
+    try {
+      const maj = await updateProject(projet.id, {
+        label: INTERVENTION_SCOPE[valeur].label,
+        stage: projet.stage,
+        scope: valeur,
+        outcome: projet.outcome,
+        outcome_note: projet.outcome_note,
+        site_address: projet.site_address,
+        site_postal_code: projet.site_postal_code,
+        site_city: projet.site_city,
+        notes: projet.notes,
+        started_at: projet.started_at,
+        closed_at: projet.closed_at,
+      });
+      onProjet(maj);
+    } catch {
+      onError("Le type de projet n'a pas pu être enregistré.");
+    }
+  }
+
   return (
     <div className="bg-muted/30 flex flex-col gap-2 rounded-lg border border-dashed p-2">
       <p className="text-muted-foreground text-[11px]">
-        Fiche créée. Son numéro et son adresse, tant que vous l&apos;avez en
-        ligne.
+        Fiche et projet créés, premier contact daté d&apos;aujourd&apos;hui.
       </p>
+
+      {projet && (
+        <div className="flex flex-wrap gap-1">
+          {(Object.keys(INTERVENTION_SCOPE) as InterventionScope[]).map((valeur) => (
+            <button
+              key={valeur}
+              type="button"
+              aria-pressed={projet.scope === valeur}
+              onClick={() => void choisirType(valeur)}
+              className={cn(
+                "cursor-pointer rounded-md border px-1.5 py-0.5 text-[0.7rem] transition-colors",
+                projet.scope === valeur
+                  ? "border-success/40 bg-success-soft text-success font-medium"
+                  : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30",
+              )}
+            >
+              {INTERVENTION_SCOPE[valeur].label}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="flex items-end gap-1.5">
         <Input
           value={phone}
@@ -434,4 +520,50 @@ function ContactRapide({
       </div>
     </div>
   );
+}
+
+/**
+ * Le projet qui naît avec la fiche.
+ *
+ * Son intitulé dit ce qu'il est — « Nouveau projet » — et non « Affaire 2026 »,
+ * qui ne dit rien et qu'il fallait ensuite deviner. Il est remplacé par le type
+ * dès qu'on en coche un.
+ */
+function nouveauProjet() {
+  return {
+    label: "Nouveau projet",
+    stage: "demande_recue" as const,
+    scope: null,
+    outcome: null,
+    outcome_note: "",
+    site_address: "",
+    site_postal_code: "",
+    site_city: "",
+    notes: "",
+    started_at: null,
+    closed_at: null,
+  };
+}
+
+/** Tout à nul, sauf le contact : c'est l'appel en cours. */
+function jalonsDuPremierContact() {
+  return {
+    rib_sent_at: null,
+    insurance_sent_at: null,
+    materials_ordered_at: null,
+    materials: [],
+    resume_at: null,
+    plans_sent_at: null,
+    review_requested_at: null,
+    review_received_at: null,
+    pv_sent_at: null,
+    pv_signed_at: null,
+    visit_report_sent_at: null,
+    survey_report_sent_at: null,
+    contact_at: new Date().toISOString(),
+    rdv_at: null,
+    quote_sent_at: null,
+    negotiation_at: null,
+    signed_at: null,
+  };
 }

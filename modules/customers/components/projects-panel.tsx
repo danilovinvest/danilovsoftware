@@ -38,9 +38,17 @@ import {
   stepMarkedAt,
   stepWrite,
   type ActionKey,
+  type CyclePoint,
   type CycleStep,
 } from "../lib/cycle";
-import { readJalons, readMarks, type Jalons, type StepMarks } from "../lib/jalons";
+import {
+  EMPTY_JALONS,
+  EMPTY_MARKS,
+  readJalons,
+  readMarks,
+  type Jalons,
+  type StepMarks,
+} from "../lib/jalons";
 import { useAction } from "../hooks/use-customers";
 import { EnumBadge } from "./enum-badge";
 import { InteractionDialog } from "./interaction-dialog";
@@ -225,10 +233,23 @@ export function ProjectsPanel({
     return (
       <div className="flex flex-col gap-4">
         {canWrite && <NewProjectButton onClick={() => setProjectOpen(true)} />}
-        <Card>
+        <Card className="gap-0 py-4">
+          {/*
+            Le cycle se montre même vide.
+
+            Une fiche sans projet affichait un cadre blanc, et rien ne disait ce
+            qu'on allait y suivre. La frise grise le dit d'un coup d'œil : dix
+            crans, du premier contact à l'avis client. C'est la **même** frise
+            que partout ailleurs, lue sur un projet qui n'existe pas encore, et
+            non un dessin refait pour l'occasion — sans quoi elle aurait divergé
+            de la vraie au premier changement de règle.
+          */}
+          <div className="px-4">
+            <ProjectCycle points={cycleVide(now)} />
+          </div>
           <EmptyState
             title="Aucun projet"
-            description="Créez un projet pour y suivre le cycle, du premier appel à la commande des matériaux."
+            description="Créez un projet pour y suivre ce cycle, du premier appel à la commande des matériaux."
           />
         </Card>
         <ProjectDialog
@@ -310,11 +331,37 @@ export function ProjectsPanel({
   );
 }
 
+/**
+ * La frise d'un projet qui n'existe pas encore.
+ *
+ * Elle passe par `readCycle` comme toutes les autres : un projet vide, aucun
+ * devis, aucun échange, aucun jalon. Dessiner dix ronds gris à la main aurait
+ * été plus court et faux au premier cran ajouté.
+ */
+function cycleVide(now: number): CyclePoint[] {
+  return readCycle(
+    {
+      id: "",
+      label: "",
+      stage: "demande_recue",
+      outcome: null,
+      started_at: null,
+      closed_at: null,
+    } as Project,
+    [],
+    [],
+    EMPTY_JALONS,
+    now,
+    undefined,
+    EMPTY_MARKS,
+  );
+}
+
 function NewProjectButton({ onClick }: { onClick: () => void }) {
   return (
     <Button size="sm" variant="outline" onClick={onClick}>
       <PlusIcon />
-      Nouvelle affaire
+      Nouveau projet
     </Button>
   );
 }
