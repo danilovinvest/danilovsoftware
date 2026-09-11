@@ -89,7 +89,15 @@ function WorkspaceNav() {
                 title={section.hint}
                 // Le repli en mode icônes remonte le titre de sa propre
                 // hauteur ; la classe par défaut vise `h-8`, celle-ci `h-7`.
-                className="text-muted-foreground h-7 px-1.5 text-[11px] font-medium group-data-[collapsible=icon]:-mt-7"
+                /*
+                  En petites majuscules et à la teinte d'accent.
+
+                  Un titre gris de la même taille que les entrées se lit comme
+                  une entrée de plus qu'on ne peut pas cliquer. Les majuscules
+                  espacées et la couleur en font une étiquette, pas un lien —
+                  et l'accent est déjà ce qui distingue l'interface du contenu.
+                */
+                className="text-brand-text h-7 px-1.5 text-[10px] font-semibold tracking-[0.08em] uppercase group-data-[collapsible=icon]:-mt-7"
               >
                 {section.label}
               </SidebarGroupLabel>
@@ -121,7 +129,22 @@ function WorkspaceNav() {
                           className={cn(
                             NAV_ITEM_CLASS,
                             teinte.text,
-                            active && `${teinte.soft} font-medium`,
+                            /*
+                              L'entrée active est une pilule posée, dans la
+                              teinte de son module et non dans un gris commun.
+
+                              La teinte est une adresse : on reconnaît l'écran
+                              des chantiers à son ambre avant d'avoir lu le mot.
+                              Une pilule sombre unique, comme en ont beaucoup
+                              d'interfaces, dirait « ici » sans dire « où ».
+
+                              Le fond reste le cran 3 et non le cran 9 : celui-ci
+                              est clair sur l'ambre et le citron, où une encre
+                              blanche tomberait sous 2 de contraste. Le liseré et
+                              l'ombre donnent le relief que la couleur pleine
+                              aurait donné, sans le prix.
+                            */
+                            active && `${teinte.soft} font-medium shadow-sm ring-1 ring-inset ring-current/15`,
                           )}
                         >
                           <Link href={item.href}>

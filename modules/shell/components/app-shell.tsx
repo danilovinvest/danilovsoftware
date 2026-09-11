@@ -34,7 +34,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Les libellés de la barre latérale repliée passent par des tooltips
           Radix, qui exigent un provider au-dessus d'eux. */}
       <TooltipProvider delayDuration={200}>
+        {/*
+          L'application flotte dans un cadre, elle ne remplit pas la fenêtre.
+
+          Le panneau principal flottait déjà sur le gris de la barre latérale ;
+          c'est désormais l'ensemble qui flotte sur la page, gouttière comprise.
+          Ce n'est pas qu'une affaire de goût : un cadre borné dit où
+          l'application commence et finit, là où un contenu collé aux quatre
+          bords se confond avec le navigateur qui l'entoure.
+
+          La gouttière disparaît sous 640 pixels. Sur un téléphone, six pixels
+          perdus de chaque côté sont six pixels qui manquaient déjà, et un
+          coin arrondi contre le bord de l'écran ne se voit pas.
+        */}
+        <div className="bg-sidebar min-h-svh sm:p-2.5">
+          <div className="bg-background ring-border/60 min-h-svh overflow-hidden sm:min-h-[calc(100svh-1.25rem)] sm:rounded-2xl sm:shadow-sm sm:ring-1">
         <SidebarProvider
+          className="min-h-svh sm:min-h-[calc(100svh-1.25rem)]"
           style={{ "--sidebar-width": SIDEBAR_WIDTH } as React.CSSProperties}
         >
           <AppSidebar />
@@ -70,6 +86,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </SidebarInset>
         </SidebarProvider>
+          </div>
+        </div>
       </TooltipProvider>
     </PageTitleProvider>
   );
