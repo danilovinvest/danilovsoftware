@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import * as api from "../lib/api";
 import { DUE_FILTERS, STATUS_ORDER, TASK_STATUS } from "../lib/labels";
 import { useTasks, useTaskStats } from "../hooks/use-tasks";
-import { useColleagues } from "../hooks/use-colleagues";
+import { useColleagues } from "@/shared/hooks/use-colleagues";
 import { TaskBoard } from "./task-board";
 import { TaskDialog } from "./task-dialog";
 import { TaskRow } from "./task-row";

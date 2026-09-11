@@ -63,6 +63,10 @@ export type Worksite = {
   materials_ordered_at: string | null;
   /** Le type d'intervention, renvoyé tel quel par la fiche latérale. */
   scope: InterventionScope | null;
+  /** Les trois intervenants, renvoyés tels quels par la fiche latérale. */
+  manager_id: string | null;
+  engineer_id: string | null;
+  drafter_id: string | null;
   /** Ce qui a été commandé. La fiche latérale le montre et le complète. */
   materials: string[];
   resume_at: string | null;

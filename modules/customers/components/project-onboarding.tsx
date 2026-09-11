@@ -145,6 +145,11 @@ export function ProjectOnboardingDrawer({
         label: label.trim() || project.label,
         stage: project.stage,
         scope,
+        // Renvoyés tels quels : ce tiroir ne nomme personne, et un champ omis
+        // est un champ effacé.
+        manager_id: project.manager_id,
+        engineer_id: project.engineer_id,
+        drafter_id: project.drafter_id,
         outcome: project.outcome,
         outcome_note: project.outcome_note,
         site_address: address,

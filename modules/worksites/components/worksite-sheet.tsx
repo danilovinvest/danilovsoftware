@@ -203,6 +203,9 @@ function Body({
           // Renvoyé tel quel : cet écran ne le modifie pas, et la route
           // remplace l'affaire entière.
           scope: w.scope,
+          manager_id: w.manager_id,
+          engineer_id: w.engineer_id,
+          drafter_id: w.drafter_id,
           outcome: (w.outcome || null) as ProjectPayload["outcome"],
           outcome_note: w.outcome_note,
           site_address: w.site_address, site_postal_code: w.site_postal_code,

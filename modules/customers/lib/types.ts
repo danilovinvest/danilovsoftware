@@ -186,6 +186,19 @@ export type Project = {
   closed_at: string | null;
   /** Le dossier OneDrive relié par la copie ; vide sinon. */
   drive_path: string;
+  /**
+   * Qui suit le dossier, qui calcule, qui dessine.
+   *
+   * Nuls tant que personne n'est nommé, ce qui est le cas de presque toutes les
+   * affaires reprises. Le nom voyage avec l'identifiant : un écran affiche un
+   * nom, et aller le chercher coûterait trois requêtes par affaire.
+   */
+  manager_id: string | null;
+  manager_name: string;
+  engineer_id: string | null;
+  engineer_name: string;
+  drafter_id: string | null;
+  drafter_name: string;
   quote_count: number;
   total_amount_ttc: string;
   last_reminder_at: string | null;
@@ -372,6 +385,11 @@ export type ProjectPayload = Omit<
   | "source_status"
   // Posé par la copie OneDrive, jamais par un formulaire.
   | "drive_path"
+  // Servis avec l'affaire, jamais envoyés : le serveur les déduit des
+  // identifiants, et les renvoyer inviterait à les croire modifiables.
+  | "manager_name"
+  | "engineer_name"
+  | "drafter_name"
 >;
 
 export type StagePayload = {

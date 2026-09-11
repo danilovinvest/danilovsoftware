@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState, ErrorNotice, Skeleton } from "@/shared/ui/feedback";
 import { useTasks } from "../hooks/use-tasks";
-import { useColleagues } from "../hooks/use-colleagues";
+import { useColleagues } from "@/shared/hooks/use-colleagues";
 import { TaskDialog } from "./task-dialog";
 import { TaskRow } from "./task-row";
 import type { Task } from "../lib/types";

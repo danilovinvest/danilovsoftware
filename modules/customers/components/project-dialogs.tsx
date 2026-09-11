@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { ErrorNotice } from "@/shared/ui/feedback";
 import { SelectField, TextField } from "@/shared/ui/form";
+import { useColleagues } from "@/shared/hooks/use-colleagues";
 import * as api from "../lib/api";
 import {
   PAYMENT_STATUS,
@@ -33,6 +34,9 @@ const EMPTY_PROJECT: ProjectPayload = {
   label: "",
   stage: "demande_recue",
   scope: null,
+  manager_id: null,
+  engineer_id: null,
+  drafter_id: null,
   outcome: null,
   outcome_note: "",
   site_address: "",
@@ -76,6 +80,7 @@ export function ProjectDialog({
 }) {
   const [values, setValues] = useState<ProjectPayload>(EMPTY_PROJECT);
   const create = useAction(() => api.createProject(customerId, values));
+  const colleagues = useColleagues();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -122,6 +127,43 @@ export function ProjectDialog({
               setValues({ ...values, started_at: event.target.value || null })
             }
           />
+          {/*
+            Les trois intervenants.
+
+            Le même annuaire pour les trois, et non la liste des comptes portant
+            le rôle : les deux rôles de production viennent d'être créés et
+            personne ne les porte encore. Filtrer dessus rendrait les trois
+            champs vides, donc inutilisables, le jour même où on les ajoute.
+            Quand les postes seront pourvus, c'est le rôle du compte qui dira
+            qui fait quoi, pas ce sélecteur.
+          */}
+          <SelectField
+            label="Responsable"
+            wrapperClassName="sm:col-span-2"
+            options={personnes(colleagues)}
+            value={values.manager_id ?? ""}
+            onValueChange={(value) =>
+              setValues({ ...values, manager_id: value || null })
+            }
+            hint="Qui suit ce dossier de bout en bout."
+          />
+          <SelectField
+            label="Ingénieur"
+            options={personnes(colleagues)}
+            value={values.engineer_id ?? ""}
+            onValueChange={(value) =>
+              setValues({ ...values, engineer_id: value || null })
+            }
+          />
+          <SelectField
+            label="Dessinateur"
+            options={personnes(colleagues)}
+            value={values.drafter_id ?? ""}
+            onValueChange={(value) =>
+              setValues({ ...values, drafter_id: value || null })
+            }
+          />
+
           <TextField
             label="Adresse du chantier"
             wrapperClassName="sm:col-span-2"
@@ -162,6 +204,20 @@ export function ProjectDialog({
  * champ effacé, sans erreur. Tous voyagent donc, y compris ceux que le
  * formulaire ne montre pas — le taux de TVA, que rien n'affiche.
  */
+/**
+ * L'annuaire, en options de liste.
+ *
+ * La première est vide et s'appelle « Personne » : retirer quelqu'un d'un
+ * dossier est un geste aussi courant que l'y mettre, et une liste sans issue
+ * obligerait à supprimer l'affaire pour défaire une erreur de clic.
+ */
+function personnes(colleagues: { id: string; name: string }[]) {
+  return [
+    { value: "", label: "Personne" },
+    ...colleagues.map((c) => ({ value: c.id, label: c.name })),
+  ];
+}
+
 function toPayload(quote: Quote): QuotePayload {
   return {
     reference: quote.reference,

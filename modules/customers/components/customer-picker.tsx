@@ -459,6 +459,10 @@ function NouvelleFiche({
         label: INTERVENTION_SCOPE[valeur].label,
         stage: projet.stage,
         scope: valeur,
+        // Renvoyés tels quels : la route remplace l'affaire entière.
+        manager_id: projet.manager_id,
+        engineer_id: projet.engineer_id,
+        drafter_id: projet.drafter_id,
         outcome: projet.outcome,
         outcome_note: projet.outcome_note,
         site_address: projet.site_address,
@@ -550,6 +554,10 @@ function nouveauProjet() {
     label: "Nouveau projet",
     stage: "demande_recue" as const,
     scope: null,
+    // Personne n'est nommé : le dossier vient de naître au téléphone.
+    manager_id: null,
+    engineer_id: null,
+    drafter_id: null,
     outcome: null,
     outcome_note: "",
     site_address: "",

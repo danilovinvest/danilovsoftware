@@ -162,6 +162,11 @@ export function ProjectsPanel({
           // Renvoyé tel quel : réserver une date ne doit pas effacer le type
           // d'intervention, que cet appel n'affiche pas.
           scope: project.scope,
+          // Renvoyés tels quels : réserver une date ne doit pas dénommer
+          // l'ingénieur qui suit le dossier.
+          manager_id: project.manager_id,
+          engineer_id: project.engineer_id,
+          drafter_id: project.drafter_id,
           outcome: project.outcome,
           outcome_note: project.outcome_note,
           site_address: project.site_address,

@@ -1,12 +1,10 @@
 export type TaskStatus = "a_faire" | "en_cours" | "terminee";
 
-/** Collègue assignable, tel que servi par /v1/directory/users. */
-export type Colleague = {
-  id: string;
-  first_name: string;
-  last_name: string;
-  name: string;
-};
+/**
+ * Collègue assignable. Le type vit dans le transverse : trois modules le lisent
+ * pour la même question, « à qui je confie ça ».
+ */
+export type { Colleague } from "@/shared/api/directory";
 
 /** Filtres d'échéance servis par l'API — jamais recalculés côté navigateur. */
 export type DueFilter = "overdue" | "today" | "week" | "none";
