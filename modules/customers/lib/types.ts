@@ -12,6 +12,23 @@ export type CustomerKind =
   | "architecte"
   | "autre";
 /** Étape du pipeline, ordonnée : une affaire n'en occupe qu'une à la fois. */
+/**
+ * Les types d'intervention, dans l'ordre où le dirigeant les a dictés.
+ *
+ * `renovation` ferme la liste sans avoir été citée : neuf affaires la portent,
+ * et une valeur ne se retire pas parce qu'on ne l'a pas nommée.
+ */
+export type InterventionScope =
+  | "ouverture"
+  | "tremie"
+  | "plancher"
+  | "sous_oeuvre"
+  | "extension"
+  | "sondage"
+  | "renforcement"
+  | "renovation"
+  | "autre";
+
 export type ProjectStage =
   | "demande_recue"
   | "qualification"
@@ -153,6 +170,14 @@ export type Project = {
   outcome_note: string;
   /** Texte brut repris du classeur Excel ; vide pour une affaire saisie ici. */
   source_status: string;
+  /**
+   * Le type d'intervention, dicté par le dirigeant.
+   *
+   * Il était servi par l'API depuis toujours et **n'a jamais été affiché** :
+   * 391 affaires sur 509 n'en portent aucun, faute d'un écran pour le saisir.
+   * C'est pourtant lui qui fait le prix, avec le type de bien.
+   */
+  scope: InterventionScope | null;
   site_address: string;
   site_postal_code: string;
   site_city: string;

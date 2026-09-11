@@ -3,6 +3,7 @@ import type {
   CustomerSource,
   CustomerStatus,
   InteractionKind,
+  InterventionScope,
   PaymentStatus,
   ProjectOutcome,
   ProjectStage,
@@ -33,6 +34,31 @@ export const CUSTOMER_SOURCE: Entry<CustomerSource> = {
   telephone: { label: "Téléphone", tone: "neutral" },
   email: { label: "E-mail", tone: "neutral" },
   recommandation: { label: "Recommandation", tone: "neutral" },
+  autre: { label: "Autre", tone: "neutral" },
+};
+
+/**
+ * Les types d'intervention, dans les mots de l'entreprise.
+ *
+ * Dictés par le dirigeant : « ouverture de mur porteur, création de trémie,
+ * renforcement plancher, reprise de fondation, extension / surélévation,
+ * sondages, autre ». Sept de ces huit valeurs existaient déjà en base sous des
+ * noms plus courts — c'était un habillage qui manquait, pas un modèle.
+ *
+ * L'ordre est celui de la dictée, et il n'est pas décoratif : c'est l'ordre de
+ * fréquence perçue, donc celui qui fait trouver vite. « Renforcement de
+ * structure » et « Rénovation » ferment la liste parce qu'ils n'ont pas été
+ * cités, mais quarante-huit affaires les portent.
+ */
+export const INTERVENTION_SCOPE: Entry<InterventionScope> = {
+  ouverture: { label: "Ouverture de mur porteur", tone: "neutral" },
+  tremie: { label: "Création de trémie", tone: "neutral" },
+  plancher: { label: "Renforcement de plancher", tone: "neutral" },
+  sous_oeuvre: { label: "Reprise de fondation", tone: "neutral" },
+  extension: { label: "Extension / surélévation", tone: "neutral" },
+  sondage: { label: "Sondages", tone: "neutral" },
+  renforcement: { label: "Renforcement de structure", tone: "neutral" },
+  renovation: { label: "Rénovation", tone: "neutral" },
   autre: { label: "Autre", tone: "neutral" },
 };
 
