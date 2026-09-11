@@ -107,6 +107,23 @@ export function mergeCustomers(keep: string, absorbed: string) {
   });
 }
 
+/**
+ * Efface une fiche pour de bon, elle et ce qui n'appartient qu'à elle.
+ *
+ * `deleteCustomer` **archive** : la fiche sort des listes et reste retrouvable
+ * par la recherche globale, ce qui est le bon geste pour un client qu'on
+ * écarte. Ce n'en est pas un pour une fiche née d'une faute de frappe, qui
+ * continuait de remonter dans la palette sans qu'aucun écran ne sache
+ * l'effacer.
+ *
+ * Les projets, devis, interlocuteurs et échanges partent avec elle ; les
+ * courriels et les rendez-vous sont seulement **détachés** — ils appartiennent
+ * à la boîte et à l'agenda, qui lui survivent.
+ */
+export function purgeCustomer(id: string) {
+  return apiFetch<void>(`/v1/customers/${id}/purge`, { method: "DELETE" });
+}
+
 export function deleteCustomer(id: string) {
   return apiFetch<void>(`/v1/customers/${id}`, { method: "DELETE" });
 }

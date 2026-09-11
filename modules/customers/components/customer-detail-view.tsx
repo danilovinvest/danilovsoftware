@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   ArchiveIcon,
+  Trash2Icon,
   ArrowLeftIcon,
   MailIcon,
   PencilIcon,
@@ -54,6 +55,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
   // permission est distincte, et l'onglet disparaît avec elle.
   const canReadMail = usePermission("mail:read");
   const remove = useAction(() => api.deleteCustomer(customerId));
+  const purge = useAction(() => api.purgeCustomer(customerId));
 
   if (loading && !customer) {
     return (
@@ -181,10 +183,43 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
               Archiver
             </Button>
           )}
+          {/*
+            Effacer pour de bon, et le dire avant.
+
+            Archiver reste le geste courant : la fiche sort des listes et se
+            retrouve. Celui-ci ne se rattrape pas, et il existe parce qu'une
+            fiche née d'une faute de frappe continuait de remonter dans la
+            recherche sans qu'aucun écran ne sache s'en débarrasser. La
+            confirmation nomme ce qui part et ce qui reste.
+          */}
+          {canDelete && (
+            <Button
+              variant="ghost"
+              className="text-muted-foreground hover:text-destructive"
+              disabled={purge.pending}
+              onClick={async () => {
+                if (
+                  !confirm(
+                    `Supprimer définitivement « ${customer.display_name} » ?\n\n` +
+                      "Ses projets, devis, interlocuteurs et échanges partent avec elle. " +
+                      "Les courriels et les rendez-vous sont conservés, simplement détachés.\n\n" +
+                      "Cette suppression ne se rattrape pas.",
+                  )
+                ) {
+                  return;
+                }
+                if (await purge.run()) router.push("/customers");
+              }}
+            >
+              <Trash2Icon />
+              Supprimer
+            </Button>
+          )}
         </div>
       </header>
 
       {remove.error && <ErrorNotice message={remove.error} />}
+      {purge.error && <ErrorNotice message={purge.error} />}
 
       <Tabs defaultValue="affaires">
         <TabsList>

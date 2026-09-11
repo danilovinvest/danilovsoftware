@@ -189,6 +189,9 @@ function FormBody({
   const set = <K extends keyof Draft>(field: K, value: Draft[K]) =>
     setDraft((current) => ({ ...current, [field]: value }));
 
+  /** Un appel se pose à une heure, il ne s'étale pas sur une plage. */
+  const instantane = draft.kind === "premier_appel";
+
   async function save() {
     setPending(true);
     setError(null);
@@ -204,7 +207,7 @@ function FormBody({
         kind: draft.kind,
         color: draft.color,
         jalons: draft.jalons,
-        ...bounds(draft),
+        ...bounds(instantane ? { ...draft, allDay: false, endTime: quartDHeureApres(draft.startTime) } : draft),
       };
       if (event) await api.updateEvent(event.id, input);
       else await api.createEvent(input);
@@ -354,7 +357,28 @@ function FormBody({
           </Label>
         </div>
 
-        {draft.allDay ? (
+        {instantane ? (
+          /*
+            Un appel est un instant, pas une plage.
+
+            Demander une heure de fin pour un coup de téléphone, c'est une
+            question à laquelle personne n'a la réponse au moment où il la
+            pose — et la contrainte de la base exige pourtant une fin. On la
+            pose à un quart d'heure, et l'écran le dit plutôt que de le cacher.
+          */
+          <div className="grid grid-cols-[1fr_7rem] gap-3">
+            <DateField
+              label="Date"
+              value={draft.date}
+              onChange={(value) => set("date", value)}
+            />
+            <TimeField
+              label="Heure"
+              value={draft.startTime}
+              onChange={(value) => set("startTime", value)}
+            />
+          </div>
+        ) : draft.allDay ? (
           <div className="grid grid-cols-2 gap-3">
             <DateField
               label="Du"
@@ -399,7 +423,7 @@ function FormBody({
         )}
 
         <TextField
-          label="Lieu"
+          label={instantane ? "Adresse du client" : "Lieu"}
           value={draft.location}
           onChange={(e) => set("location", e.target.value)}
           placeholder="Cannes, chemin des Colles"
@@ -696,6 +720,17 @@ function debut(draft: Draft): Date {
   return draft.allDay
     ? new Date(`${draft.date}T00:00:00`)
     : new Date(`${draft.date}T${draft.startTime}:00`);
+}
+
+/**
+ * Un quart d'heure après, sans dépasser minuit.
+ *
+ * La contrainte `calendar_events_bounds` refuse une durée nulle : un appel doit
+ * donc durer quelque chose, et quinze minutes est la durée qu'on note quand on
+ * ne compte pas.
+ */
+function quartDHeureApres(heure: string): string {
+  return clock(Math.min(minutes(heure) + 15, 23 * 60 + 45));
 }
 
 function bounds(draft: Draft): { start: string; end: string } {

@@ -39,6 +39,16 @@ export type Attendee = {
  * quatre-vingt-dix lignes personnelles, une douzaine d'absences.
  */
 export type EventKind =
+  /**
+   * Le premier appel d'un client inconnu.
+   *
+   * Le premier point de tout le cycle, et il se notait comme un échange —
+   * c'est-à-dire comme les cinquante suivants. Trois choses le distinguent :
+   * pas de fin à saisir puisqu'un appel est un instant, un lieu qui devient
+   * l'adresse du client puisqu'on ne va nulle part, et une trace dans la
+   * chronologie même sans compte rendu.
+   */
+  | "premier_appel"
   | "echange"
   | "rdv"
   | "sondage"

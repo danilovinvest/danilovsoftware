@@ -204,6 +204,10 @@ export function paletteAt(index: number): CalendarStyle {
  * déroulante les propose.
  */
 export const EVENT_KIND: Record<EventKind, { label: string; hint: string }> = {
+  premier_appel: {
+    label: "Premier appel",
+    hint: "Un client inconnu qui téléphone. Sans fin à saisir, et noté dans sa chronologie",
+  },
   rdv: { label: "Rendez-vous", hint: "Une visite, un rendez-vous sur place, une AG" },
   chantier: { label: "Chantier", hint: "Une intervention, un coulage, une mise en sécurité" },
   sondage: { label: "Sondage", hint: "Un sondage, un diagnostic sur place" },
@@ -231,6 +235,8 @@ export const EVENT_KIND_OPTIONS = (
  * couleurs pour deux questions dans la même case.
  */
 export const EVENT_KIND_TONE: Record<EventKind, string> = {
+  // Le premier appel partage la teinte des échanges : c'en est un, le premier.
+  premier_appel: "bg-info-soft text-info",
   rdv: "bg-success-soft text-success",
   chantier: "bg-warning-soft text-warning",
   sondage: "bg-warning-soft text-warning",
@@ -255,6 +261,9 @@ export const EVENT_KIND_TONE: Record<EventKind, string> = {
  * champ serait pire que de n'en proposer aucun.
  */
 export const EVENT_KIND_JALONS: Record<EventKind, JalonChamp[]> = {
+  // Le moyen est connu — c'est un appel — donc seul le compte rendu se saisit,
+  // et il est facultatif : le serveur écrit « Premier appel » à défaut.
+  premier_appel: ["compte_rendu"],
   chantier: ["debut", "fin", "pv_envoye", "pv_signe"],
   rdv: ["rapport_visite", "compte_rendu"],
   sondage: ["rapport_sondage", "compte_rendu"],
