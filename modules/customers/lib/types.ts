@@ -373,6 +373,21 @@ export type ContactPayload = Omit<
   "id" | "customer_id" | "created_at" | "updated_at"
 >;
 
+/**
+ * Une affaire vue depuis celui à qui elle est confiée.
+ *
+ * Le nom du client voyage avec : sans lui, l'écran afficherait « Ouverture d'un
+ * mur porteur » sans dire chez qui. Le rôle est calculé par le serveur, qui est
+ * le seul à connaître les identifiants qu'il compare.
+ */
+export type MyProject = Project & {
+  customer_name: string;
+  customer_reference: string;
+  is_manager: boolean;
+  is_engineer: boolean;
+  is_drafter: boolean;
+};
+
 export type ProjectPayload = Omit<
   Project,
   | "id"

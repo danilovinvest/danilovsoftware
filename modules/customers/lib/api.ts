@@ -200,6 +200,16 @@ export function setMilestones(
   });
 }
 
+/**
+ * Les affaires qui me sont confiées, et le rôle que j'y tiens.
+ *
+ * L'identité vient du jeton, jamais d'un paramètre : personne ne lit les
+ * dossiers d'un autre par cette route.
+ */
+export function listMyProjects(limit = 100, signal?: AbortSignal) {
+  return apiFetch<{ items: MyProject[] }>(`/v1/projects/mine?limit=${limit}`, { signal });
+}
+
 export function deleteProject(id: string) {
   return apiFetch<void>(`/v1/projects/${id}`, { method: "DELETE" });
 }
