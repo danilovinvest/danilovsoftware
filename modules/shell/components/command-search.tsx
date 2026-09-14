@@ -57,8 +57,8 @@ const VIDE: SearchResult = {
  * qu'à trouver quelque chose, et une palette qui ne répond rien tant qu'on n'a
  * pas tapé deux lettres apprend à ne pas s'ouvrir.
  *
- * **Chaque section porte la teinte de son module**, la même que dans la barre
- * latérale : une liste de vingt résultats gris demande de lire chaque ligne
+ * **Chaque section porte la teinte de son module**, la même que dans le fil
+ * d'Ariane : une liste de vingt résultats gris demande de lire chaque ligne
  * pour savoir de quoi elle parle.
  *
  * Comme `useCustomers`, elle ne garde qu'une réponse *avec la question qui l'a
