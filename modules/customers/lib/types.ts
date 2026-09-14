@@ -232,6 +232,12 @@ export type Quote = {
   /** Depuis quand l'acompte est facturé, et depuis quand il est encaissé. */
   deposit_invoiced_at: string | null;
   deposit_paid_at: string | null;
+  /**
+   * Le montant de l'acompte, tel que le client l'a réglé. Il ne se déduit pas
+   * du devis — le client le négocie ou le change — et reste nul quand on ne le
+   * connaît pas.
+   */
+  deposit_amount: string | null;
   balance_status: PaymentStatus;
   comment: string;
   /**

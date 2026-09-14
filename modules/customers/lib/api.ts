@@ -228,6 +228,19 @@ export function updateQuote(id: string, payload: QuotePayload) {
   return apiFetch<Quote>(`/v1/quotes/${id}`, { method: "PATCH", body: payload });
 }
 
+/**
+ * L'acompte seul : statut et montant.
+ *
+ * Encaisser depuis la frise ou un chantier ne renvoie plus le devis entier —
+ * les écrans qui ne le connaissaient pas en effaçaient une partie.
+ */
+export function setQuoteDeposit(
+  id: string,
+  payload: { status: PaymentStatus; amount: string | null },
+) {
+  return apiFetch<Quote>(`/v1/quotes/${id}/deposit`, { method: "PUT", body: payload });
+}
+
 export function deleteQuote(id: string) {
   return apiFetch<void>(`/v1/quotes/${id}`, { method: "DELETE" });
 }

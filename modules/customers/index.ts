@@ -40,7 +40,8 @@ export { ProjectPicker } from "./components/project-picker";
 // Le panneau des jalons d'après-signature sert aussi à la fiche latérale des
 // chantiers et des études : c'est la même liste de cases, sur la même affaire.
 export { ProjectJalons } from "./components/project-jalons";
-export { setMilestones, updateProject, updateQuote } from "./lib/api";
+export { setMilestones, setQuoteDeposit, updateProject } from "./lib/api";
+export { DepositTag } from "./components/deposit-field";
 // Les tâches ont besoin des affaires d'une fiche pour proposer à laquelle se
 // rattacher. Une route dédiée ne se justifierait pas : la fiche est déjà
 // servie en un appel, et c'est un geste explicite de l'utilisateur.

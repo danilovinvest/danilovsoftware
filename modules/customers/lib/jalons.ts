@@ -28,6 +28,8 @@ export type Jalons = {
   deposit_invoiced_at: string | null;
   /** Du devis : l'acompte est encaissé. */
   deposit_paid_at: string | null;
+  /** Du devis : combien. Nul quand on ne le connaît pas. */
+  deposit_amount: string | null;
   /*
     Du devis : le solde est encaissé.
 
@@ -77,6 +79,7 @@ export type Jalons = {
 export const EMPTY_JALONS: Jalons = {
   deposit_invoiced_at: null,
   deposit_paid_at: null,
+  deposit_amount: null,
   balance_paid_at: null,
   rib_sent_at: null,
   insurance_sent_at: null,
@@ -121,6 +124,7 @@ export function readJalons(
       signed && signed.deposit_status === "recu"
         ? (signed.deposit_paid_at ?? signed.issued_at)
         : null,
+    deposit_amount: signed?.deposit_amount ?? null,
     balance_paid_at:
       signed && signed.balance_status === "recu" ? signed.issued_at : null,
     rib_sent_at: m?.rib_sent_at ?? null,
@@ -230,7 +234,7 @@ export type Jalon = {
     exclusion, chaque ligne de l'écran devrait se demander si elle affiche un
     instant ou un tableau.
   */
-  key: Exclude<keyof Jalons, "materials">;
+  key: Exclude<keyof Jalons, "materials" | "deposit_amount">;
   label: string;
   hint: string;
   /**
@@ -238,9 +242,10 @@ export type Jalon = {
    *
    * `"date"` — une date choisie au calendrier : un chantier se réserve pour
    * dans six semaines. `"materials"` — la liste de ce qui a été commandé, et
-   * la date suit. `false` — une case, et c'est tout.
+   * la date suit. `"deposit"` — le montant encaissé, qui se corrige ensuite.
+   * `false` — une case, et c'est tout.
    */
-  picks: false | "date" | "materials";
+  picks: false | "date" | "materials" | "deposit";
 };
 
 const ACOMPTE: Jalon[] = [
@@ -285,7 +290,7 @@ const TRAVAUX: Jalon[] = [
     key: "deposit_paid_at",
     label: "Acompte encaissé",
     hint: "Rien ne se commande avant",
-    picks: false,
+    picks: "deposit",
   },
   {
     key: "worksite_date",
@@ -320,7 +325,7 @@ const ETUDES: Jalon[] = [
     key: "deposit_paid_at",
     label: "Acompte encaissé",
     hint: "L'étude démarre à l'encaissement",
-    picks: false,
+    picks: "deposit",
   },
   {
     key: "visit_report_sent_at",

@@ -27,6 +27,8 @@ export type WorksiteQuote = {
   amount_ttc: string | null;
   amount_note: string;
   deposit_status: string;
+  /** Le montant de l'acompte saisi dans le CRM, nul quand on ne le connaît pas. */
+  deposit_amount: string | null;
   balance_status: string;
   drive_url: string;
   drive_name: string;
