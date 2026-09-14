@@ -34,6 +34,7 @@ export function ProjectJalons({
   onMaterials,
   depositTotal = null,
   onDeposit,
+  onDepositRemove,
   disabled,
   className,
 }: {
@@ -56,6 +57,8 @@ export function ProjectJalons({
    * ligne reste une simple case.
    */
   onDeposit?: (amount: string | null) => boolean | Promise<boolean>;
+  /** Retire l'encaissement, et rend la réussite de l'écriture. */
+  onDepositRemove?: () => boolean | Promise<boolean>;
   disabled?: boolean;
   className?: string;
 }) {
@@ -135,17 +138,14 @@ export function ProjectJalons({
                     disabled={disabled}
                     onSave={onMaterials}
                   />
-                ) : jalon.picks === "deposit" && onDeposit ? (
+                ) : jalon.picks === "deposit" && onDeposit && onDepositRemove ? (
                   <DepositButton
                     paid={done}
                     amount={jalons.deposit_amount}
                     total={depositTotal}
                     disabled={disabled}
                     onSave={onDeposit}
-                    onRemove={() => {
-                      onToggle(jalon.key, null);
-                      return true;
-                    }}
+                    onRemove={onDepositRemove}
                   />
                 ) : (
                   <Button

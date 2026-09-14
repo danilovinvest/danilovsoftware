@@ -159,6 +159,11 @@ function Body({
     });
   }
 
+  /** Retire l'encaissement. `appliquer` rend la réussite et affiche l'échec. */
+  function retirerAcompte(): Promise<boolean> {
+    return appliquer({ deposit_paid_at: null });
+  }
+
   /**
    * Applique un lot de jalons : peint, écrit, se dédit s'il échoue.
    *
@@ -312,6 +317,7 @@ function Body({
             onMaterials={commanderMateriaux}
             depositTotal={depositTotalOf(signedQuote(w))}
             onDeposit={encaisser}
+            onDepositRemove={retirerAcompte}
           />
         </div>
 

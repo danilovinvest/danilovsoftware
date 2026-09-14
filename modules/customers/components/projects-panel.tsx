@@ -468,6 +468,13 @@ function ProjectBlock({
     return ok;
   }
 
+  /** Retire l'encaissement. Le montant reste sur le devis, le statut repart en attente. */
+  async function retirerAcompte(): Promise<boolean> {
+    const ok = (await setDeposit.run("en_attente")) !== null;
+    if (ok) onChanged();
+    return ok;
+  }
+
   /*
     Le solde suit la même route que l'acompte : c'est le devis qui porte le
     règlement, et le serveur horodate la date à partir du statut. Deux actions
@@ -704,6 +711,7 @@ function ProjectBlock({
                         total: depositTotalOf(porteur),
                       },
                       onDeposit: encaisser,
+                      onDepositRemove: retirerAcompte,
                       pending: saving || setDeposit.pending || setBalance.pending,
                     }
                   : undefined
@@ -721,6 +729,9 @@ function ProjectBlock({
             {canWrite && projetIncomplet(project) && (
               <ProjectOnboardingButton onClick={() => setCompleter(true)} />
             )}
+
+            {/* L'acompte écrit sur le devis : un refus doit se lire quelque part. */}
+            {setDeposit.error && <ErrorNotice message={setDeposit.error} />}
 
             {canWrite && (
               <ProjectNextAction
@@ -809,6 +820,7 @@ function ProjectBlock({
                   onMaterials={commanderMateriaux}
                   depositTotal={depositTotalOf(porteur)}
                   onDeposit={encaisser}
+                  onDepositRemove={retirerAcompte}
                   // Même verrou que la frise : ces cases écrivent par la
                   // même route, qui remplace la ligne entière.
                   disabled={!canWrite || saving || setDeposit.pending}

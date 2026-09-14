@@ -82,6 +82,8 @@ export type CycleEdit = {
   deposit: { amount: string | null; total: DepositTotal | null };
   /** Encaisse avec ce montant, ou le corrige. Rend la réussite. */
   onDeposit: (amount: string | null) => boolean | Promise<boolean>;
+  /** Retire l'encaissement. Rend la réussite : le panneau reste ouvert sur un échec. */
+  onDepositRemove: () => boolean | Promise<boolean>;
   pending?: boolean;
 };
 
@@ -350,10 +352,7 @@ function StepDot({
                 total={edit.deposit.total}
                 pending={edit.pending}
                 onSave={edit.onDeposit}
-                onRemove={async () => {
-                  await edit.onMark(point.step, null);
-                  return true;
-                }}
+                onRemove={edit.onDepositRemove}
                 onClose={() => setOpen(false)}
               />
             ) : (
