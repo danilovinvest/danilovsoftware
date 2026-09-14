@@ -23,7 +23,7 @@ import { ShellHeader } from "./shell-header";
 
 /**
  * Largeur de la colonne. Plus large que les 236 px de Twenty : les entrées ont
- * pris de la hauteur et de la marge, et « Synchronisation Excel » se coupait.
+ * pris de la hauteur et de la marge, et les intitulés longs se coupaient.
  */
 const SIDEBAR_WIDTH = "248px";
 

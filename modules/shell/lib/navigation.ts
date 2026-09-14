@@ -110,18 +110,12 @@ export const NAV_SECTIONS: NavSection[] = [
         label: "Fiches client",
         icon: FileTextIcon,
         hue: "indigo",
+        // Une entrée simple, sans sous-menu. La synchronisation Excel en est
+        // sortie : un geste d'administration rare n'a pas sa place dans la
+        // colonne qu'on parcourt toute la journée. Elle reste à portée par la
+        // recherche (⌘K), sous `imports:run`. Un menu dépliant pour la seule
+        // « Toutes les fiches » serait un clic de plus pour rien.
         permission: "customers:read",
-        items: [
-          { href: "/customers", label: "Toutes les fiches" },
-          // « Nouvelle fiche » n'est pas repris ici : la création a déjà son
-          // bouton en tête de liste, et Twenty ne double jamais une action par
-          // une entrée de navigation.
-          {
-            href: "/customers/import",
-            label: "Synchronisation Excel",
-            permission: "imports:run",
-          },
-        ],
       },
       {
         href: "/etudes",
