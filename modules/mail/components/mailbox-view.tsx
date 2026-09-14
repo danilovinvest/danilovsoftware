@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useSetPageTitle } from "@/modules/shell";
+import { ClaudeButton, mailContext } from "@/modules/assistant";
 import { EmptyState, ErrorNotice } from "@/shared/ui/feedback";
 import { Bar, ListSkeleton } from "@/shared/ui/loading";
 import { formatDateTime, initials, plural } from "@/shared/lib/format";
@@ -452,6 +453,14 @@ function Reader({
           </div>
 
           <div className="ml-auto flex shrink-0 flex-wrap items-center gap-2">
+            <ClaudeButton
+              size="xs"
+              context={mailContext({
+                subject: message.subject,
+                from: message.from_name || message.from_email,
+                customer: message.matched ? message.customer_name : null,
+              })}
+            />
             {message.matched && message.customer_id ? (
               <Button size="xs" variant="outline" asChild>
                 <Link href={`/customers/${message.customer_id}`}>{message.customer_name}</Link>

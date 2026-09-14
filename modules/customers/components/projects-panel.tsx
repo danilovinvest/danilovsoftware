@@ -11,6 +11,7 @@ import {
   Trash2Icon,
 } from "lucide-react";
 import { usePermission } from "@/modules/auth";
+import { ClaudeButton, projectContext, quoteContext } from "@/modules/assistant";
 import { createTask } from "@/modules/tasks";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -770,6 +771,17 @@ function ProjectBlock({
 
                 <div className="flex items-center gap-2">
                   <EnumBadge value={project.stage} entries={PROJECT_STAGE} />
+                  <ClaudeButton
+                    size="xs"
+                    context={projectContext({
+                      label: project.label,
+                      stage: PROJECT_STAGE[project.stage].label,
+                      site,
+                      quotes: quotes.length,
+                      documents: quotes.filter((quote) => quote.drive_url).length,
+                      interactions: interactions.length,
+                    })}
+                  />
                   {canWriteQuotes && (
                     <Button size="xs" variant="outline" onClick={onAddQuote}>
                       <FilePlusIcon />
@@ -1035,6 +1047,22 @@ function QuoteList({ quotes, onChanged }: { quotes: Quote[]; onChanged: () => vo
                 Le fichier n'est pas dans le CRM : le lien l'ouvre chez Microsoft,
                 et c'est ce qui évite de faire entrer trois cents PDF en base.
               */}
+              {/* Lire la pièce : c'est là que dorment montants et acomptes. */}
+              <ClaudeButton
+                size="xs"
+                iconOnly
+                context={quoteContext({
+                  reference: quote.reference,
+                  kind: QUOTE_KIND[quote.kind].label,
+                  document: quote.drive_name,
+                  amount: quote.amount_ttc
+                    ? `${formatAmount(quote.amount_ttc)} TTC`
+                    : quote.amount_ht
+                      ? `${formatAmount(quote.amount_ht)} HT`
+                      : null,
+                  invoice: quote.reference.toUpperCase().startsWith("FA"),
+                })}
+              />
               {quote.drive_url && (
                 <a
                   href={quote.drive_url}

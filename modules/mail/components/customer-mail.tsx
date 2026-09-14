@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronRightIcon, PaperclipIcon, Unlink2Icon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePermission } from "@/modules/auth";
+import { ClaudeButton, customerMailContext } from "@/modules/assistant";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { errorMessage } from "@/shared/api/errors";
@@ -79,6 +80,11 @@ export function CustomerMail({ customerId }: { customerId: string }) {
 
   return (
     <div className="flex flex-col">
+      {total > 0 && (
+        <div className="mb-2 flex justify-end">
+          <ClaudeButton size="xs" context={customerMailContext({ total })} />
+        </div>
+      )}
       {detachError && (
         <div className="mb-2">
           <ErrorNotice message={detachError} />

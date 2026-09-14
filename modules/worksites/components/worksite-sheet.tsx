@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { TONE_SOFT } from "@/shared/ui/panel";
 import { euros, formatAmount, formatDate, formatDateTime } from "@/shared/lib/format";
 import { usePermission } from "@/modules/auth";
+import { ClaudeButton, worksiteContext } from "@/modules/assistant";
 import {
   ProjectJalons,
   depositTotalOf,
@@ -262,6 +263,19 @@ function Body({
       <SheetHeader className="gap-1 pb-3">
         <SheetTitle className="text-base">{w.customer_name}</SheetTitle>
         <SheetDescription className="text-sm">{w.label}</SheetDescription>
+        <ClaudeButton
+          size="xs"
+          className="mt-1 self-start"
+          context={worksiteContext({
+            customer: w.customer_name,
+            label: w.label,
+            status: status.label,
+            etudes: metier === "etudes",
+            quotes: read.devis.length,
+            invoices: read.factures.length,
+            depositReceived: read.depositReceived,
+          })}
+        />
       </SheetHeader>
 
       <div className="flex flex-col gap-5 px-4 pb-8">

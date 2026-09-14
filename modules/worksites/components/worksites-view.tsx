@@ -17,6 +17,7 @@ import { Panel, RowShell } from "@/shared/ui/panel";
 import { HUE } from "@/shared/ui/hue";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { ClaudeButton, worksitesContext } from "@/modules/assistant";
 import { useWorksites } from "../hooks/use-worksites";
 import { alertTotal, STATUS_ORDER, STUDY_ORDER } from "../lib/derive";
 import { STUDY_STATUS, WORKSITE_STATUS } from "../lib/labels";
@@ -108,12 +109,23 @@ export function WorksitesView({ metier = "travaux" }: { metier?: Metier }) {
             </p>
           </div>
         </div>
-        <Input
-          value={board.city}
-          onChange={(event) => board.setCity(event.target.value)}
-          placeholder="Filtrer par ville"
-          className="h-8 w-52 text-sm"
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <ClaudeButton
+            className="h-8"
+            context={worksitesContext({
+              etudes,
+              total: reads.length,
+              alerts:
+                work.unplanned.length + work.running.length + work.toInvoice.length + work.noDeposit.length,
+            })}
+          />
+          <Input
+            value={board.city}
+            onChange={(event) => board.setCity(event.target.value)}
+            placeholder="Filtrer par ville"
+            className="h-8 w-52 text-sm"
+          />
+        </div>
       </header>
 
       {board.error && <ErrorNotice message={board.error} />}

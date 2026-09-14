@@ -15,6 +15,7 @@ import {
 import { usePermission } from "@/modules/auth";
 import { useSetPageTitle } from "@/modules/shell";
 import { CustomerMail } from "@/modules/mail";
+import { ClaudeButton, customerContext } from "@/modules/assistant";
 import { CustomerDocuments } from "@/modules/files";
 import { CustomerTasksPanel } from "@/modules/tasks";
 import { Button } from "@/components/ui/button";
@@ -164,6 +165,20 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
             lire soi-même. Le bouton suit donc la même permission que l'onglet
             Courriels.
           */}
+          <ClaudeButton
+            size="sm"
+            className="h-8"
+            context={customerContext({
+              name: customer.display_name,
+              reference: customer.reference,
+              projects: customer.projects.length,
+              quotes: customer.quotes.length,
+              documents: customer.quotes.filter((quote) => quote.drive_url).length,
+              contacts: customer.contacts.length,
+              interactions: customer.interactions.length,
+              mail: canReadMail,
+            })}
+          />
           {canWrite && canReadMail && (
             <Button variant="outline" onClick={() => setEnriching(true)}>
               <SparklesIcon />

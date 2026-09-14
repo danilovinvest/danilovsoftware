@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/modules/auth";
+import { ClaudeButton, dashboardContext } from "@/modules/assistant";
 import { formatDate } from "@/shared/lib/format";
 import { MetricCards } from "@/shared/ui/metric-cards";
 import { useDashboard } from "../hooks/use-dashboard";
@@ -61,12 +62,15 @@ export function DashboardView() {
               : "Aucun devis en attente dans la fenêtre de relance."}
           </p>
         </div>
-        <Button variant="outline" size="sm" asChild>
-          <Link href="/customers">
-            Ouvrir les fiches
-            <ArrowRightIcon />
-          </Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <ClaudeButton context={dashboardContext({ relances: data.relances_total, blocked })} />
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/customers">
+              Ouvrir les fiches
+              <ArrowRightIcon />
+            </Link>
+          </Button>
+        </div>
       </header>
 
       {/*
