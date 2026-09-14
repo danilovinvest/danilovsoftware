@@ -32,6 +32,7 @@ import { HUE } from "@/shared/ui/hue";
 import { cn } from "@/lib/utils";
 import { NAV_SECTIONS, type Hue } from "../lib/navigation";
 import { search, type Hit, type SearchResult } from "../lib/search";
+import { setSearchOpen, useSearchOpen } from "../lib/search-palette";
 
 /** En deçà, on ne dérange pas le serveur : la palette montre la navigation. */
 const MIN_QUERY = 2;
@@ -65,9 +66,12 @@ const VIDE: SearchResult = {
  * à resynchroniser — et une réponse lente ne peut pas se coller sous une frappe
  * plus récente.
  */
-export function CommandSearch() {
+export function CommandSearch({ className }: { className?: string }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  // L'ouverture est partagée : le champ de la barre latérale ouvre la même
+  // palette que celui-ci.
+  const open = useSearchOpen();
+  const setOpen = setSearchOpen;
   const [query, setQuery] = useState("");
   const [resolved, setResolved] = useState<{ key: string; data: SearchResult }>({
     key: "", data: VIDE,
@@ -173,7 +177,10 @@ export function CommandSearch() {
           qui se lisait « Mar… » au-dessus d'une barre de recherche démesurée.
           L'icône seule dit la même chose et rend la largeur au reste.
         */
-        className="bg-background text-muted-foreground hover:border-brand-text/40 hover:text-foreground focus-visible:ring-ring flex size-7 shrink-0 items-center justify-center gap-2 rounded-lg border text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none sm:h-7 sm:w-full sm:max-w-72 sm:justify-start sm:px-2.5"
+        className={cn(
+          "bg-background text-muted-foreground hover:border-brand-text/40 hover:text-foreground focus-visible:ring-ring flex size-7 shrink-0 items-center justify-center gap-2 rounded-lg border text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none sm:h-7 sm:w-full sm:max-w-72 sm:justify-start sm:px-2.5",
+          className,
+        )}
       >
         <SearchIcon className="size-3.5 shrink-0" />
         <span className="hidden truncate sm:inline">Rechercher</span>
@@ -429,7 +436,7 @@ function buildGroups({
     section.items.map((item) => ({
       id: item.href,
       title: item.label,
-      hint: section.label,
+      hint: section.label ?? "",
       href: item.href,
       badge: "",
       icon: item.icon,

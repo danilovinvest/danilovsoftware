@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  ChevronDownIcon,
+  EllipsisIcon,
   LogOutIcon,
   MonitorIcon,
   MoonIcon,
@@ -21,11 +21,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar";
 import { GradientAvatar } from "@/shared/ui/gradient-avatar";
 import { LogoTile } from "@/shared/ui/logo";
 import { initials } from "@/shared/lib/format";
@@ -60,44 +55,26 @@ export function WorkspaceMenu() {
     account.email;
 
   return (
-    <SidebarMenu>
-      <SidebarMenuItem>
+    /*
+      Deux ronds côte à côte : le menu, puis la marque.
+
+      Le nom écrit a quitté l'en-tête. La pastille signe déjà l'entreprise, et
+      le sélecteur de périmètre juste en dessous dit pour laquelle des deux on
+      travaille — un troisième libellé répétait ce que les deux autres disent.
+      Le menu vient en premier parce que c'est lui qu'on vise : la marque ne
+      s'ouvre pas.
+    */
+    <div className="flex items-center gap-2 px-0.5 pt-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <SidebarMenuButton
-              className="text-foreground hover:bg-sidebar-accent/70 data-[state=open]:bg-sidebar-accent h-12 gap-2.5 rounded-xl px-1.5 font-medium group-data-[collapsible=icon]:p-0!"
-              tooltip={`${WORKSPACE.name} — ${WORKSPACE.tagline}`}
+            <button
+              type="button"
+              aria-label="Compte, thème et paramètres"
+              title={`${WORKSPACE.name} — ${name}`}
+              className="bg-card/70 hover:bg-card data-[state=open]:bg-card text-foreground/70 hover:text-foreground focus-visible:ring-ring flex size-10 shrink-0 items-center justify-center rounded-full shadow-xs transition-colors focus-visible:ring-2 focus-visible:outline-none group-data-[collapsible=icon]:size-8"
             >
-              {/*
-                La pastille et le nom écrit, plutôt que le bloc-marque brut.
-
-                Le bloc-marque posé seul flottait : un dessin de deux cents
-                pixels de large sur un fond sans contenant, un chevron esseulé
-                à l'autre bout, et rien qui rattache la ligne au sélecteur de
-                périmètre juste en dessous — qui est, lui, une pastille avec
-                sa marque, son libellé et son chevron. Deux langages empilés.
-
-                Ici les deux lignes se répondent : marque carrée, nom, chevron.
-                Le nom écrit ne double plus le logo, puisque la pastille ne
-                porte que le profilé — elle ne dit pas « OMPT », elle le
-                signe.
-
-                Les tailles sont forcées parce que `SidebarMenuButton` impose
-                `[&_svg]:size-4` à tout ce qu'il contient : la règle est faite
-                pour des icônes carrées, et elle écrasait le profilé dans un
-                carré de seize pixels.
-              */}
-              <LogoTile className="size-9 rounded-[10px] group-data-[collapsible=icon]:size-8" />
-              <span className="grid min-w-0 flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
-                <span className="truncate text-[13px] font-semibold tracking-tight">
-                  {WORKSPACE.name}
-                </span>
-                <span className="text-muted-foreground truncate text-[11px] font-normal">
-                  {WORKSPACE.short}
-                </span>
-              </span>
-              <ChevronDownIcon className="text-muted-foreground/70 size-3.5! shrink-0 group-data-[collapsible=icon]:hidden" />
-            </SidebarMenuButton>
+              <EllipsisIcon className="size-4" />
+            </button>
           </DropdownMenuTrigger>
 
           <DropdownMenuContent
@@ -177,8 +154,15 @@ export function WorkspaceMenu() {
             </div>
           </DropdownMenuContent>
         </DropdownMenu>
-      </SidebarMenuItem>
-    </SidebarMenu>
+        <Link
+          href="/dashboard"
+          aria-label={`${WORKSPACE.name} — tableau de bord`}
+          title={WORKSPACE.tagline}
+          className="rounded-full focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none group-data-[collapsible=icon]:hidden"
+        >
+          <LogoTile className="size-10 rounded-full" />
+        </Link>
+    </div>
   );
 }
 

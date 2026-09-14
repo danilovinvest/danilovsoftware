@@ -59,9 +59,10 @@ export type NavItem = {
 };
 
 export type NavSection = {
-  label: string;
+  /** Absent pour la tête de colonne, qui n'appartient à aucune section. */
+  label?: string;
   /** Ce que la section regroupe, montré au survol de son titre. */
-  hint: string;
+  hint?: string;
   items: NavItem[];
 };
 
@@ -73,10 +74,12 @@ export type NavSection = {
  * et l'autre trois fois par an. Le regroupement suit **la fréquence et le
  * sujet**, pas l'ordre dans lequel les écrans ont été écrits.
  *
- * - **Suivi** est le fil d'une affaire, dans l'ordre où elle se déroule : la
- *   synthèse, le prospect, le chantier, la facture. C'est le seul endroit du
- *   CRM où cet enchaînement se lit d'un coup d'œil, et c'est pour cela qu'il
- *   vient en tête.
+ * - **Le tableau de bord** tient seul en tête, sans titre. Il n'est pas une
+ *   étape du fil mais sa synthèse : le ranger sous « Suivi » en faisait la
+ *   première marche d'un parcours qu'il résume.
+ * - **Suivi** est le fil d'une affaire, dans l'ordre où elle se déroule : le
+ *   prospect, le chantier, la facture. C'est le seul endroit du CRM où cet
+ *   enchaînement se lit d'un coup d'œil.
  * - **Au quotidien** est ce qu'on ouvre pour travailler, pas pour décider.
  * - **Outils** est ce qui fait tourner la machine : rarement ouvert, jamais
  *   pendant qu'on cherche un client.
@@ -86,8 +89,6 @@ export type NavSection = {
  */
 export const NAV_SECTIONS: NavSection[] = [
   {
-    label: "Suivi",
-    hint: "Le fil d'une affaire, de la synthèse à la facture",
     items: [
       {
         href: "/dashboard",
@@ -98,6 +99,12 @@ export const NAV_SECTIONS: NavSection[] = [
         // peut la lire.
         permission: "customers:read",
       },
+    ],
+  },
+  {
+    label: "Suivi",
+    hint: "Le fil d'une affaire, du prospect à la facture",
+    items: [
       {
         href: "/customers",
         label: "Fiches client",
