@@ -115,7 +115,7 @@ function WorkspaceNav() {
             */
             className={cn(
               "px-0 py-2.5",
-              index > 0 && "border-sidebar-border/60 border-t",
+              index > 0 && "border-border border-t",
             )}
           >
             {section.label && (
@@ -198,7 +198,7 @@ function WorkspaceNav() {
                           l'une sous l'autre ne diraient plus laquelle est
                           l'écran. Elles s'écrivent plus foncé, rien de plus.
                         */}
-                        <SidebarMenuSub className="border-sidebar-border/70 mx-0 ml-4 gap-0.5 py-1 pr-0 pl-2.5">
+                        <SidebarMenuSub className="border-border mx-0 ml-4 gap-0.5 py-1 pr-0 pl-2.5">
                           {subItems.map((sub) => (
                             <SidebarMenuSubItem key={sub.href}>
                               <SidebarMenuSubButton
