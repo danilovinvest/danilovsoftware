@@ -92,8 +92,8 @@ function ShellBreadcrumb() {
     const section = settingsLabel(pathname);
     return (
       <Breadcrumb>
-        <BreadcrumbList className="gap-1 text-sm sm:gap-1">
-          <BreadcrumbItem className="gap-2">
+        <BreadcrumbList className="flex-nowrap gap-1 text-sm whitespace-nowrap sm:gap-1">
+          <BreadcrumbItem className="min-w-0 gap-2">
             <span className="bg-selected text-brand-text flex size-5 shrink-0 items-center justify-center rounded-md">
               <SettingsIcon className="size-3.5" />
             </span>
@@ -102,14 +102,14 @@ function ShellBreadcrumb() {
                 <Link href="/settings">Paramètres</Link>
               </BreadcrumbLink>
             ) : (
-              <BreadcrumbPage className="font-medium">Paramètres</BreadcrumbPage>
+              <BreadcrumbPage className="truncate font-medium">Paramètres</BreadcrumbPage>
             )}
           </BreadcrumbItem>
           {section && (
             <>
               <BreadcrumbSeparator className="[&>svg]:size-3" />
-              <BreadcrumbItem>
-                <BreadcrumbPage className="font-medium">{section}</BreadcrumbPage>
+              <BreadcrumbItem className="min-w-0">
+                <BreadcrumbPage className="truncate font-medium">{section}</BreadcrumbPage>
               </BreadcrumbItem>
             </>
           )}
@@ -129,8 +129,8 @@ function ShellBreadcrumb() {
 
   return (
     <Breadcrumb>
-      <BreadcrumbList className="gap-1 text-sm sm:gap-1">
-        <BreadcrumbItem className="gap-2">
+      <BreadcrumbList className="flex-nowrap gap-1 text-sm whitespace-nowrap sm:gap-1">
+        <BreadcrumbItem className="min-w-0 gap-2">
           {/* La pastille reprend la teinte du module : la barre du haut dit
               alors où l'on est avant qu'on ait lu le mot. */}
           <span
@@ -147,14 +147,14 @@ function ShellBreadcrumb() {
               <Link href={active.href}>{active.label}</Link>
             </BreadcrumbLink>
           ) : (
-            <BreadcrumbPage className="font-medium">{active.label}</BreadcrumbPage>
+            <BreadcrumbPage className="truncate font-medium">{active.label}</BreadcrumbPage>
           )}
         </BreadcrumbItem>
         {leaf && (
           <>
             <BreadcrumbSeparator className="[&>svg]:size-3" />
-            <BreadcrumbItem>
-              <BreadcrumbPage className="font-medium">{leaf}</BreadcrumbPage>
+            <BreadcrumbItem className="min-w-0">
+              <BreadcrumbPage className="truncate font-medium">{leaf}</BreadcrumbPage>
             </BreadcrumbItem>
           </>
         )}
