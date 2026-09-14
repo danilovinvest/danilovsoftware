@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { EmptyState, ErrorNotice } from "@/shared/ui/feedback";
 import { CardsSkeleton } from "@/shared/ui/loading";
 import { eurosShort, plural } from "@/shared/lib/format";
-import { Panel, RowShell, TONE_SOFT } from "@/shared/ui/panel";
+import { Panel, RowShell } from "@/shared/ui/panel";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useWorksites } from "../hooks/use-worksites";
@@ -22,6 +22,7 @@ import { WorksiteBoard } from "./worksite-board";
 import { WorksiteList } from "./worksite-list";
 import { WorksitePlanning } from "./worksite-planning";
 import { WorksiteSheet } from "./worksite-sheet";
+import { StatusPill } from "./status-pill";
 
 const VIEWS = [
   { value: "tableau", label: "Tableau" },
@@ -138,12 +139,13 @@ export function WorksitesView({ metier = "travaux" }: { metier?: Metier }) {
       <Card className="gap-0 overflow-hidden py-0">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2">
           <p className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="font-medium">
+            <span className="font-semibold">
               {plural(reads.length, etudes ? "étude" : "chantier")}
             </span>
             {chiffre !== null && (
               <span className="text-muted-foreground tabular-nums">
-                {eurosShort(chiffre)} HT sur {chiffres} devis chiffrés
+                <strong className="text-foreground font-semibold">{eurosShort(chiffre)} HT</strong>{" "}
+                sur {chiffres} devis chiffrés
               </span>
             )}
             {(etudes ? STUDY_ORDER : STATUS_ORDER).map((status) => {
@@ -153,15 +155,11 @@ export function WorksitesView({ metier = "travaux" }: { metier?: Metier }) {
                 ? STUDY_STATUS[status as StudyStatus]
                 : WORKSITE_STATUS[status as WorksiteStatus];
               return (
-                <span
+                <StatusPill
                   key={status}
-                  className={cn(
-                    "rounded-md px-1.5 py-0.5 text-[11px] font-medium",
-                    TONE_SOFT[entry.tone],
-                  )}
-                >
-                  {count} {entry.label.toLowerCase()}
-                </span>
+                  tone={entry.tone}
+                  label={`${count} ${entry.label.toLowerCase()}`}
+                />
               );
             })}
           </p>
@@ -210,7 +208,7 @@ export function WorksitesView({ metier = "travaux" }: { metier?: Metier }) {
           ) : board.view === "planning" ? (
             <WorksitePlanning reads={reads} now={board.now} onSelect={board.select} />
           ) : (
-            <WorksiteList reads={reads} onSelect={board.select} />
+            <WorksiteList reads={reads} metier={metier} onSelect={board.select} />
           )}
         </div>
       </Card>
@@ -273,7 +271,7 @@ function AlertPanel({
               onClick={() => onOpen(row.worksite_id)}
               className="min-w-0 flex-1 text-left"
             >
-              <span className="block truncate text-xs font-medium">
+              <span className="block truncate text-[13px] font-semibold">
                 {row.customer_name}
               </span>
               <span className="text-muted-foreground block truncate text-[11px]">
@@ -284,7 +282,7 @@ function AlertPanel({
               </span>
             </button>
             {row.amount !== null && (
-              <span className="shrink-0 text-xs font-medium tabular-nums">
+              <span className="shrink-0 text-[13px] font-semibold tabular-nums">
                 {eurosShort(row.amount)}
               </span>
             )}

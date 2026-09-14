@@ -1,6 +1,7 @@
 "use client";
 
 import { TONE_SOFT } from "@/shared/ui/panel";
+import { StatusPill } from "./status-pill";
 import { cn } from "@/lib/utils";
 import { STATUS_ORDER, STUDY_ORDER } from "../lib/derive";
 import { STUDY_STATUS, WORKSITE_STATUS } from "../lib/labels";
@@ -52,16 +53,17 @@ export function WorksiteBoard({
 
         return (
           <div key={status} className="flex min-w-0 flex-col gap-2">
-            <div className="flex items-center justify-between gap-2">
-              <span
-                className={cn(
-                  "rounded-md px-1.5 py-0.5 text-[11px] font-medium",
-                  TONE_SOFT[entry.tone],
-                )}
-              >
-                {entry.label}
-              </span>
-              <span className="text-muted-foreground/60 text-[11px] tabular-nums">
+            {/* L'en-tête prend la couleur de sa colonne : quatre colonnes grises
+                se ressemblaient, et il fallait lire chaque titre pour savoir où
+                l'on était. Le nombre est en gras, c'est ce qu'on compare. */}
+            <div
+              className={cn(
+                "flex items-center justify-between gap-2 rounded-lg px-2 py-1.5",
+                TONE_SOFT[entry.tone],
+              )}
+            >
+              <StatusPill tone={entry.tone} label={entry.label} className="bg-background/70" />
+              <span className="text-sm font-bold tabular-nums">
                 {bucket?.count ?? 0}
               </span>
             </div>

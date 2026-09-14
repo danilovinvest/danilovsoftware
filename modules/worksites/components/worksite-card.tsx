@@ -37,13 +37,13 @@ export function WorksiteCard({
       type="button"
       onClick={() => onSelect(w.id)}
       className={cn(
-        "bg-card hover:bg-accent/40 flex w-full flex-col gap-1.5 rounded-lg border border-l-2 px-2.5 py-2 text-left transition-colors",
+        "bg-card hover:bg-accent/40 flex w-full flex-col gap-1.5 rounded-lg border border-l-4 px-2.5 py-2 text-left shadow-2xs transition-colors",
         etudes ? STUDY_RAIL[read.study] : STATUS_RAIL[read.status],
       )}
     >
       <span className="flex items-start justify-between gap-2">
         <span className="min-w-0">
-          <span className="block truncate text-xs font-medium">{w.customer_name}</span>
+          <span className="block truncate text-[13px] font-semibold">{w.customer_name}</span>
           <span className="text-muted-foreground block truncate text-[11px]">
             {w.label}
           </span>
@@ -51,7 +51,7 @@ export function WorksiteCard({
         {/* Le montant n'apparaît que s'il existe : un « — » sur les deux tiers
             des cartes ferait du vide une information. */}
         {read.amountHT !== null && (
-          <span className="shrink-0 text-xs font-medium tabular-nums">
+          <span className="shrink-0 text-[13px] font-semibold tabular-nums">
             {eurosShort(read.amountHT)}
           </span>
         )}

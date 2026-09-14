@@ -91,7 +91,7 @@ export function WorksitePlanning({
                       onClick={() => onSelect(read.worksite.id)}
                       title={`${read.worksite.customer_name} — ${read.worksite.label}`}
                       className={cn(
-                        "truncate rounded-md px-1.5 py-1 text-left text-[11px] transition-opacity hover:opacity-80",
+                        "truncate rounded-md px-1.5 py-1 text-left text-[11px] font-semibold transition-opacity hover:opacity-80",
                         TONE_SOFT[WORKSITE_STATUS[read.status].tone],
                       )}
                     >
