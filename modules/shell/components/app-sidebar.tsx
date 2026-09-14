@@ -49,7 +49,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     shadcn la colle aux bords de la fenêtre, et depuis que l'application vit
     dans un panneau elle débordait sur la gouttière, avec sa propre teinte.
     `collapsible="none"` la rend comme un simple bloc du panneau, du même fond
-    que lui. Le repli en icônes disparaît avec : le « ⋯ » de l'en-tête masque la
+    que lui. Le repli en icônes disparaît avec : le bouton de l'en-tête masque la
     colonne entière, ce qui rend toute la largeur au contenu au lieu d'en
     rendre 200 pixels.
 

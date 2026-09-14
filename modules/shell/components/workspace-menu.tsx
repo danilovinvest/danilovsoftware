@@ -1,17 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   LogOutIcon,
   MonitorIcon,
   MoonIcon,
-  SettingsIcon,
   SunIcon,
-  UserPlusIcon,
   type LucideIcon,
 } from "lucide-react";
-import { useAuth, usePermission } from "@/modules/auth";
+import { useAuth } from "@/modules/auth";
 import { setPreferences, usePreferences, type ThemeChoice } from "@/modules/settings";
 import {
   DropdownMenu,
@@ -33,6 +30,10 @@ const THEMES: Array<{ value: ThemeChoice; label: string; Icon: LucideIcon }> = [
 /**
  * Le menu du compte, à droite de l'en-tête.
  *
+ * Il ne porte plus que ce qui concerne la personne — son thème, sa sortie.
+ * Inviter et les paramètres ont chacun leur bouton dans l'en-tête : cachés
+ * derrière l'avatar, on ne les trouvait qu'en ouvrant le menu pour autre chose.
+ *
  * Un seul panneau, sans sous-menu : le compte, le thème et les raccourcis
  * tiennent dans la même colonne. Ouvrir un second volet à côté obligeait à
  * viser deux fois pour une action d'un clic, et le choix du thème — le
@@ -40,7 +41,6 @@ const THEMES: Array<{ value: ThemeChoice; label: string; Icon: LucideIcon }> = [
  */
 export function AccountMenu() {
   const { account, logout } = useAuth();
-  const canInvite = usePermission("users:write");
   const router = useRouter();
 
   // Le shell est monté sous RequireAuth ; ce garde-fou couvre l'instant de
@@ -103,33 +103,6 @@ export function AccountMenu() {
             <ThemePicker />
           </div>
 
-          <DropdownMenuSeparator className="mx-0 my-0" />
-
-          <div className="p-1.5">
-
-            {canInvite && (
-              <DropdownMenuItem asChild className="h-8 gap-2.5 rounded-lg px-2">
-                <Link href="/settings/membres">
-                  {/* Chaque action porte sa pastille : à taille et rayon
-                      égaux, la colonne d'icônes s'aligne d'elle-même, et
-                      c'est la couleur qui distingue au lieu de la forme. */}
-                  <span className="bg-h-grass-3 text-h-grass-11 flex size-6 shrink-0 items-center justify-center rounded-md">
-                    <UserPlusIcon className="size-3.5" />
-                  </span>
-                  Inviter un utilisateur
-                </Link>
-              </DropdownMenuItem>
-            )}
-
-            <DropdownMenuItem asChild className="h-8 gap-2.5 rounded-lg px-2">
-              <Link href="/settings">
-                <span className="bg-h-slate-3 text-h-slate-11 flex size-6 shrink-0 items-center justify-center rounded-md">
-                  <SettingsIcon className="size-3.5" />
-                </span>
-                Paramètres
-              </Link>
-            </DropdownMenuItem>
-          </div>
 
           <DropdownMenuSeparator className="mx-0 my-0" />
 
