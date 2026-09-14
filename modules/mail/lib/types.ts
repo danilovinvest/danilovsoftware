@@ -47,6 +47,12 @@ export type MailMessage = {
    * ce que chaque rapprochement apporte.
    */
   matched_by: string;
+  /**
+   * Vrai quand le message répond à une conversation (il porte In-Reply-To ou
+   * References), faux pour un premier message. Le serveur dit le fait ; l'écran
+   * en tire « Réponse » ou « Nouveau ».
+   */
+  is_reply: boolean;
 };
 
 export type MailAttachment = {
@@ -87,6 +93,9 @@ export type MailPage = {
 
 /** Ce sur quoi la liste porte. */
 export type MailScope = "tous" | "rapproches" | "sans_fiche" | "avec_corps";
+
+/** Premiers messages ou réponses : une seconde question, croisée avec la portée. */
+export type MailKind = "tous" | "nouveaux" | "reponses";
 
 /** Un correspondant régulier qui n'a pas de fiche. On ne connaît de lui que son
  * adresse, son nom d'affichage et sa fréquence : son courrier n'est pas en base. */

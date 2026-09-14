@@ -106,11 +106,75 @@ export function useLastMailRun() {
   return last;
 }
 
+/** Le rythme auquel un écran ouvert regarde si la boîte a apporté du nouveau. */
+const PULSE_POLL = 15_000;
+
+/** Le dernier tour de copie qui a changé quelque chose, ou 0. */
+function pulseOf(runs: MailRun[]): number {
+  return runs.reduce(
+    (latest, run) =>
+      run.finished_at !== null && (run.fetched > 0 || run.linked > 0)
+        ? Math.max(latest, run.id)
+        : latest,
+    0,
+  );
+}
+
+/**
+ * Un compteur qui avance quand la boîte a apporté du nouveau.
+ *
+ * Les écrans chargeaient leurs courriels une fois, à l'ouverture : la copie
+ * pouvait bien amener un message en trois secondes, la liste l'ignorait jusqu'à
+ * ce qu'on la rouvre. Plutôt que de recharger les listes à l'aveugle, on
+ * regarde le journal — le fait que le serveur tient déjà — et le compteur
+ * n'avance que lorsqu'un tour a réellement copié ou rattaché un message. Il
+ * entre dans la clé des listes, et c'est la clé qui décide de la requête.
+ *
+ * La première lecture sert de repère et ne compte pas : sans cela, chaque
+ * ouverture d'écran rechargerait sa liste une seconde fois.
+ */
+export function useMailPulse(enabled = true) {
+  const [state, setState] = useState<{ last: number | null; bumps: number }>({
+    last: null,
+    bumps: 0,
+  });
+
+  useEffect(() => {
+    if (!enabled) return;
+    const controller = new AbortController();
+    function lire() {
+      api
+        .listRuns(6, controller.signal)
+        .then((data) => {
+          const latest = pulseOf(data.items);
+          setState((current) =>
+            current.last === null
+              ? { last: latest, bumps: current.bumps }
+              : latest > current.last
+                ? { last: latest, bumps: current.bumps + 1 }
+                : current,
+          );
+        })
+        .catch(() => {});
+    }
+    lire();
+    const timer = setInterval(lire, PULSE_POLL);
+    return () => {
+      clearInterval(timer);
+      controller.abort();
+    };
+  }, [enabled]);
+
+  return state.bumps;
+}
+
 /** Les courriels d'une fiche. Chargés à l'ouverture de l'onglet, pas avant :
- * la plupart des visites d'une fiche ne les regardent pas. */
+ * la plupart des visites d'une fiche ne les regardent pas. Rechargés ensuite
+ * quand la boîte apporte du nouveau. */
 export function useCustomerMail(customerId: string, enabled: boolean) {
   const [token, setToken] = useState(0);
-  const key = enabled ? `customer-mail:${customerId}:${token}` : "";
+  const pulse = useMailPulse(enabled);
+  const key = enabled ? `customer-mail:${customerId}:${token}:${pulse}` : "";
   const [resolved, setResolved] = useState<
     Resolved<{ items: MailMessage[]; total: number }>
   >({ key: "", data: null, error: null });

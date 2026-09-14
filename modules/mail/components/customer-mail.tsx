@@ -12,6 +12,7 @@ import { EmptyState, ErrorNotice, Skeleton } from "@/shared/ui/feedback";
 import * as api from "../lib/api";
 import { useCustomerMail } from "../hooks/use-mail";
 import { Attachments } from "./attachments";
+import { MailKindBadge } from "./mail-kind-badge";
 
 /**
  * Les courriels d'une fiche.
@@ -186,8 +187,11 @@ export function CustomerMail({ customerId }: { customerId: string }) {
                     title={message.outgoing ? "envoyé" : "reçu"}
                   />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[13px] font-medium">
-                      {message.subject || "(sans objet)"}
+                    <span className="flex min-w-0 items-center gap-1.5">
+                      <MailKindBadge message={message} />
+                      <span className="truncate text-[13px] font-medium">
+                        {message.subject || "(sans objet)"}
+                      </span>
                     </span>
                     <span className="text-muted-foreground/70 block truncate text-[11px]">
                       {message.outgoing ? "à " : "de "}

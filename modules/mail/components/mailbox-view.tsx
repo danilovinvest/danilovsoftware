@@ -23,12 +23,13 @@ import { formatDateTime, initials, plural } from "@/shared/lib/format";
 import { GradientAvatar } from "@/shared/ui/gradient-avatar";
 import { cn } from "@/lib/utils";
 import { MailSyncBadge } from "./mail-sync-badge";
-import { useMailbox } from "../hooks/use-mail";
+import { useMailbox, useMailPulse } from "../hooks/use-mail";
 import { useMailboxBrowse, useMailMessage } from "../hooks/use-mailbox-browse";
 import { Attachments } from "./attachments";
 import { AttachDialog } from "./attach-dialog";
+import { MailKindBadge } from "./mail-kind-badge";
 import { MATCHED_BY } from "../lib/labels";
-import type { AttachResult, BrowseMessage, MailScope } from "../lib/types";
+import type { AttachResult, BrowseMessage, MailKind, MailScope } from "../lib/types";
 
 /**
  * La boîte de l'entreprise, en entier.
@@ -56,6 +57,12 @@ const SCOPES: Array<{ key: MailScope; label: string; hint: string }> = [
   { key: "avec_corps", label: "Déjà lus", hint: "Dont le contenu est en base" },
 ];
 
+const KINDS: Array<{ key: MailKind; label: string; hint: string }> = [
+  { key: "tous", label: "Tous", hint: "Premiers messages et réponses" },
+  { key: "nouveaux", label: "Nouveaux", hint: "Premiers messages d'une conversation" },
+  { key: "reponses", label: "Réponses", hint: "Réponses dans une conversation déjà ouverte" },
+];
+
 export function MailboxView() {
   useSetPageTitle("Messagerie");
 
@@ -70,7 +77,11 @@ export function MailboxView() {
   );
 
   const { accounts, running, last, now, reload } = useMailbox();
-  const browse = useMailboxBrowse();
+  // La liste se relit d'elle-même quand la boîte apporte du nouveau : sans
+  // cela, un courriel copié en trois secondes restait invisible jusqu'au
+  // prochain clic.
+  const pulse = useMailPulse();
+  const browse = useMailboxBrowse(pulse);
   const opened = useMailMessage(selected);
 
   // Les totaux couvrent toutes les boîtes : deux comptes raccordés donnaient
@@ -164,6 +175,27 @@ export function MailboxView() {
                     "rounded-md px-2 py-1 text-xs transition-colors",
                     browse.scope === entry.key
                       ? "bg-primary text-primary-foreground font-medium"
+                      : "text-muted-foreground hover:bg-muted",
+                  )}
+                >
+                  {entry.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Une seconde question, croisée avec la première : parmi ce qu'on
+                regarde, les demandes qui arrivent ou les réponses attendues. */}
+            <div className="flex flex-wrap items-center gap-1">
+              {KINDS.map((entry) => (
+                <button
+                  key={entry.key}
+                  type="button"
+                  title={entry.hint}
+                  onClick={() => browse.setKind(entry.key)}
+                  className={cn(
+                    "rounded-md px-2 py-1 text-xs transition-colors",
+                    browse.kind === entry.key
+                      ? "bg-selected text-brand-text font-medium"
                       : "text-muted-foreground hover:bg-muted",
                   )}
                 >
@@ -307,6 +339,7 @@ function MessageRow({
           )}
 
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <MailKindBadge message={message} />
             {showAccount && message.account && (
               <span className="bg-muted text-muted-foreground rounded-sm px-1.5 py-0.5 text-[0.65rem]">
                 {message.account}

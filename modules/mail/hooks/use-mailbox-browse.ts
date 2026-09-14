@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import * as api from "../lib/api";
-import type { BrowseMessage, MailPage, MailScope } from "../lib/types";
+import type { BrowseMessage, MailKind, MailPage, MailScope } from "../lib/types";
 
 /**
  * Parcourir la boîte.
@@ -13,9 +13,14 @@ import type { BrowseMessage, MailPage, MailScope } from "../lib/types";
  */
 type Resolved = { key: string; page: MailPage | null; error: string | null };
 
-export function useMailboxBrowse() {
+/**
+ * `pulse` avance quand la boîte a apporté du nouveau (voir `useMailPulse`) :
+ * il entre dans la clé, si bien que la page se relit sans qu'on y touche.
+ */
+export function useMailboxBrowse(pulse = 0) {
   const [search, setSearch] = useState("");
   const [scope, setScope] = useState<MailScope>("tous");
+  const [kind, setKind] = useState<MailKind>("tous");
   const [from, setFrom] = useState("");
   /** La boîte lue. Vide = toutes, ce qui est le défaut. */
   const [account, setAccount] = useState("");
@@ -27,14 +32,14 @@ export function useMailboxBrowse() {
   // La recherche attend qu'on cesse de taper : neuf mille lignes se cherchent
   // vite, mais une requête par frappe reste une requête par frappe.
   const debounced = useDebounced(search, 300);
-  const key = JSON.stringify({ debounced, scope, from, account, page, token });
+  const key = JSON.stringify({ debounced, scope, kind, from, account, page, token, pulse });
 
   const [resolved, setResolved] = useState<Resolved>({ key: "", page: null, error: null });
 
   useEffect(() => {
     const controller = new AbortController();
     api
-      .browseMail({ search: debounced, scope, from, account, page }, controller.signal)
+      .browseMail({ search: debounced, scope, kind, from, account, page }, controller.signal)
       .then((result) => setResolved({ key, page: result, error: null }))
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
@@ -45,7 +50,7 @@ export function useMailboxBrowse() {
         });
       });
     return () => controller.abort();
-  }, [key, debounced, scope, from, account, page]);
+  }, [key, debounced, scope, kind, from, account, page]);
 
   return {
     page: resolved.page,
@@ -60,6 +65,11 @@ export function useMailboxBrowse() {
     scope,
     setScope: (value: MailScope) => {
       setScope(value);
+      setPage(1);
+    },
+    kind,
+    setKind: (value: MailKind) => {
+      setKind(value);
       setPage(1);
     },
     from,

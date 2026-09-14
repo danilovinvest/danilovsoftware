@@ -7,6 +7,7 @@ import type {
   MailMessage,
   MailPage,
   MailRun,
+  MailKind,
   MailScope,
   UnknownSender,
   AttachResult,
@@ -32,6 +33,7 @@ export function browseMail(
   params: {
     search?: string;
     scope?: MailScope;
+    kind?: MailKind;
     from?: string;
     page?: number;
     /** Absent = toutes les boîtes raccordées. */
@@ -43,6 +45,7 @@ export function browseMail(
   if (params.account) query.set("account", params.account);
   if (params.search) query.set("search", params.search);
   if (params.scope && params.scope !== "tous") query.set("scope", params.scope);
+  if (params.kind && params.kind !== "tous") query.set("kind", params.kind);
   if (params.from) query.set("from", params.from);
   query.set("page", String(params.page ?? 1));
   query.set("per_page", "50");
