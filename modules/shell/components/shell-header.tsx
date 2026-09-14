@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { usePermission } from "@/modules/auth";
 import { useSidebar } from "@/components/ui/sidebar";
-import { LogoTile } from "@/shared/ui/logo";
+import { BrandText } from "@/shared/ui/logo";
 import { WORKSPACE } from "@/shared/lib/workspace";
 import { cn } from "@/lib/utils";
 import { AccountMenu } from "./workspace-menu";
@@ -18,15 +18,17 @@ import { CommandSearch } from "./command-search";
 import { NotificationsMenu } from "./notifications-menu";
 
 /**
- * Les gestes de l'en-tête : un carré aux angles doux, gris clair.
+ * Un geste de l'en-tête : une icône sans fond, qui ne se remplit qu'au survol.
  *
- * Carré et non rond : un rond seul se lisait comme un avatar de plus, et le
- * « ⋯ » qu'il portait ne disait pas ce qu'il allait faire.
+ * Trois carrés gris côte à côte faisaient trois boîtes pesantes pour trois
+ * icônes légères, et l'œil lisait les boîtes avant les icônes. Les gestes sont
+ * donc rangés dans une seule barre (`HeaderToolbar`) : un contour pour trois,
+ * et chaque icône respire dedans.
  */
 export const HEADER_BUTTON =
-  "bg-muted/60 hover:bg-muted text-foreground/70 hover:text-foreground data-[state=open]:bg-muted " +
-  "focus-visible:ring-ring relative flex size-9 shrink-0 items-center justify-center rounded-xl " +
-  "transition-colors focus-visible:ring-2 focus-visible:outline-none md:size-10 [&_svg]:size-[18px]";
+  "text-muted-foreground hover:text-foreground hover:bg-muted data-[state=open]:bg-muted data-[state=open]:text-foreground " +
+  "focus-visible:ring-ring relative flex size-8 shrink-0 items-center justify-center rounded-full " +
+  "transition-colors focus-visible:ring-2 focus-visible:outline-none [&_svg]:size-[17px]";
 
 /**
  * L'en-tête de l'application, sur toute la largeur du panneau.
@@ -36,15 +38,15 @@ export const HEADER_BUTTON =
  * unique comme une application.
  *
  * À gauche, le bouton qui ferme la colonne — son icône change pour dire ce
- * qu'il fera, fermer ou rouvrir, là où « ⋯ » ne disait rien — puis la marque.
- * Le fil d'Ariane commence exactement là où commence le contenu. À droite, ce
- * qu'on ouvre sans quitter l'écran : ce qui réclame, inviter, les paramètres,
- * le compte.
+ * qu'il fera, fermer ou rouvrir — puis la marque écrite. Le fil d'Ariane
+ * commence exactement là où commence le contenu. À droite, ce qu'on ouvre sans
+ * quitter l'écran : ce qui réclame, inviter, les paramètres, puis le compte.
  */
 export function ShellHeader({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { open, openMobile, isMobile, toggleSidebar } = useSidebar();
   const canInvite = usePermission("users:write");
+  const inSettings = pathname.startsWith("/settings");
 
   const ouverte = isMobile ? openMobile : open;
   const ToggleIcon = ouverte ? PanelLeftCloseIcon : PanelLeftOpenIcon;
@@ -54,7 +56,7 @@ export function ShellHeader({ children }: { children: React.ReactNode }) {
     <header className="flex h-16 shrink-0 items-center gap-2 px-3 md:h-18 md:gap-3 md:px-4">
       <div
         className={cn(
-          "flex shrink-0 items-center gap-2",
+          "flex shrink-0 items-center gap-2.5 md:gap-3",
           // 16 px de marge + cette largeur + 12 px d'écart = la colonne + les
           // 24 px de marge du contenu : le fil d'Ariane s'aligne sur le titre.
           open && !isMobile && "md:w-[calc(var(--sidebar-width)-0.25rem)]",
@@ -66,58 +68,59 @@ export function ShellHeader({ children }: { children: React.ReactNode }) {
           aria-label={toggleLabel}
           aria-expanded={ouverte}
           title={`${toggleLabel} (Ctrl B)`}
-          className={HEADER_BUTTON}
+          className={cn(HEADER_BUTTON, "size-9 rounded-xl [&_svg]:size-[18px]")}
         >
           <ToggleIcon />
         </button>
-        {/*
-          La marque en rectangle : le profilé est six fois plus large que haut,
-          et un rond le réduisait à un trait au milieu d'une pastille.
-        */}
         <Link
           href="/dashboard"
           aria-label={`${WORKSPACE.name} — tableau de bord`}
           title={WORKSPACE.tagline}
-          className="focus-visible:ring-ring rounded-xl focus-visible:ring-2 focus-visible:outline-none"
+          className="focus-visible:ring-ring rounded-md focus-visible:ring-2 focus-visible:outline-none"
         >
-          <LogoTile className="h-9 w-12 rounded-xl md:h-10 md:w-16" />
+          <BrandText className="text-[14px] md:text-[16px]" />
         </Link>
       </div>
 
       <div className="min-w-0 flex-1">{children}</div>
 
-      <div className="flex shrink-0 items-center gap-1.5 md:gap-2">
+      <div className="flex shrink-0 items-center gap-2 md:gap-2.5">
         {/* Sur un écran large, la recherche vit dans la colonne ; ce
             déclencheur-ci ne sert que là où elle n'est pas — sur un téléphone,
             où la colonne est un tiroir, et dans les réglages, dont la colonne
             ne la porte pas. */}
-        <CommandSearch
-          className={pathname.startsWith("/settings") ? undefined : "md:hidden"}
-        />
-        <NotificationsMenu buttonClassName={HEADER_BUTTON} />
-        {canInvite && (
-          // Sur un téléphone la place manque : l'invitation reste dans
-          // Paramètres → Membres, à un geste de plus.
-          <Link
-            href="/settings/membres"
-            aria-label="Inviter un utilisateur"
-            title="Inviter un utilisateur"
-            className={cn(HEADER_BUTTON, "hidden sm:flex")}
-          >
-            <UserPlusIcon />
-          </Link>
-        )}
-        <Link
-          href="/settings"
-          aria-label="Paramètres"
-          title="Paramètres"
-          className={cn(
-            HEADER_BUTTON,
-            pathname.startsWith("/settings") && "bg-muted text-foreground",
+        <CommandSearch className={inSettings ? undefined : "md:hidden"} />
+
+        {/*
+          Une barre pour trois gestes : un contour commun, un fond de carte,
+          une ombre à peine posée. Elle se lit comme un seul objet à côté de
+          l'avatar, au lieu de trois boîtes alignées.
+        */}
+        <div className="bg-card ring-border/70 flex items-center gap-0.5 rounded-full p-1 shadow-xs ring-1">
+          <NotificationsMenu buttonClassName={HEADER_BUTTON} />
+          {canInvite && (
+            // Sur un téléphone la place manque : l'invitation reste dans
+            // Paramètres → Membres, à un geste de plus.
+            <Link
+              href="/settings/membres"
+              aria-label="Inviter un utilisateur"
+              title="Inviter un utilisateur"
+              className={cn(HEADER_BUTTON, "hidden sm:flex")}
+            >
+              <UserPlusIcon />
+            </Link>
           )}
-        >
-          <SettingsIcon />
-        </Link>
+          <Link
+            href="/settings"
+            aria-label="Paramètres"
+            title="Paramètres"
+            aria-current={inSettings ? "page" : undefined}
+            className={cn(HEADER_BUTTON, inSettings && "bg-muted text-foreground")}
+          >
+            <SettingsIcon />
+          </Link>
+        </div>
+
         <AccountMenu />
       </div>
     </header>

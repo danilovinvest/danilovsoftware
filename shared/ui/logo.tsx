@@ -139,3 +139,44 @@ export function LogoTile({ className }: { className?: string }) {
     </span>
   );
 }
+
+/**
+ * La marque du CRM écrite : « OMPT », et « CRM » dessous.
+ *
+ * Deux lignes plutôt qu'une : « OMPT CRM » à la file faisait lire deux mots de
+ * même poids, alors que l'un est l'entreprise et l'autre l'outil. Le nom
+ * porte le poids et l'encre de la marque, l'outil se range dessous, petit et
+ * dans l'orange du profilé.
+ *
+ * Les trois lettres de « CRM » sont réparties sur toute la largeur d'« OMPT »
+ * plutôt qu'espacées d'une valeur fixe : un interlettrage écrit à la main
+ * tombe juste pour une police et une taille, et laisse une traîne à droite
+ * dès qu'on change l'une ou l'autre.
+ *
+ * La police est Space Grotesk (`font-display`), réservée à la marque : une
+ * géométrie d'ingénieur pour un bureau d'études, là où Inter, qui écrit tout
+ * le reste, n'aurait rien distingué.
+ */
+export function BrandText({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        "font-display inline-flex flex-col leading-none select-none",
+        className,
+      )}
+    >
+      <span className="text-logo-ink text-[1.375em] font-bold tracking-[-0.03em]">
+        OMPT
+      </span>
+      <span
+        aria-hidden
+        className="text-logo-beam mt-[0.18em] flex justify-between text-[0.56em] font-semibold"
+      >
+        <span>C</span>
+        <span>R</span>
+        <span>M</span>
+      </span>
+      <span className="sr-only">CRM</span>
+    </span>
+  );
+}
