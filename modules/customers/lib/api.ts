@@ -6,6 +6,7 @@ import type {
   CustomerDetail,
   CustomerFilters,
   CustomerListItem,
+  PaymentStatus,
   CustomerPayload,
   CustomerStats,
   DuplicatePair,

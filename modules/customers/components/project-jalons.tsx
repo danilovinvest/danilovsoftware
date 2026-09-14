@@ -8,6 +8,7 @@ import { DateField } from "@/shared/ui/date-time-field";
 import { formatDate } from "@/shared/lib/format";
 import { cn } from "@/lib/utils";
 import { jalonOrder, type Jalons } from "../lib/jalons";
+import { DepositEditor, DepositTag, type DepositTotal } from "./deposit-field";
 import { MaterialsEditor, MaterialsTags } from "./materials-field";
 import type { Metier } from "../lib/cycle";
 
@@ -31,6 +32,8 @@ export function ProjectJalons({
   jalons,
   onToggle,
   onMaterials,
+  depositTotal = null,
+  onDeposit,
   disabled,
   className,
 }: {
@@ -46,6 +49,13 @@ export function ProjectJalons({
    * un cas qui ne concerne qu'une ligne sur quinze.
    */
   onMaterials: (list: string[] | null) => boolean | Promise<boolean>;
+  /** Le montant du devis, auquel l'acompte se compare. */
+  depositTotal?: DepositTotal | null;
+  /**
+   * Encaisse l'acompte avec son montant, ou corrige le montant. Absent, la
+   * ligne reste une simple case.
+   */
+  onDeposit?: (amount: string | null) => boolean | Promise<boolean>;
   disabled?: boolean;
   className?: string;
 }) {
@@ -95,6 +105,13 @@ export function ProjectJalons({
                   </div>
                   <div className="text-muted-foreground/70 text-xs">
                     {done ? formatDate(at) : jalon.hint}
+                    {/* Combien, à côté de quand : c'est ce qu'on vérifie sur le relevé. */}
+                    {done && jalon.picks === "deposit" && jalons.deposit_amount && (
+                      <>
+                        {" · "}
+                        <DepositTag amount={jalons.deposit_amount} />
+                      </>
+                    )}
                   </div>
                   {/*
                     La commande se lit sous sa date : « commandés le 12 sept. »
@@ -117,6 +134,18 @@ export function ProjectJalons({
                     materials={jalons.materials}
                     disabled={disabled}
                     onSave={onMaterials}
+                  />
+                ) : jalon.picks === "deposit" && onDeposit ? (
+                  <DepositButton
+                    paid={done}
+                    amount={jalons.deposit_amount}
+                    total={depositTotal}
+                    disabled={disabled}
+                    onSave={onDeposit}
+                    onRemove={() => {
+                      onToggle(jalon.key, null);
+                      return true;
+                    }}
                   />
                 ) : (
                   <Button
@@ -186,6 +215,47 @@ function MaterialsButton({
           note="Écrit la commande et sa date dans les jalons de l'affaire."
           onSave={(list) => onSave(list)}
           onRemove={() => onSave(null)}
+          onClose={() => setOpen(false)}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/** L'acompte, encaissé avec son montant et corrigé ensuite, depuis sa ligne. */
+function DepositButton({
+  paid,
+  amount,
+  total,
+  disabled,
+  onSave,
+  onRemove,
+}: {
+  paid: boolean;
+  amount: string | null;
+  total: DepositTotal | null;
+  disabled?: boolean;
+  onSave: (amount: string | null) => boolean | Promise<boolean>;
+  onRemove: () => boolean | Promise<boolean>;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button size="xs" variant={paid ? "ghost" : "outline"} disabled={disabled}>
+          {paid ? "Modifier" : "Encaissé"}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72" align="end">
+        <DepositEditor
+          key={`${open}·${amount ?? "vide"}`}
+          amount={amount}
+          paid={paid}
+          total={total}
+          pending={disabled}
+          onSave={onSave}
+          onRemove={onRemove}
           onClose={() => setOpen(false)}
         />
       </PopoverContent>

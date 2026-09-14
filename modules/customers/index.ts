@@ -41,7 +41,7 @@ export { ProjectPicker } from "./components/project-picker";
 // chantiers et des études : c'est la même liste de cases, sur la même affaire.
 export { ProjectJalons } from "./components/project-jalons";
 export { setMilestones, setQuoteDeposit, updateProject } from "./lib/api";
-export { DepositTag } from "./components/deposit-field";
+export { DepositTag, depositTotalOf } from "./components/deposit-field";
 // Les tâches ont besoin des affaires d'une fiche pour proposer à laquelle se
 // rattacher. Une route dédiée ne se justifierait pas : la fiche est déjà
 // servie en un appel, et c'est un geste explicite de l'utilisateur.

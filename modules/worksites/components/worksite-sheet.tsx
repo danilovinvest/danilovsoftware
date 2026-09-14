@@ -17,14 +17,13 @@ import { euros, formatAmount, formatDate, formatDateTime } from "@/shared/lib/fo
 import { usePermission } from "@/modules/auth";
 import {
   ProjectJalons,
+  depositTotalOf,
   setMilestones,
+  setQuoteDeposit,
   updateProject,
-  updateQuote,
   type Jalons,
   type PaymentStatus,
   type ProjectPayload,
-  type QuoteKind,
-  type QuoteStatus,
 } from "@/modules/customers";
 import { errorMessage } from "@/shared/api/errors";
 import { ErrorNotice } from "@/shared/ui/feedback";
@@ -109,6 +108,7 @@ function Body({
       ? (w.started_at ?? w.created_at)
       : null,
     deposit_paid_at: read.depositReceived ? (w.started_at ?? w.created_at) : null,
+    deposit_amount: signedQuote(w)?.deposit_amount ?? null,
     // Aucune colonne ne date le solde : le devis n'en porte que le statut.
     balance_paid_at:
       signedQuote(w)?.balance_status === "recu" ? (w.started_at ?? w.created_at) : null,
@@ -151,6 +151,14 @@ function Body({
     );
   }
 
+  /** Encaisse l'acompte avec son montant, ou corrige le montant. */
+  function encaisser(amount: string | null): Promise<boolean> {
+    return appliquer({
+      deposit_paid_at: jalons.deposit_paid_at ?? new Date().toISOString(),
+      deposit_amount: amount,
+    });
+  }
+
   /**
    * Applique un lot de jalons : peint, écrit, se dédit s'il échoue.
    *
@@ -164,35 +172,28 @@ function Body({
     setEchec(null);
     const suivant = { ...jalons, ...patch };
     try {
-      if ("deposit_invoiced_at" in patch || "deposit_paid_at" in patch) {
-        const paid = "deposit_paid_at" in patch;
-        const value = paid ? patch.deposit_paid_at : patch.deposit_invoiced_at;
-        // L'acompte appartient au devis : c'est lui qui porte le règlement.
+      if ("deposit_invoiced_at" in patch || "deposit_paid_at" in patch || "deposit_amount" in patch) {
+        /*
+          L'acompte appartient au devis, et sa route ne touche que lui.
+
+          Cet écran renvoyait le devis entier sans en connaître le taux de TVA
+          ni le commentaire, et les effaçait à chaque case cochée.
+        */
         const cible = signedQuote(w);
         if (!cible) throw new Error("Aucun devis à mettre à jour sur cette affaire.");
-        /*
-          Le devis est renvoyé entier parce que la route le remplace. Les
-          champs que cet écran ne connaît pas — le taux de TVA — ne sont pas
-          servis avec un chantier : les laisser nuls les effacerait, d'où la
-          seule modification permise ici, le statut de l'acompte.
-        */
-        await updateQuote(cible.id, {
-          reference: cible.reference,
-          kind: cible.kind as QuoteKind,
-          label: cible.label,
-          status: cible.status as QuoteStatus,
-          issued_at: cible.issued_at,
-          amount_ht: cible.amount_ht, amount_ttc: cible.amount_ttc,
-          vat_rate: null, amount_note: cible.amount_note,
-          deposit_status: paid
-            ? value
+        const status: PaymentStatus =
+          "deposit_paid_at" in patch
+            ? patch.deposit_paid_at
               ? "recu"
               : "en_attente"
-            : value
-              ? "en_attente"
-              : "non_applicable",
-          balance_status: cible.balance_status as PaymentStatus,
-          comment: "",
+            : "deposit_invoiced_at" in patch
+              ? patch.deposit_invoiced_at
+                ? "en_attente"
+                : "non_applicable"
+              : (cible.deposit_status as PaymentStatus);
+        await setQuoteDeposit(cible.id, {
+          status,
+          amount: "deposit_amount" in patch ? (patch.deposit_amount ?? null) : cible.deposit_amount,
         });
       } else if ("worksite_date" in patch) {
         // Réserver une date, c'est renseigner `started_at` de l'affaire : la
@@ -271,6 +272,7 @@ function Body({
           {read.depositReceived && (
             <span className="bg-success-soft text-success rounded-md px-1.5 py-0.5 text-[11px] font-medium">
               acompte encaissé
+              {jalons.deposit_amount && ` · ${formatAmount(jalons.deposit_amount)}`}
             </span>
           )}
           {read.invoiced && (
@@ -308,6 +310,8 @@ function Body({
             disabled={!canWrite || enCours}
             onToggle={poser}
             onMaterials={commanderMateriaux}
+            depositTotal={depositTotalOf(signedQuote(w))}
+            onDeposit={encaisser}
           />
         </div>
 

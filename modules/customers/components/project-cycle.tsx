@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DateField } from "@/shared/ui/date-time-field";
 import { cn } from "@/lib/utils";
+import { DepositEditor, type DepositTotal } from "./deposit-field";
 import { MaterialsEditor } from "./materials-field";
 import {
   CYCLE_LABEL,
@@ -74,6 +75,13 @@ export type CycleEdit = {
    * faute de quoi un brouillon de plusieurs lignes disparaîtrait sans un mot.
    */
   onMaterials: (list: string[] | null) => boolean | Promise<boolean>;
+  /**
+   * L'acompte du devis qui porte le règlement : ce qu'il vaut, et à quoi il se
+   * compare. Encaisser, c'est dire combien.
+   */
+  deposit: { amount: string | null; total: DepositTotal | null };
+  /** Encaisse avec ce montant, ou le corrige. Rend la réussite. */
+  onDeposit: (amount: string | null) => boolean | Promise<boolean>;
   pending?: boolean;
 };
 
@@ -287,7 +295,9 @@ function StepDot({
     réserve pour dans six semaines, et les matériaux se listent. Leur panneau
     porte donc ses propres boutons, et non le « Marquer franchi » commun.
   */
-  const saisi = write.target === "worksite_date" || write.target === "materials";
+  // L'acompte aussi se saisit, dès qu'un devis le porte : on dit combien.
+  const acompte = write.target === "quote" && write.field === "deposit" && edit.hasQuote;
+  const saisi = write.target === "worksite_date" || write.target === "materials" || acompte;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -330,6 +340,20 @@ function StepDot({
                 note={write.note}
                 onSave={(list) => edit.onMaterials(list)}
                 onRemove={() => edit.onMaterials(null)}
+                onClose={() => setOpen(false)}
+              />
+            ) : acompte ? (
+              <DepositEditor
+                key={`${marked ?? "vide"}·${edit.deposit.amount ?? "vide"}`}
+                amount={edit.deposit.amount}
+                paid={marked !== null}
+                total={edit.deposit.total}
+                pending={edit.pending}
+                onSave={edit.onDeposit}
+                onRemove={async () => {
+                  await edit.onMark(point.step, null);
+                  return true;
+                }}
                 onClose={() => setOpen(false)}
               />
             ) : (

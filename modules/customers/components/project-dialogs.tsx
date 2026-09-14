@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { ErrorNotice } from "@/shared/ui/feedback";
 import { SelectField, TextField } from "@/shared/ui/form";
+import { parseAmountInput } from "./deposit-field";
 import { useColleagues } from "@/shared/hooks/use-colleagues";
 import * as api from "../lib/api";
 import {
@@ -58,6 +59,7 @@ const EMPTY_QUOTE: QuotePayload = {
   vat_rate: null,
   amount_note: "",
   deposit_status: "non_applicable",
+  deposit_amount: null,
   balance_status: "non_applicable",
   comment: "",
 };
@@ -265,6 +267,7 @@ function toPayload(quote: Quote): QuotePayload {
     vat_rate: quote.vat_rate,
     amount_note: quote.amount_note,
     deposit_status: quote.deposit_status,
+    deposit_amount: quote.deposit_amount,
     balance_status: quote.balance_status,
     comment: quote.comment,
     issuer: quote.issuer,
@@ -299,9 +302,15 @@ export function QuoteDialog({
   const [values, setValues] = useState<QuotePayload>(() =>
     quote ? toPayload(quote) : EMPTY_QUOTE,
   );
-  const create = useAction(() =>
-    quote ? api.updateQuote(quote.id, values) : api.createQuote(project?.id ?? "", values),
-  );
+  const create = useAction(() => {
+    // Tapé à la française — « 2 400,50 » — et envoyé comme l'API l'attend.
+    const deposit = parseAmountInput(values.deposit_amount);
+    if (deposit === undefined) {
+      throw new Error("Le montant de l'acompte est illisible : 2 400 ou 2 400,50.");
+    }
+    const payload = { ...values, deposit_amount: deposit };
+    return quote ? api.updateQuote(quote.id, payload) : api.createQuote(project?.id ?? "", payload);
+  });
 
   return (
     <Dialog open={quote !== null || project !== null} onOpenChange={onOpenChange}>
@@ -414,6 +423,19 @@ export function QuoteDialog({
               })
             }
           />
+          {/* Pas d'acompte, pas de montant : le serveur l'efface de lui-même. */}
+          {values.deposit_status !== "non_applicable" && (
+            <TextField
+              label="Montant de l'acompte"
+              hint="Ce que le client a réglé, s'il l'a changé"
+              inputMode="decimal"
+              placeholder="2 400"
+              value={values.deposit_amount ?? ""}
+              onChange={(event) =>
+                setValues({ ...values, deposit_amount: event.target.value || null })
+              }
+            />
+          )}
           <SelectField
             label="Solde"
             options={toOptions(PAYMENT_STATUS)}

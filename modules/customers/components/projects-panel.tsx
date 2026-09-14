@@ -52,6 +52,7 @@ import {
 import { useAction } from "../hooks/use-customers";
 import { EnumBadge } from "./enum-badge";
 import { InteractionDialog } from "./interaction-dialog";
+import { DepositDialog, depositTotalOf } from "./deposit-field";
 import { MaterialsDialog } from "./materials-field";
 import {
   ProjectOnboardingButton,
@@ -433,6 +434,8 @@ function ProjectBlock({
   const [logging, setLogging] = useState<InteractionKind | null>(null);
   /** La saisie des matériaux, ouverte depuis « à faire maintenant ». */
   const [materiaux, setMateriaux] = useState(false);
+  /** Le montant de l'acompte, demandé depuis « à faire maintenant ». */
+  const [acompte, setAcompte] = useState(false);
   /** Le tiroir qui complète l'affaire, ouvert depuis l'alerte du dessus. */
   const [completer, setCompleter] = useState(false);
 
@@ -444,26 +447,26 @@ function ProjectBlock({
     api.setProjectStage(project.id, { stage: project.stage, outcome: null, outcome_note: "" }),
   );
 
-  // L'acompte est réel : il vit sur le devis signé. Le marquer facturé ou
-  // encaissé écrit donc en base, contrairement aux quatre jalons simulés.
-  const setDeposit = useAction((status: "en_attente" | "recu") => {
-    const target = quotes.find((q) => q.status === "accepte" || q.status === "realise") ?? lead;
-    if (!target) throw new Error("Aucun devis à mettre à jour sur cette affaire.");
-    return api.updateQuote(target.id, {
-      reference: target.reference,
-      kind: target.kind,
-      label: target.label,
-      status: target.status,
-      issued_at: target.issued_at,
-      amount_ht: target.amount_ht,
-      amount_ttc: target.amount_ttc,
-      vat_rate: target.vat_rate,
-      amount_note: target.amount_note,
-      deposit_status: status,
-      balance_status: target.balance_status,
-      comment: target.comment,
+  /*
+    L'acompte vit sur le devis signé, et sa route ne touche que lui : statut et
+    montant. Un montant omis reste celui que porte déjà le devis — marquer
+    « facturé » ne doit pas effacer ce qu'on a saisi.
+  */
+  const porteur = quotes.find((q) => q.status === "accepte" || q.status === "realise") ?? lead;
+  const setDeposit = useAction((status: "en_attente" | "recu", amount?: string | null) => {
+    if (!porteur) throw new Error("Aucun devis à mettre à jour sur cette affaire.");
+    return api.setQuoteDeposit(porteur.id, {
+      status,
+      amount: amount === undefined ? porteur.deposit_amount : amount,
     });
   });
+
+  /** Encaisse l'acompte avec son montant, ou corrige le montant. */
+  async function encaisser(amount: string | null): Promise<boolean> {
+    const ok = (await setDeposit.run("recu", amount)) !== null;
+    if (ok) onChanged();
+    return ok;
+  }
 
   /*
     Le solde suit la même route que l'acompte : c'est le devis qui porte le
@@ -485,6 +488,7 @@ function ProjectBlock({
       vat_rate: target.vat_rate,
       amount_note: target.amount_note,
       deposit_status: target.deposit_status,
+      deposit_amount: target.deposit_amount,
       balance_status: status,
       comment: target.comment,
     });
@@ -580,7 +584,9 @@ function ProjectBlock({
         if (await setDeposit.run("en_attente")) onChanged();
         break;
       case "deposit_paid":
-        if (await setDeposit.run("recu")) onChanged();
+        // Encaisser demande de dire combien : le client change parfois
+        // l'acompte, et c'est ce montant qu'on vérifie sur le relevé.
+        setAcompte(true);
         break;
       case "send_rib":
         onOverride({ rib_sent_at: new Date().toISOString() });
@@ -693,6 +699,11 @@ function ProjectBlock({
                       onAddQuote,
                       materials: jalons.materials,
                       onMaterials: commanderMateriaux,
+                      deposit: {
+                        amount: jalons.deposit_amount,
+                        total: depositTotalOf(porteur),
+                      },
+                      onDeposit: encaisser,
                       pending: saving || setDeposit.pending || setBalance.pending,
                     }
                   : undefined
@@ -796,6 +807,8 @@ function ProjectBlock({
                   metier={metierOf(quotes)}
                   jalons={jalons}
                   onMaterials={commanderMateriaux}
+                  depositTotal={depositTotalOf(porteur)}
+                  onDeposit={encaisser}
                   // Même verrou que la frise : ces cases écrivent par la
                   // même route, qui remplace la ligne entière.
                   disabled={!canWrite || saving || setDeposit.pending}
@@ -842,6 +855,16 @@ function ProjectBlock({
         marked={jalons.materials_ordered_at}
         pending={saving}
         onSave={commanderMateriaux}
+      />
+
+      <DepositDialog
+        open={acompte}
+        onOpenChange={setAcompte}
+        amount={jalons.deposit_amount}
+        paid={jalons.deposit_paid_at !== null}
+        total={depositTotalOf(porteur)}
+        pending={setDeposit.pending}
+        onSave={encaisser}
       />
 
       {relance && (
@@ -969,6 +992,7 @@ function QuoteList({ quotes, onChanged }: { quotes: Quote[]; onChanged: () => vo
               {quote.deposit_status !== "non_applicable" && (
                 <span className="text-muted-foreground text-xs">
                   acompte {PAYMENT_STATUS[quote.deposit_status].label.toLowerCase()}
+                  {quote.deposit_amount && ` · ${formatAmount(quote.deposit_amount)}`}
                 </span>
               )}
 
