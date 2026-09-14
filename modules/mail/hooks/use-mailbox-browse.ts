@@ -60,6 +60,16 @@ export function useMailboxBrowse(pulse = 0) {
     search,
     setSearch: (value: string) => {
       setSearch(value);
+      /*
+        Chercher, c'est chercher partout.
+
+        La boîte choisie restait appliquée pendant qu'on tapait : on avait
+        cliqué « omptgroupe » pour lire une conversation, puis on cherchait un
+        client écrit à STRUCTURE, et rien ne remontait. Une recherche repasse
+        donc sur toutes les boîtes ; chaque ligne dit de laquelle elle vient,
+        et on peut rechoisir une boîte ensuite pour affiner.
+      */
+      if (value.trim() !== "") setAccount("");
       setPage(1);
     },
     scope,
