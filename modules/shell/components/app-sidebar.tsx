@@ -22,14 +22,13 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-  SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { NAV_ACTIVE_CLASS, NAV_ITEM_CLASS } from "@/shared/ui/nav";
 import { cn } from "@/lib/utils";
 import { NAV_SECTIONS } from "../lib/navigation";
 import { ScopeSwitcher, useScope } from "@/modules/group";
 import { SidebarSearch } from "./sidebar-search";
-import { WorkspaceMenu } from "./workspace-menu";
 
 /**
  * Le tiroir latéral a deux états, comme chez Twenty : la navigation de
@@ -42,11 +41,31 @@ import { WorkspaceMenu } from "./workspace-menu";
  */
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
+  const { isMobile, open } = useSidebar();
+
+  /*
+    Sur un écran large, la colonne est posée dans le flux, pas en `fixed`.
+
+    shadcn la colle aux bords de la fenêtre, et depuis que l'application vit
+    dans un panneau elle débordait sur la gouttière, avec sa propre teinte.
+    `collapsible="none"` la rend comme un simple bloc du panneau, du même fond
+    que lui. Le repli en icônes disparaît avec : le « ⋯ » de l'en-tête masque la
+    colonne entière, ce qui rend toute la largeur au contenu au lieu d'en
+    rendre 200 pixels.
+
+    Sur un téléphone elle reste le tiroir de shadcn. `hidden md:flex` couvre
+    l'instant avant que la largeur de l'écran ne soit connue, où la colonne
+    s'afficherait sinon en pleine page sur un téléphone.
+  */
+  if (!isMobile && !open) return null;
 
   return (
-    <Sidebar variant="inset" collapsible="icon" {...props}>
+    <Sidebar
+      collapsible={isMobile ? "offcanvas" : "none"}
+      className={isMobile ? undefined : "hidden bg-transparent md:flex"}
+      {...props}
+    >
       {pathname.startsWith("/settings") ? <SettingsNav /> : <WorkspaceNav />}
-      <SidebarRail />
     </Sidebar>
   );
 }
@@ -73,18 +92,16 @@ function WorkspaceNav() {
   return (
     <>
       {/*
-        L'en-tête dans l'ordre où on s'en sert : le compte, la recherche, puis
-        la société pour laquelle on travaille. La recherche revient dans la
-        colonne sur un écran large — c'est là que l'œil commence — et la barre
-        du haut ne la montre plus que là où la colonne n'est pas.
+        La recherche d'abord, puis la société pour laquelle on travaille. Le
+        compte et la marque sont montés dans l'en-tête, qui coiffe toute
+        l'application.
       */}
-      <SidebarHeader className="gap-3 px-2.5 pt-2.5 pb-1">
-        <WorkspaceMenu />
+      <SidebarHeader className="gap-3 px-3 pt-1 pb-1">
         <SidebarSearch />
         <ScopeSwitcher />
       </SidebarHeader>
 
-      <SidebarContent className="gap-0 px-2.5 pb-3">
+      <SidebarContent className="gap-0 px-3 pb-3">
         {sections.map((section, index) => (
           <SidebarGroup
             key={section.label ?? "tete"}
@@ -110,11 +127,8 @@ function WorkspaceNav() {
                   Un titre gris de la même taille que les entrées se lit comme
                   une entrée de plus qu'on ne peut pas cliquer. Les majuscules
                   espacées et la couleur en font une étiquette, pas un lien.
-
-                  Le repli en mode icônes remonte le titre de sa propre
-                  hauteur ; la classe par défaut vise `h-8`, celle-ci `h-7`.
                 */
-                className="text-brand-text h-7 px-2.5 text-[10px] font-semibold tracking-[0.08em] uppercase group-data-[collapsible=icon]:-mt-7"
+                className="text-brand-text h-7 px-2.5 text-[10px] font-semibold tracking-[0.08em] uppercase"
               >
                 {section.label}
               </SidebarGroupLabel>

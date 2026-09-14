@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  EllipsisIcon,
   LogOutIcon,
   MonitorIcon,
   MoonIcon,
@@ -22,9 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { GradientAvatar } from "@/shared/ui/gradient-avatar";
-import { LogoTile } from "@/shared/ui/logo";
 import { initials } from "@/shared/lib/format";
-import { WORKSPACE } from "@/shared/lib/workspace";
 import { cn } from "@/lib/utils";
 
 const THEMES: Array<{ value: ThemeChoice; label: string; Icon: LucideIcon }> = [
@@ -34,14 +31,14 @@ const THEMES: Array<{ value: ThemeChoice; label: string; Icon: LucideIcon }> = [
 ];
 
 /**
- * Le menu de l'espace de travail, en haut de la barre latérale.
+ * Le menu du compte, à droite de l'en-tête.
  *
  * Un seul panneau, sans sous-menu : le compte, le thème et les raccourcis
  * tiennent dans la même colonne. Ouvrir un second volet à côté obligeait à
  * viser deux fois pour une action d'un clic, et le choix du thème — le
  * réglage qu'on change le plus souvent — s'y trouvait enterré.
  */
-export function WorkspaceMenu() {
+export function AccountMenu() {
   const { account, logout } = useAuth();
   const canInvite = usePermission("users:write");
   const router = useRouter();
@@ -55,32 +52,30 @@ export function WorkspaceMenu() {
     account.email;
 
   return (
-    /*
-      Deux ronds côte à côte : le menu, puis la marque.
-
-      Le nom écrit a quitté l'en-tête. La pastille signe déjà l'entreprise, et
-      le sélecteur de périmètre juste en dessous dit pour laquelle des deux on
-      travaille — un troisième libellé répétait ce que les deux autres disent.
-      Le menu vient en premier parce que c'est lui qu'on vise : la marque ne
-      s'ouvre pas.
-    */
-    <div className="flex items-center gap-2 px-0.5 pt-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            aria-label="Compte, thème et paramètres"
-            title={`${WORKSPACE.name} — ${name}`}
-            className="bg-card/70 hover:bg-card data-[state=open]:bg-card text-foreground/70 hover:text-foreground focus-visible:ring-ring flex size-10 shrink-0 items-center justify-center rounded-full shadow-xs transition-colors focus-visible:ring-2 focus-visible:outline-none group-data-[collapsible=icon]:size-8"
-          >
-            <EllipsisIcon className="size-4" />
-          </button>
-        </DropdownMenuTrigger>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        {/* L'avatar est le compte, et il se range à droite de l'en-tête : c'est
+            là qu'on le cherche dans toute application. Le dégradé naît de
+            l'adresse, si bien que chacun reconnaît le sien sans photo. */}
+        <button
+          type="button"
+          aria-label={`Compte de ${name}`}
+          title={name}
+          className="focus-visible:ring-ring shrink-0 rounded-full transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:outline-none data-[state=open]:opacity-90"
+        >
+          <GradientAvatar
+            seed={account.email}
+            text={initials(name)}
+            size={40}
+            rounded={20}
+          />
+        </button>
+      </DropdownMenuTrigger>
 
         <DropdownMenuContent
           className="w-68 overflow-hidden rounded-xl p-0"
           side="bottom"
-          align="start"
+          align="end"
           sideOffset={6}
         >
           {/*
@@ -153,16 +148,7 @@ export function WorkspaceMenu() {
             </DropdownMenuItem>
           </div>
         </DropdownMenuContent>
-      </DropdownMenu>
-      <Link
-        href="/dashboard"
-        aria-label={`${WORKSPACE.name} — tableau de bord`}
-        title={WORKSPACE.tagline}
-        className="rounded-full focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none group-data-[collapsible=icon]:hidden"
-      >
-        <LogoTile className="size-10 rounded-full" />
-      </Link>
-    </div>
+    </DropdownMenu>
   );
 }
 
