@@ -143,6 +143,17 @@
    */
   --t-veil: oklch(1 0 0 / 0.6);
 
+  /*
+   * Le sol sous l'application : plus sombre que le cadre, dans les deux thèmes.
+   *
+   * En clair, le cran 4 suffit. Il n'existe aucun cran plus sombre que le 1 en
+   * thème sombre, où le fond du cadre est justement le cran 1 : repris tel quel,
+   * le cran 4 y devenait plus clair que l'application, qui paraissait alors
+   * enfoncée dans un cadre gris au lieu de flotter. Le sol est donc dérivé du
+   * cran 1 assombri, ce qui garde la température de chaque palette.
+   */
+  --t-ground: var(--t-gray-4);
+
   /* Twenty — BOX_SHADOW_LIGHT, exprimé sur du noir alpha. */
   --t-shadow-light: 0 2px 4px 0 rgb(0 0 0 / 0.039), 0 0 4px 0 rgb(0 0 0 / 0.078);
   --t-shadow-strong: 2px 4px 16px 0 rgb(0 0 0 / 0.161),
@@ -274,6 +285,10 @@
 
   /* En sombre, le voile est l'inverse d'une ombre : un blanc très dilué. */
   --t-veil: oklch(1 0 0 / 0.06);
+
+  /* Assombri depuis le cran 1 et non noir pur : sur une palette chaude le sol
+   * garde sa chaleur, et le cadre flotte au lieu de s'enfoncer. */
+  --t-ground: color-mix(in oklch, var(--t-gray-1), black 55%);
 
   /* BOX_SHADOW_DARK : mêmes géométries, alpha plus contenu. */
   --t-shadow-light: 0 2px 4px 0 rgb(0 0 0 / 0.04), 0 0 4px 0 rgb(0 0 0 / 0.08);
@@ -464,7 +479,7 @@
    * barre latérale, si bien que la gouttière existait sans se voir. Le cran 4
    * est le premier à se distinguer des deux.
    */
-  --app-ground: var(--t-gray-4);
+  --app-ground: var(--t-ground);
   --muted-foreground: var(--t-gray-11);
   --border: var(--t-gray-5);
   /* border.color.light de Twenty : le liseré discret des zones secondaires. */
