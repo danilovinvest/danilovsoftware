@@ -165,12 +165,14 @@ export function BrandText({ className }: { className?: string }) {
         className,
       )}
     >
-      <span className="text-logo-ink text-[1.375em] font-bold tracking-[-0.03em]">
+      {/* L'interlettrage ajoute une traîne après le T : la marge négative la
+          reprend, sinon « CRM » s'étalerait plus loin que le mot visible. */}
+      <span className="text-logo-ink -mr-[0.06em] text-[1.6em] leading-none font-bold tracking-[0.06em]">
         OMPT
       </span>
       <span
         aria-hidden
-        className="text-logo-beam mt-[0.18em] flex justify-between text-[0.56em] font-semibold"
+        className="text-logo-beam mt-[0.22em] flex justify-between text-[0.66em] leading-none font-semibold"
       >
         <span>C</span>
         <span>R</span>

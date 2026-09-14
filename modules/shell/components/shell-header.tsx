@@ -22,7 +22,7 @@ import { NotificationsMenu } from "./notifications-menu";
  *
  * Trois carrés gris côte à côte faisaient trois boîtes pesantes pour trois
  * icônes légères, et l'œil lisait les boîtes avant les icônes. Les gestes sont
- * donc rangés dans une seule barre (`HeaderToolbar`) : un contour pour trois,
+ * donc rangés dans une seule barre, plus bas : un contour pour trois,
  * et chaque icône respire dedans.
  */
 export const HEADER_BUTTON =
@@ -78,7 +78,7 @@ export function ShellHeader({ children }: { children: React.ReactNode }) {
           title={WORKSPACE.tagline}
           className="focus-visible:ring-ring rounded-md focus-visible:ring-2 focus-visible:outline-none"
         >
-          <BrandText className="text-[14px] md:text-[16px]" />
+          <BrandText className="text-[14px] md:text-[17px]" />
         </Link>
       </div>
 
