@@ -29,6 +29,8 @@ import { PageTitleProvider, usePageTitle } from "./page-title";
 const SIDEBAR_WIDTH = "236px";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
   return (
     <PageTitleProvider>
       {/* Les libellés de la barre latérale repliée passent par des tooltips
@@ -85,7 +87,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <div className="min-w-0 flex-1">
                 <ShellBreadcrumb />
               </div>
-              <CommandSearch />
+              {/* Sur un écran large, la recherche vit dans la barre latérale ;
+                  ce déclencheur-ci ne sert que là où elle n'est pas — sur un
+                  téléphone, où la colonne est repliée, et dans les réglages,
+                  dont la colonne ne la porte pas. */}
+              <CommandSearch
+                className={pathname.startsWith("/settings") ? undefined : "md:hidden"}
+              />
             </header>
             <div className="flex flex-1 flex-col gap-5 p-4 md:px-6 md:py-5">
               {children}

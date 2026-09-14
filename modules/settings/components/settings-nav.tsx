@@ -55,10 +55,10 @@ export function SettingsNav() {
       <SidebarContent className="gap-3 px-2">
         {sections.map((section) => (
           <SidebarGroup key={section.label} className="p-0">
-            <SidebarGroupLabel className="text-muted-foreground h-7 px-1.5 text-[11px] font-medium group-data-[collapsible=icon]:-mt-7">
+            <SidebarGroupLabel className="text-brand-text h-7 px-2.5 text-[10px] font-semibold tracking-[0.08em] uppercase group-data-[collapsible=icon]:-mt-7">
               {section.label}
             </SidebarGroupLabel>
-            <SidebarMenu className="gap-0.5">
+            <SidebarMenu className="gap-1">
               {section.items.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -67,11 +67,11 @@ export function SettingsNav() {
                       asChild
                       isActive={isSettingsItemActive(item.href, pathname)}
                       tooltip={item.label}
-                      className={cn(NAV_ITEM_CLASS, NAV_ACTIVE_CLASS, "text-brand-text")}
+                      className={cn(NAV_ITEM_CLASS, NAV_ACTIVE_CLASS)}
                     >
                       <Link href={item.href}>
                         <Icon />
-                        <span className="text-foreground/85">{item.label}</span>
+                        <span>{item.label}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
