@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Inter } from "next/font/google";
+import { Geist_Mono, Inter, Space_Grotesk } from "next/font/google";
 import { AuthProvider } from "@/modules/auth";
 import { PreferencesProvider, THEME_BOOTSTRAP_SCRIPT } from "@/modules/settings";
 import "./globals.css";
@@ -8,6 +8,17 @@ import "./globals.css";
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
+});
+
+/**
+ * Space Grotesk n'écrit que la marque — « OMPT » et « CRM » dans l'en-tête.
+ * Deux graisses seulement : la marque n'en emploie pas d'autre, et chacune de
+ * plus serait un fichier téléchargé pour rien.
+ */
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
+  subsets: ["latin"],
+  weight: ["600", "700"],
 });
 
 const geistMono = Geist_Mono({
@@ -32,7 +43,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="fr"
-      className={`${inter.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${spaceGrotesk.variable} ${geistMono.variable} h-full antialiased`}
       // Le script d'amorçage ajoute `dark` avant l'hydratation : sans cette
       // annonce, React signalerait l'écart entre le HTML rendu et le DOM reçu.
       suppressHydrationWarning
