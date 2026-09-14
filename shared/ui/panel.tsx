@@ -82,6 +82,7 @@ export function Panel({
   children,
   className,
   bodyClassName,
+  tinted = false,
 }: {
   title: string;
   description?: string;
@@ -91,25 +92,47 @@ export function Panel({
   children: React.ReactNode;
   className?: string;
   bodyClassName?: string;
+  /**
+   * L'en-tête prend la teinte du panneau, et son titre passe en gras.
+   *
+   * Facultatif et éteint par défaut : le tableau de bord aligne une dizaine de
+   * panneaux, et les colorer tous ferait de la couleur un décor. Un écran de
+   * listes de travail — quatre alertes, chacune avec son urgence — l'allume.
+   */
+  tinted?: boolean;
 }) {
   return (
     <Card className={cn("gap-0 overflow-hidden py-0", className)}>
-      <div className="flex items-start justify-between gap-3 border-b px-4 py-3">
+      <div
+        className={cn(
+          "flex items-start justify-between gap-3 border-b px-4 py-3",
+          tinted && TONE_SOFT[tone],
+        )}
+      >
         <div className="flex min-w-0 items-start gap-2">
           {Icon && (
             <span
               className={cn(
-                "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md",
-                TONE_SOFT[tone],
+                "mt-0.5 flex shrink-0 items-center justify-center rounded-md",
+                tinted ? "bg-background/80 size-6" : cn("size-5", TONE_SOFT[tone]),
               )}
             >
-              <Icon className="size-3" />
+              <Icon className={tinted ? "size-3.5" : "size-3"} />
             </span>
           )}
           <div className="min-w-0">
-            <h2 className="truncate text-sm font-medium">{title}</h2>
+            <h2 className={cn("truncate text-sm", tinted ? "font-bold" : "font-medium")}>
+              {title}
+            </h2>
             {description && (
-              <p className="text-muted-foreground mt-0.5 text-xs">{description}</p>
+              <p
+                className={cn(
+                  "mt-0.5 text-xs",
+                  tinted ? "opacity-80" : "text-muted-foreground",
+                )}
+              >
+                {description}
+              </p>
             )}
           </div>
         </div>

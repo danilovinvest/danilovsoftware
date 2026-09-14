@@ -4,7 +4,9 @@ import {
   AlarmClockIcon,
   BanknoteIcon,
   CalendarPlusIcon,
+  HardHatIcon,
   ReceiptTextIcon,
+  RulerIcon,
   StarIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -12,6 +14,7 @@ import { EmptyState, ErrorNotice } from "@/shared/ui/feedback";
 import { CardsSkeleton } from "@/shared/ui/loading";
 import { eurosShort, plural } from "@/shared/lib/format";
 import { Panel, RowShell } from "@/shared/ui/panel";
+import { HUE } from "@/shared/ui/hue";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useWorksites } from "../hooks/use-worksites";
@@ -73,15 +76,37 @@ export function WorksitesView({ metier = "travaux" }: { metier?: Metier }) {
   return (
     <div className="flex flex-col gap-5">
       <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-base font-semibold">
-            {etudes ? "Études" : "Chantiers"}
-          </h1>
-          <p className="text-muted-foreground mt-0.5 text-sm">
-            {etudes
-              ? "Le carnet du bureau d'études : ce qui est en production, ce qui est rendu."
-              : "Les affaires signées : où elles en sont, et ce qui manque."}
-          </p>
+        {/* Le titre porte la teinte du module, comme la barre latérale et le
+            fil d'Ariane : on sait où l'on est avant d'avoir lu le mot. */}
+        <div className="flex items-center gap-3">
+          <span
+            className={cn(
+              "flex size-10 shrink-0 items-center justify-center rounded-xl",
+              HUE[etudes ? "indigo" : "amber"].soft,
+              HUE[etudes ? "indigo" : "amber"].text,
+            )}
+          >
+            {etudes ? <RulerIcon className="size-5" /> : <HardHatIcon className="size-5" />}
+          </span>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight">
+              {etudes ? "Études" : "Chantiers"}
+            </h1>
+            <p className="text-muted-foreground mt-0.5 text-sm">
+              {etudes ? (
+                <>
+                  Le carnet du bureau d&apos;études : ce qui est{" "}
+                  <strong className="text-foreground font-semibold">en production</strong>, ce qui est{" "}
+                  <strong className="text-foreground font-semibold">rendu</strong>.
+                </>
+              ) : (
+                <>
+                  Les affaires signées : <strong className="text-foreground font-semibold">où elles en sont</strong>,
+                  et <strong className="text-foreground font-semibold">ce qui manque</strong>.
+                </>
+              )}
+            </p>
+          </div>
         </div>
         <Input
           value={board.city}
@@ -248,15 +273,23 @@ function AlertPanel({
   return (
     <Panel
       title={title}
-      description={
-        rows.length === 0
-          ? description
-          : `${plural(rows.length, "chantier")}${
-              alertTotal(rows) !== null ? ` · ${eurosShort(alertTotal(rows)!)}` : ""
-            }`
-      }
+      // La phrase reste : c'est elle qui dit pourquoi ces chantiers sont là.
+      // Le nombre et le montant passent à droite, en gras, où ils se comparent
+      // d'une liste à l'autre.
+      description={description}
       icon={icon}
       tone={tone}
+      tinted={rows.length > 0}
+      action={
+        <span className="flex shrink-0 flex-col items-end leading-none">
+          <span className="text-xl font-bold tabular-nums">{rows.length}</span>
+          {alertTotal(rows) !== null && (
+            <span className="mt-1 text-[11px] font-semibold tabular-nums">
+              {eurosShort(alertTotal(rows)!)}
+            </span>
+          )}
+        </span>
+      }
       bodyClassName="divide-y"
     >
       {rows.length === 0 ? (
