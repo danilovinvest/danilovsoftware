@@ -65,103 +65,103 @@ export function WorkspaceMenu() {
       s'ouvre pas.
     */
     <div className="flex items-center gap-2 px-0.5 pt-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              aria-label="Compte, thème et paramètres"
-              title={`${WORKSPACE.name} — ${name}`}
-              className="bg-card/70 hover:bg-card data-[state=open]:bg-card text-foreground/70 hover:text-foreground focus-visible:ring-ring flex size-10 shrink-0 items-center justify-center rounded-full shadow-xs transition-colors focus-visible:ring-2 focus-visible:outline-none group-data-[collapsible=icon]:size-8"
-            >
-              <EllipsisIcon className="size-4" />
-            </button>
-          </DropdownMenuTrigger>
-
-          <DropdownMenuContent
-            className="w-68 overflow-hidden rounded-xl p-0"
-            side="bottom"
-            align="start"
-            sideOffset={6}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            aria-label="Compte, thème et paramètres"
+            title={`${WORKSPACE.name} — ${name}`}
+            className="bg-card/70 hover:bg-card data-[state=open]:bg-card text-foreground/70 hover:text-foreground focus-visible:ring-ring flex size-10 shrink-0 items-center justify-center rounded-full shadow-xs transition-colors focus-visible:ring-2 focus-visible:outline-none group-data-[collapsible=icon]:size-8"
           >
-            {/*
-              L'en-tête sur un fond teinté : c'est la seule zone du menu qui
-              parle de la personne, et un aplat la sépare des actions mieux
-              qu'un trait. Le dégradé de l'avatar y répond au lieu de flotter
-              sur du blanc.
-            */}
-            <div className="bg-selected flex items-center gap-2.5 px-3 py-3">
-              <GradientAvatar
-                seed={account.email}
-                text={initials(name)}
-                size={36}
-                rounded={10}
-              />
-              <div className="grid min-w-0 flex-1 leading-tight">
-                <span className="truncate text-sm font-medium">{name}</span>
-                <span className="text-muted-foreground truncate text-xs">
-                  {account.email}
-                </span>
-              </div>
+            <EllipsisIcon className="size-4" />
+          </button>
+        </DropdownMenuTrigger>
+
+        <DropdownMenuContent
+          className="w-68 overflow-hidden rounded-xl p-0"
+          side="bottom"
+          align="start"
+          sideOffset={6}
+        >
+          {/*
+            L'en-tête sur un fond teinté : c'est la seule zone du menu qui
+            parle de la personne, et un aplat la sépare des actions mieux
+            qu'un trait. Le dégradé de l'avatar y répond au lieu de flotter
+            sur du blanc.
+          */}
+          <div className="bg-selected flex items-center gap-2.5 px-3 py-3">
+            <GradientAvatar
+              seed={account.email}
+              text={initials(name)}
+              size={36}
+              rounded={10}
+            />
+            <div className="grid min-w-0 flex-1 leading-tight">
+              <span className="truncate text-sm font-medium">{name}</span>
+              <span className="text-muted-foreground truncate text-xs">
+                {account.email}
+              </span>
             </div>
+          </div>
 
-            <div className="p-1.5">
-              <ThemePicker />
-            </div>
+          <div className="p-1.5">
+            <ThemePicker />
+          </div>
 
-            <DropdownMenuSeparator className="mx-0 my-0" />
+          <DropdownMenuSeparator className="mx-0 my-0" />
 
-            <div className="p-1.5">
+          <div className="p-1.5">
 
-              {canInvite && (
-                <DropdownMenuItem asChild className="h-8 gap-2.5 rounded-lg px-2">
-                  <Link href="/settings/membres">
-                    {/* Chaque action porte sa pastille : à taille et rayon
-                        égaux, la colonne d'icônes s'aligne d'elle-même, et
-                        c'est la couleur qui distingue au lieu de la forme. */}
-                    <span className="bg-h-grass-3 text-h-grass-11 flex size-6 shrink-0 items-center justify-center rounded-md">
-                      <UserPlusIcon className="size-3.5" />
-                    </span>
-                    Inviter un utilisateur
-                  </Link>
-                </DropdownMenuItem>
-              )}
-
+            {canInvite && (
               <DropdownMenuItem asChild className="h-8 gap-2.5 rounded-lg px-2">
-                <Link href="/settings">
-                  <span className="bg-h-slate-3 text-h-slate-11 flex size-6 shrink-0 items-center justify-center rounded-md">
-                    <SettingsIcon className="size-3.5" />
+                <Link href="/settings/membres">
+                  {/* Chaque action porte sa pastille : à taille et rayon
+                      égaux, la colonne d'icônes s'aligne d'elle-même, et
+                      c'est la couleur qui distingue au lieu de la forme. */}
+                  <span className="bg-h-grass-3 text-h-grass-11 flex size-6 shrink-0 items-center justify-center rounded-md">
+                    <UserPlusIcon className="size-3.5" />
                   </span>
-                  Paramètres
+                  Inviter un utilisateur
                 </Link>
               </DropdownMenuItem>
-            </div>
+            )}
 
-            <DropdownMenuSeparator className="mx-0 my-0" />
-
-            <div className="p-1.5">
-              <DropdownMenuItem
-                className="text-danger focus:text-danger focus:bg-danger-soft h-8 gap-2.5 rounded-lg px-2"
-                onSelect={async () => {
-                  await logout();
-                  router.replace("/login");
-                }}
-              >
-                <span className="bg-danger-soft flex size-6 shrink-0 items-center justify-center rounded-md">
-                  <LogOutIcon className="size-3.5" />
+            <DropdownMenuItem asChild className="h-8 gap-2.5 rounded-lg px-2">
+              <Link href="/settings">
+                <span className="bg-h-slate-3 text-h-slate-11 flex size-6 shrink-0 items-center justify-center rounded-md">
+                  <SettingsIcon className="size-3.5" />
                 </span>
-                Se déconnecter
-              </DropdownMenuItem>
-            </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <Link
-          href="/dashboard"
-          aria-label={`${WORKSPACE.name} — tableau de bord`}
-          title={WORKSPACE.tagline}
-          className="rounded-full focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none group-data-[collapsible=icon]:hidden"
-        >
-          <LogoTile className="size-10 rounded-full" />
-        </Link>
+                Paramètres
+              </Link>
+            </DropdownMenuItem>
+          </div>
+
+          <DropdownMenuSeparator className="mx-0 my-0" />
+
+          <div className="p-1.5">
+            <DropdownMenuItem
+              className="text-danger focus:text-danger focus:bg-danger-soft h-8 gap-2.5 rounded-lg px-2"
+              onSelect={async () => {
+                await logout();
+                router.replace("/login");
+              }}
+            >
+              <span className="bg-danger-soft flex size-6 shrink-0 items-center justify-center rounded-md">
+                <LogOutIcon className="size-3.5" />
+              </span>
+              Se déconnecter
+            </DropdownMenuItem>
+          </div>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <Link
+        href="/dashboard"
+        aria-label={`${WORKSPACE.name} — tableau de bord`}
+        title={WORKSPACE.tagline}
+        className="rounded-full focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none group-data-[collapsible=icon]:hidden"
+      >
+        <LogoTile className="size-10 rounded-full" />
+      </Link>
     </div>
   );
 }

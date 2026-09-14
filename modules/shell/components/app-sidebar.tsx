@@ -24,11 +24,11 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { NAV_ITEM_CLASS } from "@/shared/ui/nav";
-import { HUE } from "@/shared/ui/hue";
+import { NAV_ACTIVE_CLASS, NAV_ITEM_CLASS } from "@/shared/ui/nav";
 import { cn } from "@/lib/utils";
 import { NAV_SECTIONS } from "../lib/navigation";
 import { ScopeSwitcher, useScope } from "@/modules/group";
+import { SidebarSearch } from "./sidebar-search";
 import { WorkspaceMenu } from "./workspace-menu";
 
 /**
@@ -56,154 +56,157 @@ function WorkspaceNav() {
   const { can } = useAuth();
   const scope = useScope();
 
+  const sections = NAV_SECTIONS.map((section) => ({
+    ...section,
+    items: section.items.filter(
+      (item) =>
+        can(item.permission) &&
+        // Le périmètre masque ce qui n'a pas de sens pour la société choisie ;
+        // « tout le groupe » ne masque rien.
+        (scope === "tous" || !item.scopes || item.scopes.includes(scope)),
+    ),
+  }))
+    // Une section dont rien n'est autorisé disparaît en entier : un titre seul
+    // ferait deviner ce qu'on ne peut pas ouvrir.
+    .filter((section) => section.items.length > 0);
+
   return (
     <>
-      {/* La recherche a quitté cette colonne pour la barre du haut : elle
-          sert partout, y compris dans les réglages, où cette navigation-ci
-          disparaît entièrement. Le périmètre, lui, reste ici : il ne vaut que
-          pour l'espace de travail. */}
-      <SidebarHeader className="gap-1.5 p-2">
+      {/*
+        L'en-tête dans l'ordre où on s'en sert : le compte, la recherche, puis
+        la société pour laquelle on travaille. La recherche revient dans la
+        colonne sur un écran large — c'est là que l'œil commence — et la barre
+        du haut ne la montre plus que là où la colonne n'est pas.
+      */}
+      <SidebarHeader className="gap-3 px-2.5 pt-2.5 pb-1">
         <WorkspaceMenu />
+        <SidebarSearch />
         <ScopeSwitcher />
       </SidebarHeader>
 
-      {/* `gap-3` sépare les sections : `SidebarContent` ne met aucun espace par
-          défaut, et trois titres collés les uns aux autres se lisent comme une
-          seule liste — ce qu'on cherchait justement à défaire. */}
-      <SidebarContent className="gap-3 px-2">
-        {NAV_SECTIONS.map((section) => {
-          const visible = section.items.filter(
-            (item) =>
-              can(item.permission) &&
-              // Le périmètre masque ce qui n'a pas de sens pour la société
-              // choisie ; « tout le groupe » ne masque rien.
-              (scope === "tous" || !item.scopes || item.scopes.includes(scope)),
-          );
-          // Une section dont rien n'est autorisé disparaît en entier : un titre
-          // seul ferait deviner ce qu'on ne peut pas ouvrir.
-          if (visible.length === 0) return null;
+      <SidebarContent className="gap-0 px-2.5 pb-3">
+        {sections.map((section, index) => (
+          <SidebarGroup
+            key={section.label ?? "tete"}
+            /*
+              Un filet entre les sections, et non plus un simple espace.
 
-          return (
-            <SidebarGroup key={section.label} className="p-0">
+              L'espace seul séparait mal dès que les entrées se sont aérées :
+              douze pixels entre deux sections se confondaient avec les quatre
+              entre deux entrées. Le filet dit « autre chose commence » là où
+              l'espace ne disait que « un peu plus loin ».
+            */
+            className={cn(
+              "px-0 py-2.5",
+              index > 0 && "border-sidebar-border/60 border-t",
+            )}
+          >
+            {section.label && (
               <SidebarGroupLabel
                 title={section.hint}
-                // Le repli en mode icônes remonte le titre de sa propre
-                // hauteur ; la classe par défaut vise `h-8`, celle-ci `h-7`.
                 /*
                   En petites majuscules et à la teinte d'accent.
 
                   Un titre gris de la même taille que les entrées se lit comme
                   une entrée de plus qu'on ne peut pas cliquer. Les majuscules
-                  espacées et la couleur en font une étiquette, pas un lien —
-                  et l'accent est déjà ce qui distingue l'interface du contenu.
+                  espacées et la couleur en font une étiquette, pas un lien.
+
+                  Le repli en mode icônes remonte le titre de sa propre
+                  hauteur ; la classe par défaut vise `h-8`, celle-ci `h-7`.
                 */
-                className="text-brand-text h-7 px-1.5 text-[10px] font-semibold tracking-[0.08em] uppercase group-data-[collapsible=icon]:-mt-7"
+                className="text-brand-text h-7 px-2.5 text-[10px] font-semibold tracking-[0.08em] uppercase group-data-[collapsible=icon]:-mt-7"
               >
                 {section.label}
               </SidebarGroupLabel>
-              <SidebarMenu className="gap-0.5">
-                {visible.map((item) => {
-                  const active = pathname.startsWith(item.href);
-                  const Icon = item.icon;
+            )}
+            <SidebarMenu className="gap-1">
+              {section.items.map((item) => {
+                const active = pathname.startsWith(item.href);
+                const Icon = item.icon;
 
-                  const subItems = (item.items ?? []).filter(
-                    (sub) => !sub.permission || can(sub.permission),
-                  );
+                const subItems = (item.items ?? []).filter(
+                  (sub) => !sub.permission || can(sub.permission),
+                );
 
-                  const teinte = HUE[item.hue];
-
-                  if (subItems.length === 0) {
-                    return (
-                      <SidebarMenuItem key={item.href}>
-                        <SidebarMenuButton
-                          asChild
-                          isActive={active}
-                          tooltip={item.label}
-                          /*
-                            L'icône porte la couleur du module en permanence,
-                            pas seulement quand l'entrée est active : c'est
-                            elle qui rend la colonne lisible d'un coup d'œil,
-                            et une couleur qui n'apparaît qu'une fois sur dix
-                            n'apprend rien.
-                          */
-                          className={cn(
-                            NAV_ITEM_CLASS,
-                            teinte.text,
-                            /*
-                              L'entrée active est une pilule posée, dans la
-                              teinte de son module et non dans un gris commun.
-
-                              La teinte est une adresse : on reconnaît l'écran
-                              des chantiers à son ambre avant d'avoir lu le mot.
-                              Une pilule sombre unique, comme en ont beaucoup
-                              d'interfaces, dirait « ici » sans dire « où ».
-
-                              Le fond reste le cran 3 et non le cran 9 : celui-ci
-                              est clair sur l'ambre et le citron, où une encre
-                              blanche tomberait sous 2 de contraste. Le liseré et
-                              l'ombre donnent le relief que la couleur pleine
-                              aurait donné, sans le prix.
-                            */
-                            active && `${teinte.soft} font-medium shadow-sm ring-1 ring-inset ring-current/15`,
-                          )}
-                        >
-                          <Link href={item.href}>
-                            <Icon />
-                            <span className="text-foreground/85">{item.label}</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  }
-
+                if (subItems.length === 0) {
                   return (
-                    <Collapsible
-                      key={item.href}
-                      asChild
-                      defaultOpen={active}
-                      className="group/collapsible"
-                    >
-                      <SidebarMenuItem>
-                        <CollapsibleTrigger asChild>
-                          <SidebarMenuButton
-                            tooltip={item.label}
-                            isActive={active}
-                            className={cn(
-                              NAV_ITEM_CLASS,
-                              teinte.text,
-                              active && `${teinte.soft} font-medium`,
-                            )}
-                          >
-                            <Icon />
-                            <span className="text-foreground/85">{item.label}</span>
-                            <ChevronRightIcon className="text-muted-foreground ml-auto size-3.5! transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                          </SidebarMenuButton>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          <SidebarMenuSub className="mx-0 gap-0.5 border-none py-0.5 pr-0 pl-4">
-                            {subItems.map((sub) => (
-                              <SidebarMenuSubItem key={sub.href}>
-                                <SidebarMenuSubButton
-                                  asChild
-                                  isActive={pathname === sub.href}
-                                  className={NAV_ITEM_CLASS}
-                                >
-                                  <Link href={sub.href}>
-                                    <span>{sub.label}</span>
-                                  </Link>
-                                </SidebarMenuSubButton>
-                              </SidebarMenuSubItem>
-                            ))}
-                          </SidebarMenuSub>
-                        </CollapsibleContent>
-                      </SidebarMenuItem>
-                    </Collapsible>
+                    <SidebarMenuItem key={item.href}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={active}
+                        tooltip={item.label}
+                        /*
+                          L'entrée active est une pilule pleine, les autres
+                          restent grises, icônes comprises.
+
+                          Dix icônes de dix couleurs faisaient de la colonne
+                          un nuancier : l'œil y cherchait l'écran courant
+                          parmi dix taches. Une seule entrée pleine se trouve
+                          sans chercher. La teinte du module n'a pas disparu
+                          pour autant — elle reste l'adresse de l'écran dans
+                          le fil d'Ariane, les attentes et la recherche, là où
+                          l'écran se nomme.
+                        */
+                        className={cn(NAV_ITEM_CLASS, NAV_ACTIVE_CLASS)}
+                      >
+                        <Link href={item.href}>
+                          <Icon />
+                          <span>{item.label}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
                   );
-                })}
-              </SidebarMenu>
-            </SidebarGroup>
-          );
-        })}
+                }
+
+                return (
+                  <Collapsible
+                    key={item.href}
+                    asChild
+                    defaultOpen={active}
+                    className="group/collapsible"
+                  >
+                    <SidebarMenuItem>
+                      <CollapsibleTrigger asChild>
+                        <SidebarMenuButton
+                          tooltip={item.label}
+                          isActive={active}
+                          className={cn(NAV_ITEM_CLASS, NAV_ACTIVE_CLASS)}
+                        >
+                          <Icon />
+                          <span>{item.label}</span>
+                          <ChevronRightIcon className="ml-auto size-3.5! transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                        </SidebarMenuButton>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        {/*
+                          Les sous-entrées ne prennent pas de pilule : leur
+                          parente la porte déjà, et deux pilules pleines
+                          l'une sous l'autre ne diraient plus laquelle est
+                          l'écran. Elles s'écrivent plus foncé, rien de plus.
+                        */}
+                        <SidebarMenuSub className="border-sidebar-border/70 mx-0 ml-4 gap-0.5 py-1 pr-0 pl-2.5">
+                          {subItems.map((sub) => (
+                            <SidebarMenuSubItem key={sub.href}>
+                              <SidebarMenuSubButton
+                                asChild
+                                isActive={pathname === sub.href}
+                                className="text-foreground/65 data-active:text-foreground h-8 rounded-lg px-2 text-[13px] data-active:bg-transparent data-active:font-medium"
+                              >
+                                <Link href={sub.href}>
+                                  <span>{sub.label}</span>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          ))}
+                        </SidebarMenuSub>
+                      </CollapsibleContent>
+                    </SidebarMenuItem>
+                  </Collapsible>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
     </>
   );

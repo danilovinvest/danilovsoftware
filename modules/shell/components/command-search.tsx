@@ -71,7 +71,6 @@ export function CommandSearch({ className }: { className?: string }) {
   // L'ouverture est partagée : le champ de la barre latérale ouvre la même
   // palette que celui-ci.
   const open = useSearchOpen();
-  const setOpen = setSearchOpen;
   const [query, setQuery] = useState("");
   const [resolved, setResolved] = useState<{ key: string; data: SearchResult }>({
     key: "", data: VIDE,
@@ -91,7 +90,7 @@ export function CommandSearch({ className }: { className?: string }) {
         return;
       }
       event.preventDefault();
-      setOpen((current) => !current);
+      setSearchOpen((current) => !current);
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -153,7 +152,7 @@ export function CommandSearch({ className }: { className?: string }) {
 
   function go(entry: Entry | undefined) {
     if (!entry) return;
-    setOpen(false);
+    setSearchOpen(false);
     setQuery("");
     router.push(entry.href);
   }
@@ -168,7 +167,7 @@ export function CommandSearch({ className }: { className?: string }) {
       */}
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => setSearchOpen(true)}
         aria-label="Rechercher"
         /*
           Sur un téléphone, le déclencheur se replie en icône.
@@ -189,7 +188,7 @@ export function CommandSearch({ className }: { className?: string }) {
         </kbd>
       </button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={setSearchOpen}>
         <DialogContent
           showCloseButton={false}
           className="top-[12%] max-w-xl translate-y-0 gap-0 overflow-hidden rounded-xl p-0"
