@@ -11,6 +11,7 @@ import {
   Trash2Icon,
 } from "lucide-react";
 import { usePermission } from "@/modules/auth";
+import { PreviewLink } from "@/modules/files";
 import { ClaudeButton, projectContext, quoteContext } from "@/modules/assistant";
 import { createTask } from "@/modules/tasks";
 import { Button } from "@/components/ui/button";
@@ -1184,16 +1185,14 @@ function QuoteList({ quotes, onChanged }: { quotes: Quote[]; onChanged: () => vo
                 })}
               />
               {quote.drive_url && (
-                <a
-                  href={quote.drive_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  title={quote.drive_name}
-                  className="text-muted-foreground hover:text-primary hover:border-primary/40 flex w-full min-w-0 items-center gap-1.5 rounded-md border border-dashed px-2 py-1.5 text-xs transition-colors"
+                <PreviewLink
+                  url={quote.drive_url}
+                  name={quote.drive_name || quote.reference || "Devis"}
+                  className="text-muted-foreground hover:border-primary/40 flex w-full min-w-0 gap-1.5 rounded-md border border-dashed px-2 py-1.5 text-xs transition-colors"
                 >
                   <FileTextIcon className="size-3.5 shrink-0" />
                   <span className="truncate">{quote.drive_name || "Ouvrir le devis"}</span>
-                </a>
+                </PreviewLink>
               )}
 
               {quote.comment && (

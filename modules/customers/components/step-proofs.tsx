@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
-  ExternalLinkIcon,
+  EyeIcon,
   FileTextIcon,
   FolderIcon,
   MailIcon,
@@ -11,7 +11,7 @@ import {
   Trash2Icon,
   UploadIcon,
 } from "lucide-react";
-import { browse, type DriveItem } from "@/modules/files";
+import { browse, PreviewLink, type DriveItem } from "@/modules/files";
 import { listCustomerMail, type MailMessage } from "@/modules/mail";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -75,15 +75,10 @@ export function StepProofs({
             <FileTextIcon className="text-muted-foreground mt-0.5 size-3.5 shrink-0" />
             <span className="min-w-0 flex-1">
               {proof.href ? (
-                <a
-                  href={proof.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="hover:text-primary inline-flex items-center gap-1 font-medium"
-                >
+                <PreviewLink url={proof.href} name={proof.label} className="font-medium">
                   {proof.label}
-                  <ExternalLinkIcon className="size-3" />
-                </a>
+                  <EyeIcon className="size-3" />
+                </PreviewLink>
               ) : (
                 <span className="font-medium">{proof.label}</span>
               )}
@@ -149,15 +144,14 @@ function ProofRow({
       )}
       <span className="min-w-0 flex-1">
         {proof.drive_url && (
-          <a
-            href={proof.drive_url}
-            target="_blank"
-            rel="noreferrer"
-            className="hover:text-primary inline-flex items-center gap-1 font-medium break-all"
+          <PreviewLink
+            url={proof.drive_url}
+            name={proof.drive_name || "Document"}
+            className="font-medium break-all"
           >
             {proof.drive_name || "Document"}
-            <ExternalLinkIcon className="size-3 shrink-0" />
-          </a>
+            <EyeIcon className="size-3 shrink-0" />
+          </PreviewLink>
         )}
         {proof.mail_message_id && (
           <span className="block font-medium">

@@ -40,6 +40,20 @@ const FICHE_ETUDE = "/customers/7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "apercu-documents",
+    title: "Voir un document sans quitter le CRM",
+    date: "2026-09-15",
+    steps: [
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="cran-devis"]',
+        target: '[data-demo="step-proofs"] button[title^="Aperçu de"]',
+        title: "Un clic, le document s'ouvre ici",
+        body: "Devis, factures, preuves, onglet Documents : le fichier s'affiche dans une fenêtre du CRM, sans passer par OneDrive. Word, Excel et PowerPoint sont convertis en PDF par Microsoft. « Ouvrir dans OneDrive » reste là pour ce que l'aperçu ne sait pas montrer, comme un plan DWG.",
+      },
+    ],
+  },
+  {
     id: "preuves-et-clients",
     title: "Prouver un cran de la frise",
     date: "2026-09-15",

@@ -10,6 +10,7 @@ import { EmptyState, ErrorNotice } from "@/shared/ui/feedback";
 import { formatAgo, plural } from "@/shared/lib/format";
 import { useListing } from "../hooks/use-drive";
 import { weight } from "../lib/weight";
+import { PreviewButton } from "./document-preview";
 import type { DriveItem } from "../lib/types";
 
 /**
@@ -160,6 +161,7 @@ function DocumentRow({ item, now }: { item: DriveItem; now: number }) {
           {weight(item.size)} · modifié {formatAgo(item.modified_at, now)}
         </div>
       </div>
+      <PreviewButton url={item.web_url} name={item.name} />
       <OpenLink href={item.web_url} />
     </li>
   );

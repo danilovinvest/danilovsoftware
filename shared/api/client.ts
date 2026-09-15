@@ -59,9 +59,7 @@ type RequestOptions = {
   retryOnUnauthorized?: boolean;
 };
 
-export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { method = "GET", body, query, signal, retryOnUnauthorized = true } = options;
-
+function buildUrl(path: string, query: RequestOptions["query"]): URL {
   const url = new URL(`${API_URL}${path}`);
   for (const [key, value] of Object.entries(query ?? {})) {
     if (value === undefined || value === null || value === "") continue;
@@ -71,6 +69,54 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
       url.searchParams.set(key, String(value));
     }
   }
+  return url;
+}
+
+/**
+ * Un fichier, et non du JSON : l'aperçu d'un document.
+ *
+ * Même jeton, même renouvellement que `apiFetch` — un aperçu ouvert au bout de
+ * seize minutes ne doit pas échouer sur un jeton expiré. Une erreur arrive, elle,
+ * dans l'enveloppe JSON habituelle.
+ */
+export async function apiFetchBlob(
+  path: string,
+  options: Pick<RequestOptions, "query" | "signal" | "retryOnUnauthorized"> = {},
+): Promise<Blob> {
+  const { query, signal, retryOnUnauthorized = true } = options;
+  const headers: Record<string, string> = {};
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+
+  let response: Response;
+  try {
+    response = await fetch(buildUrl(path, query), { headers, credentials: "include", signal });
+  } catch (cause) {
+    if (cause instanceof DOMException && cause.name === "AbortError") throw cause;
+    throw new ApiError(0, "network_error", "L'API est injoignable.");
+  }
+
+  if (response.status === 401 && retryOnUnauthorized) {
+    const renewed = await refreshSession();
+    if (renewed) return apiFetchBlob(path, { ...options, retryOnUnauthorized: false });
+  }
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    const error = payload?.error;
+    throw new ApiError(
+      response.status,
+      error?.code ?? "internal_error",
+      error?.message ?? "Une erreur est survenue.",
+      error?.fields ?? {},
+    );
+  }
+  return response.blob();
+}
+
+export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const { method = "GET", body, query, signal, retryOnUnauthorized = true } = options;
+
+  const url = buildUrl(path, query);
 
   const headers: Record<string, string> = {};
   // Un fichier part en multipart : le navigateur pose lui-même l'en-tête, avec

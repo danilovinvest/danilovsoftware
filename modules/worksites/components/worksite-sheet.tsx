@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ExternalLinkIcon, FileTextIcon, ReceiptTextIcon } from "lucide-react";
+import { EyeIcon, FileTextIcon, ReceiptTextIcon } from "lucide-react";
+import { PreviewLink } from "@/modules/files";
 import {
   Sheet,
   SheetContent,
@@ -488,11 +489,10 @@ function Section({
         <ul className="divide-y rounded-lg border">
           {quotes.map((quote) => (
             <li key={quote.id}>
-              <a
-                href={quote.drive_url || undefined}
-                target="_blank"
-                rel="noreferrer"
-                className="hover:bg-accent/50 flex items-center gap-2 px-2.5 py-2 transition-colors"
+              <PreviewLink
+                url={quote.drive_url}
+                name={quote.drive_name || quote.reference || quote.label}
+                className="hover:bg-accent/50 flex w-full items-center gap-2 px-2.5 py-2 transition-colors"
               >
                 <span className="font-mono text-[11px]">
                   {quote.reference || "sans référence"}
@@ -509,9 +509,9 @@ function Section({
                   </span>
                 )}
                 {quote.drive_url && (
-                  <ExternalLinkIcon className="text-muted-foreground/50 size-3 shrink-0" />
+                  <EyeIcon className="text-muted-foreground/50 size-3 shrink-0" />
                 )}
-              </a>
+              </PreviewLink>
             </li>
           ))}
         </ul>
