@@ -40,6 +40,27 @@ const FICHE_ETUDE = "/customers/7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "preuves-et-clients",
+    title: "Prouver un cran de la frise",
+    date: "2026-09-15",
+    steps: [
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="cran-devis"]',
+        target: '[data-demo="step-proofs"]',
+        title: "Ce qui prouve déjà le cran",
+        body: "Le PDF du devis, la facture, le compte rendu du rendez-vous : ce que l'affaire porte déjà s'ouvre d'un clic. Le trombone sous un cran dit combien de preuves il a.",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="cran-calcul"]',
+        target: '[data-demo="step-proofs"]',
+        title: "Joindre une preuve",
+        body: "Un document du dossier OneDrive de l'affaire, un courriel de la fiche, une note, et la date où c'est vraiment arrivé. « Marquer franchi » demande aussi cette date au lieu de poser celle du clic.",
+      },
+    ],
+  },
+  {
     id: "taches-automatiques",
     title: "Les tâches automatiques de STRUCTURE",
     date: "2026-09-15",

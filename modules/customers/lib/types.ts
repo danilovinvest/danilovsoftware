@@ -113,6 +113,12 @@ export type Review = {
 
 export type CustomerListItem = {
   id: string;
+  /**
+   * Déduit des pièces, jamais saisi : un devis signé, une facture ou un
+   * paiement reçu. Vrai même sur une fiche archivée — archiver ne retire pas la
+   * qualité de client.
+   */
+  is_client: boolean;
   reference: string;
   display_name: string;
   kind: CustomerKind;
@@ -138,6 +144,12 @@ export type CustomerListItem = {
 
 export type Customer = {
   id: string;
+  /**
+   * Déduit des pièces, jamais saisi : un devis signé, une facture ou un
+   * paiement reçu. Vrai même sur une fiche archivée — archiver ne retire pas la
+   * qualité de client.
+   */
+  is_client: boolean;
   reference: string;
   display_name: string;
   kind: CustomerKind;
@@ -353,12 +365,45 @@ export type Milestones = {
 };
 
 /** Réponse de GET /v1/customers/{id} : fiche + collections en un seul appel. */
+/**
+ * Une pièce jointe à un cran de la frise : un document du dossier OneDrive (son
+ * lien, jamais le fichier), un courriel de la fiche, une note, la vraie date.
+ * Elle prouve le cran sans le cocher.
+ */
+export type StepProof = {
+  id: string;
+  project_id: string;
+  step: string;
+  occurred_at: string | null;
+  note: string;
+  drive_item_id: string;
+  drive_name: string;
+  drive_url: string;
+  mail_message_id: string | null;
+  mail_subject: string;
+  mail_from: string;
+  mail_sent_at: string | null;
+  created_by_name: string;
+  created_at: string;
+};
+
+export type StepProofInput = {
+  occurred_at: string | null;
+  note: string;
+  drive_item_id: string;
+  drive_name: string;
+  drive_url: string;
+  mail_message_id: string | null;
+};
+
 export type CustomerDetail = Customer & {
   contacts: Contact[];
   projects: Project[];
   quotes: Quote[];
   interactions: Interaction[];
   milestones: Milestones[];
+  /** Les preuves jointes aux crans de la frise, toutes affaires confondues. */
+  step_proofs: StepProof[];
 };
 
 /**

@@ -9,7 +9,6 @@ import {
   PaperclipIcon,
   StickyNoteIcon,
   Trash2Icon,
-  XIcon,
 } from "lucide-react";
 import { browse, type DriveItem } from "@/modules/files";
 import { listCustomerMail, type MailMessage } from "@/modules/mail";
@@ -433,4 +432,3 @@ function MailPicker({ customerId, onPick }: { customerId: string; onPick: (messa
   );
 }
 
-export { XIcon as _unusedXIcon };

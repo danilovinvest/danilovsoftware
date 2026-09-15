@@ -23,6 +23,7 @@ import { formatAmount, formatDate } from "@/shared/lib/format";
 import { cn } from "@/lib/utils";
 import * as api from "../lib/api";
 import { deadlineOf, deliveredAt, missionOf, projectReference } from "../lib/mission";
+import { autoProofsOf } from "../lib/proofs";
 import {
   PAYMENT_STATUS,
   PROJECT_MISSION,
@@ -71,6 +72,7 @@ import { ProjectDialog, QuoteDialog } from "./project-dialogs";
 import { RelanceDialog } from "./relance-dialog";
 import type {
   CustomerDetail,
+  StepProofInput,
   Interaction,
   InteractionKind,
   Project,
@@ -458,6 +460,12 @@ function ProjectBlock({
   const points = readCycle(project, quotes, interactions, jalons, now, undefined, marks);
   const action = nextAction(points, project, quotes, jalons, now);
   const lead = leadQuote(quotes);
+  /** Les preuves jointes aux crans de cette affaire. */
+  const preuves = (customer.step_proofs ?? []).filter((proof) => proof.project_id === project.id);
+  const ajouterPreuve = useAction((step: CycleStep, input: StepProofInput) =>
+    api.createStepProof(project.id, { step, ...input }),
+  );
+  const retirerPreuve = useAction((id: string) => api.deleteStepProof(id));
   /*
     Le métier, la mission et le délai, lus une fois pour l'en-tête et les jalons.
 
@@ -790,6 +798,21 @@ function ProjectBlock({
                       },
                       onDeposit: encaisser,
                       onDepositRemove: retirerAcompte,
+                      proofs: (step) => preuves.filter((proof) => proof.step === step),
+                      autoProofs: (step) => autoProofsOf(step, quotes, interactions),
+                      customerId: customer.id,
+                      drivePath: project.drive_path,
+                      onAddProof: async (step, input) => {
+                        const ok = (await ajouterPreuve.run(step, input)) !== null;
+                        if (ok) onChanged();
+                        return ok;
+                      },
+                      onRemoveProof: async (id) => {
+                        // 204 sans corps rend `undefined` : seul `null` dit l'échec.
+                        const ok = (await retirerPreuve.run(id)) !== null;
+                        if (ok) onChanged();
+                        return ok;
+                      },
                       pending: saving || setDeposit.pending || setBalance.pending,
                     }
                   : undefined
@@ -811,6 +834,9 @@ function ProjectBlock({
 
             {/* L'acompte écrit sur le devis : un refus doit se lire quelque part. */}
             {setDeposit.error && <ErrorNotice message={setDeposit.error} />}
+            {(ajouterPreuve.error || retirerPreuve.error) && (
+              <ErrorNotice message={ajouterPreuve.error ?? retirerPreuve.error ?? ""} />
+            )}
 
             <div data-demo="next-action">
             {canWrite && (

@@ -4,6 +4,8 @@
  */
 export { MailPanel } from "./components/mail-panel";
 export { CustomerMail } from "./components/customer-mail";
+// Les courriels d'une fiche servent aussi de preuves aux crans de la frise.
+export { listCustomerMail } from "./lib/api";
 // La boîte entière, et non plus seulement le courrier d'une fiche : sur
 // vingt-sept fiches portant une adresse, une seule a écrit dans cette boîte.
 export { MailboxView } from "./components/mailbox-view";

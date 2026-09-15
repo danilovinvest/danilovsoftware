@@ -108,6 +108,16 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-semibold">{customer.display_name}</h1>
             <EnumBadge value={customer.status} entries={CUSTOMER_STATUS} />
+            {/* Déduit des pièces : une cliente archivée reste une cliente. */}
+            {customer.is_client && customer.status !== "client" && (
+              <span
+                data-demo="customer-is-client"
+                title="Déduit de ses pièces : devis signé, facture ou paiement reçu"
+                className="bg-success-soft text-success rounded-md px-1.5 py-0.5 text-xs font-medium"
+              >
+                Client
+              </span>
+            )}
             <EnumBadge value={customer.kind} entries={CUSTOMER_KIND} />
           </div>
 

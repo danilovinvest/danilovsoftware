@@ -1,13 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { CheckIcon, PauseIcon, XIcon } from "lucide-react";
+import { CheckIcon, PaperclipIcon, PauseIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DateField } from "@/shared/ui/date-time-field";
 import { cn } from "@/lib/utils";
 import { DepositEditor, type DepositTotal } from "./deposit-field";
 import { MaterialsEditor } from "./materials-field";
+import { StepProofs } from "./step-proofs";
+import type { AutoProof } from "../lib/proofs";
+import type { StepProof, StepProofInput } from "../lib/types";
 import {
   CYCLE_LABEL,
   stepWrite,
@@ -84,6 +87,18 @@ export type CycleEdit = {
   onDeposit: (amount: string | null) => boolean | Promise<boolean>;
   /** Retire l'encaissement. Rend la réussite : le panneau reste ouvert sur un échec. */
   onDepositRemove: () => boolean | Promise<boolean>;
+  /**
+   * Les preuves d'un cran : celles qu'on a jointes, et celles que l'affaire
+   * porte déjà (le PDF d'un devis, une facture, un rendez-vous consigné).
+   */
+  proofs: (step: CycleStep) => StepProof[];
+  autoProofs: (step: CycleStep) => AutoProof[];
+  customerId: string;
+  /** Le dossier OneDrive de l'affaire, vide quand aucun n'est relié. */
+  drivePath: string;
+  /** Rendent la réussite : le formulaire ne se ferme que sur un succès. */
+  onAddProof: (step: CycleStep, input: StepProofInput) => Promise<boolean>;
+  onRemoveProof: (id: string) => Promise<boolean>;
   pending?: boolean;
 };
 
@@ -274,7 +289,11 @@ function StepDot({
   compact: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  // La date où c'est arrivé : cocher le jour du clic était faux dès qu'on
+  // rattrapait une étape de la semaine dernière.
+  const [markDate, setMarkDate] = useState(() => new Date().toISOString().slice(0, 10));
   const write = stepWrite(point.step);
+  const nbPreuves = edit.proofs(point.step).length + edit.autoProofs(point.step).length;
   const marked = edit.markedAt(point.step);
   const entry = CYCLE_LABEL[point.step];
 
@@ -315,12 +334,19 @@ function StepDot({
           */
           className="group/cran focus-visible:ring-ring flex min-w-0 cursor-pointer flex-col items-start rounded-md text-left select-none focus-visible:ring-2 focus-visible:outline-none"
           aria-label={`${entry.label} — ${point.detail}`}
+          data-demo={`cran-${point.step}`}
         >
           <Cran point={point} compact={compact} />
+          {nbPreuves > 0 && (
+            <span className="text-muted-foreground mt-0.5 inline-flex items-center gap-0.5 text-[10px]">
+              <PaperclipIcon className="size-2.5" />
+              {nbPreuves}
+            </span>
+          )}
         </button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-72" align="start">
+      <PopoverContent className="max-h-[80vh] w-80 overflow-y-auto sm:w-96" align="start">
         <div className="flex flex-col gap-3">
           <div>
             <p className="text-sm font-medium">{entry.label}</p>
@@ -407,20 +433,40 @@ function StepDot({
                 </Button>
               ) : (
                 marked === null && (
-                  <Button
-                    size="xs"
-                    disabled={edit.pending}
-                    onClick={async () => {
-                      await edit.onMark(point.step, new Date().toISOString());
-                      setOpen(false);
-                    }}
-                  >
-                    Marquer franchi
-                  </Button>
+                  <>
+                    <input
+                      type="date"
+                      value={markDate}
+                      onChange={(event) => setMarkDate(event.target.value)}
+                      aria-label="Date où c'est arrivé"
+                      className="bg-background h-6 rounded-md border px-1 text-[11px]"
+                    />
+                    <Button
+                      size="xs"
+                      disabled={edit.pending || !markDate}
+                      onClick={async () => {
+                        await edit.onMark(point.step, new Date(`${markDate}T12:00:00`).toISOString());
+                        setOpen(false);
+                      }}
+                    >
+                      Marquer franchi
+                    </Button>
+                  </>
                 )
               )}
             </div>
           )}
+
+          <StepProofs
+            automatic={edit.autoProofs(point.step)}
+            proofs={edit.proofs(point.step)}
+            customerId={edit.customerId}
+            drivePath={edit.drivePath}
+            canWrite
+            pending={edit.pending}
+            onAdd={(input) => edit.onAddProof(point.step, input)}
+            onRemove={edit.onRemoveProof}
+          />
         </div>
       </PopoverContent>
     </Popover>

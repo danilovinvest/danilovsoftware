@@ -7,6 +7,8 @@ import type {
   CustomerFilters,
   CustomerListItem,
   PaymentStatus,
+  StepProof,
+  StepProofInput,
   CustomerPayload,
   CustomerStats,
   DuplicatePair,
@@ -250,6 +252,18 @@ export function setQuoteDeposit(
   payload: { status: PaymentStatus; amount: string | null },
 ) {
   return apiFetch<Quote>(`/v1/quotes/${id}/deposit`, { method: "PUT", body: payload });
+}
+
+/**
+ * Joindre une preuve à un cran. Elle ne coche pas le cran : l'état reste celui
+ * des faits et des marques, et l'écran fait les deux gestes s'il le faut.
+ */
+export function createStepProof(projectId: string, payload: StepProofInput & { step: string }) {
+  return apiFetch<StepProof>(`/v1/projects/${projectId}/proofs`, { method: "POST", body: payload });
+}
+
+export function deleteStepProof(id: string) {
+  return apiFetch<void>(`/v1/proofs/${id}`, { method: "DELETE" });
 }
 
 export function deleteQuote(id: string) {
