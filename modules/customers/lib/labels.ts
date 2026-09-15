@@ -5,6 +5,7 @@ import type {
   InteractionKind,
   InterventionScope,
   PaymentStatus,
+  ProjectMission,
   ProjectOutcome,
   ProjectStage,
   QuoteKind,
@@ -60,6 +61,16 @@ export const INTERVENTION_SCOPE: Entry<InterventionScope> = {
   renforcement: { label: "Renforcement de structure", tone: "neutral" },
   renovation: { label: "Rénovation", tone: "neutral" },
   autre: { label: "Autre", tone: "neutral" },
+};
+
+/**
+ * Les trois missions du bureau d'études, dans les mots du cahier des charges.
+ * Elles ne s'appliquent qu'à STRUCTURE : un chantier n'a pas de mission.
+ */
+export const PROJECT_MISSION: Entry<ProjectMission> = {
+  etude_structurelle: { label: "Étude structurelle", tone: "info" },
+  rapport_attestation: { label: "Rapport / attestation", tone: "neutral" },
+  sondage: { label: "Sondage", tone: "neutral" },
 };
 
 export const CUSTOMER_KIND: Entry<CustomerKind> = {

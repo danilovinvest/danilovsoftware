@@ -1,4 +1,4 @@
-import type { Milestones, PaymentStatus, Project, Quote } from "./types";
+import type { Milestones, PaymentStatus, Project, ProjectMission, Quote } from "./types";
 
 /**
  * Les jalons d'après-signature d'une affaire.
@@ -74,6 +74,17 @@ export type Jalons = {
    */
   visit_report_sent_at: string | null;
   survey_report_sent_at: string | null;
+  /** La production du bureau d'études — voir `Milestones`. */
+  calc_started_at: string | null;
+  calc_done_at: string | null;
+  plans_started_at: string | null;
+  plans_review_at: string | null;
+  corrections_at: string | null;
+  final_ready_at: string | null;
+  report_written_at: string | null;
+  report_validated_at: string | null;
+  report_sent_at: string | null;
+  survey_done_at: string | null;
 };
 
 export const EMPTY_JALONS: Jalons = {
@@ -94,6 +105,16 @@ export const EMPTY_JALONS: Jalons = {
   pv_signed_at: null,
   visit_report_sent_at: null,
   survey_report_sent_at: null,
+  calc_started_at: null,
+  calc_done_at: null,
+  plans_started_at: null,
+  plans_review_at: null,
+  corrections_at: null,
+  final_ready_at: null,
+  report_written_at: null,
+  report_validated_at: null,
+  report_sent_at: null,
+  survey_done_at: null,
 };
 
 /**
@@ -138,6 +159,16 @@ export function readJalons(
     pv_signed_at: m?.pv_signed_at ?? null,
     visit_report_sent_at: m?.visit_report_sent_at ?? null,
     survey_report_sent_at: m?.survey_report_sent_at ?? null,
+    calc_started_at: m?.calc_started_at ?? null,
+    calc_done_at: m?.calc_done_at ?? null,
+    plans_started_at: m?.plans_started_at ?? null,
+    plans_review_at: m?.plans_review_at ?? null,
+    corrections_at: m?.corrections_at ?? null,
+    final_ready_at: m?.final_ready_at ?? null,
+    report_written_at: m?.report_written_at ?? null,
+    report_validated_at: m?.report_validated_at ?? null,
+    report_sent_at: m?.report_sent_at ?? null,
+    survey_done_at: m?.survey_done_at ?? null,
     review_requested_at: m?.review_requested_at ?? null,
     review_received_at: m?.review_received_at ?? null,
   };
@@ -246,6 +277,11 @@ export type Jalon = {
    * `false` — une case, et c'est tout.
    */
   picks: false | "date" | "materials" | "deposit";
+  /**
+   * Une étape qui n'arrive pas toujours — des corrections, un rapport validé
+   * par un tiers. Elle ne bloque pas la suite quand elle reste vide.
+   */
+  optional?: boolean;
 };
 
 const ACOMPTE: Jalon[] = [
@@ -319,7 +355,16 @@ const TRAVAUX: Jalon[] = [
   ...FIN,
 ];
 
-const ETUDES: Jalon[] = [
+/*
+  Les jalons du bureau d'études, par mission.
+
+  Ils suivent le cahier des charges, et c'est la production qui manquait : le
+  CRM passait d'« acompte encaissé » à « plans envoyés » sans rien entre les
+  deux, alors que c'est là que se fait le métier. Chaque étape dit **qui** agit
+  et, quand elle en produit un, **quel livrable** elle date — cocher « calcul
+  terminé », c'est dater la note de calcul.
+*/
+const ACOMPTE_ETUDE: Jalon[] = [
   ...ACOMPTE,
   {
     key: "deposit_paid_at",
@@ -327,29 +372,117 @@ const ETUDES: Jalon[] = [
     hint: "L'étude démarre à l'encaissement",
     picks: "deposit",
   },
+];
+
+const VISITE: Jalon = {
+  key: "visit_report_sent_at",
+  label: "Rapport de visite",
+  hint: "Le premier livrable, remis avant de chiffrer",
+  picks: false,
+};
+
+const ETUDE_STRUCTURELLE: Jalon[] = [
+  ...ACOMPTE_ETUDE,
+  VISITE,
   {
-    key: "visit_report_sent_at",
-    label: "Rapport de visite",
-    hint: "Le premier livrable, remis avant de chiffrer",
+    key: "calc_started_at",
+    label: "Calcul en cours",
+    hint: "Ingénieur · le dossier est ouvert",
     picks: false,
   },
   {
-    key: "survey_report_sent_at",
-    label: "Rapport de sondage",
-    hint: "Quand un sondage a été fait — distinct du rapport de visite",
+    key: "calc_done_at",
+    label: "Calcul terminé",
+    hint: "Ingénieur · livrable : la note de calcul",
+    picks: false,
+  },
+  {
+    key: "plans_started_at",
+    label: "Plans en cours",
+    hint: "Dessinateur · le dossier est passé au dessin",
+    picks: false,
+  },
+  {
+    key: "plans_review_at",
+    label: "Plans à valider",
+    hint: "Dessinateur · rendus à l'ingénieur pour relecture",
+    picks: false,
+  },
+  {
+    key: "corrections_at",
+    label: "Corrections demandées",
+    hint: "Ingénieur · seulement si la relecture renvoie au dessin",
+    picks: false,
+    optional: true,
+  },
+  {
+    key: "final_ready_at",
+    label: "Dossier définitif",
+    hint: "Ingénieur · livrable : plans validés et note de calcul",
     picks: false,
   },
   {
     key: "plans_sent_at",
-    label: "Plans envoyés",
+    label: "Dossier envoyé",
     hint: "Les plans d'exécution remis au client — le livrable attendu",
     picks: false,
   },
   ...FIN,
 ];
 
-export function jalonOrder(metier: "etudes" | "travaux"): Jalon[] {
-  return metier === "etudes" ? ETUDES : TRAVAUX;
+const RAPPORT_ATTESTATION: Jalon[] = [
+  VISITE,
+  ...ACOMPTE_ETUDE.map((jalon) => ({ ...jalon, optional: true })),
+  {
+    key: "report_written_at",
+    label: "Rapport rédigé",
+    hint: "Ingénieur · rapport, attestation ou étude de faisabilité",
+    picks: false,
+  },
+  {
+    key: "report_validated_at",
+    label: "Rapport validé",
+    hint: "Contrôle avant envoi",
+    picks: false,
+    optional: true,
+  },
+  {
+    key: "report_sent_at",
+    label: "Rapport envoyé",
+    hint: "Livrable : le document remis au client",
+    picks: false,
+  },
+  ...FIN,
+];
+
+const SONDAGE: Jalon[] = [
+  ...ACOMPTE_ETUDE,
+  {
+    key: "survey_done_at",
+    label: "Sondage réalisé",
+    hint: "Sur site",
+    picks: false,
+  },
+  {
+    key: "survey_report_sent_at",
+    label: "Rapport de sondage",
+    hint: "Livrable : le rapport remis au client",
+    picks: false,
+  },
+  ...FIN,
+];
+
+const ETUDES: Record<ProjectMission, Jalon[]> = {
+  etude_structurelle: ETUDE_STRUCTURELLE,
+  rapport_attestation: RAPPORT_ATTESTATION,
+  sondage: SONDAGE,
+};
+
+export function jalonOrder(
+  metier: "etudes" | "travaux",
+  mission: ProjectMission = "etude_structurelle",
+): Jalon[] {
+  return metier === "etudes" ? ETUDES[mission] : TRAVAUX;
 }
 
 /** Conservé pour ce qui ne distingue pas les métiers. */

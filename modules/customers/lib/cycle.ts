@@ -1,12 +1,14 @@
 import type {
   Interaction,
   PaymentStatus,
+  ProjectMission,
   ProjectOutcome,
   ProjectStage,
   Quote,
 } from "./types";
 import { isPaused, PROJECT_OUTCOME, type Tone } from "./labels";
 import { EMPTY_MARKS, type Jalons, type StepMarks } from "./jalons";
+import { deadlineOf, missionOf } from "./mission";
 
 /**
  * Le cycle d'une affaire, de la demande au chantier.
@@ -49,6 +51,15 @@ export type CycleStep =
   | "materiaux"
   // Propre aux études : les plans d'exécution envoyés au client.
   | "plans"
+  // Propres à l'étude structurelle : la production, entre l'acompte et l'envoi.
+  | "calcul"
+  | "dossier"
+  // Propres au rapport ou à l'attestation.
+  | "redaction"
+  | "envoi"
+  // Propres au sondage.
+  | "sondage"
+  | "rapport_sondage"
   // Communs aux deux.
   | "solde"
   | "avis";
@@ -71,23 +82,48 @@ export type CycleStep =
  */
 export type Metier = "etudes" | "travaux";
 
-const ORDRE: Record<Metier, CycleStep[]> = {
-  travaux: [
-    "contact", "rdv", "devis", "negociation", "signe",
-    "acompte", "chantier", "materiaux", "solde", "avis",
-  ],
-  etudes: [
+const TRAVAUX_ORDRE: CycleStep[] = [
+  "contact", "rdv", "devis", "negociation", "signe",
+  "acompte", "chantier", "materiaux", "solde", "avis",
+];
+
+/*
+  Le bureau d'études a trois parcours, un par mission.
+
+  Ils partagent le début — on parle, on visite, on chiffre, on signe — et
+  divergent sur ce qu'on produit. L'étude structurelle calcule, dessine, valide
+  et envoie un dossier. Le rapport ou l'attestation se paie généralement en une
+  fois **avant** d'être rédigé, d'où le solde avant la rédaction et l'absence
+  d'acompte. Le sondage se fait sur site puis se rend en rapport.
+
+  La production détaillée — calcul commencé, plans à valider, corrections — vit
+  dans les jalons, pas dans la frise : une frise à vingt crans ne se lit plus.
+  Chaque cran ajouté ici est un moment où le dossier change de mains.
+*/
+const ETUDES_ORDRE: Record<ProjectMission, CycleStep[]> = {
+  etude_structurelle: [
     "contact", "rdv", "rapport", "devis", "negociation", "signe",
-    "acompte", "plans", "solde", "avis",
+    "acompte", "calcul", "dossier", "plans", "solde", "avis",
+  ],
+  rapport_attestation: [
+    "contact", "rdv", "rapport", "devis", "negociation", "signe",
+    "solde", "redaction", "envoi", "avis",
+  ],
+  sondage: [
+    "contact", "rdv", "devis", "negociation", "signe",
+    "acompte", "sondage", "rapport_sondage", "solde", "avis",
   ],
 };
 
-export function cycleOrder(metier: Metier): CycleStep[] {
-  return ORDRE[metier];
+export function cycleOrder(
+  metier: Metier,
+  mission: ProjectMission = "etude_structurelle",
+): CycleStep[] {
+  return metier === "travaux" ? TRAVAUX_ORDRE : ETUDES_ORDRE[mission];
 }
 
 /** Conservé pour ce qui n'a pas besoin de distinguer : la frise des travaux. */
-export const CYCLE_ORDER: CycleStep[] = ORDRE.travaux;
+export const CYCLE_ORDER: CycleStep[] = TRAVAUX_ORDRE;
 
 export const CYCLE_LABEL: Record<CycleStep, { label: string; hint: string }> = {
   contact: { label: "Contact", hint: "Appels, e-mails, premiers échanges" },
@@ -99,7 +135,13 @@ export const CYCLE_LABEL: Record<CycleStep, { label: string; hint: string }> = {
   acompte: { label: "Acompte", hint: "Facture d'acompte, RIB, assurance, encaissement" },
   chantier: { label: "Date", hint: "Date de chantier réservée" },
   materiaux: { label: "Matériaux", hint: "Béton, acier et fournitures commandés" },
-  plans: { label: "Plans", hint: "Plans d'exécution envoyés au client" },
+  plans: { label: "Envoi", hint: "Dossier définitif et plans d'exécution envoyés au client" },
+  calcul: { label: "Calcul", hint: "Note de calcul faite par l'ingénieur" },
+  dossier: { label: "Dossier", hint: "Plans dessinés, relus et validés : le dossier définitif" },
+  redaction: { label: "Rédaction", hint: "Rapport ou attestation rédigé" },
+  envoi: { label: "Envoi", hint: "Rapport ou attestation envoyé au client" },
+  sondage: { label: "Sondage", hint: "Sondage réalisé sur site" },
+  rapport_sondage: { label: "Rapport", hint: "Rapport de sondage envoyé au client" },
   solde: { label: "Solde", hint: "Facture de solde encaissée" },
   avis: { label: "Avis", hint: "Avis client recueilli — après encaissement" },
 };
@@ -264,6 +306,11 @@ export type CycleInput = {
   started_at: string | null;
   last_reminder_at: string | null;
   created_at?: string;
+  /** Choisie par l'entreprise ; absente ou nulle, elle se déduit des devis. */
+  mission?: ProjectMission | null;
+  /** Les deux délais, qui font d'un dossier en production un dossier en retard. */
+  promised_at?: string | null;
+  internal_deadline_at?: string | null;
 };
 
 /**
@@ -396,29 +443,56 @@ export function readCycle(
   // devis, puisqu'on ne chiffre pas une étude sans avoir visité.
   const rapportFait = rapport !== null || devisDone;
 
-  // --- Chaque cran, dans l'ordre -----------------------------------------
-  const commun: Array<{
+  // --- Chaque cran --------------------------------------------------------
+  /*
+    Tous les crans se décrivent, puis le parcours choisit.
+
+    Le métier et la mission disent lesquels s'affichent et dans quel ordre
+    (`cycleOrder`) ; décrire un cran qui ne s'affichera pas ne coûte rien, et
+    garde une seule définition par cran quel que soit le parcours.
+  */
+  type Entry = {
     step: CycleStep;
     done: boolean;
     /** Franchi par autre chose que ce que le cran sait écrire. */
     fact: boolean;
     at: string | null;
     since: string | null;
-  }> = [
-    { step: "contact", done: contactDone, fact: contactFait, at: contactAt, since: contactAt ?? anchor },
-    { step: "rdv", done: rdvDone, fact: rdvFait, at: rdvAt, since: rdvAt ?? contactAt ?? anchor },
-    ...(metier === "etudes"
-      ? [{
-          step: "rapport" as CycleStep,
-          done: rapportAt !== null || devisDone,
-          fact: rapportFait,
-          at: rapportAt,
-          since: rdvAt ?? contactAt ?? anchor,
-        }]
-      : []),
-    { step: "devis", done: devisDone, fact: devisFait, at: devisAt, since: devisAt ?? rdvAt ?? anchor },
-    {
-      step: "negociation",
+  };
+  const mission = metier === "etudes" ? missionOf(project, quotes) : undefined;
+  const depuisAcompte = jalons.deposit_paid_at ?? jalons.deposit_invoiced_at;
+  // Ce qui a été rendu au client, quelle que soit la mission : le solde se
+  // réclame après lui.
+  const livreAt =
+    jalons.plans_sent_at ??
+    jalons.report_sent_at ??
+    jalons.survey_report_sent_at ??
+    jalons.materials_ordered_at;
+
+  /*
+    Une étape plus avancée prouve celles d'avant.
+
+    Un dossier envoyé a été calculé et validé, un rapport envoyé a été rédigé :
+    les laisser gris derrière un cran vert ferait croire à un trou dans la
+    production. Ce sont des faits, pas des marques — le panneau du cran le dit,
+    au lieu d'offrir un « Retirer » qui ne retirerait rien.
+  */
+  const dossierFait = jalons.plans_sent_at !== null;
+  const calculFait = jalons.final_ready_at !== null || dossierFait;
+  const redactionFait = jalons.report_sent_at !== null;
+  const sondageFait = jalons.survey_report_sent_at !== null;
+
+  const entries: Record<CycleStep, Omit<Entry, "step">> = {
+    contact: { done: contactDone, fact: contactFait, at: contactAt, since: contactAt ?? anchor },
+    rdv: { done: rdvDone, fact: rdvFait, at: rdvAt, since: rdvAt ?? contactAt ?? anchor },
+    rapport: {
+      done: rapportAt !== null || devisDone,
+      fact: rapportFait,
+      at: rapportAt,
+      since: rdvAt ?? contactAt ?? anchor,
+    },
+    devis: { done: devisDone, fact: devisFait, at: devisAt, since: devisAt ?? rdvAt ?? anchor },
+    negociation: {
       done: negoDone,
       fact: signeFait,
       at: negoAt,
@@ -427,9 +501,8 @@ export function readCycle(
       // chiffre resterait rouge alors qu'on vient d'agir.
       since: project.last_reminder_at ?? devisAt ?? project.started_at ?? anchor,
     },
-    { step: "signe", done: signeDone, fact: signeFait, at: signeAt, since: signeAt ?? devisAt },
-    {
-      step: "acompte",
+    signe: { done: signeDone, fact: signeFait, at: signeAt, since: signeAt ?? devisAt },
+    acompte: {
       done: acompteDone,
       // L'acompte, la date de chantier, les jalons, le solde, l'avis : leur
       // cran écrit dans ce qui les porte. Ce qui les franchit est donc
@@ -438,61 +511,80 @@ export function readCycle(
       at: acompteDone ? jalons.deposit_paid_at : null,
       since: jalons.deposit_invoiced_at ?? signeAt,
     },
-  ];
-
-  /*
-    La queue du cycle, propre au métier.
-
-    Les travaux réservent une date et commandent du béton ; l'étude prépare et
-    envoie des plans d'exécution. Les deux finissent pareil — le solde, puis
-    l'avis client.
-  */
-  const queue: typeof commun =
-    metier === "travaux"
-      ? [
-          {
-            step: "chantier",
-            done: jalons.worksite_date !== null,
-            fact: false,
-            at: jalons.worksite_date,
-            since: jalons.deposit_paid_at ?? jalons.deposit_invoiced_at,
-          },
-          {
-            step: "materiaux",
-            done: jalons.materials_ordered_at !== null,
-            fact: false,
-            at: jalons.materials_ordered_at,
-            since: jalons.worksite_date,
-          },
-        ]
-      : [
-          {
-            step: "plans",
-            done: jalons.plans_sent_at !== null,
-            fact: false,
-            at: jalons.plans_sent_at,
-            since: jalons.deposit_paid_at ?? jalons.deposit_invoiced_at,
-          },
-        ];
-
-  const raw = [
-    ...commun,
-    ...queue,
-    {
-      step: "solde" as CycleStep,
-      done: soldeDone,
+    chantier: {
+      done: jalons.worksite_date !== null,
       fact: false,
-      at: soldeDone ? (jalons.plans_sent_at ?? jalons.materials_ordered_at) : null,
-      since: jalons.plans_sent_at ?? jalons.materials_ordered_at ?? jalons.worksite_date,
+      at: jalons.worksite_date,
+      since: depuisAcompte,
     },
-    {
-      step: "avis" as CycleStep,
+    materiaux: {
+      done: jalons.materials_ordered_at !== null,
+      fact: false,
+      at: jalons.materials_ordered_at,
+      since: jalons.worksite_date,
+    },
+    calcul: {
+      done: jalons.calc_done_at !== null || calculFait,
+      fact: calculFait,
+      at: jalons.calc_done_at,
+      since: jalons.calc_started_at ?? depuisAcompte,
+    },
+    dossier: {
+      done: jalons.final_ready_at !== null || dossierFait,
+      fact: dossierFait,
+      at: jalons.final_ready_at,
+      since: jalons.plans_review_at ?? jalons.plans_started_at ?? jalons.calc_done_at ?? depuisAcompte,
+    },
+    plans: {
+      done: jalons.plans_sent_at !== null,
+      fact: false,
+      at: jalons.plans_sent_at,
+      since: jalons.final_ready_at ?? depuisAcompte,
+    },
+    redaction: {
+      done: jalons.report_written_at !== null || redactionFait,
+      fact: redactionFait,
+      at: jalons.report_written_at,
+      since: signeAt,
+    },
+    envoi: {
+      done: jalons.report_sent_at !== null,
+      fact: false,
+      at: jalons.report_sent_at,
+      since: jalons.report_validated_at ?? jalons.report_written_at ?? signeAt,
+    },
+    sondage: {
+      done: jalons.survey_done_at !== null || sondageFait,
+      fact: sondageFait,
+      at: jalons.survey_done_at,
+      since: depuisAcompte,
+    },
+    rapport_sondage: {
+      done: jalons.survey_report_sent_at !== null,
+      fact: false,
+      at: jalons.survey_report_sent_at,
+      since: jalons.survey_done_at ?? depuisAcompte,
+    },
+    // Un rapport se paie avant d'être rédigé : son solde n'attend aucune
+    // livraison, il attend depuis la signature.
+    solde:
+      mission === "rapport_attestation"
+        ? { done: soldeDone, fact: false, at: null, since: signeAt }
+        : {
+            done: soldeDone,
+            fact: false,
+            at: soldeDone ? livreAt : null,
+            since: livreAt ?? jalons.worksite_date,
+          },
+    avis: {
       done: jalons.review_received_at !== null,
       fact: false,
       at: jalons.review_received_at,
       since: jalons.review_requested_at,
     },
-  ];
+  };
+
+  const raw: Entry[] = cycleOrder(metier, mission).map((step) => ({ step, ...entries[step] }));
 
   /*
   Les dates ne peuvent pas reculer.
@@ -641,7 +733,13 @@ type JalonColumn =
   | "visit_report_sent_at"
   | "materials_ordered_at"
   | "plans_sent_at"
-  | "review_received_at";
+  | "review_received_at"
+  | "calc_done_at"
+  | "final_ready_at"
+  | "report_written_at"
+  | "report_sent_at"
+  | "survey_done_at"
+  | "survey_report_sent_at";
 
 /** Ce que le clic fait, dit à l'utilisateur avant qu'il clique. */
 type StepNote = { note: string };
@@ -708,7 +806,37 @@ const WRITE: Record<CycleStep, StepWrite> = {
   plans: {
     target: "jalon",
     field: "plans_sent_at",
-    note: "Écrit « plans envoyés » dans les jalons de l'affaire.",
+    note: "Écrit « dossier envoyé » dans les jalons de l'affaire.",
+  },
+  calcul: {
+    target: "jalon",
+    field: "calc_done_at",
+    note: "Écrit « calcul terminé » — la date de la note de calcul — dans les jalons.",
+  },
+  dossier: {
+    target: "jalon",
+    field: "final_ready_at",
+    note: "Écrit « dossier définitif » dans les jalons de l'affaire.",
+  },
+  redaction: {
+    target: "jalon",
+    field: "report_written_at",
+    note: "Écrit « rapport rédigé » dans les jalons de l'affaire.",
+  },
+  envoi: {
+    target: "jalon",
+    field: "report_sent_at",
+    note: "Écrit « rapport envoyé » dans les jalons de l'affaire.",
+  },
+  sondage: {
+    target: "jalon",
+    field: "survey_done_at",
+    note: "Écrit « sondage réalisé » dans les jalons de l'affaire.",
+  },
+  rapport_sondage: {
+    target: "jalon",
+    field: "survey_report_sent_at",
+    note: "Écrit « rapport de sondage envoyé » dans les jalons de l'affaire.",
   },
   solde: {
     target: "quote",
@@ -783,7 +911,13 @@ export type ActionKey =
   | "send_plans"
   | "invoice_balance"
   | "ask_review"
-  | "record_review";
+  | "record_review"
+  | "calc_done"
+  | "final_ready"
+  | "write_report"
+  | "send_report"
+  | "survey_done"
+  | "send_survey_report";
 
 export type NextAction = {
   /** Le cran auquel l'action se rattache. */
@@ -947,6 +1081,49 @@ export function nextAction(
     };
   }
 
+  const has = (step: CycleStep) => points.some((point) => point.step === step);
+
+  /*
+    Le rapport ou l'attestation, avant l'acompte.
+
+    Il n'a pas d'acompte : il se paie en une fois, puis se rédige. Le laisser
+    tomber dans la branche suivante proposerait « Facture d'acompte à émettre »
+    sur une attestation, ce qui ferait douter de tout le reste de l'écran.
+  */
+  if (has("redaction")) {
+    const solde = at("solde");
+    if (solde.state !== "done") {
+      const days = solde.waiting ?? 0;
+      return {
+        step: "solde",
+        title: "Paiement de la commande attendu",
+        detail: "Un rapport ou une attestation se règle en une fois, avant la rédaction.",
+        tone: waitingTone(days),
+        alert: days > FRESH_DAYS,
+        actions: [{ key: "invoice_balance", label: "Paiement reçu", primary: true }],
+      };
+    }
+    const redaction = at("redaction");
+    if (redaction.state !== "done") {
+      return enProduction(redaction, project, now, "Rapport à rédiger", "La commande est payée.", {
+        key: "write_report",
+        label: "Rapport rédigé",
+      });
+    }
+    const envoi = at("envoi");
+    if (envoi.state !== "done") {
+      return enProduction(
+        envoi,
+        project,
+        now,
+        "Rapport à envoyer",
+        jalons.report_validated_at ? "Validé, reste à l'envoyer." : "À relire et valider avant l'envoi.",
+        { key: "send_report", label: "Rapport envoyé" },
+      );
+    }
+    return soldeEtAvis(at, jalons, "envoi");
+  }
+
   // --- Après la signature : là où l'argent se bloque ----------------------
   const acompte = at("acompte");
   if (acompte.state !== "done") {
@@ -1002,20 +1179,72 @@ export function nextAction(
     à l'autre serait pire qu'inutile — « commander les matériaux » sur une étude
     ferait douter de tout le reste de l'écran.
   */
-  if (metierOf(quotes) === "etudes") {
+  /*
+    La production d'une étude structurelle.
+
+    Elle avait un seul cran, « plans envoyés », et l'écran sautait donc de
+    l'acompte au solde sans rien dire du calcul ni du dessin — là où le temps
+    passe, et où le client rappelle pour savoir où en est son dossier. La
+    branche se choisit sur la frise elle-même : c'est la mission qui a décidé
+    des crans, et la relire ici ferait deux déductions à tenir d'accord.
+  */
+  if (has("calcul")) {
+    const calcul = at("calcul");
+    if (calcul.state !== "done") {
+      return enProduction(
+        calcul,
+        project,
+        now,
+        "Calcul à réaliser",
+        jalons.calc_started_at
+          ? "Le calcul est en cours chez l'ingénieur."
+          : "L'acompte est encaissé : l'ingénieur peut commencer.",
+        { key: "calc_done", label: "Calcul terminé" },
+      );
+    }
+    const dossier = at("dossier");
+    if (dossier.state !== "done") {
+      return enProduction(
+        dossier,
+        project,
+        now,
+        jalons.corrections_at
+          ? "Corrections en cours"
+          : jalons.plans_review_at
+            ? "Plans à valider"
+            : "Plans à dessiner",
+        jalons.plans_review_at
+          ? "Le dessinateur a rendu, l'ingénieur relit."
+          : "La note de calcul est faite, le dossier passe au dessin.",
+        { key: "final_ready", label: "Dossier définitif" },
+      );
+    }
     const plans = at("plans");
     if (plans.state !== "done") {
-      const days = plans.waiting ?? 0;
-      return {
-        step: "plans",
-        title: "Plans d'exécution à rendre",
-        detail: `Acompte encaissé depuis ${days} j. C'est le livrable attendu.`,
-        tone: days > PLANNING_GRACE_DAYS ? "danger" : "warning",
-        alert: days > PLANNING_GRACE_DAYS,
-        actions: [{ key: "send_plans", label: "Plans envoyés", primary: true }],
-      };
+      return enProduction(plans, project, now, "Dossier à envoyer au client", "Le dossier définitif est prêt.", {
+        key: "send_plans",
+        label: "Dossier envoyé",
+      });
     }
-    return soldeEtAvis(at, jalons, "plans", "etudes");
+    return soldeEtAvis(at, jalons, "plans");
+  }
+
+  if (has("sondage")) {
+    const sondage = at("sondage");
+    if (sondage.state !== "done") {
+      return enProduction(sondage, project, now, "Sondage à réaliser", "L'acompte est encaissé.", {
+        key: "survey_done",
+        label: "Sondage réalisé",
+      });
+    }
+    const rapport = at("rapport_sondage");
+    if (rapport.state !== "done") {
+      return enProduction(rapport, project, now, "Rapport de sondage à envoyer", "Le sondage est fait.", {
+        key: "send_survey_report",
+        label: "Rapport envoyé",
+      });
+    }
+    return soldeEtAvis(at, jalons, "rapport_sondage");
   }
 
   const chantier = at("chantier");
@@ -1047,8 +1276,46 @@ export function nextAction(
     };
   }
 
-  return soldeEtAvis(at, jalons, "materiaux", "travaux");
+  return soldeEtAvis(at, jalons, "materiaux");
 }
+
+/**
+ * Une étape de production : ce qu'il faut faire, et le temps qu'il reste.
+ *
+ * Sans délai, l'attente depuis l'étape précédente décide de la couleur, comme
+ * pour la date de chantier. Avec un délai, c'est lui qui parle : un dossier
+ * commencé hier mais dû demain est plus urgent qu'un dossier ouvert depuis trois
+ * semaines et dû dans un mois.
+ */
+function enProduction(
+  point: CyclePoint,
+  project: CycleInput,
+  now: number,
+  title: string,
+  detail: string,
+  action: { key: ActionKey; label: string },
+): NextAction {
+  const days = point.waiting ?? 0;
+  const echeance = deadlineOf(project, false, now);
+  const pressant = echeance !== null && echeance.tone !== "neutral";
+  const long = days > PLANNING_GRACE_DAYS;
+  return {
+    step: point.step,
+    title,
+    detail: echeance ? `${detail} ${echeance.label}.` : detail,
+    tone: echeance?.late || (!echeance && long) ? "danger" : "warning",
+    alert: pressant || (!echeance && long),
+    actions: [{ ...action, primary: true }],
+  };
+}
+
+/** La phrase de fin, selon ce qui a été livré. */
+const FIN_DE_COURSE: Partial<Record<CycleStep, string>> = {
+  plans: "Dossier envoyé, solde encaissé, avis recueilli.",
+  envoi: "Rapport envoyé, commande payée, avis recueilli.",
+  rapport_sondage: "Rapport de sondage envoyé, solde encaissé, avis recueilli.",
+  materiaux: "Chantier livré, solde encaissé, avis recueilli.",
+};
 
 /**
  * La fin de course, commune aux deux métiers : le solde, puis l'avis.
@@ -1062,8 +1329,9 @@ function soldeEtAvis(
   at: (step: CycleStep) => CyclePoint,
   jalons: Jalons,
   precedent: CycleStep,
-  metier: Metier,
 ): NextAction {
+  // Seul le chantier se livre par ses matériaux : c'est la marque des travaux.
+  const metier: Metier = precedent === "materiaux" ? "travaux" : "etudes";
   const solde = at("solde");
   if (solde.state !== "done") {
     const days = solde.waiting ?? 0;
@@ -1102,10 +1370,7 @@ function soldeEtAvis(
   return {
     step: precedent,
     title: "Affaire terminée",
-    detail:
-      metier === "etudes"
-        ? "Plans rendus, solde encaissé, avis recueilli."
-        : "Chantier livré, solde encaissé, avis recueilli.",
+    detail: FIN_DE_COURSE[precedent] ?? "Solde encaissé, avis recueilli.",
     tone: "success",
     alert: false,
     // Un bureau d'études n'a pas de chantier à ouvrir : lui proposer le bouton

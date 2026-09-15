@@ -71,6 +71,12 @@ export type InteractionKind =
   | "note";
 
 /** Ligne du tableau : les agrégats sont calculés par l'API. */
+/**
+ * La mission d'une affaire du bureau d'études : elle commande son parcours.
+ * Nulle en base tant que personne ne tranche — elle se déduit alors des devis.
+ */
+export type ProjectMission = "etude_structurelle" | "rapport_attestation" | "sondage";
+
 /** Vue compacte d'une affaire, servie avec la ligne du client dans la liste. */
 export type ProjectSummary = {
   id: string;
@@ -84,6 +90,11 @@ export type ProjectSummary = {
   quote_count: number;
   total_amount_ttc: string;
   last_reminder_at: string | null;
+  /** Le numéro de dossier, année et rang (`2026-0148`) : le préfixe se lit du métier. */
+  reference: string;
+  mission: ProjectMission | null;
+  promised_at: string | null;
+  internal_deadline_at: string | null;
 };
 
 /**
@@ -199,6 +210,19 @@ export type Project = {
   engineer_name: string;
   drafter_id: string | null;
   drafter_name: string;
+  /**
+   * Le numéro de dossier, posé par la base à la création et jamais réécrit.
+   * Seuls l'année et le rang sont stockés — voir `projectReference`.
+   */
+  reference: string;
+  /** Choisie par l'entreprise, ou nulle : elle se déduit alors des devis. */
+  mission: ProjectMission | null;
+  /**
+   * Le délai annoncé au client, et la deadline qu'on se donne en interne.
+   * L'interne précède l'annoncée ; l'écart entre les deux est la marge.
+   */
+  promised_at: string | null;
+  internal_deadline_at: string | null;
   quote_count: number;
   total_amount_ttc: string;
   last_reminder_at: string | null;
@@ -290,6 +314,25 @@ export type Milestones = {
   pv_signed_at: string | null;
   visit_report_sent_at: string | null;
   survey_report_sent_at: string | null;
+  /*
+    La production du bureau d'études, entre l'acompte et l'envoi.
+
+    Étude structurelle : calcul commencé puis terminé (la note de calcul est
+    faite), plans commencés puis rendus au contrôle, corrections demandées,
+    dossier définitif. Rapport ou attestation : rédigé, validé, envoyé.
+    Sondage : réalisé sur site. Chacune est une date, nulle tant que ce n'est
+    pas fait.
+  */
+  calc_started_at: string | null;
+  calc_done_at: string | null;
+  plans_started_at: string | null;
+  plans_review_at: string | null;
+  corrections_at: string | null;
+  final_ready_at: string | null;
+  report_written_at: string | null;
+  report_validated_at: string | null;
+  report_sent_at: string | null;
+  survey_done_at: string | null;
   /** L'avis client : demander n'est pas recevoir, d'où deux dates. */
   review_requested_at: string | null;
   review_received_at: string | null;
@@ -404,6 +447,8 @@ export type ProjectPayload = Omit<
   | "total_amount_ttc"
   | "last_reminder_at"
   | "source_status"
+  // Posé par la base à la création, jamais modifiable.
+  | "reference"
   // Posé par la copie OneDrive, jamais par un formulaire.
   | "drive_path"
   // Servis avec l'affaire, jamais envoyés : le serveur les déduit des
