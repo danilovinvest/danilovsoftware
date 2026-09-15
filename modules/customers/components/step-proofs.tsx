@@ -9,6 +9,7 @@ import {
   PaperclipIcon,
   StickyNoteIcon,
   Trash2Icon,
+  UploadIcon,
 } from "lucide-react";
 import { browse, type DriveItem } from "@/modules/files";
 import { listCustomerMail, type MailMessage } from "@/modules/mail";
@@ -50,10 +51,12 @@ export function StepProofs({
   drivePath: string;
   canWrite: boolean;
   pending?: boolean;
-  onAdd: (input: StepProofInput) => Promise<boolean>;
+  /** Rend la réussite, et une ligne qui dit où le fichier a été rangé. */
+  onAdd: (input: StepProofInput, file: File | null) => Promise<{ ok: boolean; message: string }>;
   onRemove: (id: string) => Promise<boolean>;
 }) {
   const [adding, setAdding] = useState(false);
+  const [notice, setNotice] = useState("");
 
   return (
     <div data-demo="step-proofs" className="flex flex-col gap-2 border-t pt-3">
@@ -96,6 +99,8 @@ export function StepProofs({
         ))}
       </ul>
 
+      {notice && <p className="text-success text-[11px]">{notice}</p>}
+
       {canWrite &&
         (adding ? (
           <ProofForm
@@ -103,10 +108,13 @@ export function StepProofs({
             drivePath={drivePath}
             pending={pending}
             onCancel={() => setAdding(false)}
-            onSave={async (input) => {
-              const ok = await onAdd(input);
-              if (ok) setAdding(false);
-              return ok;
+            onSave={async (input, file) => {
+              const result = await onAdd(input, file);
+              if (result.ok) {
+                setAdding(false);
+                setNotice(result.message);
+              }
+              return result.ok;
             }}
           />
         ) : (
@@ -180,6 +188,9 @@ function ProofRow({
   );
 }
 
+/** Au-delà, le serveur refuse : autant le dire avant d'envoyer. */
+const MAX_UPLOAD = 50 * 1024 * 1024;
+
 type Picker = "none" | "document" | "mail";
 
 function ProofForm({
@@ -193,14 +204,17 @@ function ProofForm({
   drivePath: string;
   pending?: boolean;
   onCancel: () => void;
-  onSave: (input: StepProofInput) => Promise<boolean>;
+  onSave: (input: StepProofInput, file: File | null) => Promise<boolean>;
 }) {
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [note, setNote] = useState("");
   const [document, setDocument] = useState<DriveItem | null>(null);
   const [mail, setMail] = useState<MailMessage | null>(null);
   const [picker, setPicker] = useState<Picker>("none");
-  const empty = note.trim() === "" && !document && !mail;
+  // Un fichier de l'ordinateur part dans OneDrive, rangé par thème.
+  const [file, setFile] = useState<File | null>(null);
+  const tooBig = file !== null && file.size > MAX_UPLOAD;
+  const empty = note.trim() === "" && !document && !mail && !file;
 
   return (
     <div className="bg-muted/40 flex flex-col gap-2 rounded-lg border p-2">
@@ -240,12 +254,35 @@ function ProofForm({
         >
           {mail ? mail.subject || "(sans objet)" : "Courriel de la fiche"}
         </Chip>
-        {(document || mail) && (
+        <label
+          className={cn(
+            "inline-flex max-w-full cursor-pointer items-center gap-1 truncate rounded-md border px-1.5 py-0.5 text-[11px] transition-colors",
+            file ? "border-primary/50 bg-background text-foreground" : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <UploadIcon className="size-3 shrink-0" />
+          <span className="truncate">{file ? file.name : "Fichier de l'ordinateur"}</span>
+          <input
+            type="file"
+            className="sr-only"
+            onChange={(event) => {
+              const chosen = event.target.files?.[0] ?? null;
+              setFile(chosen);
+              if (chosen) {
+                setDocument(null);
+                setMail(null);
+                setPicker("none");
+              }
+            }}
+          />
+        </label>
+        {(document || mail || file) && (
           <button
             type="button"
             onClick={() => {
               setDocument(null);
               setMail(null);
+              setFile(null);
             }}
             className="text-muted-foreground hover:text-foreground text-[11px] underline"
           >
@@ -260,6 +297,7 @@ function ProofForm({
           onPick={(item) => {
             setDocument(item);
             setMail(null);
+            setFile(null);
             setPicker("none");
           }}
         />
@@ -270,10 +308,21 @@ function ProofForm({
           onPick={(message) => {
             setMail(message);
             setDocument(null);
+            setFile(null);
             setPicker("none");
             if (!note.trim()) setDate(message.sent_at.slice(0, 10));
           }}
         />
+      )}
+
+      {(file || mail) && (
+        <p className={cn("text-[11px]", tooBig ? "text-danger" : "text-muted-foreground")}>
+          {tooBig
+            ? "Ce fichier dépasse 50 Mo."
+            : file
+              ? "Déposé dans le dossier OneDrive de l'affaire, dans le sous-dossier du thème de ce cran."
+              : "Ses pièces jointes seront copiées dans le dossier OneDrive de l'affaire."}
+        </p>
       )}
 
       <div className="flex justify-end gap-1.5">
@@ -282,7 +331,7 @@ function ProofForm({
         </Button>
         <Button
           size="xs"
-          disabled={pending || empty}
+          disabled={pending || empty || tooBig}
           onClick={() =>
             void onSave({
               occurred_at: date ? new Date(`${date}T12:00:00`).toISOString() : null,
@@ -291,7 +340,7 @@ function ProofForm({
               drive_name: document?.name ?? "",
               drive_url: document?.web_url ?? "",
               mail_message_id: mail?.id ?? null,
-            })
+            }, file)
           }
         >
           Joindre

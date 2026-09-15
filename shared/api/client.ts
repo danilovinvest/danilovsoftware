@@ -73,7 +73,10 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   }
 
   const headers: Record<string, string> = {};
-  if (body !== undefined) headers["Content-Type"] = "application/json";
+  // Un fichier part en multipart : le navigateur pose lui-même l'en-tête, avec
+  // la frontière qui sépare les parties. L'écrire à la main la perdrait.
+  const isForm = typeof FormData !== "undefined" && body instanceof FormData;
+  if (body !== undefined && !isForm) headers["Content-Type"] = "application/json";
   if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
 
   let response: Response;
@@ -83,7 +86,7 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
       headers,
       credentials: "include",
       signal,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined ? undefined : isForm ? (body as FormData) : JSON.stringify(body),
     });
   } catch (cause) {
     if (cause instanceof DOMException && cause.name === "AbortError") throw cause;

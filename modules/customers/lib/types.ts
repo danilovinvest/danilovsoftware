@@ -387,6 +387,21 @@ export type StepProof = {
   created_at: string;
 };
 
+/**
+ * Ce que rend une preuve déposée dans OneDrive : les preuves créées (une par
+ * fichier), et où elles ont été rangées.
+ */
+export type ProofBatch = {
+  proofs: StepProof[];
+  folder_path: string;
+  folder_url: string;
+  folder_created: boolean;
+  /** Les pièces jointes non copiées — gardées par leur nom seulement. */
+  skipped: string[];
+  /** Ce qui n'a pas pu se faire, sans empêcher le reste (OneDrive non raccordé…). */
+  warning: string;
+};
+
 export type StepProofInput = {
   occurred_at: string | null;
   note: string;

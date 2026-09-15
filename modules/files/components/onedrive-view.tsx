@@ -48,7 +48,7 @@ export function OneDriveView() {
           </h2>
           <span className="text-muted-foreground/70 inline-flex items-center gap-1.5 text-xs">
             <ShieldCheckIcon className="text-success size-3.5" />
-            Lecture seule · aucun fichier ne descend dans la base
+            Écriture limitée à l&apos;ajout · aucun fichier ne descend dans la base
           </span>
         </div>
 
@@ -154,7 +154,7 @@ function EntraGuide() {
       body: (
         <>
           API autorisées → Microsoft Graph → Permissions <strong>déléguées</strong> :{" "}
-          <code className="font-mono text-xs">Files.Read.All</code>,{" "}
+          <code className="font-mono text-xs">Files.ReadWrite.All</code>,{" "}
           <code className="font-mono text-xs">offline_access</code>,{" "}
           <code className="font-mono text-xs">User.Read</code>.
           <span className="mt-1 block">
@@ -164,8 +164,8 @@ function EntraGuide() {
             moment du raccordement.
           </span>
           <span className="text-warning mt-1 block">
-            Aucune permission en écriture. Pas de <code className="font-mono">
-            Files.ReadWrite</code>, jamais.
+            L&apos;écriture sert à ajouter : créer des dossiers et déposer les preuves de
+            la frise. Le CRM ne modifie ni ne supprime jamais un fichier.
           </span>
         </>
       ),

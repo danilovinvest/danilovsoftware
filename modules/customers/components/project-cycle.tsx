@@ -97,7 +97,11 @@ export type CycleEdit = {
   /** Le dossier OneDrive de l'affaire, vide quand aucun n'est relié. */
   drivePath: string;
   /** Rendent la réussite : le formulaire ne se ferme que sur un succès. */
-  onAddProof: (step: CycleStep, input: StepProofInput) => Promise<boolean>;
+  onAddProof: (
+    step: CycleStep,
+    input: StepProofInput,
+    file: File | null,
+  ) => Promise<{ ok: boolean; message: string }>;
   onRemoveProof: (id: string) => Promise<boolean>;
   pending?: boolean;
 };
@@ -464,7 +468,7 @@ function StepDot({
             drivePath={edit.drivePath}
             canWrite
             pending={edit.pending}
-            onAdd={(input) => edit.onAddProof(point.step, input)}
+            onAdd={(input, file) => edit.onAddProof(point.step, input, file)}
             onRemove={edit.onRemoveProof}
           />
         </div>

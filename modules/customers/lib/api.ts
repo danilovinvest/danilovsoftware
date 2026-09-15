@@ -7,6 +7,7 @@ import type {
   CustomerFilters,
   CustomerListItem,
   PaymentStatus,
+  ProofBatch,
   StepProof,
   StepProofInput,
   CustomerPayload,
@@ -260,6 +261,32 @@ export function setQuoteDeposit(
  */
 export function createStepProof(projectId: string, payload: StepProofInput & { step: string }) {
   return apiFetch<StepProof>(`/v1/projects/${projectId}/proofs`, { method: "POST", body: payload });
+}
+
+/**
+ * Déposer un fichier en preuve : il part dans le dossier OneDrive de l'affaire,
+ * dans le sous-dossier du thème du cran, puis la preuve pointe vers lui.
+ */
+export function uploadStepProof(projectId: string, step: string, input: StepProofInput, file: File) {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("step", step);
+  if (input.occurred_at) form.append("occurred_at", input.occurred_at);
+  form.append("note", input.note);
+  return apiFetch<ProofBatch>(`/v1/projects/${projectId}/proofs/upload`, { method: "POST", body: form });
+}
+
+/** Joindre un courriel : ses pièces jointes sont copiées au même endroit. */
+export function createMailStepProof(projectId: string, payload: StepProofInput & { step: string }) {
+  return apiFetch<ProofBatch>(`/v1/projects/${projectId}/proofs/mail`, {
+    method: "POST",
+    body: {
+      step: payload.step,
+      occurred_at: payload.occurred_at,
+      note: payload.note,
+      mail_message_id: payload.mail_message_id,
+    },
+  });
 }
 
 export function deleteStepProof(id: string) {

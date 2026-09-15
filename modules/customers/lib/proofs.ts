@@ -1,5 +1,5 @@
 import type { CycleStep } from "./cycle";
-import type { Interaction, Quote } from "./types";
+import type { Interaction, ProofBatch, Quote } from "./types";
 
 /**
  * Ce qui prouve déjà un cran, sans qu'on ait rien à joindre.
@@ -67,4 +67,18 @@ export function autoProofsOf(
     default:
       return [];
   }
+}
+
+/** Ce qu'une preuve déposée a fait, en une ligne : où, combien, ce qui manque. */
+export function describeBatch(batch: ProofBatch): string {
+  const parts: string[] = [];
+  if (batch.folder_path) {
+    const where = batch.folder_path.split("/").slice(-2).join("/");
+    parts.push(`Rangé dans ${where}${batch.folder_created ? " (dossier créé)" : ""}`);
+  }
+  const files = batch.proofs.filter((proof) => proof.drive_url).length;
+  if (files > 1) parts.push(`${files} fichiers déposés`);
+  if (batch.skipped.length > 0) parts.push(`non copiées : ${batch.skipped.join(", ")}`);
+  if (batch.warning) parts.push(batch.warning);
+  return parts.join(" · ");
 }

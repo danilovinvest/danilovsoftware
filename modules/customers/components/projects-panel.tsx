@@ -23,7 +23,7 @@ import { formatAmount, formatDate } from "@/shared/lib/format";
 import { cn } from "@/lib/utils";
 import * as api from "../lib/api";
 import { deadlineOf, deliveredAt, missionOf, projectReference } from "../lib/mission";
-import { autoProofsOf } from "../lib/proofs";
+import { autoProofsOf, describeBatch } from "../lib/proofs";
 import {
   PAYMENT_STATUS,
   PROJECT_MISSION,
@@ -72,6 +72,7 @@ import { ProjectDialog, QuoteDialog } from "./project-dialogs";
 import { RelanceDialog } from "./relance-dialog";
 import type {
   CustomerDetail,
+  ProofBatch,
   StepProofInput,
   Interaction,
   InteractionKind,
@@ -462,8 +463,18 @@ function ProjectBlock({
   const lead = leadQuote(quotes);
   /** Les preuves jointes aux crans de cette affaire. */
   const preuves = (customer.step_proofs ?? []).filter((proof) => proof.project_id === project.id);
-  const ajouterPreuve = useAction((step: CycleStep, input: StepProofInput) =>
-    api.createStepProof(project.id, { step, ...input }),
+  /*
+    Trois chemins pour une preuve, une seule réponse : un fichier part dans
+    OneDrive, un courriel y copie ses pièces jointes, une note ou un lien reste
+    en base. L'écran lit la même forme dans les trois cas.
+  */
+  const ajouterPreuve = useAction(
+    async (step: CycleStep, input: StepProofInput, file: File | null): Promise<ProofBatch> => {
+      if (file) return api.uploadStepProof(project.id, step, input, file);
+      if (input.mail_message_id) return api.createMailStepProof(project.id, { step, ...input });
+      const proof = await api.createStepProof(project.id, { step, ...input });
+      return { proofs: [proof], folder_path: "", folder_url: "", folder_created: false, skipped: [], warning: "" };
+    },
   );
   const retirerPreuve = useAction((id: string) => api.deleteStepProof(id));
   /*
@@ -802,10 +813,11 @@ function ProjectBlock({
                       autoProofs: (step) => autoProofsOf(step, quotes, interactions),
                       customerId: customer.id,
                       drivePath: project.drive_path,
-                      onAddProof: async (step, input) => {
-                        const ok = (await ajouterPreuve.run(step, input)) !== null;
-                        if (ok) onChanged();
-                        return ok;
+                      onAddProof: async (step, input, file) => {
+                        const batch = await ajouterPreuve.run(step, input, file);
+                        if (batch === null) return { ok: false, message: "" };
+                        onChanged();
+                        return { ok: true, message: describeBatch(batch) };
                       },
                       onRemoveProof: async (id) => {
                         // 204 sans corps rend `undefined` : seul `null` dit l'échec.

@@ -25,8 +25,9 @@ import * as api from "../lib/api";
  * un consentement OAuth sur un compte que toute l'entreprise partage.
  *
  * L'écran dit ce que le CRM prend et ce qu'il ne prend pas, parce que la portée
- * demandée est un engagement : `Files.Read.All` et rien d'autre, aucune
- * écriture, et aucun fichier ne descend dans la base.
+ * demandée est un engagement : `Files.ReadWrite.All` depuis le 15/09, pour
+ * **ajouter** seulement — créer des dossiers, déposer les preuves — jamais
+ * modifier ni supprimer, et aucun fichier ne descend dans la base.
  */
 export function FilesPanel() {
   const params = useSearchParams();
@@ -70,11 +71,17 @@ export function FilesPanel() {
         description="La portée demandée est un engagement, pas un détail technique."
       >
         <SettingsRows>
-          <SettingsRow label="Lecture seule">
-            <span className="inline-flex items-center gap-1.5">
-              <ShieldCheckIcon className="text-success size-3.5" />
-              <code className="font-mono text-xs">Files.Read.All</code> — aucune portée
-              d&apos;écriture n&apos;est demandée
+          <SettingsRow label="Écriture limitée à l'ajout">
+            <span className="inline-flex flex-col gap-0.5">
+              <span className="inline-flex items-center gap-1.5">
+                <ShieldCheckIcon className="text-success size-3.5" />
+                <code className="font-mono text-xs">Files.ReadWrite.All</code> — le CRM crée
+                des dossiers et dépose les preuves, jamais il ne modifie ni ne supprime
+              </span>
+              <span className="text-muted-foreground text-xs">
+                Raccordé avant le 15/09 ? Débranchez puis raccordez à nouveau : l&apos;ancien
+                jeton ne permet que la lecture.
+              </span>
             </span>
           </SettingsRow>
           <SettingsRow label="Ce qui entre en base">

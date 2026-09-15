@@ -56,7 +56,7 @@ export const DEMOS: Demo[] = [
         click: '[data-demo="cran-calcul"]',
         target: '[data-demo="step-proofs"]',
         title: "Joindre une preuve",
-        body: "Un document du dossier OneDrive de l'affaire, un courriel de la fiche, une note, et la date où c'est vraiment arrivé. « Marquer franchi » demande aussi cette date au lieu de poser celle du clic.",
+        body: "Un fichier de l'ordinateur part dans le dossier OneDrive de l'affaire, rangé par thème (Devis, Factures, Plans, Rapports, Photos…) et nommé « date_cran_nom ». Un courriel y copie ses pièces jointes. On peut aussi choisir un document déjà dans le dossier, écrire une note et dire quand c'est arrivé.",
       },
     ],
   },
