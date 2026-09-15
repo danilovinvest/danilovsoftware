@@ -709,18 +709,25 @@ function ProjectBlock({
             <div className="flex flex-wrap items-center gap-2">
               {/* Le numéro qu'on dicte au téléphone et qu'on écrit sur un plan. */}
               {project.reference && (
-                <span className="text-muted-foreground font-mono text-[11px] font-semibold">
+                <span
+                  data-demo="project-reference"
+                  className="text-muted-foreground font-mono text-[11px] font-semibold"
+                >
                   {projectReference(project.reference, metier)}
                 </span>
               )}
               <span className="truncate text-sm font-medium">{project.label}</span>
               {metier === "etudes" && (
-                <span className="text-muted-foreground bg-muted rounded-md px-1.5 py-0.5 text-[0.65rem]">
+                <span
+                  data-demo="project-mission"
+                  className="text-muted-foreground bg-muted rounded-md px-1.5 py-0.5 text-[0.65rem]"
+                >
                   {PROJECT_MISSION[mission].label}
                 </span>
               )}
               {echeance && (
                 <span
+                  data-demo="project-deadline"
                   className={cn(
                     "rounded-md px-1.5 py-0.5 text-[0.65rem] font-medium",
                     TONE_SOFT[echeance.tone],
@@ -765,6 +772,7 @@ function ProjectBlock({
               l'affaire est ouverte, donc le seul où l'on sait de quelle affaire
               on parle. Dans la liste et le tableau de bord, elle se lit.
             */}
+            <div data-demo="project-cycle">
             <ProjectCycle
               points={points}
               edit={
@@ -787,6 +795,7 @@ function ProjectBlock({
                   : undefined
               }
             />
+            </div>
 
             {/*
               L'affaire ne dit pas de quoi il s'agit.
@@ -803,6 +812,7 @@ function ProjectBlock({
             {/* L'acompte écrit sur le devis : un refus doit se lire quelque part. */}
             {setDeposit.error && <ErrorNotice message={setDeposit.error} />}
 
+            <div data-demo="next-action">
             {canWrite && (
               <ProjectNextAction
                 action={action}
@@ -810,6 +820,7 @@ function ProjectBlock({
                 pending={reopen.pending || setDeposit.pending || setBalance.pending || saving}
               />
             )}
+            </div>
 
             {project.source_status && (
               <p className="text-muted-foreground text-xs">
@@ -835,7 +846,7 @@ function ProjectBlock({
                       <span className="text-muted-foreground ml-1.5 text-xs">{quotes.length}</span>
                     )}
                   </TabsTrigger>
-                  <TabsTrigger value="apres">Après-signature</TabsTrigger>
+                  <TabsTrigger value="apres" data-demo="tab-apres">Après-signature</TabsTrigger>
                 </TabsList>
 
                 <div className="flex items-center gap-2">
@@ -863,6 +874,7 @@ function ProjectBlock({
                       variant="outline"
                       onClick={onEdit}
                       title="Intitulé, type, responsable, intervenants"
+                      data-demo="project-edit"
                     >
                       <PencilIcon />
                     </Button>

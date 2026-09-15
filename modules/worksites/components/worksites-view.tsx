@@ -130,7 +130,7 @@ export function WorksitesView({ metier = "travaux" }: { metier?: Metier }) {
 
       {board.error && <ErrorNotice message={board.error} />}
 
-      <div className="grid items-start gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div data-demo="work-lists" className="grid items-start gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <AlertPanel
           title={etudes ? "Acompte attendu" : "Sans date de démarrage"}
           description={

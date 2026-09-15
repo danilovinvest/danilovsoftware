@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { AccountMenu } from "./workspace-menu";
 import { CommandSearch } from "./command-search";
 import { NotificationsMenu } from "./notifications-menu";
+import { DemoMenu } from "@/modules/devtools";
 
 /**
  * Un geste de l'en-tête : une icône sans fond, qui ne se remplit qu'au survol.
@@ -98,6 +99,7 @@ export function ShellHeader({ children }: { children: React.ReactNode }) {
         */}
         <div className="bg-card ring-border/70 flex items-center gap-0.5 rounded-full p-1 shadow-xs ring-1">
           <NotificationsMenu buttonClassName={HEADER_BUTTON} />
+          <DemoMenu buttonClassName={HEADER_BUTTON} />
           {canInvite && (
             // Sur un téléphone la place manque : l'invitation reste dans
             // Paramètres → Membres, à un geste de plus.

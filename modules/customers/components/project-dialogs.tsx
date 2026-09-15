@@ -180,6 +180,7 @@ export function ProjectDialog({
             l'une engage l'entreprise, l'autre est la marge qu'elle se donne.
           */}
           <SelectField
+            id="project-mission"
             label="Mission"
             wrapperClassName="sm:col-span-2"
             options={[{ value: "", label: "Déduite des devis" }, ...toOptions(PROJECT_MISSION)]}
@@ -191,6 +192,7 @@ export function ProjectDialog({
           />
           <TextField
             label="Promis au client"
+            data-demo="project-delais"
             type="date"
             value={values.promised_at ?? ""}
             onChange={(event) =>
@@ -199,6 +201,7 @@ export function ProjectDialog({
           />
           <TextField
             label="Deadline interne"
+            data-demo="project-delais"
             type="date"
             value={values.internal_deadline_at ?? ""}
             onChange={(event) =>

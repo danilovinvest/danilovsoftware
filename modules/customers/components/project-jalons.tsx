@@ -84,7 +84,7 @@ export function ProjectJalons({
             ordre.slice(0, index).every((prev) => prev.optional || jalons[prev.key] !== null);
 
           return (
-            <li key={jalon.key} className="flex gap-3">
+            <li key={jalon.key} data-demo={`jalon-${jalon.key}`} className="flex gap-3">
               <div className="flex flex-col items-center">
                 <span
                   className={cn(
