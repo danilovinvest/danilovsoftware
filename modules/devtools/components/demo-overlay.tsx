@@ -65,7 +65,7 @@ function Spotlight({ demo, index, step }: { demo: Demo; index: number; step: Dem
       if (!clicked && step.click) {
         const trigger = document.querySelector<HTMLElement>(step.click);
         if (trigger) {
-          trigger.click();
+          activate(trigger);
           clicked = true;
         }
       }
@@ -168,6 +168,22 @@ function Spotlight({ demo, index, step }: { demo: Demo; index: number; step: Dem
       </div>
     </div>
   );
+}
+
+/**
+ * Ouvrir ce qu'une étape désigne, comme le ferait une souris.
+ *
+ * Un simple `click()` ne suffit pas : les onglets Radix s'activent au
+ * `mousedown`, les menus au `pointerdown`. La séquence complète couvre les
+ * deux, et un bouton ordinaire n'y réagit qu'une fois, au clic.
+ */
+function activate(element: HTMLElement) {
+  const init = { bubbles: true, cancelable: true, button: 0 };
+  element.dispatchEvent(new PointerEvent("pointerdown", { ...init, pointerType: "mouse" }));
+  element.dispatchEvent(new MouseEvent("mousedown", init));
+  element.dispatchEvent(new PointerEvent("pointerup", { ...init, pointerType: "mouse" }));
+  element.dispatchEvent(new MouseEvent("mouseup", init));
+  element.click();
 }
 
 function union(elements: HTMLElement[]): Box {
