@@ -189,6 +189,16 @@ export function setMilestones(
     pv_signed_at: string | null;
     visit_report_sent_at: string | null;
     survey_report_sent_at: string | null;
+    calc_started_at: string | null;
+    calc_done_at: string | null;
+    plans_started_at: string | null;
+    plans_review_at: string | null;
+    corrections_at: string | null;
+    final_ready_at: string | null;
+    report_written_at: string | null;
+    report_validated_at: string | null;
+    report_sent_at: string | null;
+    survey_done_at: string | null;
     contact_at: string | null;
     rdv_at: string | null;
     quote_sent_at: string | null;

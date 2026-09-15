@@ -11,6 +11,7 @@ import { jalonOrder, type Jalons } from "../lib/jalons";
 import { DepositEditor, DepositTag, type DepositTotal } from "./deposit-field";
 import { MaterialsEditor, MaterialsTags } from "./materials-field";
 import type { Metier } from "../lib/cycle";
+import type { ProjectMission } from "../lib/types";
 
 /**
  * L'après-signature : ce qui sépare un devis signé d'un chantier qui démarre.
@@ -29,6 +30,7 @@ import type { Metier } from "../lib/cycle";
  */
 export function ProjectJalons({
   metier,
+  mission,
   jalons,
   onToggle,
   onMaterials,
@@ -40,6 +42,8 @@ export function ProjectJalons({
 }: {
   /** Le métier de l'affaire : il décide de la liste des jalons. */
   metier: Metier;
+  /** La mission d'une étude : elle décide des étapes de production. */
+  mission?: ProjectMission;
   jalons: Jalons;
   onToggle: (key: keyof Jalons, value: string | null) => void;
   /**
@@ -62,7 +66,7 @@ export function ProjectJalons({
   disabled?: boolean;
   className?: string;
 }) {
-  const ordre = jalonOrder(metier);
+  const ordre = jalonOrder(metier, mission);
 
   return (
     <div className={cn("flex flex-col gap-3", className)}>
@@ -73,8 +77,11 @@ export function ProjectJalons({
           const last = index === ordre.length - 1;
           // Le premier jalon non atteint est celui qui bloque la suite : lui
           // seul se met en avant, sans quoi six lignes réclameraient à la fois.
+          // Une étape facultative — des corrections — ne bloque ni ne réclame.
           const blocking =
-            !done && ordre.slice(0, index).every((prev) => jalons[prev.key] !== null);
+            !done &&
+            !jalon.optional &&
+            ordre.slice(0, index).every((prev) => prev.optional || jalons[prev.key] !== null);
 
           return (
             <li key={jalon.key} className="flex gap-3">

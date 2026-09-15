@@ -158,6 +158,9 @@ export function ProjectOnboardingDrawer({
         notes: project.notes,
         started_at: project.started_at,
         closed_at: project.closed_at,
+        mission: project.mission,
+        promised_at: project.promised_at,
+        internal_deadline_at: project.internal_deadline_at,
       });
 
       // Le téléphone appartient à la personne, pas au chantier.
@@ -201,6 +204,16 @@ export function ProjectOnboardingDrawer({
           pv_signed_at: milestones?.pv_signed_at ?? null,
           visit_report_sent_at: milestones?.visit_report_sent_at ?? null,
           survey_report_sent_at: milestones?.survey_report_sent_at ?? null,
+          calc_started_at: milestones?.calc_started_at ?? null,
+          calc_done_at: milestones?.calc_done_at ?? null,
+          plans_started_at: milestones?.plans_started_at ?? null,
+          plans_review_at: milestones?.plans_review_at ?? null,
+          corrections_at: milestones?.corrections_at ?? null,
+          final_ready_at: milestones?.final_ready_at ?? null,
+          report_written_at: milestones?.report_written_at ?? null,
+          report_validated_at: milestones?.report_validated_at ?? null,
+          report_sent_at: milestones?.report_sent_at ?? null,
+          survey_done_at: milestones?.survey_done_at ?? null,
           contact_at: new Date().toISOString(),
           rdv_at: milestones?.rdv_at ?? null,
           quote_sent_at: milestones?.quote_sent_at ?? null,

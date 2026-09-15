@@ -10,6 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { projectReference } from "@/modules/customers";
 import { euros, formatDate } from "@/shared/lib/format";
 import { STUDY_STATUS, WORKSITE_STATUS } from "../lib/labels";
 import type { Metier, ReadWorksite } from "../lib/types";
@@ -73,6 +74,9 @@ export function WorksiteList({
               >
                 <TableCell className="text-foreground text-[13px] font-semibold">
                   {w.customer_name}
+                  <span className="text-muted-foreground block font-mono text-[10px] font-medium">
+                    {projectReference(w.reference, metier)}
+                  </span>
                 </TableCell>
                 <TableCell className="text-muted-foreground max-w-70 truncate text-sm">
                   {w.label}

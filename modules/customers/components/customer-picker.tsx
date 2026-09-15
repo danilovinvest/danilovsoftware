@@ -471,6 +471,9 @@ function NouvelleFiche({
         notes: projet.notes,
         started_at: projet.started_at,
         closed_at: projet.closed_at,
+        mission: projet.mission,
+        promised_at: projet.promised_at,
+        internal_deadline_at: projet.internal_deadline_at,
       });
       onProjet(maj);
     } catch {
@@ -566,6 +569,9 @@ function nouveauProjet() {
     notes: "",
     started_at: null,
     closed_at: null,
+    mission: null,
+    promised_at: null,
+    internal_deadline_at: null,
   };
 }
 
@@ -584,6 +590,16 @@ function jalonsDuPremierContact() {
     pv_signed_at: null,
     visit_report_sent_at: null,
     survey_report_sent_at: null,
+    calc_started_at: null,
+    calc_done_at: null,
+    plans_started_at: null,
+    plans_review_at: null,
+    corrections_at: null,
+    final_ready_at: null,
+    report_written_at: null,
+    report_validated_at: null,
+    report_sent_at: null,
+    survey_done_at: null,
     contact_at: new Date().toISOString(),
     rdv_at: null,
     quote_sent_at: null,

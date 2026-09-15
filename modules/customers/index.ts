@@ -16,6 +16,8 @@ export * from "./lib/labels";
 // porte, et une seule définition évite que « à relancer » ne veuille pas dire
 // la même chose d'un écran à l'autre.
 export * from "./lib/cycle";
+// La mission, le numéro de dossier et les délais : lus aussi par l'écran Études.
+export * from "./lib/mission";
 export {
   EMPTY_JALONS,
   EMPTY_MARKS,

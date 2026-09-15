@@ -12,7 +12,7 @@
  */
 
 /** Un devis ou une facture de l'affaire, avec son fichier sur OneDrive. */
-import type { InterventionScope } from "@/modules/customers";
+import type { Deadline, InterventionScope, ProjectMission } from "@/modules/customers";
 
 export type WorksiteQuote = {
   id: string;
@@ -83,6 +83,23 @@ export type Worksite = {
   /** Les deux rapports du bureau d'études, distincts l'un de l'autre. */
   visit_report_sent_at: string | null;
   survey_report_sent_at: string | null;
+  /** Le numéro de dossier (`2026-0148`) : le préfixe se lit du métier. */
+  reference: string;
+  /** Renvoyés tels quels par la fiche latérale : la route remplace l'affaire. */
+  mission: ProjectMission | null;
+  promised_at: string | null;
+  internal_deadline_at: string | null;
+  /** La production du bureau d'études, que la fiche latérale fait cocher. */
+  calc_started_at: string | null;
+  calc_done_at: string | null;
+  plans_started_at: string | null;
+  plans_review_at: string | null;
+  corrections_at: string | null;
+  final_ready_at: string | null;
+  report_written_at: string | null;
+  report_validated_at: string | null;
+  report_sent_at: string | null;
+  survey_done_at: string | null;
   /*
     Les crans cochés à la main sur la frise de la fiche client.
 
@@ -138,6 +155,8 @@ export type ReadWorksite = {
   daysRunning: number | null;
   /** Jours depuis la dernière trace d'échange, nul s'il n'y en a jamais eu. */
   daysSilent: number | null;
+  /** Ce que disent le délai client et la deadline interne, tant que rien n'est rendu. */
+  deadline: Deadline | null;
   /** Vrai dès qu'une facture existe — la référence commence par `FA`. */
   invoiced: boolean;
   /** Vrai quand un devis porte un acompte encaissé. */

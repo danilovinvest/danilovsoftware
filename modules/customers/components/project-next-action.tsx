@@ -3,6 +3,12 @@
 import {
   AlertTriangleIcon,
   BanknoteIcon,
+  CalculatorIcon,
+  FileCheckIcon,
+  PencilRulerIcon,
+  PenLineIcon,
+  SendIcon,
+  ShovelIcon,
   CalendarPlusIcon,
   CheckCircle2Icon,
   FileTextIcon,
@@ -53,6 +59,12 @@ const ICONS: Record<ActionKey, LucideIcon> = {
   invoice_balance: BanknoteIcon,
   ask_review: StarIcon,
   record_review: StarIcon,
+  calc_done: CalculatorIcon,
+  final_ready: PencilRulerIcon,
+  write_report: PenLineIcon,
+  send_report: SendIcon,
+  survey_done: ShovelIcon,
+  send_survey_report: FileCheckIcon,
 };
 
 export function ProjectNextAction({

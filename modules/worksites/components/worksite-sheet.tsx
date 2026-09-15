@@ -19,6 +19,8 @@ import { ClaudeButton, worksiteContext } from "@/modules/assistant";
 import {
   ProjectJalons,
   depositTotalOf,
+  missionOf,
+  projectReference,
   setMilestones,
   setQuoteDeposit,
   updateProject,
@@ -126,6 +128,16 @@ function Body({
     pv_signed_at: w.pv_signed_at,
     visit_report_sent_at: w.visit_report_sent_at,
     survey_report_sent_at: w.survey_report_sent_at,
+    calc_started_at: w.calc_started_at,
+    calc_done_at: w.calc_done_at,
+    plans_started_at: w.plans_started_at,
+    plans_review_at: w.plans_review_at,
+    corrections_at: w.corrections_at,
+    final_ready_at: w.final_ready_at,
+    report_written_at: w.report_written_at,
+    report_validated_at: w.report_validated_at,
+    report_sent_at: w.report_sent_at,
+    survey_done_at: w.survey_done_at,
     ...optimiste,
   };
 
@@ -219,6 +231,9 @@ function Body({
           site_city: w.city, notes: w.notes,
           started_at: value ? value.slice(0, 10) : null,
           closed_at: w.closed_at,
+          mission: w.mission,
+          promised_at: w.promised_at,
+          internal_deadline_at: w.internal_deadline_at,
         });
       } else {
         await setMilestones(w.id, {
@@ -234,6 +249,16 @@ function Body({
           pv_signed_at: suivant.pv_signed_at,
           visit_report_sent_at: suivant.visit_report_sent_at,
           survey_report_sent_at: suivant.survey_report_sent_at,
+          calc_started_at: suivant.calc_started_at,
+          calc_done_at: suivant.calc_done_at,
+          plans_started_at: suivant.plans_started_at,
+          plans_review_at: suivant.plans_review_at,
+          corrections_at: suivant.corrections_at,
+          final_ready_at: suivant.final_ready_at,
+          report_written_at: suivant.report_written_at,
+          report_validated_at: suivant.report_validated_at,
+          report_sent_at: suivant.report_sent_at,
+          survey_done_at: suivant.survey_done_at,
           // Rendus tels quels : cet écran ne les modifie pas, et la requête
           // remplace la ligne entière.
           contact_at: w.contact_at,
@@ -262,7 +287,14 @@ function Body({
     <>
       <SheetHeader className="gap-1 pb-3">
         <SheetTitle className="text-base">{w.customer_name}</SheetTitle>
-        <SheetDescription className="text-sm">{w.label}</SheetDescription>
+        <SheetDescription className="text-sm">
+          {w.reference && (
+            <span className="font-mono text-xs font-semibold">
+              {projectReference(w.reference, metier)} ·{" "}
+            </span>
+          )}
+          {w.label}
+        </SheetDescription>
         <ClaudeButton
           size="xs"
           className="mt-1 self-start"
@@ -288,6 +320,16 @@ function Body({
           >
             {status.label}
           </span>
+          {read.deadline && (
+            <span
+              className={cn(
+                "rounded-md px-1.5 py-0.5 text-[11px] font-medium",
+                TONE_SOFT[read.deadline.tone],
+              )}
+            >
+              {read.deadline.label}
+            </span>
+          )}
           {read.depositReceived && (
             <span className="bg-success-soft text-success rounded-md px-1.5 py-0.5 text-[11px] font-medium">
               acompte encaissé
@@ -325,6 +367,7 @@ function Body({
           <h3 className="mb-2 text-xs font-medium">Après la signature</h3>
           <ProjectJalons
             metier={metier}
+            mission={missionOf(w, w.quotes)}
             jalons={jalons}
             disabled={!canWrite || enCours}
             onToggle={poser}

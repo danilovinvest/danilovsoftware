@@ -22,8 +22,10 @@ import { TONE_SOFT } from "@/shared/ui/panel";
 import { formatAmount, formatDate } from "@/shared/lib/format";
 import { cn } from "@/lib/utils";
 import * as api from "../lib/api";
+import { deadlineOf, deliveredAt, missionOf, projectReference } from "../lib/mission";
 import {
   PAYMENT_STATUS,
+  PROJECT_MISSION,
   PROJECT_STAGE,
   QUOTE_ISSUER,
   QUOTE_KIND,
@@ -179,6 +181,9 @@ export function ProjectsPanel({
           notes: project.notes,
           started_at: date ? date.slice(0, 10) : null,
           closed_at: project.closed_at,
+          mission: project.mission,
+          promised_at: project.promised_at,
+          internal_deadline_at: project.internal_deadline_at,
         });
         return;
       }
@@ -197,6 +202,16 @@ export function ProjectsPanel({
         pv_signed_at: suivant.pv_signed_at,
         visit_report_sent_at: suivant.visit_report_sent_at,
         survey_report_sent_at: suivant.survey_report_sent_at,
+        calc_started_at: suivant.calc_started_at,
+        calc_done_at: suivant.calc_done_at,
+        plans_started_at: suivant.plans_started_at,
+        plans_review_at: suivant.plans_review_at,
+        corrections_at: suivant.corrections_at,
+        final_ready_at: suivant.final_ready_at,
+        report_written_at: suivant.report_written_at,
+        report_validated_at: suivant.report_validated_at,
+        report_sent_at: suivant.report_sent_at,
+        survey_done_at: suivant.survey_done_at,
         contact_at: suivant.contact_at,
         rdv_at: suivant.rdv_at,
         quote_sent_at: suivant.quote_sent_at,
@@ -443,6 +458,19 @@ function ProjectBlock({
   const points = readCycle(project, quotes, interactions, jalons, now, undefined, marks);
   const action = nextAction(points, project, quotes, jalons, now);
   const lead = leadQuote(quotes);
+  /*
+    Le métier, la mission et le délai, lus une fois pour l'en-tête et les jalons.
+
+    Une affaire livrée ne dit plus son délai : un retard rattrapé n'est plus une
+    alerte. Pour un chantier, « livré » veut dire réalisé.
+  */
+  const metier = metierOf(quotes);
+  const mission = missionOf(project, quotes);
+  const echeance = deadlineOf(
+    project,
+    metier === "etudes" ? deliveredAt(jalons, mission) !== null : project.stage === "realise",
+    now,
+  );
 
   const reopen = useAction(() =>
     api.setProjectStage(project.id, { stage: project.stage, outcome: null, outcome_note: "" }),
@@ -633,6 +661,26 @@ function ProjectBlock({
       case "record_review":
         onOverride({ review_received_at: new Date().toISOString() });
         break;
+      // La production du bureau d'études : chaque geste date son jalon, et le
+      // livrable qu'il produit — la note de calcul, le dossier, le rapport.
+      case "calc_done":
+        onOverride({ calc_done_at: new Date().toISOString() });
+        break;
+      case "final_ready":
+        onOverride({ final_ready_at: new Date().toISOString() });
+        break;
+      case "write_report":
+        onOverride({ report_written_at: new Date().toISOString() });
+        break;
+      case "send_report":
+        onOverride({ report_sent_at: new Date().toISOString() });
+        break;
+      case "survey_done":
+        onOverride({ survey_done_at: new Date().toISOString() });
+        break;
+      case "send_survey_report":
+        onOverride({ survey_report_sent_at: new Date().toISOString() });
+        break;
       case "open_worksite":
         // Le chantier **est** cette affaire : on emmène son identifiant, sinon
         // on atterrit sur une liste de quarante-neuf et il faut y rechercher
@@ -659,7 +707,28 @@ function ProjectBlock({
 
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
+              {/* Le numéro qu'on dicte au téléphone et qu'on écrit sur un plan. */}
+              {project.reference && (
+                <span className="text-muted-foreground font-mono text-[11px] font-semibold">
+                  {projectReference(project.reference, metier)}
+                </span>
+              )}
               <span className="truncate text-sm font-medium">{project.label}</span>
+              {metier === "etudes" && (
+                <span className="text-muted-foreground bg-muted rounded-md px-1.5 py-0.5 text-[0.65rem]">
+                  {PROJECT_MISSION[mission].label}
+                </span>
+              )}
+              {echeance && (
+                <span
+                  className={cn(
+                    "rounded-md px-1.5 py-0.5 text-[0.65rem] font-medium",
+                    TONE_SOFT[echeance.tone],
+                  )}
+                >
+                  {echeance.label}
+                </span>
+              )}
               {hasSurvey(quotes) && (
                 <span className="text-muted-foreground bg-muted rounded-md px-1.5 py-0.5 text-[0.65rem]">
                   sondage
@@ -827,7 +896,8 @@ function ProjectBlock({
 
               <TabsContent value="apres" className="pt-4">
                 <ProjectJalons
-                  metier={metierOf(quotes)}
+                  metier={metier}
+                  mission={mission}
                   jalons={jalons}
                   onMaterials={commanderMateriaux}
                   depositTotal={depositTotalOf(porteur)}

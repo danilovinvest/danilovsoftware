@@ -66,6 +66,9 @@ function emptyProject(): ProjectPayload {
     notes: "",
     started_at: null,
     closed_at: null,
+    mission: null,
+    promised_at: null,
+    internal_deadline_at: null,
   };
 }
 

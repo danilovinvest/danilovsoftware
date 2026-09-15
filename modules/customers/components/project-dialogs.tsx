@@ -16,6 +16,7 @@ import { useColleagues } from "@/shared/hooks/use-colleagues";
 import * as api from "../lib/api";
 import {
   PAYMENT_STATUS,
+  PROJECT_MISSION,
   PROJECT_STAGE,
   QUOTE_ISSUER,
   QUOTE_KIND,
@@ -46,6 +47,9 @@ const EMPTY_PROJECT: ProjectPayload = {
   notes: "",
   started_at: null,
   closed_at: null,
+  mission: null,
+  promised_at: null,
+  internal_deadline_at: null,
 };
 
 const EMPTY_QUOTE: QuotePayload = {
@@ -83,6 +87,9 @@ function projectToPayload(project: Project): ProjectPayload {
     notes: project.notes,
     started_at: project.started_at,
     closed_at: project.closed_at,
+    mission: project.mission,
+    promised_at: project.promised_at,
+    internal_deadline_at: project.internal_deadline_at,
     manager_id: project.manager_id,
     engineer_id: project.engineer_id,
     drafter_id: project.drafter_id,
@@ -162,6 +169,40 @@ export function ProjectDialog({
             value={values.started_at ?? ""}
             onChange={(event) =>
               setValues({ ...values, started_at: event.target.value || null })
+            }
+          />
+          {/*
+            La mission et les deux délais.
+
+            La mission se déduit des devis tant que personne ne la choisit :
+            « Déduite » est donc un vrai choix, pas un champ vide. Les deux
+            dates sont distinctes parce qu'elles ne disent pas la même chose —
+            l'une engage l'entreprise, l'autre est la marge qu'elle se donne.
+          */}
+          <SelectField
+            label="Mission"
+            wrapperClassName="sm:col-span-2"
+            options={[{ value: "", label: "Déduite des devis" }, ...toOptions(PROJECT_MISSION)]}
+            value={values.mission ?? ""}
+            onValueChange={(value) =>
+              setValues({ ...values, mission: (value || null) as ProjectPayload["mission"] })
+            }
+            hint="Pour une affaire de STRUCTURE : elle choisit le parcours de l'étude."
+          />
+          <TextField
+            label="Promis au client"
+            type="date"
+            value={values.promised_at ?? ""}
+            onChange={(event) =>
+              setValues({ ...values, promised_at: event.target.value || null })
+            }
+          />
+          <TextField
+            label="Deadline interne"
+            type="date"
+            value={values.internal_deadline_at ?? ""}
+            onChange={(event) =>
+              setValues({ ...values, internal_deadline_at: event.target.value || null })
             }
           />
           {/*

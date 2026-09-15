@@ -8,6 +8,7 @@ import type {
   WorksiteQuote,
   WorksiteStatus,
 } from "./types";
+import { deadlineOf, deliveredAt, missionOf } from "@/modules/customers";
 
 /**
  * Ce qui se déduit d'un chantier, et rien de plus.
@@ -72,9 +73,14 @@ export function statusOf(worksite: Worksite, now: number): WorksiteStatus {
  */
 export function studyOf(worksite: Worksite, soldee: boolean, acompte: boolean): StudyStatus {
   if (soldee) return "soldee";
-  if (worksite.plans_sent_at !== null) return "rendue";
+  // Rendue, c'est ce que la mission livre : un dossier, un rapport, un sondage.
+  if (rendueLe(worksite) !== null) return "rendue";
   if (!acompte) return "acompte_attendu";
   return "en_cours";
+}
+
+function rendueLe(worksite: Worksite): string | null {
+  return deliveredAt(worksite, missionOf(worksite, worksite.quotes));
 }
 
 export const STUDY_ORDER: StudyStatus[] = [
@@ -121,6 +127,12 @@ export function read(worksite: Worksite, now: number): ReadWorksite {
     daysSilent: worksite.last_interaction_at
       ? days(worksite.last_interaction_at, now)
       : null,
+    // Un chantier réalisé ou une étude rendue ne sont plus en retard de rien.
+    deadline: deadlineOf(
+      worksite,
+      worksite.stage === "realise" || rendueLe(worksite) !== null,
+      now,
+    ),
     invoiced: factures.length > 0,
     depositReceived: worksite.quotes.some((q) => q.deposit_status === "recu"),
     amountHT: total(devis, "amount_ht"),
@@ -187,14 +199,30 @@ export function studyAlerts(reads: ReadWorksite[]) {
     .filter((r) => r.study === "acompte_attendu")
     .map((r) => alert(r, "Signée, acompte non encaissé — l'étude ne démarre pas"));
 
+  /*
+    Une étude en production inquiète quand son délai approche ou passe, et à
+    défaut de délai quand elle dure. Celles qui sont en retard passent devant :
+    c'est une promesse faite au client qu'on est en train de ne pas tenir.
+  */
+  const pressante = (r: ReadWorksite) => r.deadline !== null && r.deadline.tone !== "neutral";
   const production = reads
-    .filter((r) => r.study === "en_cours" && (r.daysRunning ?? 0) > RUNNING_LONG_DAYS)
-    .sort((a, b) => (b.daysRunning ?? 0) - (a.daysRunning ?? 0))
-    .map((r) => alert(r, `En production depuis ${r.daysRunning} jours`));
+    .filter(
+      (r) =>
+        r.study === "en_cours" &&
+        (pressante(r) || (r.deadline === null && (r.daysRunning ?? 0) > RUNNING_LONG_DAYS)),
+    )
+    .sort(
+      (a, b) =>
+        Number(b.deadline?.late ?? false) - Number(a.deadline?.late ?? false) ||
+        (b.daysRunning ?? 0) - (a.daysRunning ?? 0),
+    )
+    .map((r) =>
+      alert(r, pressante(r) ? r.deadline!.label : `En production depuis ${r.daysRunning} jours`),
+    );
 
   const aFacturer = reads
     .filter((r) => r.study === "rendue")
-    .map((r) => alert(r, "Plans rendus, solde non encaissé"));
+    .map((r) => alert(r, "Rendue au client, solde non encaissé"));
 
   const avis = reads
     .filter(
