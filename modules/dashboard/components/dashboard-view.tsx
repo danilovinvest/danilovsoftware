@@ -23,6 +23,7 @@ import { HotPanel } from "./hot-panel";
 import { PipelinePanel } from "./pipeline-panel";
 import { RelancePanel } from "./relance-panel";
 import { TopClientsPanel } from "./top-clients-panel";
+import { UnassignedPanel } from "./unassigned-panel";
 import { VatPanel } from "./vat-panel";
 import { WaitingPanel } from "./waiting-panel";
 
@@ -124,6 +125,9 @@ export function DashboardView() {
         </div>
         <MetricCards metrics={data.metrics} />
       </section>
+
+      {/* Branché sur l'API, contrairement aux compteurs : qui porte quoi est un fait du jour. */}
+      <UnassignedPanel />
 
       <div className="grid items-start gap-4 xl:grid-cols-3">
         <RelancePanel

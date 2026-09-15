@@ -236,6 +236,8 @@ export type Project = {
    * formulaire de l'affaire.
    */
   issuer: string | null;
+  /** La prochaine action assignée : la tâche ouverte la plus pressante. */
+  next_task: NextTask | null;
   /**
    * Le délai annoncé au client, et la deadline qu'on se donne en interne.
    * L'interne précède l'annoncée ; l'écart entre les deux est la marge.
@@ -496,6 +498,48 @@ export type ContactPayload = Omit<
  * mur porteur » sans dire chez qui. Le rôle est calculé par le serveur, qui est
  * le seul à connaître les identifiants qu'il compare.
  */
+/**
+ * La tâche en cours d'une affaire : sa prochaine action, assignée.
+ *
+ * La plus pressante des tâches ouvertes qui la ciblent — priorité, puis
+ * échéance. Nulle quand personne n'est chargé de rien sur l'affaire.
+ */
+export type NextTask = {
+  id: string;
+  title: string;
+  status: string;
+  priority: "basse" | "normale" | "haute";
+  due_at: string | null;
+  assignee_id: string | null;
+  assignee_name: string;
+  is_overdue: boolean;
+};
+
+/** Une affaire active sans responsable ou sans prochaine action. */
+export type UnassignedProject = {
+  id: string;
+  reference: string;
+  label: string;
+  stage: ProjectStage;
+  customer_id: string;
+  customer_name: string;
+  manager_id: string | null;
+  manager_name: string;
+  next_task: NextTask | null;
+  quote_count: number;
+  last_activity_at: string | null;
+  created_at: string;
+  promised_at: string | null;
+  internal_deadline_at: string | null;
+};
+
+export type UnassignedPage = {
+  items: UnassignedProject[];
+  total: number;
+  without_manager: number;
+  without_task: number;
+};
+
 export type MyProject = Project & {
   customer_name: string;
   customer_reference: string;
@@ -518,6 +562,8 @@ export type ProjectPayload = Omit<
   | "reference"
   // Sa propre route : le formulaire remplace l'affaire et l'effacerait.
   | "issuer"
+  // Servie par le serveur, lue des tâches : jamais écrite par l'affaire.
+  | "next_task"
   // Posé par la copie OneDrive, jamais par un formulaire.
   | "drive_path"
   // Servis avec l'affaire, jamais envoyés : le serveur les déduit des

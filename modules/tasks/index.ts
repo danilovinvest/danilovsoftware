@@ -5,6 +5,8 @@ export { TaskStatusBadge } from "./components/task-badge";
 // en pause n'est réveillée par rien. C'est la seule écriture que le module des
 // fiches client fait ici, et elle passe par la surface publique.
 export { createTask } from "./lib/api";
+// La prochaine action d'une affaire s'assigne par le formulaire de tâche, pré-rempli.
+export { TaskDialog } from "./components/task-dialog";
 // Les notifications de l'en-tête sont les tâches qui réclament l'appelant : elles
 // les lisent ici plutôt que de tenir une seconde route qui dirait la même chose.
 export { listTasks } from "./lib/api";

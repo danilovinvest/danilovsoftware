@@ -48,5 +48,7 @@ export { DepositTag, depositTotalOf } from "./components/deposit-field";
 // rattacher. Une route dédiée ne se justifierait pas : la fiche est déjà
 // servie en un appel, et c'est un geste explicite de l'utilisateur.
 export { getCustomer } from "./lib/api";
+// « À attribuer » vit sur le tableau de bord : il lit et attribue les affaires sans responsable.
+export { listUnassigned, setProjectManager } from "./lib/api";
 export * from "./lib/types";
 export { ImportView } from "./import";

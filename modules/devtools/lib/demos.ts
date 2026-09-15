@@ -40,6 +40,25 @@ const FICHE_ETUDE = "/customers/7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "prochaine-action-assignee",
+    title: "La prochaine action, et qui la porte",
+    date: "2026-09-15",
+    steps: [
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="next-assignment"]',
+        title: "Quoi, par qui, pour quand",
+        body: "Sous « à faire maintenant » : la tâche en cours, son responsable, son échéance et sa priorité. Sans elle, « Assigner » crée la tâche pré-remplie — l'étape, la bonne personne (ingénieur, dessinateur, responsable), la deadline interne. « M'attribuer » pose le responsable de l'affaire d'un clic.",
+      },
+      {
+        path: "/dashboard",
+        target: '[data-demo="unassigned-panel"]',
+        title: "À attribuer",
+        body: "Les dossiers actifs sans responsable ou sans prochaine action, les signés et les deadlines proches d'abord. On s'en attribue un d'un clic, sans passer par la fiche. « Mes dossiers » montre ensuite la prochaine action de chacun.",
+      },
+    ],
+  },
+  {
     id: "affaire-societe-suppression",
     title: "Basculer une affaire de société, la supprimer",
     date: "2026-09-15",

@@ -43,6 +43,12 @@ export function TaskDialog({
   defaultTargetName = "",
   /** Colonne d'origine quand on crée depuis le tableau. */
   initialStatus,
+  /**
+   * Ce que la tâche propose à sa création : la prochaine action d'une affaire
+   * arrive avec son intitulé, sa priorité, son échéance et la personne qui doit
+   * agir. Tout reste modifiable avant d'enregistrer.
+   */
+  preset,
   colleagues = [],
 }: {
   task: Task | null;
@@ -52,6 +58,13 @@ export function TaskDialog({
   defaultTarget?: TaskTargetPayload;
   defaultTargetName?: string;
   initialStatus?: TaskStatus;
+  preset?: {
+    title?: string;
+    body?: string;
+    priority?: TaskPriority;
+    due_at?: string | null;
+    assignee_id?: string | null;
+  };
   colleagues?: Colleague[];
 }) {
   /*
@@ -65,7 +78,7 @@ export function TaskDialog({
   const cibleFiche = task?.targets.find((t) => t.customer_id) ?? null;
   const cibleAffaire = task?.targets.find((t) => t.project_id) ?? null;
 
-  const [title, setTitle] = useState(task?.title ?? "");
+  const [title, setTitle] = useState(task?.title ?? preset?.title ?? "");
   const [customerId, setCustomerId] = useState<string | null>(
     cibleFiche?.customer_id ?? cibleAffaire?.owner_id ?? defaultTarget?.customer_id ?? null,
   );
@@ -75,11 +88,13 @@ export function TaskDialog({
   const [projectId, setProjectId] = useState<string | null>(
     cibleAffaire?.project_id ?? defaultTarget?.project_id ?? null,
   );
-  const [body, setBody] = useState(task?.body ?? "");
+  const [body, setBody] = useState(task?.body ?? preset?.body ?? "");
   const [status, setStatus] = useState<TaskStatus>(task?.status ?? initialStatus ?? "a_faire");
-  const [priority, setPriority] = useState<TaskPriority>(task?.priority ?? "normale");
-  const [assigneeId, setAssigneeId] = useState(task?.assignee_id ?? "");
-  const [dueAt, setDueAt] = useState<string | null>(task?.due_at ?? null);
+  const [priority, setPriority] = useState<TaskPriority>(
+    task?.priority ?? preset?.priority ?? "normale",
+  );
+  const [assigneeId, setAssigneeId] = useState(task?.assignee_id ?? preset?.assignee_id ?? "");
+  const [dueAt, setDueAt] = useState<string | null>(task?.due_at ?? preset?.due_at ?? null);
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string>>({});
   const [pending, setPending] = useState(false);

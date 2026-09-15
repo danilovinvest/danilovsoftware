@@ -58,6 +58,7 @@ import { useAction } from "../hooks/use-customers";
 import { EnumBadge } from "./enum-badge";
 import { InteractionDialog } from "./interaction-dialog";
 import { DeleteProjectDialog } from "./delete-project-dialog";
+import { ProjectNextAssignment } from "./next-assignment";
 import { DepositDialog, depositTotalOf } from "./deposit-field";
 import { ProjectIssuerDialog } from "./project-issuer-dialog";
 import { MaterialsDialog } from "./materials-field";
@@ -863,6 +864,13 @@ function ProjectBlock({
                 pending={reopen.pending || setDeposit.pending || setBalance.pending || saving}
               />
             )}
+              <ProjectNextAssignment
+                project={project}
+                customerName={customer.display_name}
+                action={action}
+                canWrite={canWrite}
+                onChanged={onChanged}
+              />
             </div>
 
             {project.source_status && (

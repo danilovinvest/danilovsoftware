@@ -6,7 +6,7 @@ import { AlertTriangleIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { EmptyState, ErrorNotice } from "@/shared/ui/feedback";
 import { Bar } from "@/shared/ui/loading";
-import { formatRelative } from "@/shared/lib/format";
+import { formatDate, formatRelative } from "@/shared/lib/format";
 import { cn } from "@/lib/utils";
 import { errorMessage } from "@/shared/api/errors";
 import * as api from "../lib/api";
@@ -120,6 +120,15 @@ function MyProjectRow({ project }: { project: MyProject }) {
           {project.label}
           {site && ` · ${site}`}
         </div>
+        {/* La prochaine action : ce qu'on vient chercher en ouvrant ses dossiers. */}
+        {project.next_task ? (
+          <div className={cn("truncate text-xs", project.next_task.is_overdue ? "text-danger" : "text-foreground")}>
+            → {project.next_task.title}
+            {project.next_task.due_at && ` · ${project.next_task.is_overdue ? "en retard depuis le" : "pour le"} ${formatDate(project.next_task.due_at)}`}
+          </div>
+        ) : (
+          <div className="text-warning truncate text-xs">Aucune prochaine action assignée</div>
+        )}
       </div>
 
       {project.scope && (

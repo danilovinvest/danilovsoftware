@@ -8,6 +8,7 @@ import type {
   CustomerListItem,
   PaymentStatus,
   ProjectDeletion,
+  UnassignedPage,
   ProofBatch,
   StepProof,
   StepProofInput,
@@ -234,6 +235,19 @@ export function setProjectIssuer(id: string, payload: { issuer: string | null; r
 /** L'inventaire de ce que la suppression d'une affaire emporte. */
 export function getProjectDeletion(id: string, signal?: AbortSignal) {
   return apiFetch<ProjectDeletion>(`/v1/projects/${id}/deletion`, { signal });
+}
+
+/** Poser le responsable d'une affaire, sans renvoyer l'affaire entière. */
+export function setProjectManager(id: string, managerId: string | null) {
+  return apiFetch<Project>(`/v1/projects/${id}/manager`, { method: "PUT", body: { manager_id: managerId } });
+}
+
+/** Les affaires actives sans responsable ou sans prochaine action. */
+export function listUnassigned(
+  params: { limit?: number; offset?: number; issuer?: string },
+  signal?: AbortSignal,
+) {
+  return apiFetch<UnassignedPage>("/v1/projects/unassigned", { query: params, signal });
 }
 
 export function deleteProject(id: string) {
