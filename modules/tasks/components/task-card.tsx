@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { describeDue, formatRelative } from "@/shared/lib/format";
 import { DUE_ACCENT, DUE_TEXT, TASK_PRIORITY } from "../lib/labels";
 import { AssigneePicker } from "./assignee-picker";
+import { AutoTaskBadge } from "./auto-task-badge";
 import type { Colleague, Task } from "../lib/types";
 
 /**
@@ -95,6 +96,7 @@ export function TaskCard({
           <span className={cn(done && "text-muted-foreground line-through")}>
             {task.title}
           </span>
+          {task.auto_rule && <AutoTaskBadge rule={task.auto_rule} className="ml-1.5" />}
         </button>
 
         {task.body && (

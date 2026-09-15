@@ -10,6 +10,7 @@ import { describeDue } from "@/shared/lib/format";
 import * as api from "../lib/api";
 import { DUE_TEXT } from "../lib/labels";
 import { TaskStatusBadge } from "./task-badge";
+import { AutoTaskBadge } from "./auto-task-badge";
 import type { Task, TaskStatus } from "../lib/types";
 
 /**
@@ -63,6 +64,7 @@ export function TaskRow({
           <span className={cn(done && "text-muted-foreground line-through")}>
             {task.title}
           </span>
+          {task.auto_rule && <AutoTaskBadge rule={task.auto_rule} className="ml-1.5" />}
         </button>
 
         {task.body && (

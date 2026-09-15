@@ -40,6 +40,33 @@ const FICHE_ETUDE = "/customers/7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "taches-automatiques",
+    title: "Les tâches automatiques de STRUCTURE",
+    date: "2026-09-15",
+    steps: [
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="next-action"]',
+        title: "Chaque étape crée la suivante",
+        body: "Devis signé → « Émettre la facture d'acompte ». Acompte encaissé → « Réaliser le calcul » pour l'ingénieur. Calcul terminé → « Dessiner les plans » pour le dessinateur. Plans rendus → « Valider les plans ». Dossier définitif → « Envoyer le dossier ». Dossier livré → « Vérifier la satisfaction ».",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="tab-apres"]',
+        target:
+          '[data-demo="jalon-deposit_paid_at"], [data-demo="jalon-calc_done_at"], [data-demo="jalon-plans_review_at"], [data-demo="jalon-final_ready_at"], [data-demo="jalon-plans_sent_at"]',
+        title: "Les étapes qui déclenchent",
+        body: "Une tâche naît quand une de ces étapes devient vraie — jamais sur une étape déjà cochée avant, et une seule fois par affaire. Cocher l'étape suivante ferme la tâche d'elle-même.",
+      },
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="tab-taches"]',
+        title: "Elles arrivent dans les Tâches",
+        body: "Assignées à l'ingénieur, au dessinateur ou au responsable de l'affaire, avec l'échéance de la deadline interne si elle est posée. La pastille « Auto » dit quelle étape l'a créée.",
+      },
+    ],
+  },
+  {
     id: "structure-production",
     title: "STRUCTURE : missions, production, numéro et délais",
     date: "2026-09-15",

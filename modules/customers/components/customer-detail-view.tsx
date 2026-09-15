@@ -271,7 +271,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
               {customer.interactions.length}
             </span>
           </TabsTrigger>
-          <TabsTrigger value="taches">Tâches</TabsTrigger>
+          <TabsTrigger value="taches" data-demo="tab-taches">Tâches</TabsTrigger>
           {canReadMail && <TabsTrigger value="courriels">Courriels</TabsTrigger>}
           <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="details">Détails</TabsTrigger>

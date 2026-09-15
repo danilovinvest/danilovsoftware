@@ -52,6 +52,13 @@ export type Task = {
   targets: TaskTarget[];
   /** Calculé par le serveur : l'horloge d'un poste ne décide pas du retard. */
   is_overdue: boolean;
+  /**
+   * La règle qui a créé la tâche — `calcul`, `dessin`, `facture_acompte`… —
+   * ou nul pour une tâche saisie à la main. Une tâche automatique naît quand
+   * une étape de l'affaire devient vraie, et se ferme quand le fait qu'elle
+   * réclame est enregistré.
+   */
+  auto_rule: string | null;
   created_at: string;
   updated_at: string;
 };
