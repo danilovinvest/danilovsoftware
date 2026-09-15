@@ -95,6 +95,7 @@ export type ProjectSummary = {
   mission: ProjectMission | null;
   promised_at: string | null;
   internal_deadline_at: string | null;
+  issuer: string | null;
 };
 
 /**
@@ -229,6 +230,12 @@ export type Project = {
   reference: string;
   /** Choisie par l'entreprise, ou nulle : elle se déduit alors des devis. */
   mission: ProjectMission | null;
+  /**
+   * La société de l'affaire, quand l'entreprise l'a choisie ; nulle, elle se lit
+   * sur les devis. Elle ne s'écrit que par `setProjectIssuer`, jamais par le
+   * formulaire de l'affaire.
+   */
+  issuer: string | null;
   /**
    * Le délai annoncé au client, et la deadline qu'on se donne en interne.
    * L'interne précède l'annoncée ; l'écart entre les deux est la marge.
@@ -509,6 +516,8 @@ export type ProjectPayload = Omit<
   | "source_status"
   // Posé par la base à la création, jamais modifiable.
   | "reference"
+  // Sa propre route : le formulaire remplace l'affaire et l'effacerait.
+  | "issuer"
   // Posé par la copie OneDrive, jamais par un formulaire.
   | "drive_path"
   // Servis avec l'affaire, jamais envoyés : le serveur les déduit des
@@ -517,6 +526,20 @@ export type ProjectPayload = Omit<
   | "engineer_name"
   | "drafter_name"
 >;
+
+/** Ce que la suppression d'une affaire emporte, et ce qu'elle garde. */
+export type ProjectDeletion = {
+  quotes: number;
+  /** Les références des factures (FA…) qui partent avec l'affaire. */
+  invoices: string[];
+  proofs: number;
+  milestones: boolean;
+  tasks: number;
+  realisation: boolean;
+  interactions_kept: number;
+  events_kept: number;
+  drive_path: string;
+};
 
 export type StagePayload = {
   stage: ProjectStage;

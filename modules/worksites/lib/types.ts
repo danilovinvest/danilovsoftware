@@ -87,6 +87,8 @@ export type Worksite = {
   reference: string;
   /** Renvoyés tels quels par la fiche latérale : la route remplace l'affaire. */
   mission: ProjectMission | null;
+  /** La société choisie par l'entreprise, nulle quand elle se lit sur les devis. */
+  issuer: string | null;
   promised_at: string | null;
   internal_deadline_at: string | null;
   /** La production du bureau d'études, que la fiche latérale fait cocher. */

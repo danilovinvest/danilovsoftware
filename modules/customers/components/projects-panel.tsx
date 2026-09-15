@@ -36,7 +36,7 @@ import {
 import {
   hasSurvey,
   leadQuote,
-  metierOf,
+  projectMetier,
   nextAction,
   readCycle,
   revisions,
@@ -57,7 +57,9 @@ import {
 import { useAction } from "../hooks/use-customers";
 import { EnumBadge } from "./enum-badge";
 import { InteractionDialog } from "./interaction-dialog";
+import { DeleteProjectDialog } from "./delete-project-dialog";
 import { DepositDialog, depositTotalOf } from "./deposit-field";
+import { ProjectIssuerDialog } from "./project-issuer-dialog";
 import { MaterialsDialog } from "./materials-field";
 import {
   ProjectOnboardingButton,
@@ -484,7 +486,7 @@ function ProjectBlock({
     Une affaire livrée ne dit plus son délai : un retard rattrapé n'est plus une
     alerte. Pour un chantier, « livré » veut dire réalisé.
   */
-  const metier = metierOf(quotes);
+  const metier = projectMetier(project, quotes);
   const mission = missionOf(project, quotes);
   const echeance = deadlineOf(
     project,
@@ -550,7 +552,9 @@ function ProjectBlock({
     });
   });
 
-  const remove = useAction(() => api.deleteProject(project.id));
+  /** Les deux fenêtres qui touchent à l'affaire elle-même : sa société, sa suppression. */
+  const [changerSociete, setChangerSociete] = useState(false);
+  const [supprimer, setSupprimer] = useState(false);
 
   /*
     Cocher un cran de la frise.
@@ -890,6 +894,18 @@ function ProjectBlock({
 
                 <div className="flex items-center gap-2">
                   <EnumBadge value={project.stage} entries={PROJECT_STAGE} />
+                  {canWrite && (
+                    <Button
+                      size="xs"
+                      variant="outline"
+                      data-demo="project-issuer"
+                      title="Basculer l'affaire vers l'autre société"
+                      onClick={() => setChangerSociete(true)}
+                    >
+                      {metier === "etudes" ? "STRUCTURE" : "GROUPE"}
+                      {!project.issuer && <span className="text-muted-foreground font-normal">· déduite</span>}
+                    </Button>
+                  )}
                   <ClaudeButton
                     size="xs"
                     context={projectContext({
@@ -916,22 +932,19 @@ function ProjectBlock({
                       data-demo="project-edit"
                     >
                       <PencilIcon />
+                      Modifier
                     </Button>
                   )}
                   {canWrite && (
                     <Button
                       size="xs"
                       variant="ghost"
+                      data-demo="project-delete"
                       className="text-muted-foreground hover:text-destructive"
-                      disabled={remove.pending}
-                      onClick={async () => {
-                        if (!confirm(`Supprimer l'affaire « ${project.label} » et ses devis ?`)) return;
-                        // Même raison qu'ailleurs : 204 rend `undefined`, qui
-                        // est faux. Seul `null` dit l'échec.
-                        if ((await remove.run()) !== null) onChanged();
-                      }}
+                      onClick={() => setSupprimer(true)}
                     >
                       <Trash2Icon />
+                      Supprimer
                     </Button>
                   )}
                 </div>
@@ -1000,6 +1013,25 @@ function ProjectBlock({
         marked={jalons.materials_ordered_at}
         pending={saving}
         onSave={commanderMateriaux}
+      />
+
+      {changerSociete && (
+        <ProjectIssuerDialog
+          project={project}
+          quotes={quotes}
+          open={changerSociete}
+          onOpenChange={setChangerSociete}
+          onSaved={onChanged}
+        />
+      )}
+      <DeleteProjectDialog
+        project={project}
+        open={supprimer}
+        onOpenChange={setSupprimer}
+        onDeleted={() => {
+          setSupprimer(false);
+          onChanged();
+        }}
       />
 
       <DepositDialog

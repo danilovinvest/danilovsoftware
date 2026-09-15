@@ -163,6 +163,18 @@ export function metierOf(quotes: Quote[]): Metier {
 }
 
 /**
+ * Le métier d'une affaire : sa société choisie d'abord, ses devis sinon.
+ *
+ * Une affaire basculée de GROUPE vers STRUCTURE doit suivre le cycle d'une étude
+ * même si ses devis n'ont pas suivi : c'est le choix de l'entreprise.
+ */
+export function projectMetier(project: { issuer?: string | null }, quotes: Quote[]): Metier {
+  if (project.issuer === "ompt-structure") return "etudes";
+  if (project.issuer === "ompt-groupe") return "travaux";
+  return metierOf(quotes);
+}
+
+/**
  * L'état d'un cran.
  *
  * `skipped` n'est pas `blocked` : une affaire reportée reprendra, une affaire
@@ -308,6 +320,8 @@ export type CycleInput = {
   created_at?: string;
   /** Choisie par l'entreprise ; absente ou nulle, elle se déduit des devis. */
   mission?: ProjectMission | null;
+  /** La société choisie par l'entreprise ; absente ou nulle, elle se lit sur les devis. */
+  issuer?: string | null;
   /** Les deux délais, qui font d'un dossier en production un dossier en retard. */
   promised_at?: string | null;
   internal_deadline_at?: string | null;
@@ -425,7 +439,7 @@ export function readCycle(
   const balance: PaymentStatus = signed?.balance_status ?? lead?.balance_status ?? "non_applicable";
   const soldeDone = balance === "recu";
 
-  const metier = metierForce ?? metierOf(quotes);
+  const metier = metierForce ?? projectMetier(project, quotes);
 
   /*
     Le rapport de visite, propre aux études.

@@ -40,6 +40,25 @@ const FICHE_ETUDE = "/customers/7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "affaire-societe-suppression",
+    title: "Basculer une affaire de société, la supprimer",
+    date: "2026-09-15",
+    steps: [
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="project-issuer"]',
+        title: "La société de l'affaire",
+        body: "STRUCTURE ou GROUPE : un clic pour la basculer. Ses devis peuvent suivre (c'est eux qui portent le SIREN et la TVA), et une référence déjà prise dans l'autre société est signalée sans rien écrire. « déduite » veut dire qu'elle se lit encore sur les devis.",
+      },
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="project-edit"], [data-demo="project-delete"]',
+        title: "Modifier et supprimer, en toutes lettres",
+        body: "Supprimer demande deux confirmations : la première liste ce qui part (devis, factures, preuves, jalons) et ce qui reste (échanges, rendez-vous, dossier OneDrive), la seconde dit que c'est définitif. La copie OneDrive ne recrée plus une affaire supprimée.",
+      },
+    ],
+  },
+  {
     id: "apercu-documents",
     title: "Voir un document sans quitter le CRM",
     date: "2026-09-15",

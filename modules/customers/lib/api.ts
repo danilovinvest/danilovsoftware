@@ -7,6 +7,7 @@ import type {
   CustomerFilters,
   CustomerListItem,
   PaymentStatus,
+  ProjectDeletion,
   ProofBatch,
   StepProof,
   StepProofInput,
@@ -223,6 +224,16 @@ export function setMilestones(
  */
 export function listMyProjects(limit = 100, signal?: AbortSignal) {
   return apiFetch<{ items: MyProject[] }>(`/v1/projects/mine?limit=${limit}`, { signal });
+}
+
+/** Changer la société d'une affaire, et celle de ses devis si on le demande. */
+export function setProjectIssuer(id: string, payload: { issuer: string | null; reassign_quotes: boolean }) {
+  return apiFetch<Project>(`/v1/projects/${id}/issuer`, { method: "PUT", body: payload });
+}
+
+/** L'inventaire de ce que la suppression d'une affaire emporte. */
+export function getProjectDeletion(id: string, signal?: AbortSignal) {
+  return apiFetch<ProjectDeletion>(`/v1/projects/${id}/deletion`, { signal });
 }
 
 export function deleteProject(id: string) {
