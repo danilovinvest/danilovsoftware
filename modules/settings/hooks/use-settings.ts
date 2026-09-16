@@ -1,7 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { listSessions, type DeviceSession } from "@/modules/auth";
+import {
+  listPasskeys,
+  listSessions,
+  type DeviceSession,
+  type Passkey,
+} from "@/modules/auth";
 import {
   listAccounts,
   listCalendars,
@@ -214,6 +219,43 @@ export function useSessions() {
 
   return {
     sessions: resolved.data ?? [],
+    loading: resolved.key !== key,
+    error: resolved.error,
+    reload,
+  };
+}
+
+/**
+ * Les clés d'accès du compte courant.
+ *
+ * `configured` vient du serveur : sans domaine public lisible, les passkeys
+ * sont éteintes, et l'écran le dit plutôt que d'offrir un bouton qui échouera.
+ */
+export function usePasskeys() {
+  const [token, setToken] = useState(0);
+  const key = `passkeys:${token}`;
+  const [resolved, setResolved] = useState<
+    Resolved<{ items: Passkey[]; configured: boolean }>
+  >({ key: "", data: null, error: null });
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    listPasskeys(controller.signal)
+      .then((data) => setResolved({ key, data, error: null }))
+      .catch((cause) => {
+        if (controller.signal.aborted) return;
+        setResolved({ key, data: null, error: errorMessage(cause) });
+      });
+
+    return () => controller.abort();
+  }, [key]);
+
+  const reload = useCallback(() => setToken((value) => value + 1), []);
+
+  return {
+    passkeys: resolved.data?.items ?? [],
+    configured: resolved.data?.configured ?? false,
     loading: resolved.key !== key,
     error: resolved.error,
     reload,

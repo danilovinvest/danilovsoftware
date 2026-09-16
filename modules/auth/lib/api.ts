@@ -3,6 +3,8 @@ import type {
   Account,
   DeviceSession,
   InvitationPreview,
+  Passkey,
+  PasskeyChallenge,
   SessionResponse,
 } from "./types";
 
@@ -47,6 +49,64 @@ export function revokeSession(id: string) {
 /** Ferme toutes les sessions, y compris celle qui appelle. */
 export function logoutAll() {
   return apiFetch<void>("/v1/auth/logout-all", { method: "POST" });
+}
+
+/* --- Passkeys ------------------------------------------------------------- */
+
+/*
+ * Deux temps par cérémonie, et le défi fait l'aller-retour.
+ *
+ * Le serveur ne garde rien entre les deux : le défi revient scellé, signé par
+ * lui, ce qui lui évite une table de défis à écrire puis à purger à chaque
+ * tentative — y compris les tentatives abandonnées, qui sont la majorité.
+ */
+
+export function beginPasskeyLogin() {
+  return apiFetch<PasskeyChallenge>("/v1/auth/passkey/login/begin", {
+    method: "POST",
+  });
+}
+
+/** Ouvre la session : la réponse est celle d'une connexion, cookie compris. */
+export function finishPasskeyLogin(challenge: string, credential: unknown) {
+  return apiFetch<SessionResponse>("/v1/auth/passkey/login/finish", {
+    method: "POST",
+    body: { challenge, credential },
+  });
+}
+
+export function beginPasskeyRegistration() {
+  return apiFetch<PasskeyChallenge>("/v1/auth/passkey/register/begin", {
+    method: "POST",
+  });
+}
+
+export function finishPasskeyRegistration(
+  challenge: string,
+  credential: unknown,
+  name: string,
+) {
+  return apiFetch<Passkey>("/v1/auth/passkey/register/finish", {
+    method: "POST",
+    body: { challenge, credential, name },
+  });
+}
+
+export function listPasskeys(signal?: AbortSignal) {
+  return apiFetch<{ items: Passkey[]; configured: boolean }>("/v1/auth/passkeys", {
+    signal,
+  });
+}
+
+export function renamePasskey(id: string, name: string) {
+  return apiFetch<void>(`/v1/auth/passkeys/${id}`, {
+    method: "PATCH",
+    body: { name },
+  });
+}
+
+export function deletePasskey(id: string) {
+  return apiFetch<void>(`/v1/auth/passkeys/${id}`, { method: "DELETE" });
 }
 
 /* --- Invitations ---------------------------------------------------------- */

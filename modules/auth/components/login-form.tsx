@@ -9,6 +9,7 @@ import { TextField } from "@/shared/ui/form";
 import { ErrorNotice } from "@/shared/ui/feedback";
 import { useAuth } from "../auth-context";
 import { DevAccountPicker } from "./dev-account-picker";
+import { PasskeyLoginButton } from "./passkey-login-button";
 
 export function LoginForm() {
   const router = useRouter();
@@ -80,6 +81,11 @@ export function LoginForm() {
       <Button type="submit" size="lg" disabled={pending}>
         Se connecter
       </Button>
+
+      {/* La clé d'accès vient après le mot de passe, pas à sa place : c'est
+          l'ordre de la doctrine — elle s'ajoute, et le mot de passe reste le
+          trousseau de secours du jour où un appareil se perd. */}
+      <PasskeyLoginButton onSignedIn={goToApp} />
     </form>
   );
 }

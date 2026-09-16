@@ -18,6 +18,7 @@ import { TextField } from "@/shared/ui/form";
 import { errorMessage } from "@/shared/api/errors";
 import { initials } from "@/shared/lib/format";
 import { DeviceList } from "./device-list";
+import { PasskeysSection } from "./passkeys-section";
 import { SettingsPage, SettingsSection } from "./settings-page";
 
 export function ProfilePanel() {
@@ -31,6 +32,7 @@ export function ProfilePanel() {
       <EmailSection email={account.email} />
       <TwoFactorSection />
       <PasswordSection />
+      <PasskeysSection />
       <DeviceList />
       <DangerZone />
     </SettingsPage>

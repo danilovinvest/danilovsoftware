@@ -55,6 +55,36 @@ export type SessionResponse = {
 
 
 /**
+ * Une passkey enregistrée, telle que les réglages l'affichent.
+ *
+ * Ni la clé publique ni l'identifiant de la clé n'en font partie : ils ne
+ * servent qu'à la cérémonie, et un écran n'a rien à en faire. `synced` se lit de
+ * l'état de sauvegarde — la clé existe ailleurs que sur cet appareil, donc le
+ * perdre ne perd pas l'accès, et c'est la seule chose qu'il faut savoir.
+ */
+export type Passkey = {
+  id: string;
+  name: string;
+  transports: string[];
+  synced: boolean;
+  last_used_at: string | null;
+  created_at: string;
+};
+
+/**
+ * Le début d'une cérémonie : ce que le navigateur doit demander à
+ * l'authentificateur, et le défi scellé à renvoyer tel quel.
+ *
+ * `options` n'est pas retypé champ par champ : c'est le protocole WebAuthn, le
+ * serveur le produit déjà dans la forme attendue, et en tenir une seconde
+ * définition ici la ferait diverger à la première mise à jour.
+ */
+export type PasskeyChallenge = {
+  options: { publicKey: Record<string, unknown> };
+  challenge: string;
+};
+
+/**
  * Un appareil connecté, tel que listé dans les réglages.
  *
  * La rotation des refresh tokens ne laisse qu'une ligne vivante par chaîne :
