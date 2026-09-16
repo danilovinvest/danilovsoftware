@@ -106,6 +106,17 @@ export type QuoteAmountsProgress = {
   from_pdf: number;
   pending: number;
   failed: number;
+  /**
+   * Les montants saisis que leur propre document contredit.
+   *
+   * Mesuré le 16/09 : quatorze sur les quarante-neuf devis qui portaient à la
+   * fois une saisie et un PDF — et dans les quatorze cas c'est le document qui
+   * a raison. Le CRM ne les corrige pas : une remise accordée est une décision
+   * commerciale. Il les compte, et le devis affiche l'écart.
+   */
+  divergent: number;
+  /** Ce qu'il reste à confronter à son document. */
+  to_compare: number;
   last_read_at: string | null;
   last_error: string;
 };

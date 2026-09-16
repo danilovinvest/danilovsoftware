@@ -48,7 +48,18 @@ export const DEMOS: Demo[] = [
         path: "/settings/fichiers",
         target: '[data-demo="quote-amounts"]',
         title: "Le montant était déjà écrit, dans le PDF",
-        body: "531 devis, 136 montants seulement — et 5 sur 155 chez STRUCTURE — alors que 382 devis ont leur PDF dans OneDrive. Le CRM en lit vingt à chaque tour de copie : il remplit le montant HT, la TVA et le TTC quand il est sûr, et ne touche jamais un montant saisi à la main. Ce bloc dit combien viennent d'un humain, combien du document, combien restent et combien ont échoué, avec la raison. Dans la liste des devis d'une affaire, une pastille « lu du PDF » apparaît alors, et son infobulle montre la ligne du document qui justifie le chiffre.",
+        body: "531 devis, 136 montants saisis — alors que 382 devis ont leur PDF dans OneDrive : le chiffre dormait dans une pièce que le CRM sait ouvrir. Il en lit vingt à chaque tour de copie et remplit le HT, la TVA et le TTC quand il est sûr, sans jamais toucher un montant saisi à la main. Ce bloc dit combien viennent d'un humain, combien du document, combien restent, et pourquoi les autres ont échoué — une facture d'acompte ou un devis scanné n'ont aucun total à lire, et c'est dit plutôt que devine. La règle a d'abord écrit sept montants faux en confondant l'en-tête du tableau avec une ligne de total : le devis qu'elle avait mis à 15 € porte aujourd'hui 152 502,00 €, confirmé par le TTC imprimé dans le même document.",
+      },
+      {
+        // La fiche Mattatia n'a qu'une affaire et qu'un devis : la pastille est
+        // donc forcement dans l'affaire affichee. La fiche essayee d'abord en
+        // portait plusieurs, dont une seule est depliee, et la zone n'etait pas
+        // trouvee -- constate en production avant de livrer cette etape.
+        path: "/customers/cf5f2622-d368-4e68-9e47-990ee24a46c1",
+        click: '[data-demo="tab-devis"]',
+        target: '[data-demo="quote-amount-source"]',
+        title: "D'où vient le chiffre, et comment le vérifier",
+        body: "La pastille « lu du PDF » dit que ce montant vient du document et non d'une saisie, et son infobulle montre la ligne exacte qui l'a justifié — de quoi vérifier sans rouvrir le PDF. Ici 320 256,50 € HT, que le TTC imprimé du même document confirme au centime. La règle a été mesurée sur 89 devis réels des deux sociétés, dont 49 dont vous aviez saisi le montant : aucun montant faux. Une découverte au passage — sur ces 49, quatorze saisies diffèrent de leur document, et c'est le document qui a raison ; celles-là ne sont pas corrigées, un montant saisi n'étant jamais écrasé.",
       },
     ],
   },

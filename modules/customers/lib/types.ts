@@ -283,6 +283,19 @@ export type Quote = {
   /** Pourquoi la lecture n'a rien rendu. Vide quand elle a abouti. */
   amount_read_error: string;
   /**
+   * Ce que le document dit, à côté de ce qu'un humain a saisi.
+   *
+   * Nul quand le document n'a pas encore été relu, ou quand il n'en portait
+   * aucun total sûr. Le CRM ne corrige **jamais** une saisie avec ce chiffre —
+   * une remise accordée est une décision commerciale, pas une erreur — il
+   * affiche l'écart et laisse trancher. Mesuré le 16/09 : quatorze saisies sur
+   * quarante-neuf divergent de leur document, et c'est le document qui a raison
+   * à chaque fois.
+   */
+  amount_pdf_ht: string | null;
+  /** La ligne du PDF qui porte ce chiffre : vérifier sans rouvrir le document. */
+  amount_pdf_evidence: string;
+  /**
    * La société qui émet ce devis.
    *
    * C'est le devis qui porte le SIREN, la TVA et le dossier comptable, pas
@@ -671,6 +684,9 @@ export type QuotePayload = Omit<
   | "amount_read_at"
   | "amount_evidence"
   | "amount_read_error"
+  // Ce que le document dit : posé par la passe de comparaison, jamais saisi.
+  | "amount_pdf_ht"
+  | "amount_pdf_evidence"
 > & { issuer?: string | null };
 
 export type InteractionPayload = {
