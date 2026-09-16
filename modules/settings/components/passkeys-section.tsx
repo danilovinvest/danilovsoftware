@@ -8,12 +8,14 @@ import {
   passkeysSupported,
   registerPasskey,
   renamePasskey,
+  type Passkey,
 } from "@/modules/auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ErrorNotice, Skeleton } from "@/shared/ui/feedback";
 import { errorMessage } from "@/shared/api/errors";
+import { formatDate } from "@/shared/lib/format";
 
 import { usePasskeys } from "../hooks/use-settings";
 import { SettingsSection } from "./settings-page";
@@ -96,7 +98,12 @@ export function PasskeysSection() {
               value={name}
               onChange={(event) => setName(event.target.value)}
             />
-            <Button size="sm" disabled={pending || !configured} onClick={add}>
+            <Button
+              size="sm"
+              data-demo="passkey-add"
+              disabled={pending || !configured}
+              onClick={add}
+            >
               <KeyRoundIcon />
               {pending ? "Enregistrement…" : "Ajouter une clé"}
             </Button>
@@ -111,19 +118,31 @@ function PasskeyRow({
   passkey,
   onChanged,
 }: {
-  passkey: { id: string; name: string; synced: boolean; last_used_at: string | null };
+  passkey: Passkey;
   onChanged: () => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(passkey.name);
   const [pending, setPending] = useState(false);
+  /*
+   * L'échec se dit sur la ligne, jamais en silence.
+   *
+   * Le cas n'est pas théorique : deux onglets ouverts sur cet écran, la clé
+   * retirée dans le premier, et le second — dont la liste n'a pas encore été
+   * rechargée — reçoit un 404. Sans message, la ligne resterait affichée
+   * indéfiniment et le bouton semblerait ne rien faire.
+   */
+  const [failure, setFailure] = useState<string | null>(null);
 
   async function save() {
     setPending(true);
+    setFailure(null);
     try {
       await renamePasskey(passkey.id, name);
       setEditing(false);
       onChanged();
+    } catch (cause) {
+      setFailure(errorMessage(cause));
     } finally {
       setPending(false);
     }
@@ -131,9 +150,12 @@ function PasskeyRow({
 
   async function remove() {
     setPending(true);
+    setFailure(null);
     try {
       await deletePasskey(passkey.id);
       onChanged();
+    } catch (cause) {
+      setFailure(errorMessage(cause));
     } finally {
       setPending(false);
     }
@@ -154,11 +176,17 @@ function PasskeyRow({
         ) : (
           <p className="truncate text-sm">{passkey.name}</p>
         )}
-        <p className="text-muted-foreground truncate text-xs">
-          {passkey.last_used_at
-            ? `Utilisée le ${new Date(passkey.last_used_at).toLocaleDateString("fr-FR")}`
-            : "Jamais utilisée"}
-        </p>
+        {/* L'échec prend la place de la date : c'est la seule chose à lire sur
+            cette ligne tant qu'il n'est pas réglé. */}
+        {failure ? (
+          <p className="text-danger text-xs">{failure}</p>
+        ) : (
+          <p className="text-muted-foreground truncate text-xs">
+            {passkey.last_used_at
+              ? `Utilisée le ${formatDate(passkey.last_used_at)}`
+              : "Jamais utilisée"}
+          </p>
+        )}
       </div>
 
       {/* « Synchronisée » veut dire que la clé vit ailleurs que sur cet

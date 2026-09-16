@@ -40,6 +40,25 @@ const FICHE_ETUDE = "/customers/7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "connexion-par-passkey",
+    title: "Entrer par une clé d'accès, sans mot de passe",
+    date: "2026-09-16",
+    steps: [
+      {
+        path: "/settings",
+        target: '[data-demo="passkeys"]',
+        title: "Une empreinte à la place du mot de passe — mais le mot de passe reste",
+        body: "Une clé d'accès s'enregistre sur un appareil : c'est lui qui prouve votre identité, par Touch ID, Face ID ou le code de l'écran de verrouillage. Rien à retenir, rien à taper, et rien à voler — la moitié secrète ne quitte jamais l'appareil, et le CRM n'en garde que la moitié publique, celle qui sert à vérifier et qui ne permet pas d'entrer. Le mot de passe, lui, n'est pas retiré : une bascule sèche vous laisserait dehors le jour où un iPhone se perd. C'est pourquoi retirer sa dernière clé reste permis, et pourquoi changer de mot de passe ne supprime aucune clé — c'est justement le recours quand le mot de passe est perdu.",
+      },
+      {
+        path: "/settings",
+        target: '[data-demo="passkey-add"]',
+        title: "Une clé s'ajoute en un geste, et se nomme",
+        body: "« Ajouter une clé » demande à l'appareil de fabriquer la sienne : une empreinte, et c'est fait. Le nom est facultatif — sans lui le CRM nomme la ligne d'après ce que la clé dit d'elle-même, « Cet appareil » ou « Clé de sécurité », plutôt que de laisser une ligne anonyme qu'on n'oserait pas supprimer. La pastille « Synchronisée » dit que la clé vit aussi ailleurs que sur cet appareil, dans votre trousseau iCloud ou Google : la perdre ne fait alors pas perdre l'accès. Ensuite, sur l'écran de connexion, un bouton « Se connecter avec une clé d'accès » suffit : aucune adresse à saisir, le navigateur sait déjà lesquelles il détient pour ce domaine.",
+      },
+    ],
+  },
+  {
     id: "taches-a-la-github",
     title: "Le tableau des tâches, à la GitHub Projects",
     date: "2026-09-16",

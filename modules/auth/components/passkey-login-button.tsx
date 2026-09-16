@@ -46,7 +46,7 @@ export function PasskeyLoginButton({ onSignedIn }: { onSignedIn: () => void }) {
   }
 
   return (
-    <div className="flex flex-col gap-3" data-demo="passkey-login">
+    <div className="flex flex-col gap-3">
       {/* Un filet nommé plutôt qu'un simple trait : il dit que ce qui suit est
           une autre façon d'entrer, pas la suite du formulaire. */}
       <div className="flex items-center gap-3">
