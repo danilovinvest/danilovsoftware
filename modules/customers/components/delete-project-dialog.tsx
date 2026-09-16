@@ -100,6 +100,9 @@ function Steps({
                 <li>{plural(data.quotes, "devis", "devis")}</li>
                 {data.invoices.length > 0 && <li>Les factures {data.invoices.join(", ")}</li>}
                 {data.proofs > 0 && <li>{plural(data.proofs, "preuve")} jointes aux crans</li>}
+                {data.subcontractors > 0 && (
+                  <li>La sous-traitance de {plural(data.subcontractors, "intervenant")}</li>
+                )}
                 {data.milestones && <li>Les jalons et les crans cochés</li>}
                 {data.realisation && <li>L&apos;article de réalisation</li>}
                 {data.tasks > 0 && <li>Le rattachement de {plural(data.tasks, "tâche")}</li>}

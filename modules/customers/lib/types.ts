@@ -620,6 +620,8 @@ export type ProjectDeletion = {
   /** Les références des factures (FA…) qui partent avec l'affaire. */
   invoices: string[];
   proofs: number;
+  /** Les sous-traitants posés sur l'affaire : leur assignation part avec elle. */
+  subcontractors: number;
   milestones: boolean;
   tasks: number;
   realisation: boolean;
