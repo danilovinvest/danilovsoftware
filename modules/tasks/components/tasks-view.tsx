@@ -129,7 +129,7 @@ export function TasksView() {
             ))}
           </div>
           {canWrite && (
-            <Button size="lg" onClick={() => setCreatingIn("a_faire")}>
+            <Button size="lg" data-demo="task-new" onClick={() => setCreatingIn("a_faire")}>
               <PlusIcon />
               Nouvelle tâche
             </Button>
@@ -163,6 +163,29 @@ export function TasksView() {
         </Card>
       </div>
 
+      {/*
+        La barre de filtre en pleine largeur, au-dessus de tout le reste, comme
+        sur un tableau GitHub Projects.
+
+        C'est le premier geste qu'on fait en arrivant sur l'écran, et un champ de
+        deux cent quatre-vingts pixels coincé entre deux groupes de boutons ne le
+        disait pas. Les filtres qui restent en dessous sont ceux qu'on choisit,
+        pas ceux qu'on tape.
+      */}
+      <div className="relative" data-demo="task-filter">
+        <SearchIcon className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+        <Input
+          aria-label="Filtrer les tâches"
+          placeholder="Filtrer par mot-clé ou par champ"
+          className="h-10 pl-9"
+          value={search}
+          onChange={(event) => {
+            setSearch(event.target.value);
+            update({ search: event.target.value || undefined });
+          }}
+        />
+      </div>
+
       <div className="flex flex-wrap items-center gap-2">
         <nav className="bg-muted flex rounded-lg p-0.5" aria-label="Portée">
           {[
@@ -186,20 +209,6 @@ export function TasksView() {
             );
           })}
         </nav>
-
-        <div className="relative min-w-48 flex-1">
-          <SearchIcon className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2" />
-          <Input
-            aria-label="Rechercher une tâche"
-            placeholder="Rechercher…"
-            className="pl-8"
-            value={search}
-            onChange={(event) => {
-              setSearch(event.target.value);
-              update({ search: event.target.value || undefined });
-            }}
-          />
-        </div>
 
         {/* Le filtre par fiche : « qu'est-ce que je dois à ce client ? » se
             posait jusqu'ici depuis la fiche seulement, écran par écran. */}

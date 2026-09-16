@@ -40,6 +40,32 @@ const FICHE_ETUDE = "/customers/7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "taches-a-la-github",
+    title: "Le tableau des tâches, à la GitHub Projects",
+    date: "2026-09-16",
+    steps: [
+      {
+        path: "/tasks",
+        target: '[data-demo="task-filter"]',
+        title: "Filtrer d'abord, en pleine largeur",
+        body: "C'est le premier geste qu'on fait en arrivant sur l'écran, et il était coincé dans un champ de deux cent quatre-vingts pixels entre deux groupes de boutons. Il prend désormais toute la largeur, au-dessus de tout le reste, comme sur un tableau GitHub Projects. Les filtres qui restent en dessous sont ceux qu'on choisit — mes tâches, un client, une échéance — pas ceux qu'on tape.",
+      },
+      {
+        path: "/tasks",
+        target: '[data-demo="task-column-hint"]',
+        title: "Chaque colonne dit quand une carte y a sa place",
+        body: "Les catégories restent celles du CRM — à faire, en cours, en attente, terminée — parce que les colonnes de GitHub parlent de pull requests, ce qui ne veut rien dire pour un mur porteur. Ce qui est copié, c'est la phrase sous l'en-tête, et c'est elle qui manquait : « À faire » et « En attente » se ressemblent assez pour qu'on hésite à chaque dépôt, si bien que deux personnes ne rangent pas pareil. L'émoji du titre n'est pas un ornement — il rend la colonne reconnaissable avant d'être lue, même quand la largeur tronque le mot.",
+      },
+      {
+        path: "/tasks",
+        click: '[data-demo="task-new"]',
+        target: "#task-size-field",
+        title: "La taille d'une tâche, et le droit de ne pas savoir",
+        body: "Les quatre crans de GitHub — Small, Regular, Large, X-Large — avec leurs libellés anglais, puisque ce sont ceux que vous lisez sur votre propre tableau. Ils apparaissent en pastille sur la carte, à côté de l'urgence. Le champ reste facultatif et part sur « Non estimée » : « on ne sait pas » n'est pas « moyenne », et une tâche que personne n'a regardée ne doit pas peser comme une tâche moyenne dans ce qu'on lira demain. Les tâches que le CRM crée seul n'en portent aucune — une machine ne sait pas combien de temps prend une note de calcul. La carte, elle, se lit maintenant en trois étages : d'où ça vient (le client et le numéro de dossier, avec l'avatar de l'assigné à droite), ce qu'il y a à faire, puis les pastilles.",
+      },
+    ],
+  },
+  {
     id: "montants-des-factures",
     title: "Les factures disent enfin leur montant",
     date: "2026-09-16",

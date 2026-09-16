@@ -11,6 +11,16 @@ export type TaskStatus = "a_faire" | "en_cours" | "en_attente" | "terminee";
 export type TaskPriority = "basse" | "normale" | "haute";
 
 /**
+ * La taille d'une tâche, reprise de GitHub Projects.
+ *
+ * Nulle tant que personne ne l'a estimée — « on ne sait pas » n'est pas
+ * « Regular », et une tâche non dimensionnée ne doit pas peser comme une tâche
+ * moyenne. Les libellés restent en anglais : ce sont ceux que le dirigeant lit
+ * déjà sur son propre tableau.
+ */
+export type TaskSize = "small" | "regular" | "large" | "xlarge";
+
+/**
  * Collègue assignable. Le type vit dans le transverse : trois modules le lisent
  * pour la même question, « à qui je confie ça ».
  */
@@ -44,6 +54,8 @@ export type Task = {
   status: TaskStatus;
   /** L'urgence. Toujours servie : le serveur ramène l'inconnu à « normale ». */
   priority: TaskPriority;
+  /** La taille estimée, nulle tant que personne ne l'a posée. */
+  size: TaskSize | null;
   due_at: string | null;
   completed_at: string | null;
   position: number;
@@ -90,6 +102,7 @@ export type TaskPayload = {
   body: string;
   status: TaskStatus;
   priority: TaskPriority;
+  size: TaskSize | null;
   due_at: string | null;
   assignee_id: string | null;
   targets: TaskTargetPayload[];

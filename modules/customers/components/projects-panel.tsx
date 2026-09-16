@@ -1097,6 +1097,7 @@ function ProjectBlock({
               status: "a_faire",
               // Une affaire reportée se reprend, elle n'urge pas.
               priority: "normale",
+              size: null,
               due_at: new Date(`${date}T09:00:00`).toISOString(),
               assignee_id: null,
               targets: [{ project_id: project.id }],

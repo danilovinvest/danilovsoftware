@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -11,23 +12,34 @@ import {
   GripVerticalIcon,
   UserRoundIcon,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { describeDue, formatRelative } from "@/shared/lib/format";
-import { DUE_ACCENT, DUE_TEXT, TASK_PRIORITY } from "../lib/labels";
+import { DUE_ACCENT, DUE_TEXT, TASK_PRIORITY, TASK_SIZE } from "../lib/labels";
 import { AssigneePicker } from "./assignee-picker";
 import { AutoTaskBadge } from "./auto-task-badge";
 import type { Colleague, Task } from "../lib/types";
 
 /**
- * Carte du tableau.
+ * Carte du tableau, sur le patron d'un tableau GitHub Projects.
+ *
+ * Trois étages, et l'ordre est la règle : **d'où ça vient**, **ce qu'il y a à
+ * faire**, puis **ce qu'il faut savoir avant de s'y mettre**. C'est ce que
+ * demande le dirigeant, qui lit ce gabarit tous les jours ailleurs :
+ *
+ *  - en tête, le client et le dossier — l'équivalent du dépôt et du numéro
+ *    d'issue — avec l'avatar de l'assigné à droite ;
+ *  - au milieu, l'intitulé seul, en gras ;
+ *  - en bas, une rangée de pastilles : urgence, taille, échéance, origine.
+ *
+ * Les pastilles ne s'affichent que lorsqu'elles disent quelque chose. Une
+ * pastille « Normale » sur chaque carte remplirait le tableau d'une information
+ * qui ne fait rien changer, et il n'y aurait plus de place pour celles qui en
+ * font. Même règle pour la taille, nulle tant que personne ne l'a estimée.
  *
  * La poignée de gauche est la seule zone qui déclenche le glisser : sans elle,
  * cliquer sur le titre ou sur l'assigné amorcerait un déplacement au lieu
- * d'ouvrir la tâche ou le menu.
- *
- * La bordure gauche colore l'urgence — rouge en retard, ambre aujourd'hui —
- * pour que l'état se lise sans parcourir les dates.
+ * d'ouvrir la tâche ou le menu. La bordure gauche colore l'urgence — rouge en
+ * retard, ambre aujourd'hui — pour que l'état se lise sans parcourir les dates.
  */
 export function TaskCard({
   task,
@@ -50,6 +62,7 @@ export function TaskCard({
 
   const customers = task.targets.filter((t) => t.customer_id);
   const projects = task.targets.filter((t) => t.project_id);
+  const size = task.size ? TASK_SIZE[task.size] : null;
 
   return (
     <li
@@ -88,15 +101,70 @@ export function TaskCard({
       )}
 
       <div className="min-w-0 flex-1">
+        {/*
+          D'où vient cette tâche, et pour qui.
+
+          Une affaire mène à la **fiche** dont elle relève : c'est là qu'on
+          trouve le téléphone du client quand la tâche est « rappeler ». Sans
+          `owner_id`, l'étiquette n'ouvrait rien.
+        */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="text-muted-foreground flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[0.7rem]">
+            {customers.map((target) => (
+              <Link
+                key={target.id}
+                href={`/customers/${target.customer_id}`}
+                onPointerDown={(event) => event.stopPropagation()}
+                className="hover:text-foreground flex min-w-0 items-center gap-1"
+              >
+                <UserRoundIcon className="size-3 shrink-0" />
+                <span className="truncate font-medium">{target.label}</span>
+              </Link>
+            ))}
+            {projects.map((target) => {
+              const inner = (
+                <>
+                  <BriefcaseIcon className="size-3 shrink-0" />
+                  <span className="truncate">{target.reference || target.label}</span>
+                </>
+              );
+              return target.owner_id ? (
+                <Link
+                  key={target.id}
+                  href={`/customers/${target.owner_id}`}
+                  onPointerDown={(event) => event.stopPropagation()}
+                  className="hover:text-foreground flex min-w-0 items-center gap-1"
+                >
+                  {inner}
+                </Link>
+              ) : (
+                <span key={target.id} className="flex min-w-0 items-center gap-1">
+                  {inner}
+                </span>
+              );
+            })}
+            {customers.length === 0 && projects.length === 0 && (
+              <span className="text-muted-foreground/50">Sans client</span>
+            )}
+          </div>
+
+          <AssigneePicker
+            assigneeId={task.assignee_id}
+            assigneeName={task.assignee_name}
+            colleagues={colleagues}
+            disabled={!canWrite || overlay}
+            onChange={(assigneeId) => onAssign(task, assigneeId)}
+          />
+        </div>
+
         <button
           type="button"
           onClick={() => onOpen(task)}
-          className="hover:text-primary block w-full text-left text-sm leading-snug font-medium"
+          className="hover:text-primary mt-1 block w-full text-left text-sm leading-snug font-medium"
         >
           <span className={cn(done && "text-muted-foreground line-through")}>
             {task.title}
           </span>
-          {task.auto_rule && <AutoTaskBadge rule={task.auto_rule} className="ml-1.5" />}
         </button>
 
         {task.body && (
@@ -105,112 +173,79 @@ export function TaskCard({
           </p>
         )}
 
-        {(customers.length > 0 || projects.length > 0) && (
-          <div className="mt-2 flex flex-wrap gap-1">
-            {customers.map((target) => (
-              <Badge
-                key={target.id}
-                asChild
-                className="bg-accent text-accent-foreground max-w-full gap-1"
-              >
-                <Link
-                  href={`/customers/${target.customer_id}`}
-                  className="truncate"
-                  onPointerDown={(event) => event.stopPropagation()}
-                >
-                  <UserRoundIcon />
-                  <span className="truncate">{target.label}</span>
-                </Link>
-              </Badge>
-            ))}
-            {/* Une affaire mène à la fiche dont elle relève : c'est là qu'on
-                trouve le téléphone du client quand la tâche est « rappeler ».
-                Sans `owner_id`, l'étiquette n'ouvrait rien. */}
-            {projects.map((target) =>
-              target.owner_id ? (
-                <Badge
-                  key={target.id}
-                  asChild
-                  variant="outline"
-                  className="max-w-full gap-1"
-                >
-                  <Link
-                    href={`/customers/${target.owner_id}`}
-                    className="truncate"
-                    onPointerDown={(event) => event.stopPropagation()}
-                  >
-                    <BriefcaseIcon />
-                    <span className="truncate">{target.label}</span>
-                  </Link>
-                </Badge>
-              ) : (
-                <Badge key={target.id} variant="outline" className="max-w-full gap-1">
-                  <BriefcaseIcon />
-                  <span className="truncate">{target.label}</span>
-                </Badge>
-              ),
-            )}
-          </div>
-        )}
-
-        {/*
-          L'urgence ne se montre que lorsqu'elle l'est.
-
-          Une pastille « Normale » sur chaque carte remplirait le tableau d'une
-          information qui ne fait rien changer, et il n'y aurait plus de place
-          pour celles qui en font. « Basse » se montre aussi : elle dit qu'on
-          peut passer devant.
-        */}
-        {task.priority !== "normale" && !done && (
-          <div className="mt-2.5">
-            <span
-              className={cn(
-                "rounded-md px-1.5 py-0.5 text-[0.65rem] font-medium",
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {task.priority !== "normale" && !done && (
+            <Pill
+              className={
                 task.priority === "haute"
                   ? "bg-danger-soft text-danger"
-                  : "bg-neutral-soft text-neutral",
-              )}
+                  : "bg-neutral-soft text-neutral"
+              }
             >
+              {/* L'émoji est masqué au lecteur d'écran, comme celui de la
+                  taille juste à côté : il annoncerait « mountain Haute ». Le
+                  mot, lui, porte toute l'information — aucune pastille du
+                  tableau ne se distingue par la seule couleur. */}
+              <span aria-hidden>{task.priority === "haute" ? "⛰️" : "🍃"}</span>{" "}
               {TASK_PRIORITY[task.priority].label}
+            </Pill>
+          )}
+
+          {size && (
+            <Pill className="bg-muted text-muted-foreground" demo="task-size">
+              <span aria-hidden>{size.icon}</span> {size.label}
+            </Pill>
+          )}
+
+          <Pill className={cn("bg-transparent px-0", DUE_TEXT[due.tone])}>
+            <span title={due.title} className="flex items-center gap-1">
+              {due.tone === "overdue" ? (
+                <AlertTriangleIcon className="size-3 shrink-0" />
+              ) : done ? (
+                <CheckIcon className="size-3 shrink-0" />
+              ) : (
+                <CalendarClockIcon className="size-3 shrink-0" />
+              )}
+              <span className="truncate">{due.label}</span>
             </span>
-          </div>
-        )}
+          </Pill>
 
-        <div className="mt-2.5 flex items-center justify-between gap-2">
-          <span
-            title={due.title}
-            className={cn("flex min-w-0 items-center gap-1 text-xs", DUE_TEXT[due.tone])}
-          >
-            {due.tone === "overdue" ? (
-              <AlertTriangleIcon className="size-3.5 shrink-0" />
-            ) : done ? (
-              <CheckIcon className="size-3.5 shrink-0" />
-            ) : (
-              <CalendarClockIcon className="size-3.5 shrink-0" />
-            )}
-            <span className="truncate">{due.label}</span>
-          </span>
+          {task.auto_rule && <AutoTaskBadge rule={task.auto_rule} />}
 
-          <div className="flex shrink-0 items-center gap-2">
-            {/* Une tâche qui traîne sans échéance mérite qu'on le voie. */}
-            {!task.due_at && !done && (
-              <span
-                className="text-muted-foreground/50 text-[0.65rem]"
-                title={`Créée le ${new Date(task.created_at).toLocaleDateString("fr-FR")}`}
-              >
+          {/* Une tâche qui traîne sans échéance mérite qu'on le voie. */}
+          {!task.due_at && !done && (
+            <Pill className="text-muted-foreground/50 bg-transparent px-0">
+              <span title={`Créée le ${new Date(task.created_at).toLocaleDateString("fr-FR")}`}>
                 créée {formatRelative(task.created_at)}
               </span>
-            )}
-            <AssigneePicker
-              assigneeId={task.assignee_id}
-              assigneeName={task.assignee_name}
-              colleagues={colleagues}
-              disabled={!canWrite || overlay}
-              onChange={(assigneeId) => onAssign(task, assigneeId)}
-            />
-          </div>
+            </Pill>
+          )}
         </div>
       </div>
     </li>
+  );
+}
+
+/** Une pastille de la rangée du bas : même forme pour toutes, la couleur dit quoi. */
+function Pill({
+  className,
+  demo,
+  children,
+}: {
+  className?: string;
+  /** Marque la zone pour une démo (`data-demo`), quand il y a lieu. */
+  demo?: string;
+  children: ReactNode;
+}) {
+  return (
+    <span
+      data-demo={demo}
+      className={cn(
+        "flex max-w-full items-center gap-1 rounded-md px-1.5 py-0.5 text-[0.65rem] font-medium",
+        className,
+      )}
+    >
+      {children}
+    </span>
   );
 }

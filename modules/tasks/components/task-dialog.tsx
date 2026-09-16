@@ -15,14 +15,14 @@ import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
 import { DateTimeField } from "@/shared/ui/date-time-field";
 import { errorMessage } from "@/shared/api/errors";
 import * as api from "../lib/api";
-import { TASK_PRIORITY,
-  TASK_STATUS, toOptions } from "../lib/labels";
+import { SIZE_ORDER, TASK_PRIORITY, TASK_SIZE, TASK_STATUS, toOptions } from "../lib/labels";
 import { TaskTargetField } from "./task-target-field";
 import type {
   Colleague,
   Task,
   TaskPayload,
   TaskPriority,
+  TaskSize,
   TaskStatus,
   TaskTargetPayload,
 } from "../lib/types";
@@ -93,6 +93,9 @@ export function TaskDialog({
   const [priority, setPriority] = useState<TaskPriority>(
     task?.priority ?? preset?.priority ?? "normale",
   );
+  // Nulle par défaut : une tâche qu'on vient de saisir n'est pas estimée, et la
+  // poser à « Regular » d'office ferait passer pour mesuré ce qui est ignoré.
+  const [taskSize, setTaskSize] = useState<TaskSize | null>(task?.size ?? null);
   const [assigneeId, setAssigneeId] = useState(task?.assignee_id ?? preset?.assignee_id ?? "");
   const [dueAt, setDueAt] = useState<string | null>(task?.due_at ?? preset?.due_at ?? null);
   const [error, setError] = useState<string | null>(null);
@@ -124,6 +127,7 @@ export function TaskDialog({
       body,
       status,
       priority,
+      size: taskSize,
       due_at: dueAt,
       assignee_id: assigneeId || null,
       targets,
@@ -200,6 +204,25 @@ export function TaskDialog({
             options={toOptions(TASK_PRIORITY)}
             value={priority}
             onValueChange={(value) => setPriority(value as TaskPriority)}
+          />
+          {/*
+            La taille, comme sur un tableau GitHub Projects — et facultative.
+            « Non estimée » est un choix qui se relit : une tâche sans taille
+            n'est pas une tâche moyenne.
+          */}
+          <SelectField
+            // `SelectField` ne transmet pas d'attribut libre : c'est son `id`
+            // qui sert de prise à la démo, comme ailleurs dans le CRM.
+            id="task-size-field"
+            label="Taille"
+            placeholder="Non estimée"
+            emptyLabel="Non estimée"
+            options={SIZE_ORDER.map((value) => ({
+              value,
+              label: `${TASK_SIZE[value].icon} ${TASK_SIZE[value].label}`,
+            }))}
+            value={taskSize ?? ""}
+            onValueChange={(value) => setTaskSize((value as TaskSize) || null)}
           />
           <DateTimeField label="Échéance" value={dueAt} onChange={setDueAt} />
           <SelectField

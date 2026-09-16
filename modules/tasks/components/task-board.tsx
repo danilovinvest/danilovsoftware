@@ -23,7 +23,7 @@ import {
 import { PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { COLUMN_STYLE, STATUS_ORDER, TASK_STATUS } from "../lib/labels";
+import { COLUMN_META, COLUMN_STYLE, STATUS_ORDER, TASK_STATUS } from "../lib/labels";
 import { positionBetween } from "../lib/position";
 import { TaskCard } from "./task-card";
 import type { Colleague, Task, TaskStatus } from "../lib/types";
@@ -225,27 +225,45 @@ function Column({
     >
       <span aria-hidden className={cn("h-1 w-full", style.accent)} />
 
-      <header className="flex items-center justify-between gap-2 px-3 py-2.5">
-        <h2 className="flex items-center gap-2 text-sm font-medium">
-          <span aria-hidden className={cn("size-2 rounded-full", style.dot)} />
-          {TASK_STATUS[status].label}
-          <span className="text-muted-foreground tabular-nums">{tasks.length}</span>
-          {overdue > 0 && (
-            <span className="bg-danger-soft text-danger rounded-full px-1.5 text-[0.65rem] font-medium">
-              {overdue} en retard
+      {/*
+        L'en-tête d'une colonne dit trois choses, dans cet ordre : ce qu'elle
+        est, combien elle en porte, et **quand une carte y a sa place**. C'est
+        cette troisième que le tableau n'avait pas : « À faire » et « En
+        attente » se ressemblent assez pour qu'on hésite à chaque dépôt, et deux
+        personnes ne rangent alors pas pareil.
+      */}
+      <header className="px-3 pt-2.5 pb-2">
+        <div className="flex items-start justify-between gap-2">
+          <h2 className="flex min-w-0 flex-wrap items-center gap-1.5 text-sm font-medium">
+            <span aria-hidden className={cn("size-2.5 shrink-0 rounded-full", style.dot)} />
+            <span aria-hidden>{COLUMN_META[status].emoji}</span>
+            <span className="truncate">{TASK_STATUS[status].label}</span>
+            <span className="bg-muted text-muted-foreground rounded-full px-1.5 py-px text-xs tabular-nums">
+              {tasks.length}
             </span>
+            {overdue > 0 && (
+              <span className="bg-danger-soft text-danger rounded-full px-1.5 text-[0.65rem] font-medium">
+                {overdue} en retard
+              </span>
+            )}
+          </h2>
+          {canWrite && (
+            <Button
+              size="icon-xs"
+              variant="ghost"
+              aria-label={`Ajouter une tâche dans « ${TASK_STATUS[status].label} »`}
+              onClick={() => onCreate(status)}
+            >
+              <PlusIcon />
+            </Button>
           )}
-        </h2>
-        {canWrite && (
-          <Button
-            size="icon-xs"
-            variant="ghost"
-            aria-label={`Ajouter une tâche dans « ${TASK_STATUS[status].label} »`}
-            onClick={() => onCreate(status)}
-          >
-            <PlusIcon />
-          </Button>
-        )}
+        </div>
+        <p
+          data-demo={status === "a_faire" ? "task-column-hint" : undefined}
+          className="text-muted-foreground mt-0.5 text-xs leading-snug"
+        >
+          {COLUMN_META[status].hint}
+        </p>
       </header>
 
       <SortableContext

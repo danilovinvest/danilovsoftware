@@ -1,4 +1,4 @@
-import type { DueFilter, TaskPriority, TaskStatus } from "./types";
+import type { DueFilter, TaskPriority, TaskSize, TaskStatus } from "./types";
 
 /** Tonalité d'une pastille, résolue en classes par <EnumBadge>. */
 export type Tone = "neutral" | "info" | "success" | "warning" | "danger";
@@ -23,6 +23,46 @@ export const TASK_PRIORITY: Entry<TaskPriority> = {
   haute: { label: "Haute", tone: "danger" },
   normale: { label: "Normale", tone: "neutral" },
   basse: { label: "Basse", tone: "neutral" },
+};
+
+/**
+ * La taille d'une tâche, comme sur un tableau GitHub Projects.
+ *
+ * Les quatre crans et leurs libellés anglais viennent de là : le dirigeant les
+ * lit déjà sur son propre tableau, et « Très grande » ne lui dirait pas la même
+ * chose. L'icône accompagne le mot pour que la carte se lise d'un coup d'œil,
+ * comme la pastille d'urgence juste au-dessus.
+ *
+ * Aucune tonalité de danger : une grosse tâche n'est pas un problème, c'est un
+ * volume. La couleur du tableau reste réservée à ce qui alerte — l'urgence et
+ * le retard.
+ */
+export const TASK_SIZE: Record<TaskSize, { label: string; icon: string }> = {
+  small: { label: "Small", icon: "🐁" },
+  regular: { label: "Regular", icon: "🐢" },
+  large: { label: "Large", icon: "🐘" },
+  xlarge: { label: "X-Large", icon: "🐳" },
+};
+
+/** L'ordre de la liste déroulante : du plus petit au plus gros. */
+export const SIZE_ORDER: TaskSize[] = ["small", "regular", "large", "xlarge"];
+
+/**
+ * Ce qu'une colonne annonce, sous son titre.
+ *
+ * C'est le trait qui manquait au tableau et que GitHub Projects fait bien : une
+ * phrase sous l'en-tête dit **quand** une carte a sa place ici. Sans elle,
+ * « En attente » et « À faire » se ressemblent assez pour qu'on hésite à chaque
+ * dépôt, et deux personnes ne rangent pas pareil.
+ *
+ * L'émoji est celui du titre, pas une décoration : il rend la colonne
+ * reconnaissable avant d'être lue, y compris quand la largeur tronque le mot.
+ */
+export const COLUMN_META: Record<TaskStatus, { emoji: string; hint: string }> = {
+  a_faire: { emoji: "📋", hint: "Tâche pas encore commencée" },
+  en_cours: { emoji: "🏗️", hint: "Tâche sur laquelle on travaille" },
+  en_attente: { emoji: "⏸️", hint: "Bloquée : on attend un tiers ou un document" },
+  terminee: { emoji: "✅", hint: "Faite, et datée" },
 };
 
 /**
