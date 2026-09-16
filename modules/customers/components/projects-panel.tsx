@@ -59,6 +59,7 @@ import { EnumBadge } from "./enum-badge";
 import { InteractionDialog } from "./interaction-dialog";
 import { DeleteProjectDialog } from "./delete-project-dialog";
 import { ProjectNextAssignment } from "./next-assignment";
+import { SubcontractingPanel } from "./subcontracting-panel";
 import { DepositDialog, depositTotalOf } from "./deposit-field";
 import { ProjectIssuerDialog } from "./project-issuer-dialog";
 import { MaterialsDialog } from "./materials-field";
@@ -891,7 +892,7 @@ function ProjectBlock({
                       </span>
                     )}
                   </TabsTrigger>
-                  <TabsTrigger value="devis">
+                  <TabsTrigger value="devis" data-demo="tab-devis">
                     Devis
                     {quotes.length > 0 && (
                       <span className="text-muted-foreground ml-1.5 text-xs">{quotes.length}</span>
@@ -963,7 +964,18 @@ function ProjectBlock({
               </TabsContent>
 
               <TabsContent value="devis" className="pt-4">
-                <QuoteList quotes={quotes} onChanged={onChanged} />
+                <div className="flex flex-col gap-3">
+                  <QuoteList quotes={quotes} onChanged={onChanged} />
+                  {/* La sous-traitance se lit en face des devis : c'est là que la
+                      marge a un sens. */}
+                  <SubcontractingPanel
+                    key={project.subcontractors.map((s) => `${s.subcontractor_id}:${s.amount}`).join("|")}
+                    project={project}
+                    quotes={quotes}
+                    canWrite={canWrite}
+                    onChanged={onChanged}
+                  />
+                </div>
               </TabsContent>
 
               <TabsContent value="apres" className="pt-4">

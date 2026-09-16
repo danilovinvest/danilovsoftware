@@ -40,6 +40,20 @@ const FICHE_ETUDE = "/customers/7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "sous-traitance",
+    title: "La sous-traitance d'une affaire",
+    date: "2026-09-16",
+    steps: [
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="tab-devis"]',
+        target: '[data-demo="subcontracting"]',
+        title: "Qui sous-traite, et pour combien",
+        body: "Igor, Alex, Vladimir, Maxime : on en ajoute un ou plusieurs, chacun avec son montant — tout est facultatif. Le bloc affiche le total, la part que ça prend du chiffré et la marge estimée, quand les devis portent un montant.",
+      },
+    ],
+  },
+  {
     id: "prochaine-action-assignee",
     title: "La prochaine action, et qui la porte",
     date: "2026-09-15",

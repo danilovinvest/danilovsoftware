@@ -239,6 +239,13 @@ export type Project = {
   /** La prochaine action assignée : la tâche ouverte la plus pressante. */
   next_task: NextTask | null;
   /**
+   * Qui sous-traite cette affaire, et pour combien. Vide le plus souvent : un
+   * chantier fait en interne n'a personne ici.
+   */
+  subcontractors: ProjectSubcontractor[];
+  /** La somme des montants connus, nulle quand aucun n'est renseigné. */
+  subcontracting_total: string | null;
+  /**
    * Le délai annoncé au client, et la deadline qu'on se donne en interne.
    * L'interne précède l'annoncée ; l'écart entre les deux est la marge.
    */
@@ -564,6 +571,9 @@ export type ProjectPayload = Omit<
   | "issuer"
   // Servie par le serveur, lue des tâches : jamais écrite par l'affaire.
   | "next_task"
+  // Leur propre route, comme les jalons : le formulaire les effacerait.
+  | "subcontractors"
+  | "subcontracting_total"
   // Posé par la copie OneDrive, jamais par un formulaire.
   | "drive_path"
   // Servis avec l'affaire, jamais envoyés : le serveur les déduit des
@@ -572,6 +582,27 @@ export type ProjectPayload = Omit<
   | "engineer_name"
   | "drafter_name"
 >;
+
+/**
+ * Un sous-traitant régulier de l'entreprise.
+ *
+ * Quatre au départ — Igor, Alex, Vladimir, Maxime — dans une table plutôt qu'en
+ * dur : ils changent, et un nom écrit dans le code ne se corrige pas depuis
+ * l'écran.
+ */
+export type Subcontractor = {
+  id: string;
+  name: string;
+  active: boolean;
+};
+
+/** Un sous-traitant posé sur une affaire, avec ce qu'il prend. */
+export type ProjectSubcontractor = {
+  subcontractor_id: string;
+  name: string;
+  /** Nul quand on ne connaît pas encore son prix : facultatif, comme le reste. */
+  amount: string | null;
+};
 
 /** Ce que la suppression d'une affaire emporte, et ce qu'elle garde. */
 export type ProjectDeletion = {

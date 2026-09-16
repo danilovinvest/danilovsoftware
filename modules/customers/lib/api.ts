@@ -8,6 +8,7 @@ import type {
   CustomerListItem,
   PaymentStatus,
   ProjectDeletion,
+  Subcontractor,
   UnassignedPage,
   ProofBatch,
   StepProof,
@@ -235,6 +236,28 @@ export function setProjectIssuer(id: string, payload: { issuer: string | null; r
 /** L'inventaire de ce que la suppression d'une affaire emporte. */
 export function getProjectDeletion(id: string, signal?: AbortSignal) {
   return apiFetch<ProjectDeletion>(`/v1/projects/${id}/deletion`, { signal });
+}
+
+/** Les sous-traitants réguliers de l'entreprise. */
+export function listSubcontractors(signal?: AbortSignal) {
+  return apiFetch<{ items: Subcontractor[] }>("/v1/subcontractors", { signal });
+}
+
+/**
+ * Qui sous-traite une affaire, et pour combien.
+ *
+ * La route **remplace la liste entière**, comme celle des jalons : l'écran
+ * envoie l'état complet, et une écriture partielle obligerait à distinguer
+ * « retiré » de « non envoyé ».
+ */
+export function setProjectSubcontractors(
+  projectId: string,
+  items: Array<{ subcontractor_id: string; amount: string | null }>,
+) {
+  return apiFetch<Project>(`/v1/projects/${projectId}/subcontractors`, {
+    method: "PUT",
+    body: { items },
+  });
 }
 
 /** Poser le responsable d'une affaire, sans renvoyer l'affaire entière. */
