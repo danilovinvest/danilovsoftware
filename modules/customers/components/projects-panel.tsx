@@ -1224,6 +1224,29 @@ function QuoteList({ quotes, onChanged }: { quotes: Quote[]; onChanged: () => vo
                     lu du PDF
                   </span>
                 )}
+                {/*
+                  Ce que le document dit, quand il contredit la saisie.
+
+                  Mesuré le 16/09 : quatorze devis sur les quarante-neuf qui
+                  portaient à la fois une saisie et un PDF — une remise, une
+                  révision, ou un TTC ramené en HT. Le CRM ne corrige rien : il
+                  le dit, l'infobulle montre la ligne du document, et la
+                  décision reste commerciale.
+                */}
+                {quote.amount_pdf_ht &&
+                  quote.amount_ht &&
+                  Math.abs(Number(quote.amount_pdf_ht) - Number(quote.amount_ht)) > 0.01 && (
+                    <span
+                      data-demo="quote-amount-divergence"
+                      title={
+                        quote.amount_pdf_evidence ||
+                        "Montant lu dans le PDF, différent de celui saisi"
+                      }
+                      className="text-warning bg-muted rounded-md px-1.5 py-0.5 text-[0.65rem]"
+                    >
+                      le PDF dit {formatAmount(quote.amount_pdf_ht)}
+                    </span>
+                  )}
                 {quote.amount_read_error && !quote.amount_ht && !quote.amount_ttc && (
                   <span className="text-warning text-[0.65rem]" title={quote.amount_read_error}>
                     montant illisible
