@@ -273,6 +273,16 @@ export type Quote = {
   vat_rate: string | null;
   amount_note: string;
   /**
+   * D'où vient le montant : « manuel » (saisi ou validé par quelqu'un, jamais
+   * écrasé par la lecture), « pdf » (lu du document, `amount_evidence` garde la
+   * ligne qui le justifie), vide (on ne sait pas).
+   */
+  amount_source: string;
+  amount_read_at: string | null;
+  amount_evidence: string;
+  /** Pourquoi la lecture n'a rien rendu. Vide quand elle a abouti. */
+  amount_read_error: string;
+  /**
    * La société qui émet ce devis.
    *
    * C'est le devis qui porte le SIREN, la TVA et le dossier comptable, pas
@@ -653,6 +663,12 @@ export type QuotePayload = Omit<
   | "updated_at"
   | "deposit_invoiced_at"
   | "deposit_paid_at"
+  // La provenance d'un montant est un fait du serveur : la lecture des PDF la
+  // pose, une correction humaine la reprend. Un formulaire ne l'envoie jamais.
+  | "amount_source"
+  | "amount_read_at"
+  | "amount_evidence"
+  | "amount_read_error"
 > & { issuer?: string | null };
 
 export type InteractionPayload = {

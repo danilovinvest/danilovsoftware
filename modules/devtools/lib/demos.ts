@@ -40,6 +40,19 @@ const FICHE_ETUDE = "/customers/7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "montants-lus-des-pdf",
+    title: "Les montants lus dans les PDF des devis",
+    date: "2026-09-16",
+    steps: [
+      {
+        path: "/settings/fichiers",
+        target: '[data-demo="quote-amounts"]',
+        title: "Le montant était déjà écrit, dans le PDF",
+        body: "531 devis, 136 montants seulement — et 5 sur 155 chez STRUCTURE — alors que 382 devis ont leur PDF dans OneDrive. Le CRM en lit vingt à chaque tour de copie : il remplit le montant HT, la TVA et le TTC quand il est sûr, et ne touche jamais un montant saisi à la main. Ce bloc dit combien viennent d'un humain, combien du document, combien restent et combien ont échoué, avec la raison. Dans la liste des devis d'une affaire, une pastille « lu du PDF » apparaît alors, et son infobulle montre la ligne du document qui justifie le chiffre.",
+      },
+    ],
+  },
+  {
     id: "sous-traitance",
     title: "La sous-traitance d'une affaire",
     date: "2026-09-16",

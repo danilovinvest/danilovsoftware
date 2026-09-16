@@ -1213,6 +1213,22 @@ function QuoteList({ quotes, onChanged }: { quotes: Quote[]; onChanged: () => vo
                     ? formatAmount(quote.amount_ttc ?? quote.amount_ht)
                     : quote.amount_note || "—"}
                 </span>
+                {/* D'où vient le chiffre : lu du PDF, l'infobulle montre la
+                    ligne du document qui l'a justifié. */}
+                {quote.amount_source === "pdf" && (
+                  <span
+                    data-demo="quote-amount-source"
+                    title={quote.amount_evidence || "Montant lu dans le PDF du devis"}
+                    className="text-muted-foreground bg-muted rounded-md px-1.5 py-0.5 text-[0.65rem]"
+                  >
+                    lu du PDF
+                  </span>
+                )}
+                {quote.amount_read_error && !quote.amount_ht && !quote.amount_ttc && (
+                  <span className="text-warning text-[0.65rem]" title={quote.amount_read_error}>
+                    montant illisible
+                  </span>
+                )}
               </span>
 
               {/*

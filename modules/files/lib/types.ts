@@ -90,3 +90,22 @@ export type ParsedFolder = {
   /** La date du dossier, AAAA-MM-JJ, ou vide. */
   date: string;
 };
+
+/**
+ * Où en est la lecture des montants dans les devis PDF.
+ *
+ * Mesuré le 16/09 : 531 devis, 136 montants seulement, et 382 devis dont le PDF
+ * est dans OneDrive sans qu'aucun montant soit en base. `pending` reprend la
+ * clause exacte de la passe, pour que l'écran n'annonce jamais un reste
+ * différent de ce qu'elle va chercher.
+ */
+export type QuoteAmountsProgress = {
+  total: number;
+  with_amount: number;
+  manual: number;
+  from_pdf: number;
+  pending: number;
+  failed: number;
+  last_read_at: string | null;
+  last_error: string;
+};

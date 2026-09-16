@@ -1,5 +1,10 @@
 import { apiFetch } from "@/shared/api/client";
-import type { DriveAccount, DriveListing, DriveRun } from "./types";
+import type {
+  DriveAccount,
+  DriveListing,
+  DriveRun,
+  QuoteAmountsProgress,
+} from "./types";
 
 export function listAccounts(signal?: AbortSignal) {
   return apiFetch<{ items: DriveAccount[]; configured: boolean }>("/v1/files/accounts", {
@@ -44,4 +49,17 @@ export function disconnect(id: string) {
 export function browse(path: string, signal?: AbortSignal) {
   const query = path ? `?path=${encodeURIComponent(path)}` : "";
   return apiFetch<DriveListing>(`/v1/files/browse${query}`, { signal });
+}
+
+/** Où en est la lecture des montants dans les devis PDF. */
+export function quoteAmountsProgress(signal?: AbortSignal) {
+  return apiFetch<QuoteAmountsProgress>("/v1/files/quotes/progress", { signal });
+}
+
+/** Relancer une passe de lecture à la main. Le serveur répond avant d'avoir fini. */
+export function readQuoteAmounts(limit?: number) {
+  return apiFetch<{ started: boolean }>("/v1/files/quotes/read", {
+    method: "POST",
+    query: { limit },
+  });
 }

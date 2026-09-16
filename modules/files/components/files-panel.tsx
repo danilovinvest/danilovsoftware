@@ -15,6 +15,7 @@ import { formatAgo, formatDateTime } from "@/shared/lib/format";
 import { ErrorNotice, Skeleton, Spinner } from "@/shared/ui/feedback";
 import { Switch } from "@/components/ui/switch";
 import { SettingsPage, SettingsRow, SettingsRows, SettingsSection } from "@/modules/settings";
+import { QuoteAmountsPanel } from "./quote-amounts-panel";
 import { useDrive, useDriveRuns } from "../hooks/use-drive";
 import * as api from "../lib/api";
 
@@ -65,6 +66,10 @@ export function FilesPanel() {
       {(error || actionError || returned) && (
         <ErrorNotice message={returned ?? actionError ?? error ?? ""} />
       )}
+
+      <div data-demo="quote-amounts">
+        <QuoteAmountsPanel />
+      </div>
 
       <SettingsSection
         title="Ce que le CRM prend, et ce qu'il ne prend pas"
