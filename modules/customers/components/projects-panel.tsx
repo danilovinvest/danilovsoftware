@@ -1161,12 +1161,19 @@ function QuoteList({ quotes, onChanged }: { quotes: Quote[]; onChanged: () => vo
     <>
       <ul className="divide-y">
         {ordered.map((quote, index) => {
-          const previous = ordered
-            .slice(0, index)
-            .filter((other) => other.kind === quote.kind)
-            .at(-1);
+          /*
+            Une révision se compare à la pièce de **même nature**. `kind` n'y
+            suffit pas — il vaut `travaux` sur tout ce que la copie OneDrive
+            crée, factures comprises — si bien qu'une facture d'acompte de
+            5 000 € rangée sous un devis de 10 000 € s'affichait « révision 2,
+            −5 000 € ». Invisible tant qu'une seule facture portait un montant,
+            systématique dès que la lecture des PDF les peuple.
+          */
+          const memeNature = (other: Quote) =>
+            other.kind === quote.kind && estFacture(other) === estFacture(quote);
+          const previous = ordered.slice(0, index).filter(memeNature).at(-1);
           const delta = previous ? amount(quote) - amount(previous) : 0;
-          const revision = previous ? ordered.slice(0, index).filter((o) => o.kind === quote.kind).length + 1 : 0;
+          const revision = previous ? ordered.slice(0, index).filter(memeNature).length + 1 : 0;
 
           return (
             <li key={quote.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5">
@@ -1272,7 +1279,7 @@ function QuoteList({ quotes, onChanged }: { quotes: Quote[]; onChanged: () => vo
                     : quote.amount_ht
                       ? `${formatAmount(quote.amount_ht)} HT`
                       : null,
-                  invoice: quote.reference.toUpperCase().startsWith("FA"),
+                  invoice: estFacture(quote),
                 })}
               />
               {quote.drive_url && (
@@ -1343,6 +1350,15 @@ function QuoteList({ quotes, onChanged }: { quotes: Quote[]; onChanged: () => vo
       />
     </>
   );
+}
+
+/*
+  Une facture se reconnaît à sa référence, et `kind` ne peut pas servir : la
+  copie OneDrive pose `travaux` sur toutes les pièces qu'elle crée, factures
+  comprises. Le serveur tient la même règle en SQL — `est_facture`, migration 59.
+*/
+function estFacture(quote: Quote): boolean {
+  return quote.reference.toUpperCase().startsWith("FA");
 }
 
 function amount(quote: Quote): number {

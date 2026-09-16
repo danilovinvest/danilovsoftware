@@ -40,6 +40,27 @@ const FICHE_ETUDE = "/customers/7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "montants-des-factures",
+    title: "Les factures disent enfin leur montant",
+    date: "2026-09-16",
+    steps: [
+      {
+        /*
+          La fiche Baubillier : une seule affaire — donc dépliée d'office — et
+          deux factures dont le montant a été mesuré lisible avant d'écrire
+          cette étape, 704,00 € et 13 108,95 €. Une fiche à plusieurs affaires
+          ne conviendrait pas : une seule est dépliée, et une étape ne porte
+          qu'un clic.
+        */
+        path: "/customers/7b258702-e98d-49be-b2f2-4197cf335fc8",
+        click: '[data-demo="tab-devis"]',
+        target: '[data-demo="quote-amount-source"]',
+        title: "Ce n'était pas invisible, c'était un mot qui manquait",
+        body: "Cent vingt-sept des cent quarante-quatre documents dont le CRM n'arrivait pas à lire le montant étaient des factures — et le chiffre y était écrit en clair depuis le début. Ce qui manquait n'était pas un œil, c'était le vocabulaire : une facture dit « Montant de la facture HT » ou « Total acompte HT », et aucune de ces phrases ne contient « Total HT ». Vingt-cinq factures reprises au hasard : vingt-cinq lues, aucune en désaccord avec son propre document, et trente et une lectures du lot dont le TTC retombe au centime sur 10 % ou 20 %. Le mot « acompte » reste piégeux et la règle en tient compte : sur une facture d'acompte c'est le montant de la pièce, sur un devis ce n'est qu'une fraction — la référence tranche. Enfin une facture d'avoir, à montants négatifs, se refuse en le disant plutôt que de se faire lire à l'envers : celle qui portait « -1 976,00 € » était lue « 1 976,00 ». Quatre devis rédigés en russe et trois PDF sans aucune couche de texte restent illisibles, et l'écran le dit au lieu de le deviner.",
+      },
+    ],
+  },
+  {
     id: "ecart-entre-saisie-et-pdf",
     title: "Quand une saisie contredit son propre PDF",
     date: "2026-09-16",
