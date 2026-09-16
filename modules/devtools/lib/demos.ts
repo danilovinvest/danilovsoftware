@@ -40,6 +40,26 @@ const FICHE_ETUDE = "/customers/7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "ecart-entre-saisie-et-pdf",
+    title: "Quand une saisie contredit son propre PDF",
+    date: "2026-09-16",
+    steps: [
+      {
+        /*
+          La fiche Lisa Meilhac : une seule affaire, un seul devis, et un écart
+          net — 9 437,00 € saisis là où le document dit 10 699,00 €. Une fiche à
+          plusieurs affaires ne conviendrait pas : une seule est dépliée, et une
+          étape ne porte qu'un clic.
+        */
+        path: "/customers/02086ac2-2cc1-455c-8c49-daeebc73048b",
+        click: '[data-demo="tab-devis"]',
+        target: '[data-demo="quote-amount-divergence"]',
+        title: "Le CRM le dit, il ne le corrige pas",
+        body: "Quatorze devis sur les quarante-neuf qui portaient à la fois un montant saisi et un PDF ont un écart entre les deux — et à chaque fois c'est le document qui a raison : le chiffre saisi n'y figure nulle part, tandis que le chiffre lu est confirmé par le TTC imprimé. Une remise accordée, une révision, ou un TTC rond ramené en HT (13 636,36 € = 15 000 € / 1,1). Le CRM n'écrase rien, parce qu'une remise est une décision commerciale et non une erreur : il affiche ce que le document dit, son infobulle montre la ligne exacte qui le justifie, et vous tranchez. Réglages → Fichiers compte combien de saisies sont ainsi contredites.",
+      },
+    ],
+  },
+  {
     id: "montants-lus-des-pdf",
     title: "Les montants lus dans les PDF des devis",
     date: "2026-09-16",
