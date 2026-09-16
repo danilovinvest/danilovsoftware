@@ -91,6 +91,29 @@ export function QuoteAmountsPanel() {
             "…"
           )}
         </SettingsRow>
+        {/*
+          Les saisies que leur propre document contredit.
+
+          Mesuré le 16/09 : quatorze sur les quarante-neuf devis qui portaient à
+          la fois une saisie et un PDF — une remise, une révision, ou un TTC
+          ramené en HT. Le CRM ne les corrige pas : il les compte ici, et chaque
+          devis concerné affiche l'écart avec la ligne du document en infobulle.
+        */}
+        <SettingsRow label="Saisies contredites par leur PDF">
+          {progress ? (
+            <span className={progress.divergent > 0 ? "text-warning tabular-nums" : "tabular-nums"}>
+              {progress.divergent === 0 ? "aucune" : `${progress.divergent} devis`}
+              {progress.to_compare > 0 && (
+                <span className="text-muted-foreground">
+                  {" "}
+                  · {progress.to_compare} à confronter
+                </span>
+              )}
+            </span>
+          ) : (
+            "…"
+          )}
+        </SettingsRow>
         <SettingsRow label="Dernière lecture">
           {progress?.last_read_at ? formatRelative(progress.last_read_at) : "jamais"}
         </SettingsRow>
