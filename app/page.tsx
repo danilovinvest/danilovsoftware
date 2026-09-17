@@ -1,26 +1,16 @@
-import type { Metadata } from "next";
-import { RequireAuth } from "@/modules/auth";
-import { CompanyPortal } from "@/modules/group";
-
-export const metadata: Metadata = { title: "OMPT CRM" };
+import { redirect } from "next/navigation";
 
 /**
- * La racine du domaine principal : le portail.
+ * La racine d'un CRM de société.
  *
- * Elle redirigeait vers le tableau de bord, du temps où il n'y avait qu'un CRM.
- * Il y en a deux — un par société, chacun sur son sous-domaine — et cette page
- * est l'endroit où l'on s'authentifie une fois avant de choisir.
+ * Elle a brièvement porté le portail, du temps où l'apex et les deux sociétés
+ * étaient servis par le même conteneur. Le portail est désormais une
+ * application à lui — dépôt `danilovinvest/panel`, conteneur propre, racine de
+ * l'apex — et ce front ne sert plus que `groupe.` et `structure.`. Ici, la
+ * racine n'a donc rien à proposer : elle mène au tableau de bord, comme avant.
  *
- * Elle vit **hors du groupe `(crm)`** : elle n'a ni barre latérale ni fil
- * d'Ariane, parce qu'elle n'appartient à aucune société. `RequireAuth` suffit,
- * et renvoie vers la connexion en gardant la destination.
+ * Le retour au portail vit dans l'en-tête (`shell-header.tsx`), à gauche.
  */
-export default function PortalPage() {
-  return (
-    <RequireAuth>
-      <div className="grid min-h-dvh place-items-center px-6 py-10">
-        <CompanyPortal />
-      </div>
-    </RequireAuth>
-  );
+export default function HomePage() {
+  redirect("/dashboard");
 }

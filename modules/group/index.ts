@@ -16,7 +16,6 @@ export {
   type EntityRole,
 } from "./lib/entities";
 export { ScopeSwitcher } from "./components/scope-switcher";
-export { CompanyPortal } from "./components/company-portal";
 export {
   SCOPES,
   companyLabel,
