@@ -13,7 +13,9 @@ import { Button } from "@/components/ui/button";
 import { SelectField, TextField } from "@/shared/ui/form";
 import { ErrorNotice, Spinner } from "@/shared/ui/feedback";
 import { ApiError } from "@/shared/api/errors";
-import { updateUser } from "../lib/api";
+import { companyOptions } from "@/modules/group";
+import { useAuth } from "@/modules/auth";
+import { setUserCompany, updateUser } from "../lib/api";
 import type { Role, WorkspaceUser } from "../lib/types";
 
 /**
@@ -49,6 +51,7 @@ export function MemberDialog({
     last_name: user.last_name,
     email: user.email,
     role: user.role,
+    issuer: user.issuer,
   });
   const [active, setActive] = useState(user.is_active);
   const [pending, setPending] = useState(false);
@@ -59,12 +62,18 @@ export function MemberDialog({
     .filter((role) => role.rank <= actorRank)
     .map((role) => ({ value: role.slug, label: role.name }));
 
+  // On ne range quelqu'un que dans une société qu'on détient soi-même : le
+  // serveur le refuse, l'écran ne le propose donc pas.
+  const { account } = useAuth();
+  const societes = companyOptions(account?.issuer ?? "");
+
   // Rôle, adresse et activation voyagent dans le jeton d'accès : les changer
   // ferme les sessions de la personne. Le nom, non — et le dire évite qu'on
   // renonce à corriger une faute de peur de déconnecter un collègue.
   const disconnects =
     form.role !== user.role ||
     active !== user.is_active ||
+    form.issuer !== user.issuer ||
     form.email.trim().toLowerCase() !== user.email.toLowerCase();
 
   async function submit(event: React.FormEvent) {
@@ -80,6 +89,17 @@ export function MemberDialog({
         role: form.role,
         is_active: active,
       });
+      /*
+        La société part par sa propre route, et seulement si elle a changé.
+
+        Les deux écritures ne sont pas fusionnables : `PATCH /v1/users/{id}`
+        remplace la ligne entière et n'emporte pas la société. Si la seconde
+        échoue, la première reste appliquée — l'erreur s'affiche, et rouvrir le
+        formulaire montre l'état réel plutôt qu'un succès inventé.
+      */
+      if (form.issuer !== user.issuer) {
+        await setUserCompany(user.id, form.issuer);
+      }
       onSaved();
       onClose();
     } catch (cause) {
@@ -144,6 +164,17 @@ export function MemberDialog({
               error={fields.role}
               disabled={isSelf}
               onValueChange={(value) => setForm((state) => ({ ...state, role: value }))}
+            />
+            <SelectField
+              label="Société"
+              data-demo="member-company"
+              options={societes}
+              value={form.issuer}
+              error={fields.issuer}
+              disabled={isSelf}
+              onValueChange={(value) =>
+                setForm((state) => ({ ...state, issuer: value }))
+              }
             />
             <SelectField
               label="Statut"

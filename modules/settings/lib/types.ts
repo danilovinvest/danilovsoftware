@@ -1,6 +1,14 @@
 /** Types miroir des DTO exposés par `internal/users` côté API. */
 
 export type WorkspaceUser = {
+  /**
+   * La société du compte, vide pour tout le groupe.
+   *
+   * Elle ne voyage **pas** dans `UserPayload` : `PATCH /v1/users/{id}` remplace
+   * la ligne entière, et une société omise y serait une société effacée. Elle a
+   * sa route à elle, comme le rôle.
+   */
+  issuer: string;
   id: string;
   email: string;
   first_name: string;
@@ -56,6 +64,8 @@ export type Invitation = {
   last_name: string;
   role: string;
   role_name: string;
+  /** La société où le lien fait entrer, vide pour tout le groupe. */
+  issuer: string;
   invited_by: string;
   expires_at: string;
   created_at: string;
@@ -68,6 +78,8 @@ export type InvitationPayload = {
   first_name: string;
   last_name: string;
   role: string;
+  /** Vide vaut tout le groupe. Le serveur refuse une société qu'on ne détient pas. */
+  issuer: string;
 };
 
 /** Réponse de la création : l'invitation, et le jeton en clair une seule fois. */

@@ -14,6 +14,8 @@ import { ApiError, errorMessage } from "@/shared/api/errors";
 import { ErrorNotice } from "@/shared/ui/feedback";
 import { SelectField, TextField } from "@/shared/ui/form";
 import { SummaryLine, WizardNav, WizardSteps } from "@/shared/ui/wizard";
+import { companyOptions, scopeName } from "@/modules/group";
+import { useAuth } from "@/modules/auth";
 import { createInvitation, invitationUrl } from "../lib/api";
 import type { Role } from "../lib/types";
 
@@ -42,12 +44,15 @@ export function InviteWizard({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const { account } = useAuth();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
     email: "",
     first_name: "",
     last_name: "",
     role: "user",
+    // Un appelant lié invite chez lui, et n'a rien à choisir.
+    issuer: account?.issuer ?? "",
   });
   const [link, setLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -56,6 +61,7 @@ export function InviteWizard({
   const [fields, setFields] = useState<Record<string, string>>({});
 
   const assignable = roles.filter((role) => role.rank <= actorRank);
+  const societes = companyOptions(account?.issuer ?? "");
   const chosen = roles.find((role) => role.slug === form.role);
   const fullName = [form.first_name, form.last_name].filter(Boolean).join(" ");
 
@@ -78,6 +84,7 @@ export function InviteWizard({
         first_name: form.first_name.trim(),
         last_name: form.last_name.trim(),
         role: form.role,
+        issuer: form.issuer,
       });
       setLink(invitationUrl(created.token));
       setStep(2);
@@ -169,6 +176,18 @@ export function InviteWizard({
               onValueChange={(value) => setForm((state) => ({ ...state, role: value }))}
             />
 
+            {/* La société vient après le rôle : ce sont les deux dimensions de
+                l'arrivée — ce qu'on peut faire, et pour laquelle des sociétés. */}
+            <SelectField
+              label="Société"
+              hint="Le CRM où le lien fait entrer"
+              options={societes}
+              value={form.issuer}
+              error={fields.issuer}
+              disabled={societes.length === 1}
+              onValueChange={(value) => setForm((state) => ({ ...state, issuer: value }))}
+            />
+
             {chosen && (
               <dl className="divide-y rounded-lg border px-3">
                 <SummaryLine label="Invité" value={fullName || form.email} />
@@ -184,6 +203,10 @@ export function InviteWizard({
                 {chosen.description && (
                   <SummaryLine label="Ce rôle" value={chosen.description} />
                 )}
+                <SummaryLine
+                  label="Société"
+                  value={form.issuer === "" ? "Tout le groupe" : scopeName(form.issuer)}
+                />
                 <SummaryLine label="Validité du lien" value="7 jours, un seul usage" />
               </dl>
             )}

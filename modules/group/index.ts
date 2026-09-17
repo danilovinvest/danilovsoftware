@@ -19,6 +19,7 @@ export { ScopeSwitcher } from "./components/scope-switcher";
 export { CompanyPortal } from "./components/company-portal";
 export {
   SCOPES,
+  companyOptions,
   scopeName,
   scopeParam,
   setScope,

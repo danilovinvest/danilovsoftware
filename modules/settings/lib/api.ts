@@ -115,6 +115,21 @@ export function setRolePermissions(slug: string, permissions: string[]) {
  * statut — et écraserait toute modification concurrente. L'API applique les
  * mêmes garde-fous : rang de la cible, rang du rôle attribué, dernier dirigeant.
  */
+/**
+ * Ranger un compte dans sa société.
+ *
+ * Sa propre route, comme le rôle : `updateUser` remplace la ligne entière et
+ * n'emporte pas la société — corriger une faute de frappe dans un prénom
+ * l'effacerait. Le changement révoque les sessions de la personne, la société
+ * voyageant dans le jeton d'accès.
+ */
+export function setUserCompany(id: string, issuer: string) {
+  return apiFetch<WorkspaceUser>(`/v1/users/${id}/issuer`, {
+    method: "PUT",
+    body: { issuer },
+  });
+}
+
 export function setUserRole(id: string, role: string) {
   return apiFetch<WorkspaceUser>(`/v1/users/${id}/role`, {
     method: "PUT",

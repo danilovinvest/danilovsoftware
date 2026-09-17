@@ -139,6 +139,32 @@ export function useScopeLocked(): boolean {
 }
 
 /**
+ * Les sociétés qu'un compte peut attribuer, pour un `<select>`.
+ *
+ * Une seule liste, lue par le formulaire d'un compte et par l'assistant
+ * d'invitation : deux copies divergeraient au premier ajustement, et l'une des
+ * deux finirait par proposer une société que l'autre refuse.
+ *
+ * `""` vaut tout le groupe. Un appelant **lié** ne peut faire entrer personne
+ * ailleurs que chez lui — c'est la règle du serveur — donc il ne voit que sa
+ * société : proposer les autres serait promettre un refus.
+ */
+export function companyOptions(
+  actorCompany: string,
+): Array<{ value: string; label: string }> {
+  if (actorCompany !== "") {
+    return SCOPES.filter((entry) => entry.id === actorCompany).map((entry) => ({
+      value: entry.id,
+      label: entry.label,
+    }));
+  }
+  return SCOPES.map((entry) => ({
+    value: entry.id === "tous" ? "" : entry.id,
+    label: entry.label,
+  }));
+}
+
+/**
  * Le paramètre à passer à l'API. Vide pour le groupe entier — le serveur ne
  * filtre alors rien, plutôt que de recevoir une valeur qu'il devrait ignorer.
  */
