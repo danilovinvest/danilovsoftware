@@ -185,13 +185,14 @@ export function EnrichDialog({
         {chercher.pending && (
           <div className="flex flex-col items-center gap-3 py-12">
             <Spinner />
-            {/* « Une minute » était la promesse du temps où le modèle mettait
-                des dizaines de secondes — et du temps, surtout, où il ne
-                répondait pas du tout. Celui qui sert répond en quelques
-                centaines de millisecondes : annoncer une minute ferait fermer
-                la fenêtre avant la réponse. */}
+            {/* « Une minute » est la bonne promesse, et elle est mesurée : un
+                dossier réel de vingt-cinq courriels demande environ soixante-dix
+                secondes de génération. J'avais écrit « quelques secondes » sur
+                la foi d'un test à cinq mots — mesurer la mauvaise chose donne
+                une promesse fausse, et une attente qu'on croit bloquée se ferme
+                avant la réponse. */}
             <p className="text-muted-foreground text-sm">
-              Lecture des courriels en cours, quelques secondes…
+              Lecture des courriels en cours, comptez une minute…
             </p>
           </div>
         )}
