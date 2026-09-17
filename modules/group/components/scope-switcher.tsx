@@ -3,7 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { SCOPES, setScope, useScope, type Scope } from "../lib/scope";
+import {
+  SCOPES,
+  setScope,
+  useScope,
+  useScopeLocked,
+  type Scope,
+} from "../lib/scope";
 
 /**
  * Le sélecteur de périmètre, en tête de la barre latérale.
@@ -30,6 +36,7 @@ const MARQUES: Record<Scope, { sigle: string; classe: string }> = {
 
 export function ScopeSwitcher() {
   const scope = useScope();
+  const locked = useScopeLocked();
   const [open, setOpen] = useState(false);
   const bloc = useRef<HTMLDivElement>(null);
 
@@ -53,6 +60,18 @@ export function ScopeSwitcher() {
 
   const actif = SCOPES.find((entry) => entry.id === scope) ?? SCOPES[0];
   const marque = MARQUES[scope];
+
+  /*
+    Un compte lié à sa société n'a rien à choisir : le serveur lui répond sur
+    son périmètre quoi qu'il demande, et un sélecteur qui ne sélectionne rien
+    fait chercher pourquoi il ne répond pas. Il s'efface — l'écran dit déjà
+    dans quelle société on est, par son sous-domaine et par le portail.
+
+    L'effacement est décidé **après** les crochets et jamais avant : un retour
+    anticipé placé plus haut changerait le nombre de crochets appelés entre
+    deux rendus, ce que React interdit.
+  */
+  if (locked) return null;
 
   return (
     <div ref={bloc} className="relative">

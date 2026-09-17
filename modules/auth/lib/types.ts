@@ -40,6 +40,15 @@ export type Account = {
   last_name: string;
   role: RoleSlug;
   role_name: string;
+  /**
+   * La société du compte, vide pour tout le groupe.
+   *
+   * **Ce n'est pas une permission** : une permission dit ce qu'on a le droit de
+   * faire, celle-ci de quelles sociétés. L'écran s'en sert pour masquer le
+   * sélecteur de périmètre plutôt que d'offrir un choix sans effet — le serveur
+   * imposant déjà la société, un choix affiché ne changerait rien.
+   */
+  issuer: string;
   is_active: boolean;
   permissions: Permission[];
   last_login_at: string | null;

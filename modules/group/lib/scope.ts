@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { useAuth } from "@/modules/auth";
 import { ENTITY_BY_ID } from "./entities";
 
 /**
@@ -86,8 +87,55 @@ export function setScope(scope: Scope) {
   for (const listener of listeners) listener();
 }
 
-export function useScope(): Scope {
+/** Le périmètre choisi dans ce navigateur, avant que le compte ait son mot à dire. */
+function useStoredScope(): Scope {
   return useSyncExternalStore(souscrire, lire, serveur);
+}
+
+/**
+ * La société du compte l'emporte sur la lentille du navigateur.
+ *
+ * Fonction pure, pour que la règle se lise et se teste sans React.
+ *
+ * Une société que cette liste ne connaît pas — les trois sociétés dormantes du
+ * groupe — retombe sur le choix stocké. Ce n'est pas une faille : le serveur
+ * filtre sur la **vraie** valeur du compte, jamais sur ce que le navigateur
+ * demande, si bien que la seule conséquence possible est un libellé inexact,
+ * jamais une donnée de trop.
+ */
+export function resolveScope(company: string, stored: Scope): Scope {
+  if (company === "ompt-structure" || company === "ompt-groupe") return company;
+  return stored;
+}
+
+/**
+ * Le périmètre qui **s'applique**, et non celui qu'on a choisi.
+ *
+ * Un compte lié à une société lit la sienne, quoi qu'il ait coché ici : le
+ * serveur impose déjà cette société, et afficher un autre périmètre ferait
+ * mentir les compteurs sans rien montrer de plus.
+ *
+ * La résolution vit à cet endroit unique plutôt que dans les huit écrans qui
+ * lisent le périmètre — la refaire huit fois la ferait diverger au premier
+ * ajustement, et « où en est-on » ne voudrait plus dire la même chose d'un
+ * écran à l'autre. C'est pourquoi ce module dépend désormais de `auth` :
+ * l'inverse n'existe pas, il n'y a donc aucun cycle.
+ */
+export function useScope(): Scope {
+  const stored = useStoredScope();
+  const { account } = useAuth();
+  return resolveScope(account?.issuer ?? "", stored);
+}
+
+/**
+ * Vrai quand la société est imposée par le compte.
+ *
+ * Le sélecteur s'efface alors : offrir un choix que le serveur ignore est pire
+ * que de ne pas l'offrir — on cliquerait, et rien ne changerait.
+ */
+export function useScopeLocked(): boolean {
+  const { account } = useAuth();
+  return (account?.issuer ?? "") !== "";
 }
 
 /**
