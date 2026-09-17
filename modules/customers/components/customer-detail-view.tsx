@@ -190,7 +190,11 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
             })}
           />
           {canWrite && canReadMail && (
-            <Button variant="outline" onClick={() => setEnriching(true)}>
+            <Button
+              variant="outline"
+              data-demo="bouton-chercher-courriels"
+              onClick={() => setEnriching(true)}
+            >
               <SparklesIcon />
               Chercher dans les courriels
             </Button>

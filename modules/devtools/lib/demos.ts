@@ -40,6 +40,31 @@ const FICHE_ETUDE = "/customers/7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "chercher-dans-les-courriels",
+    title: "« Chercher dans les courriels » répond enfin",
+    date: "2026-09-17",
+    steps: [
+      {
+        /*
+          La fiche de la capture d'écran du dirigeant : elle porte des
+          courriels, ce qui est la condition d'apparition du bouton — une fiche
+          sans courrier ne le montre pas, et la démo s'ouvrirait sur du vide.
+        */
+        path: "/customers/d4804e98-5283-42fe-ab4e-3f14d17b1720",
+        target: '[data-demo="bouton-chercher-courriels"]',
+        title: "Le bouton qui ne rendait qu'une erreur",
+        body: "Cette fonctionnalité n'avait jamais abouti une seule fois en production : un appel, cinq minutes d'attente, puis un encadré rouge portant une erreur de transport brute. La cause n'était ni le réseau, ni la clé, ni le compte — tous mesurés sains — mais le modèle demandé. Le CRM réclamait « moonshotai/kimi-k3 », que le catalogue de NVIDIA annonce toujours et qui ne renvoie plus rien du tout : pas un refus, pas un quota dépassé, aucun octet. Passés un par un, quatre-vingt-deux identifiants du catalogue donnent trois modèles qui répondent, quatre qui rendent 404 tout en étant listés, et cinq muets — dont celui-là, et dont le 90B vision demandé le matin même.",
+      },
+      {
+        path: "/customers/d4804e98-5283-42fe-ab4e-3f14d17b1720",
+        click: '[data-demo="bouton-chercher-courriels"]',
+        target: '[data-demo="chercher-messagerie"]',
+        title: "Le modèle qui répond, et qui le dit",
+        body: "Le modèle retenu a été mesuré avant d'être choisi : il répond en 171 millisecondes, et il sait lire une image, si bien que l'analyse des devis en PDF n'aura pas à en changer. La fenêtre annonce désormais quel modèle a lu et en combien de temps — c'est la même phrase qu'avant, mais elle a enfin quelque chose à dire. Deux garde-fous l'accompagnent. Le silence est borné à une minute au lieu de cinq : un modèle qui n'a pas commencé à répondre en une minute ne répondra pas, alors qu'une génération déjà commencée peut légitimement durer, et les deux ne se règlent pas ensemble. Et une erreur de transport ne s'affiche plus jamais : le détail va au journal, l'écran reçoit une phrase qui dit quoi faire. Les refus déjà rédigés en français, eux, continuent de s'afficher tels quels — « le modèle est saturé », « le dossier est trop long » sont écrits pour être lus.",
+      },
+    ],
+  },
+  {
     id: "enroler-une-cle-par-lien",
     title: "La société se choisit, et la clé d'accès s'enrôle par lien",
     date: "2026-09-17",

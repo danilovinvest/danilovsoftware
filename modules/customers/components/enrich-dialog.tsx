@@ -169,7 +169,7 @@ export function EnrichDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-2xl" data-demo="chercher-messagerie">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <SparklesIcon className="text-info size-4" />
@@ -185,8 +185,13 @@ export function EnrichDialog({
         {chercher.pending && (
           <div className="flex flex-col items-center gap-3 py-12">
             <Spinner />
+            {/* « Une minute » était la promesse du temps où le modèle mettait
+                des dizaines de secondes — et du temps, surtout, où il ne
+                répondait pas du tout. Celui qui sert répond en quelques
+                centaines de millisecondes : annoncer une minute ferait fermer
+                la fenêtre avant la réponse. */}
             <p className="text-muted-foreground text-sm">
-              Lecture des courriels en cours, cela prend une minute…
+              Lecture des courriels en cours, quelques secondes…
             </p>
           </div>
         )}
