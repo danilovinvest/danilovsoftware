@@ -174,6 +174,10 @@ export function MemberDialog({
                  guidée vise donc cet `id`, ce que sa doctrine prévoit. */
               id="member-company"
               options={societes}
+              /* « Tout le groupe » n'est offert que par un compte qui le voit
+                 lui-même : c'est la règle du serveur, et un choix qu'il
+                 refuserait n'a rien à faire dans la liste. */
+              emptyLabel={account?.issuer ? undefined : "Tout le groupe"}
               value={form.issuer}
               error={fields.issuer}
               disabled={isSelf}

@@ -145,23 +145,26 @@ export function useScopeLocked(): boolean {
  * d'invitation : deux copies divergeraient au premier ajustement, et l'une des
  * deux finirait par proposer une société que l'autre refuse.
  *
- * `""` vaut tout le groupe. Un appelant **lié** ne peut faire entrer personne
- * ailleurs que chez lui — c'est la règle du serveur — donc il ne voit que sa
- * société : proposer les autres serait promettre un refus.
+ * Un appelant **lié** ne peut faire entrer personne ailleurs que chez lui —
+ * c'est la règle du serveur — donc il ne voit que sa société : proposer les
+ * autres serait promettre un refus.
+ *
+ * **« Tout le groupe » n'est pas dans cette liste**, et ce n'est pas un oubli.
+ * Radix interdit la chaîne vide comme valeur d'option : `SelectField` la traduit
+ * en sentinelle interne et n'affiche l'option « aucune valeur » que si on lui
+ * passe un `emptyLabel`. Une option de valeur vide fabriquée ici ne
+ * correspondait donc à rien, et le champ s'affichait muet là où il devait dire
+ * « Tout le groupe ». C'est à l'appelant de donner cet `emptyLabel` — et
+ * seulement s'il est lui-même non lié, sans quoi il proposerait un périmètre
+ * que le serveur lui refuserait.
  */
 export function companyOptions(
   actorCompany: string,
 ): Array<{ value: string; label: string }> {
-  if (actorCompany !== "") {
-    return SCOPES.filter((entry) => entry.id === actorCompany).map((entry) => ({
-      value: entry.id,
-      label: entry.label,
-    }));
-  }
-  return SCOPES.map((entry) => ({
-    value: entry.id === "tous" ? "" : entry.id,
-    label: entry.label,
-  }));
+  return SCOPES.filter(
+    (entry) =>
+      entry.id !== "tous" && (actorCompany === "" || entry.id === actorCompany),
+  ).map((entry) => ({ value: entry.id, label: entry.label }));
 }
 
 /**

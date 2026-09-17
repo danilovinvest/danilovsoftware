@@ -182,9 +182,13 @@ export function InviteWizard({
               label="Société"
               hint="Le CRM où le lien fait entrer"
               options={societes}
+              emptyLabel={account?.issuer ? undefined : "Tout le groupe"}
               value={form.issuer}
               error={fields.issuer}
-              disabled={societes.length === 1}
+              /* Un compte lié n'a qu'une société et aucun « tout le groupe » :
+                 il n'y a rien à choisir, et un champ actif sans alternative
+                 ferait chercher ce qu'on peut y changer. */
+              disabled={Boolean(account?.issuer)}
               onValueChange={(value) => setForm((state) => ({ ...state, issuer: value }))}
             />
 
