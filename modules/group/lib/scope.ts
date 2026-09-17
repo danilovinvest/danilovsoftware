@@ -82,19 +82,31 @@ function serveur(): Scope | null {
 }
 
 /**
- * La société du compte l'emporte sur ce que l'hôte ne dit pas.
+ * La société du compte l'emporte, puis l'hôte, puis tout le groupe.
  *
  * Fonction pure, pour que la règle se lise et se teste sans React.
  *
- * L'ordre est celui de l'autorité : l'hôte d'abord — c'est l'adresse qu'on a
- * tapée —, puis la société du compte, puis tout le groupe. Une société que
- * cette liste ne connaît pas (les trois sociétés dormantes) retombe sur tout le
- * groupe côté affichage ; ce n'est pas une faille, le serveur filtrant sur la
- * **vraie** valeur du compte et jamais sur ce que le navigateur demande.
+ * **L'ordre est celui de l'autorité, et il a été corrigé.** La première version
+ * mettait l'hôte devant : un compte lié à GROUPE qui ouvrait `structure.` voyait
+ * alors les libellés de STRUCTURE — sa navigation, ses écrans — pendant que le
+ * serveur lui renvoyait, à juste titre, les données de GROUPE. Aucune fuite,
+ * puisque `Identity.CompanyFilter` impose la société du compte quoi qu'on
+ * demande ; mais un écran qui se contredit fait douter du reste, et c'est
+ * exactement ce que ce produit refuse ailleurs.
+ *
+ * Une société du compte est une **appartenance**, imposée par le serveur ; un
+ * hôte n'est qu'un **choix**, celui de l'adresse qu'on a tapée. Une
+ * appartenance prime sur un choix. L'hôte ne décide donc que pour qui ne porte
+ * aucune société — le dirigeant et le trousseau de secours — et c'est
+ * précisément le cas pour lequel il a été introduit.
+ *
+ * Une société que cette liste ne connaît pas (les trois sociétés dormantes du
+ * groupe) retombe sur l'hôte, puis sur tout le groupe : côté affichage
+ * seulement, le serveur filtrant toujours sur la vraie valeur.
  */
 export function resolveScope(host: Scope | null, company: string): Scope {
-  if (host) return host;
   if (company === "ompt-structure" || company === "ompt-groupe") return company;
+  if (host) return host;
   return "tous";
 }
 
