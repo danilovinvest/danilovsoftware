@@ -146,15 +146,34 @@ export function useScope(): Scope {
 export function companyOptions(
   actorCompany: string,
 ): Array<{ value: string; label: string }> {
-  return SCOPES.filter(
-    (entry) =>
-      entry.id !== "tous" && (actorCompany === "" || entry.id === actorCompany),
-  ).map((entry) => ({ value: entry.id, label: entry.label }));
+  /*
+    « Tout le groupe » est une **option**, plus la valeur vide.
+
+    Elle en était l'absence, et `SelectField` en faisait donc le défaut
+    silencieux : on créait un accès aux deux sociétés en ne répondant pas. Le
+    dirigeant l'a tranché le 17/09 — la société est obligatoire, et l'accès
+    total se coche exprès. Sans `emptyLabel`, le champ n'a plus de valeur vide à
+    offrir, et rien ne part tant que personne n'a choisi.
+
+    Un compte lié, lui, ne voit que la sienne : on ne fait entrer quelqu'un que
+    dans sa propre société (`ErrCompanyNotHeld`), et « tout le groupe » ne lui
+    est pas plus attribuable que l'autre société.
+  */
+  if (actorCompany !== "") {
+    return SCOPES.filter((entry) => entry.id === actorCompany).map((entry) => ({
+      value: entry.id,
+      label: entry.label,
+    }));
+  }
+  return SCOPES.map((entry) => ({ value: entry.id, label: entry.label }));
 }
 
 /** Le libellé d'une société à partir d'une chaîne quelconque. */
 export function companyLabel(value: string): string {
-  if (value === "") return "Tout le groupe";
+  // Vide et « tous » disent la même chose et doivent se lire pareil : le
+  // serveur rend une société nulle pour tout le groupe, le formulaire envoie
+  // désormais `tous` pour le dire explicitement.
+  if (value === "" || value === "tous") return "Tout le groupe";
   return SCOPES.find((entry) => entry.id === value)?.label ?? value;
 }
 
