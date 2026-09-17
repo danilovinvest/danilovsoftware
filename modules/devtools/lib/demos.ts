@@ -59,7 +59,7 @@ export const DEMOS: Demo[] = [
         path: "/customers/d4804e98-5283-42fe-ab4e-3f14d17b1720",
         click: '[data-demo="bouton-chercher-courriels"]',
         target: '[data-demo="chercher-messagerie"]',
-        title: "Le modèle qui répond, et qui le dit",
+        title: "Le modèle qui répond, et qui le dit (comptez une minute)",
         body: "Le modèle retenu a été mesuré avant d'être choisi : il répond en 171 millisecondes, et il sait lire une image, si bien que l'analyse des devis en PDF n'aura pas à en changer. La fenêtre annonce désormais quel modèle a lu et en combien de temps — c'est la même phrase qu'avant, mais elle a enfin quelque chose à dire. Deux garde-fous l'accompagnent. Le silence est borné à une minute au lieu de cinq : un modèle qui n'a pas commencé à répondre en une minute ne répondra pas, alors qu'une génération déjà commencée peut légitimement durer, et les deux ne se règlent pas ensemble. Et une erreur de transport ne s'affiche plus jamais : le détail va au journal, l'écran reçoit une phrase qui dit quoi faire. Les refus déjà rédigés en français, eux, continuent de s'afficher tels quels — « le modèle est saturé », « le dossier est trop long » sont écrits pour être lus.",
       },
     ],
