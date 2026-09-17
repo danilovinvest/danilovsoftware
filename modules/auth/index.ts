@@ -2,12 +2,14 @@ export { AuthProvider, useAuth, usePermission } from "./auth-context";
 export { LoginForm } from "./components/login-form";
 export { PasskeyLoginButton } from "./components/passkey-login-button";
 export { InvitationForm } from "./components/invitation-form";
+export { PasskeyEnrollForm } from "./components/passkey-enroll-form";
 export { RequireAuth } from "./components/require-auth";
 export type {
   Account,
   DeviceSession,
   InvitationPreview,
   Passkey,
+  PasskeyEnrollPreview,
   Permission,
   RoleSlug,
 } from "./lib/types";

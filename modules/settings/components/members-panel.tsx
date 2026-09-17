@@ -3,7 +3,7 @@
 import { companyLabel } from "@/modules/group";
 
 import { useMemo, useState } from "react";
-import { PencilIcon, SearchIcon, UserPlusIcon, XIcon } from "lucide-react";
+import { KeyRoundIcon, PencilIcon, SearchIcon, UserPlusIcon, XIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,10 +21,17 @@ import { GradientAvatar } from "@/shared/ui/gradient-avatar";
 import { formatDate, formatRelative, initials } from "@/shared/lib/format";
 import { errorMessage } from "@/shared/api/errors";
 import { revokeInvitation } from "../lib/api";
-import { useInvitations, useRoles, useWorkspaceUsers } from "../hooks/use-settings";
+import {
+  useInvitations,
+  usePasskeyCoverage,
+  usePasskeyEnrollments,
+  useRoles,
+  useWorkspaceUsers,
+} from "../hooks/use-settings";
 import type { WorkspaceUser } from "../lib/types";
 import { InviteWizard } from "./invite-wizard";
 import { MemberDialog } from "./member-dialog";
+import { PasskeyLinkDialog } from "./passkey-link-dialog";
 import { SettingsPage, SettingsSection } from "./settings-page";
 
 /**
@@ -41,9 +48,20 @@ export function MembersPanel() {
   const { users, total, loading, error, reload } = useWorkspaceUsers();
   const { roles } = useRoles();
   const invitations = useInvitations(canWrite);
+  /*
+    Les clés et les liens en circulation, chargés seulement pour qui peut agir.
+
+    Deux lectures distinctes parce que ce sont deux faits distincts : combien de
+    clés porte un compte, et quel lien attend d'être ouvert. Les fondre aurait
+    obligé l'écran à deviner l'un depuis l'autre — un compte sans clé peut très
+    bien avoir déjà reçu son lien.
+  */
+  const passkeys = usePasskeyCoverage(canWrite);
+  const enrollments = usePasskeyEnrollments(canWrite);
 
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<WorkspaceUser | null>(null);
+  const [enrolling, setEnrolling] = useState<WorkspaceUser | null>(null);
   const [inviting, setInviting] = useState(false);
   const [revokeError, setRevokeError] = useState<string | null>(null);
   const [revoking, setRevoking] = useState<string | null>(null);
@@ -59,6 +77,12 @@ export function MembersPanel() {
     () => (slug: string) => roles.find((role) => role.slug === slug)?.rank ?? 0,
     [roles],
   );
+
+  // Un compte absent de la couverture n'a aucune clé : c'est un regroupement
+  // en base, pas une ligne par personne.
+  const keysOf = (id: string) => passkeys.keysByUser.get(id) ?? 0;
+  const liveLinkOf = (id: string) =>
+    enrollments.enrollments.find((entry) => entry.user_id === id) ?? null;
 
   const filtered = useMemo(() => {
     const needle = search.trim().toLowerCase();
@@ -201,6 +225,33 @@ export function MembersPanel() {
                                 {companyLabel(user.issuer)}
                               </Badge>
                             )}
+                            {/*
+                              Les clés d'accès du compte, et c'est la seule
+                              question qui commande la bascule vers la clé
+                              seule : on ne coupe les mots de passe que
+                              lorsque plus personne n'est à zéro. Le zéro est
+                              donc en teinte d'alerte, le reste en gris — un
+                              compte pourvu n'a rien à signaler.
+                            */}
+                            {canWrite && (
+                              <Badge
+                                data-demo="cles-par-compte"
+                                className={
+                                  keysOf(user.id) === 0
+                                    ? "bg-warning-soft text-warning rounded-md"
+                                    : "bg-neutral-soft text-neutral rounded-md"
+                                }
+                              >
+                                {keysOf(user.id) === 0
+                                  ? "aucune clé"
+                                  : `${keysOf(user.id)} clé${keysOf(user.id) > 1 ? "s" : ""}`}
+                              </Badge>
+                            )}
+                            {liveLinkOf(user.id) !== null && (
+                              <Badge className="bg-info-soft text-info rounded-md">
+                                lien envoyé
+                              </Badge>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -220,17 +271,30 @@ export function MembersPanel() {
                             : "jamais"}
                         </TableCell>
                         <TableCell className="text-right">
-                          {canEdit(user) && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-7"
-                              onClick={() => setEditing(user)}
-                              title={`Modifier ${name}`}
-                            >
-                              <PencilIcon className="size-3.5" />
-                            </Button>
-                          )}
+                          <div className="flex justify-end gap-1">
+                            {canEdit(user) && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-7"
+                                onClick={() => setEnrolling(user)}
+                                title={`Enrôler une clé d'accès pour ${name}`}
+                              >
+                                <KeyRoundIcon className="size-3.5" />
+                              </Button>
+                            )}
+                            {canEdit(user) && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-7"
+                                onClick={() => setEditing(user)}
+                                title={`Modifier ${name}`}
+                              >
+                                <PencilIcon className="size-3.5" />
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -350,6 +414,19 @@ export function MembersPanel() {
           actorRank={actorRank}
           onClose={() => setInviting(false)}
           onCreated={invitations.reload}
+        />
+      )}
+
+      {enrolling && (
+        <PasskeyLinkDialog
+          key={enrolling.id}
+          user={enrolling}
+          live={liveLinkOf(enrolling.id)}
+          onClose={() => setEnrolling(null)}
+          onChanged={() => {
+            enrollments.reload();
+            passkeys.reload();
+          }}
         />
       )}
     </SettingsPage>

@@ -40,6 +40,33 @@ const FICHE_ETUDE = "/customers/7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "enroler-une-cle-par-lien",
+    title: "La société se choisit, et la clé d'accès s'enrôle par lien",
+    date: "2026-09-17",
+    steps: [
+      {
+        path: "/settings/membres",
+        click: 'button:has-text("Inviter")',
+        target: "#invite-company",
+        title: "La société est obligatoire, et « tout le groupe » se coche exprès",
+        body: "Elle était facultative, donc son absence valait accès aux deux sociétés : on ouvrait tout en ne remplissant pas le champ — exactement ce que le découpage des accès venait d'empêcher. « Tout le groupe » est désormais une valeur de la liste, plus le silence du formulaire, et rien ne part tant que personne n'a choisi. Le serveur applique la même règle de son côté, pour les appels qui ne passent pas par cet écran : la création d'un compte par l'API ignorait purement et simplement la société, et un compte né là voyait les deux. Un compte déjà rattaché à une société, lui, n'a rien à choisir : on ne fait entrer quelqu'un que dans la sienne.",
+      },
+      {
+        path: "/settings/membres",
+        target: '[data-demo="cles-par-compte"]',
+        title: "Qui n'a pas encore de clé",
+        body: "C'est la seule question qui commande la bascule voulue : on ne coupe les mots de passe que lorsque plus personne n'est à zéro. Mesuré le 17 septembre, deux clés existaient en production, toutes deux celles du dirigeant — couper ce jour-là aurait mis les deux autres comptes dehors. Le compte est affiché ici plutôt qu'ajouté à la fiche d'un membre, parce qu'un champ « nombre de clés » y aurait valu zéro partout sauf dans cette liste : une demi-vérité qu'un écran finit toujours par afficher.",
+      },
+      {
+        path: "/settings/membres",
+        click: 'button[title^="Enrôler"]',
+        target: '[data-demo="lien-de-cle"]',
+        title: "Une clé ne s'envoie pas : ce qui s'envoie, c'est un lien",
+        body: "La moitié privée d'une clé d'accès naît dans l'appareil de son porteur et n'en sort jamais : personne, pas même le dirigeant, ne peut en fabriquer une pour quelqu'un d'autre. Ce qui se transmet est ce lien à usage unique, valable sept jours, dont la base ne garde que l'empreinte — il n'est affiché qu'une fois, comme une invitation. Le QR code n'est pas une coquetterie : la clé doit naître sur l'appareil qui servira à entrer, et c'est le téléphone. Scanner l'écran y amène la personne en un geste, là où un lien de soixante caractères collé dans un SMS se retape mal. Un lien déjà en circulation n'est jamais remplacé en silence : celui qui a été transmis hier doit continuer de fonctionner jusqu'à ce qu'on décide le contraire.",
+      },
+    ],
+  },
+  {
     id: "deux-crm-une-societe-par-compte",
     title: "Deux CRM, un par société — et le compte y est lié",
     date: "2026-09-17",

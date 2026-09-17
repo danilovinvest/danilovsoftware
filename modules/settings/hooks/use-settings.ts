@@ -115,6 +115,92 @@ export function useInvitations(enabled: boolean) {
   };
 }
 
+/**
+ * Combien de clés d'accès porte chaque compte.
+ *
+ * C'est la seule question qui commande la bascule voulue par le dirigeant — on
+ * ne coupe les mots de passe que lorsque plus personne n'est à zéro — et elle a
+ * son propre point d'accès plutôt qu'un champ sur la fiche d'un compte, qui
+ * vaudrait zéro partout sauf dans la liste.
+ *
+ * Un compte absent de la réponse n'a aucune clé : c'est un `GROUP BY`, pas une
+ * ligne par personne. La carte le rend explicite pour l'écran.
+ */
+export function usePasskeyCoverage(enabled: boolean) {
+  const [token, setToken] = useState(0);
+  const key = enabled ? `passkey-coverage:${token}` : "disabled";
+  const [resolved, setResolved] = useState<Resolved<Map<string, number>>>({
+    key: "disabled",
+    data: null,
+    error: null,
+  });
+
+  useEffect(() => {
+    if (!enabled) return;
+    const controller = new AbortController();
+
+    api
+      .passkeyCoverage(controller.signal)
+      .then((data) =>
+        setResolved({
+          key,
+          data: new Map(data.items.map((entry) => [entry.user_id, entry.keys])),
+          error: null,
+        }),
+      )
+      .catch((cause) => {
+        if (controller.signal.aborted) return;
+        setResolved({ key, data: null, error: errorMessage(cause) });
+      });
+
+    return () => controller.abort();
+  }, [key, enabled]);
+
+  const reload = useCallback(() => setToken((value) => value + 1), []);
+
+  return {
+    keysByUser: resolved.data ?? new Map<string, number>(),
+    loading: resolved.key !== key,
+    error: resolved.error,
+    reload,
+  };
+}
+
+/** Les liens d'enrôlement encore en circulation, pour les voir et les refermer. */
+export function usePasskeyEnrollments(enabled: boolean) {
+  const [token, setToken] = useState(0);
+  const key = enabled ? `passkey-enrollments:${token}` : "disabled";
+  const [resolved, setResolved] = useState<Resolved<PasskeyEnrollment[]>>({
+    key: "disabled",
+    data: null,
+    error: null,
+  });
+
+  useEffect(() => {
+    if (!enabled) return;
+    const controller = new AbortController();
+
+    api
+      .listPasskeyEnrollments(controller.signal)
+      .then((data) => setResolved({ key, data: data.items, error: null }))
+      .catch((cause) => {
+        if (controller.signal.aborted) return;
+        setResolved({ key, data: null, error: errorMessage(cause) });
+      });
+
+    return () => controller.abort();
+  }, [key, enabled]);
+
+  const reload = useCallback(() => setToken((value) => value + 1), []);
+
+  return {
+    enrollments: resolved.data ?? [],
+    loading: resolved.key !== key,
+    error: resolved.error,
+    reload,
+  };
+}
+
 export function useRoles() {
   const [token, setToken] = useState(0);
   const key = `roles:${token}`;

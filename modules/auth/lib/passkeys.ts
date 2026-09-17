@@ -12,8 +12,10 @@
  */
 
 import {
+  beginPasskeyEnrollment,
   beginPasskeyLogin,
   beginPasskeyRegistration,
+  finishPasskeyEnrollment,
   finishPasskeyLogin,
   finishPasskeyRegistration,
 } from "./api";
@@ -159,6 +161,25 @@ export async function registerPasskey(name: string) {
     options.publicKey as unknown as ServerCreationOptions,
   );
   return finishPasskeyRegistration(challenge, credential, name);
+}
+
+/**
+ * Crée une clé depuis un lien d'enrôlement, **sans session préalable**.
+ *
+ * C'est le seul chemin qui fabrique une clé pour quelqu'un qui ne peut pas
+ * encore entrer : ni clé, ni forcément mot de passe. La cérémonie est
+ * exactement celle de `registerPasskey` — mêmes exigences, même sceau — et le
+ * lien remplace la session pour dire de quel compte il s'agit.
+ *
+ * Rend la session telle que l'API la renvoie : `adoptSession` l'adopte, comme
+ * après une invitation ou une connexion par clé.
+ */
+export async function enrollPasskey(token: string, name: string) {
+  const { options, challenge } = await beginPasskeyEnrollment(token);
+  const credential = await createPasskey(
+    options.publicKey as unknown as ServerCreationOptions,
+  );
+  return finishPasskeyEnrollment(token, challenge, credential, name);
 }
 
 /**

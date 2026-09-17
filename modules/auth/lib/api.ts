@@ -109,6 +109,40 @@ export function deletePasskey(id: string) {
   return apiFetch<void>(`/v1/auth/passkeys/${id}`, { method: "DELETE" });
 }
 
+/* --- Enrôler une clé par lien --------------------------------------------- */
+
+/*
+ * Trois routes publiques, et publiques par nécessité : la personne n'a ni clé
+ * ni forcément mot de passe — c'est exactement ce que le lien vient réparer.
+ * Exiger une session pour en ouvrir une serait circulaire.
+ *
+ * Elles ne disent rien de qui possède un compte : un jeton inconnu, expiré,
+ * révoqué ou déjà utilisé rendent tous la même 404.
+ */
+
+export function previewPasskeyEnrollment(token: string, signal?: AbortSignal) {
+  return apiFetch<PasskeyEnrollPreview>(`/v1/auth/passkey/enroll/${token}`, { signal });
+}
+
+export function beginPasskeyEnrollment(token: string) {
+  return apiFetch<PasskeyChallenge>(`/v1/auth/passkey/enroll/${token}/begin`, {
+    method: "POST",
+  });
+}
+
+/** Ouvre la session : la clé vient d'être créée, se reconnecter serait un pas de trop. */
+export function finishPasskeyEnrollment(
+  token: string,
+  challenge: string,
+  credential: unknown,
+  name: string,
+) {
+  return apiFetch<SessionResponse>(`/v1/auth/passkey/enroll/${token}/finish`, {
+    method: "POST",
+    body: { challenge, credential, name },
+  });
+}
+
 /* --- Invitations ---------------------------------------------------------- */
 
 /** Route publique : elle ne demande aucun jeton d'accès. */

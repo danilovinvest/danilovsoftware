@@ -74,6 +74,56 @@ export function invitationUrl(token: string): string {
   return `${origin}/invitation/${token}`;
 }
 
+/* --- Enrôler une clé d'accès ---------------------------------------------- */
+
+/*
+ * Une clé d'accès ne s'envoie pas : sa moitié privée naît dans l'appareil de
+ * son porteur. Ce qui s'envoie, c'est un lien à usage unique qui laisse la
+ * personne en créer une — sur son téléphone, où la clé doit vivre.
+ *
+ * Les trois routes d'administration vivent sous `/v1/auth/passkeys` parce
+ * qu'elles parlent de clés, et sont gardées par `users:write` parce qu'elles
+ * parlent d'un compte qui n'est pas forcément le sien.
+ */
+
+export function createPasskeyEnrollment(userId: string) {
+  return apiFetch<{ enrollment: PasskeyEnrollment; token: string }>(
+    "/v1/auth/passkeys/enrollments",
+    { method: "POST", body: { user_id: userId } },
+  );
+}
+
+export function listPasskeyEnrollments(signal?: AbortSignal) {
+  return apiFetch<{ items: PasskeyEnrollment[] }>("/v1/auth/passkeys/enrollments", {
+    signal,
+  });
+}
+
+export function revokePasskeyEnrollment(id: string) {
+  return apiFetch<void>(`/v1/auth/passkeys/enrollments/${id}`, { method: "DELETE" });
+}
+
+/** Combien de clés par compte. Un compte absent de la liste n'en a aucune. */
+export function passkeyCoverage(signal?: AbortSignal) {
+  return apiFetch<{ items: Array<{ user_id: string; keys: number }> }>(
+    "/v1/auth/passkeys/coverage",
+    { signal },
+  );
+}
+
+/*
+ * L'adresse du lien, construite sur l'origine de la page.
+ *
+ * Elle est lue **à l'appel** et jamais au chargement du module : le portail et
+ * les deux CRM sont trois hôtes, et un lien figé à la compilation enverrait la
+ * personne sur celui qui n'est pas le sien. La clé, elle, vaut pour les trois —
+ * le RPID est l'apex.
+ */
+export function passkeyEnrollUrl(token: string): string {
+  const origin = typeof window === "undefined" ? "" : window.location.origin;
+  return `${origin}/cle/${token}`;
+}
+
 /* --- Rôles ---------------------------------------------------------------- */
 
 /**

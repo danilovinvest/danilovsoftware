@@ -125,3 +125,22 @@ export type InvitationPreview = {
   role_name: string;
   expires_at: string;
 };
+
+/**
+ * Ce qu'un visiteur non authentifié lit d'un lien d'enrôlement de clé.
+ *
+ * Même masquage que l'invitation, au caractère près : deux masquages divergents
+ * feraient du plus bavard un moyen de tester si une adresse a un compte. Il n'y
+ * a ni rôle ni société ici — le compte existe déjà et les porte ; les recopier
+ * serait une seconde vérité sur la même personne.
+ *
+ * `key_count` sert à parler juste : « votre première clé » et « une clé de
+ * plus » ne se disent pas pareil.
+ */
+export type PasskeyEnrollPreview = {
+  email_hint: string;
+  first_name: string;
+  last_name: string;
+  key_count: number;
+  expires_at: string;
+};

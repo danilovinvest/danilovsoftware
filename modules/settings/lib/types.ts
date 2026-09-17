@@ -122,3 +122,23 @@ export type McpTokenCreated = {
   /** Le secret en clair, une seule fois. */
   secret: string;
 };
+
+/**
+ * Un lien d'enrôlement de clé en circulation.
+ *
+ * Le jeton n'y figure pas : il n'est rendu qu'une fois, à la création, et la
+ * base n'en garde que l'empreinte — comme une invitation ou une adresse de
+ * connecteur. Perdu, on révoque et on réémet.
+ *
+ * Il n'y a ni rôle ni société : le compte existe déjà et les porte. Ce lien
+ * n'ajoute qu'une façon d'entrer.
+ */
+export type PasskeyEnrollment = {
+  id: string;
+  user_id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  expires_at: string;
+  created_at: string;
+};

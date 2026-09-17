@@ -75,6 +75,13 @@ export function InviteWizard({
   }
 
   async function finish() {
+    // La société est obligatoire, et le dire ici évite un aller-retour pour
+    // s'entendre répondre la même chose. Le serveur la refuse aussi : c'est lui
+    // qui protège, l'écran ne fait que l'annoncer plus tôt.
+    if (form.issuer === "") {
+      setFields({ issuer: "Choisissez la société où ce compte entre." });
+      return;
+    }
     setPending(true);
     setError(null);
     setFields({});
@@ -179,10 +186,20 @@ export function InviteWizard({
             {/* La société vient après le rôle : ce sont les deux dimensions de
                 l'arrivée — ce qu'on peut faire, et pour laquelle des sociétés. */}
             <SelectField
+              /* Un `id` et non un `data-demo` : `SelectField` ne transmet
+                 aucun attribut arbitraire — il ne retient qu'un identifiant —
+                 et un attribut à trait d'union échappe au contrôle de
+                 TypeScript, donc il serait jeté en silence. */
+              id="invite-company"
               label="Société"
               hint="Le CRM où le lien fait entrer"
+              required
+              placeholder="À choisir"
               options={societes}
-              emptyLabel={account?.issuer ? undefined : "Tout le groupe"}
+              /* Plus d'option vide : « Tout le groupe » est une valeur de la
+                 liste (`tous`), pas l'absence de réponse. Elle l'était, donc on
+                 ouvrait l'accès aux deux sociétés en ne remplissant pas le
+                 champ — exactement ce que le découpage vient d'empêcher. */
               value={form.issuer}
               error={fields.issuer}
               /* Un compte lié n'a qu'une société et aucun « tout le groupe » :
