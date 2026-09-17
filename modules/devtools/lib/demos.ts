@@ -55,8 +55,13 @@ export const DEMOS: Demo[] = [
         click: 'button[title^="Modifier"]',
         target: '#member-company',
         title: "La société se change seule, et ferme les sessions",
-        // La troisième étape suit : elle montre par où l'on ressort.
         body: "Elle a sa propre route, comme le rôle, et pour une raison très concrète : enregistrer le formulaire remplace la ligne entière du compte, si bien qu'une société qui y voyagerait serait effacée le jour où l'on corrige une faute de frappe dans un prénom. Changer la société déconnecte la personne — elle voyage dans le jeton, et sans cela elle verrait encore un quart d'heure durant la société qu'on vient de lui retirer. Deux garde-fous s'appliquent : on n'agit que sur un compte de rang inférieur au sien, et on ne fait entrer quelqu'un que dans sa propre société — sinon la gestion des comptes serait le contournement du découpage. Le lien d'invitation porte la même société : le compte naît déjà rangé, plutôt que d'être classé après coup.",
+      },
+      {
+        path: "/dashboard",
+        target: '[data-demo="retour-portail"]',
+        title: "Et par où l'on ressort : le portail",
+        body: "Chaque société a désormais son adresse — groupe.… et structure.… — et le domaine principal est devenu un portail : on s'y authentifie une fois, puis on choisit. Ce bouton y ramène de n'importe quel écran du CRM. On y trouve les deux CRM, des raccourcis vers les listes qu'on ouvre le plus, les applications du quotidien — Gmail, Slack, le coffre à mots de passe, OneDrive — et, pour l'administration seulement, un groupe Dev. Rien à retaper en chemin : les trois adresses partagent une seule session, parce que le cookie porte le domaine principal, et une seule clé d'accès les ouvre toutes les trois puisque son domaine de référence est celui du portail.",
       },
     ],
   },
