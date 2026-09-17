@@ -1,5 +1,7 @@
 "use client";
 
+import { companyLabel } from "@/modules/group";
+
 import { useMemo, useState } from "react";
 import { PencilIcon, SearchIcon, UserPlusIcon, XIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -179,10 +181,27 @@ export function MembersPanel() {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <Badge className="bg-info-soft text-info rounded-md">
-                            {user.role_name}
-                          </Badge>
+                        <TableCell data-demo="member-companies">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <Badge className="bg-info-soft text-info rounded-md">
+                              {user.role_name}
+                            </Badge>
+                            {/*
+                              La société à côté du rôle : ce sont les deux
+                              dimensions d'un compte — ce qu'il peut faire, et
+                              pour laquelle des sociétés il le fait.
+
+                              Rien du tout pour un compte qui voit tout le
+                              groupe. Une pastille « Tout le groupe » sur chaque
+                              ligne ne distinguerait personne, et c'est
+                              justement la distinction qu'on vient lire ici.
+                            */}
+                            {user.issuer !== "" && (
+                              <Badge className="bg-neutral-soft text-neutral rounded-md">
+                                {companyLabel(user.issuer)}
+                              </Badge>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           {user.is_active ? (
@@ -267,9 +286,18 @@ export function MembersPanel() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge className="bg-info-soft text-info rounded-md">
-                          {invitation.role_name}
-                        </Badge>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <Badge className="bg-info-soft text-info rounded-md">
+                            {invitation.role_name}
+                          </Badge>
+                          {/* Le lien dit dans quel CRM il fait entrer : c'est
+                              écrit dans l'invitation, pas posé après coup. */}
+                          {invitation.issuer !== "" && (
+                            <Badge className="bg-neutral-soft text-neutral rounded-md">
+                              {companyLabel(invitation.issuer)}
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground text-xs">
                         {invitation.invited_by || "—"}

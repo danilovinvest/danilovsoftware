@@ -165,6 +165,20 @@ export function companyOptions(
 }
 
 /**
+ * Le libellé d'une société à partir d'une chaîne quelconque.
+ *
+ * L'API rend la société d'un compte en `string` — vide pour tout le groupe — et
+ * non dans le type fermé `Scope` : les cinq sociétés du groupe existent en base,
+ * `Scope` n'en nomme que deux. Passer par une assertion de type aurait affirmé
+ * une garantie que la donnée ne porte pas ; cette fonction se contente de ce
+ * qu'elle sait, et rend la valeur brute pour ce qu'elle ne connaît pas.
+ */
+export function companyLabel(value: string): string {
+  if (value === "") return "Tout le groupe";
+  return SCOPES.find((entry) => entry.id === value)?.label ?? value;
+}
+
+/**
  * Le paramètre à passer à l'API. Vide pour le groupe entier — le serveur ne
  * filtre alors rien, plutôt que de recevoir une valeur qu'il devrait ignorer.
  */

@@ -14,7 +14,7 @@ import { ApiError, errorMessage } from "@/shared/api/errors";
 import { ErrorNotice } from "@/shared/ui/feedback";
 import { SelectField, TextField } from "@/shared/ui/form";
 import { SummaryLine, WizardNav, WizardSteps } from "@/shared/ui/wizard";
-import { companyOptions, scopeName } from "@/modules/group";
+import { companyLabel, companyOptions } from "@/modules/group";
 import { useAuth } from "@/modules/auth";
 import { createInvitation, invitationUrl } from "../lib/api";
 import type { Role } from "../lib/types";
@@ -205,7 +205,7 @@ export function InviteWizard({
                 )}
                 <SummaryLine
                   label="Société"
-                  value={form.issuer === "" ? "Tout le groupe" : scopeName(form.issuer)}
+                  value={companyLabel(form.issuer)}
                 />
                 <SummaryLine label="Validité du lien" value="7 jours, un seul usage" />
               </dl>

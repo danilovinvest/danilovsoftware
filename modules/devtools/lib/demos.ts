@@ -40,6 +40,26 @@ const FICHE_ETUDE = "/customers/7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "deux-crm-une-societe-par-compte",
+    title: "Deux CRM, un par société — et le compte y est lié",
+    date: "2026-09-17",
+    steps: [
+      {
+        path: "/settings/membres",
+        target: '[data-demo="member-companies"]',
+        title: "Un compte appartient désormais à une société",
+        body: "Le périmètre de travail était une lentille : chacun cochait STRUCTURE ou GROUPE dans sa barre latérale, et le serveur filtrait sur ce que le navigateur lui demandait — retirer le paramètre de l'adresse suffisait à voir l'autre société. C'est devenu une appartenance : la société est écrite sur le compte, elle voyage dans le jeton d'accès, et c'est le serveur qui l'impose à chaque lecture. Une pastille à côté du rôle le dit, parce que ce sont les deux dimensions d'un compte — ce qu'il peut faire, et pour laquelle des sociétés. Aucune pastille pour le dirigeant : lui voit tout le groupe, et l'écrire sur chaque ligne ne distinguerait personne. La fiche d'un client, elle, reste entière des deux côtés : seules ses affaires et ses devis se filtrent, sans quoi on perdrait l'historique travaux de son propre client au moment précis où il rappelle.",
+      },
+      {
+        path: "/settings/membres",
+        click: 'button[title^="Modifier"]',
+        target: '#member-company',
+        title: "La société se change seule, et ferme les sessions",
+        body: "Elle a sa propre route, comme le rôle, et pour une raison très concrète : enregistrer le formulaire remplace la ligne entière du compte, si bien qu'une société qui y voyagerait serait effacée le jour où l'on corrige une faute de frappe dans un prénom. Changer la société déconnecte la personne — elle voyage dans le jeton, et sans cela elle verrait encore un quart d'heure durant la société qu'on vient de lui retirer. Deux garde-fous s'appliquent : on n'agit que sur un compte de rang inférieur au sien, et on ne fait entrer quelqu'un que dans sa propre société — sinon la gestion des comptes serait le contournement du découpage. Le lien d'invitation porte la même société : le compte naît déjà rangé, plutôt que d'être classé après coup.",
+      },
+    ],
+  },
+  {
     id: "connexion-par-passkey",
     title: "Entrer par une clé d'accès, sans mot de passe",
     date: "2026-09-16",

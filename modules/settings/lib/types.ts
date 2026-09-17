@@ -1,6 +1,12 @@
 /** Types miroir des DTO exposés par `internal/users` côté API. */
 
 export type WorkspaceUser = {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  role: string;
+  role_name: string;
   /**
    * La société du compte, vide pour tout le groupe.
    *
@@ -9,12 +15,6 @@ export type WorkspaceUser = {
    * sa route à elle, comme le rôle.
    */
   issuer: string;
-  id: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  role: string;
-  role_name: string;
   is_active: boolean;
   last_login_at: string | null;
   created_at: string;

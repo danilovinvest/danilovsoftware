@@ -167,7 +167,12 @@ export function MemberDialog({
             />
             <SelectField
               label="Société"
-              data-demo="member-company"
+              /* `SelectField` ne transmet pas d'attribut arbitraire : il ne
+                 retient qu'un `id`. Un `data-demo` y serait jeté en silence,
+                 et TypeScript ne le dirait pas — un attribut JSX à trait
+                 d'union échappe au contrôle des propriétés en trop. La visite
+                 guidée vise donc cet `id`, ce que sa doctrine prévoit. */
+              id="member-company"
               options={societes}
               value={form.issuer}
               error={fields.issuer}
