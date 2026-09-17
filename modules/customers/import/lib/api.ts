@@ -1,4 +1,4 @@
-import { API_URL } from "@/shared/lib/env";
+import { apiBase } from "@/shared/lib/env";
 import { apiFetch, getAccessToken, refreshSession } from "@/shared/api/client";
 import { ApiError } from "@/shared/api/errors";
 import type { ImportReport, ImportStatus, Plan } from "./types";
@@ -27,7 +27,7 @@ export async function analyze(file?: File): Promise<Plan> {
       body = new FormData();
       body.append("file", file);
     }
-    return fetch(`${API_URL}/v1/imports/excel/analyze`, {
+    return fetch(`${apiBase()}/v1/imports/excel/analyze`, {
       method: "POST",
       headers,
       credentials: "include",

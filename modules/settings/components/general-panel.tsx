@@ -1,6 +1,6 @@
 "use client";
 
-import { API_URL } from "@/shared/lib/env";
+import { apiBase } from "@/shared/lib/env";
 import { WORKSPACE } from "@/shared/lib/workspace";
 import {
   SettingsPage,
@@ -35,7 +35,7 @@ export function GeneralPanel() {
       >
         <SettingsRows>
           <SettingsRow label="API">
-            <span className="font-mono text-xs">{API_URL}</span>
+            <span className="font-mono text-xs">{apiBase()}</span>
           </SettingsRow>
           <SettingsRow
             label="Session"

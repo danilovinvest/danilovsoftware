@@ -1,5 +1,5 @@
 import { apiFetch, type Paginated } from "@/shared/api/client";
-import { API_URL } from "@/shared/lib/env";
+import { apiBase } from "@/shared/lib/env";
 import type {
   Invitation,
   McpToken,
@@ -160,5 +160,5 @@ export function revokeMcpToken(id: string) {
  * tourne sur un autre port, d'où la lecture de `NEXT_PUBLIC_API_URL`.
  */
 export function mcpConnectorUrl(secret: string): string {
-  return `${API_URL}/mcp/${secret}`;
+  return `${apiBase()}/mcp/${secret}`;
 }

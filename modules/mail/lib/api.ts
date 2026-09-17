@@ -1,5 +1,5 @@
 import { apiFetch } from "@/shared/api/client";
-import { API_URL } from "@/shared/lib/env";
+import { apiBase } from "@/shared/lib/env";
 import type {
   BrowseMessage,
   MailAccount,
@@ -133,7 +133,7 @@ export function listAttachments(messageId: string, signal?: AbortSignal) {
  * le navigateur qui télécharge, avec le nom de fichier que le serveur donne.
  */
 export function attachmentUrl(id: string): string {
-  return `${API_URL}/v1/mail/attachments/${id}`;
+  return `${apiBase()}/v1/mail/attachments/${id}`;
 }
 
 export type ConnectInput = {

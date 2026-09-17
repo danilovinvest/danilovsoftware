@@ -1,4 +1,4 @@
-import { API_URL } from "@/shared/lib/env";
+import { apiBase } from "@/shared/lib/env";
 import { ApiError } from "./errors";
 
 /**
@@ -29,7 +29,7 @@ export function getAccessToken() {
  * rejoué — deux refresh en parallèle déconnecteraient donc l'utilisateur.
  */
 export function refreshSession<T extends MinimalSession>(): Promise<T | null> {
-  refreshPromise ??= fetch(`${API_URL}/v1/auth/refresh`, {
+  refreshPromise ??= fetch(`${apiBase()}/v1/auth/refresh`, {
     method: "POST",
     credentials: "include",
   })
@@ -60,7 +60,7 @@ type RequestOptions = {
 };
 
 function buildUrl(path: string, query: RequestOptions["query"]): URL {
-  const url = new URL(`${API_URL}${path}`);
+  const url = new URL(`${apiBase()}${path}`);
   for (const [key, value] of Object.entries(query ?? {})) {
     if (value === undefined || value === null || value === "") continue;
     if (Array.isArray(value)) {
