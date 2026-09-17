@@ -78,11 +78,28 @@ export function MembersPanel() {
     [roles],
   );
 
-  // Un compte absent de la couverture n'a aucune clé : c'est un regroupement
-  // en base, pas une ligne par personne.
-  const keysOf = (id: string) => passkeys.keysByUser.get(id) ?? 0;
+  /*
+    `null` veut dire « on ne sait pas », et la distinction n'est pas
+    théorique.
+
+    Un compte absent de la couverture n'a aucune clé — c'est un regroupement en
+    base, pas une ligne par personne — mais une carte **vide** dit la même chose
+    qu'un compte sans clé. Pendant le chargement, chaque ligne affichait donc
+    « aucune clé », y compris pour qui en avait déjà ; et si la lecture échouait,
+    l'écran restait bloqué sur ce mensonge sans rien en dire. C'est le défaut que
+    ce dépôt a déjà payé sur l'interrupteur de copie OneDrive — un réglage qui
+    mentait — et une relecture l'a rattrapé ici.
+
+    On ne rend donc une pastille que lorsqu'on sait, et l'échec se dit.
+  */
+  const couvertureConnue = !passkeys.loading && passkeys.error === null;
+  const liensConnus = !enrollments.loading && enrollments.error === null;
+  const keysOf = (id: string): number | null =>
+    couvertureConnue ? (passkeys.keysByUser.get(id) ?? 0) : null;
   const liveLinkOf = (id: string) =>
-    enrollments.enrollments.find((entry) => entry.user_id === id) ?? null;
+    liensConnus
+      ? (enrollments.enrollments.find((entry) => entry.user_id === id) ?? null)
+      : null;
 
   const filtered = useMemo(() => {
     const needle = search.trim().toLowerCase();
@@ -233,7 +250,7 @@ export function MembersPanel() {
                               donc en teinte d'alerte, le reste en gris — un
                               compte pourvu n'a rien à signaler.
                             */}
-                            {canWrite && (
+                            {canWrite && keysOf(user.id) !== null && (
                               <Badge
                                 data-demo="cles-par-compte"
                                 className={
@@ -244,7 +261,17 @@ export function MembersPanel() {
                               >
                                 {keysOf(user.id) === 0
                                   ? "aucune clé"
-                                  : `${keysOf(user.id)} clé${keysOf(user.id) > 1 ? "s" : ""}`}
+                                  : `${keysOf(user.id)} clé${(keysOf(user.id) ?? 0) > 1 ? "s" : ""}`}
+                              </Badge>
+                            )}
+                            {/* L'échec se dit, au lieu de laisser croire que
+                                personne n'a de clé. */}
+                            {canWrite && passkeys.error !== null && (
+                              <Badge
+                                className="bg-neutral-soft text-neutral rounded-md"
+                                title={passkeys.error}
+                              >
+                                clés inconnues
                               </Badge>
                             )}
                             {liveLinkOf(user.id) !== null && (

@@ -85,10 +85,12 @@ export function PasskeyLinkDialog({
     setError(null);
     try {
       await revokePasskeyEnrollment(live.id);
-      onChanged();
       const created = await createPasskeyEnrollment(user.id);
       setLink(passkeyEnrollUrl(created.token));
       setEncombre(false);
+      // Une seule fois, après les deux écritures : recharger entre les deux
+      // faisait deux allers-retours pour un état intermédiaire que personne ne
+      // regarde.
       onChanged();
     } catch (cause) {
       setError(errorMessage(cause));
@@ -139,7 +141,10 @@ export function PasskeyLinkDialog({
             <QrCode
               value={link}
               label={`QR code du lien d'enrôlement de ${nom}`}
-              className="size-44 text-foreground"
+              /* Pas de classe de couleur : la polarité du code est fixée par le
+                 composant, parce qu'elle est imposée par les lecteurs et par
+                 le papier, pas par le thème. */
+              className="size-44 rounded-md"
             />
             <p className="text-muted-foreground text-center text-xs">
               À scanner avec le téléphone de {user.first_name || nom} — c&apos;est
@@ -171,7 +176,19 @@ export function PasskeyLinkDialog({
               Terminé
             </Button>
           ) : encombre ? (
-            <Button type="button" disabled={pending} onClick={remplacer}>
+            /* Désactivé quand on ignore quel lien révoquer — la liste n'est pas
+               encore lue, ou sa lecture a échoué. Un bouton qui ne ferait rien
+               serait pire que le dire. */
+            <Button
+              type="button"
+              disabled={pending || live === null}
+              title={
+                live === null
+                  ? "La liste des liens n'est pas disponible : rechargez l'écran."
+                  : undefined
+              }
+              onClick={remplacer}
+            >
               {pending && <Spinner />}
               Révoquer et créer un nouveau lien
             </Button>

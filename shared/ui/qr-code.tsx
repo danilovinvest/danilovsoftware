@@ -14,10 +14,21 @@ import { create } from "qrcode";
  * à eux, le rendu reste à nous.
  *
  * Le dessin est donc le nôtre, et c'est ce qui compte ici : pas de `<canvas>`
- * (flou sur les écrans à haute densité, invisible à l'impression), pas d'image
- * en `data:` — un SVG net à toutes les tailles, qui prend les couleurs du
- * thème. `currentColor` pour les modules, transparent pour le fond : un QR code
- * noir sur blanc collé dans une interface sombre est un rectangle blanc.
+ * (flou sur les écrans à haute densité, mal imprimé), pas d'image en `data:` —
+ * un SVG net à toutes les tailles.
+ *
+ * **Sa polarité ne suit pas le thème, et c'est la seule exception que ce
+ * composant s'autorise.** Un QR code n'est pas un élément d'interface : c'est
+ * une image lisible par machine, et la norme suppose des modules **sombres sur
+ * fond clair**. Le premier jet le dessinait en `currentColor` « pour suivre le
+ * thème » : en thème sombre il rendait des modules clairs sur fond sombre —
+ * polarité inversée, que beaucoup de lecteurs tolèrent sans que rien ne le
+ * garantisse, et justement sur le public visé, des téléphones parfois anciens.
+ * À l'impression c'était pire : les navigateurs n'impriment pas les fonds mais
+ * impriment les tracés, donc des modules gris clair sur papier blanc,
+ * invisibles. Le fond clair est donc **dessiné** (un rectangle du SVG, qui
+ * s'imprime) et l'encre est sombre, dans les deux thèmes. On ne teinte pas une
+ * photographie non plus.
  *
  * La correction d'erreur est volontairement **moyenne** : ces codes vivent à
  * l'écran, pas sur un carton froissé, et une correction plus haute densifie la
@@ -63,7 +74,11 @@ export function QrCode({
       aria-label={label}
       shapeRendering="crispEdges"
     >
-      <path d={carres.join("")} fill="currentColor" />
+      {/* La plaque claire fait partie du dessin : c'est la « zone de silence »
+          de la norme, et c'est aussi ce qui garantit le contraste sur papier,
+          où les fonds CSS ne sont pas imprimés. */}
+      <rect width={side} height={side} fill="#ffffff" />
+      <path d={carres.join("")} fill="#111111" />
     </svg>
   );
 }
