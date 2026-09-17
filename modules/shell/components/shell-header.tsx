@@ -98,6 +98,7 @@ export function ShellHeader({ children }: { children: React.ReactNode }) {
             const apex = hote.split(".").slice(-2).join(".");
             window.location.href = `${window.location.protocol}//${apex}/`;
           }}
+          data-demo="retour-portail"
           aria-label="Revenir au portail"
           title="Revenir au portail"
           className={cn(
