@@ -21,6 +21,7 @@ import * as api from "../lib/api";
 import type {
   Invitation,
   McpToken,
+  PasskeyEnrollment,
   PermissionEntry,
   Role,
   WorkspaceUser,

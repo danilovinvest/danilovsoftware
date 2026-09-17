@@ -5,6 +5,7 @@ import type {
   InvitationPreview,
   Passkey,
   PasskeyChallenge,
+  PasskeyEnrollPreview,
   SessionResponse,
 } from "./types";
 

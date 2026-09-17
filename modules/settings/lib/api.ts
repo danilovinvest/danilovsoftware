@@ -6,6 +6,7 @@ import type {
   McpTokenCreated,
   InvitationCreated,
   InvitationPayload,
+  PasskeyEnrollment,
   PermissionEntry,
   Role,
   RolePayload,
