@@ -7,29 +7,37 @@ import { ENTITY_BY_ID } from "./entities";
 /**
  * Le périmètre de travail : sur quelle société on est.
  *
- * **Ce n'est pas une permission, c'est une lentille.** Un chargé d'affaires de
- * STRUCTURE et un de GROUPE ont le même rôle, pas le même périmètre. Et la
- * fiche client reste entière des deux côtés : cloisonner ferait perdre
- * l'historique travaux de son propre client au moment précis où il rappelle.
- * Ce que le périmètre change, c'est ce qu'on voit en premier — les listes, la
- * navigation, les compteurs.
+ * **C'est l'hôte qui le dit, désormais.** Chaque société a son adresse —
+ * `groupe.…` et `structure.…` — et le portail sur le domaine principal est
+ * l'endroit où l'on choisit. Le sélecteur qui vivait en tête de la barre
+ * latérale a donc disparu : sur le CRM de GROUPE, proposer « STRUCTURE » ou
+ * « tout le groupe » contredisait l'adresse même de la page.
  *
- * Il vit dans le navigateur, comme le thème, mais **pas dans les mêmes
- * préférences** : celles-là décrivent un écran, celui-ci décrit un travail. Le
- * jour où le rôle portera la société, cette valeur en héritera par défaut et ne
- * restera modifiable que pour ceux qui travaillent des deux côtés.
+ * Il a été trois choses successives, et l'ordre a son sens. D'abord une
+ * **lentille** choisie dans le navigateur, que le serveur croyait sur parole —
+ * retirer le paramètre de l'URL suffisait à voir l'autre société. Puis une
+ * **appartenance** portée par le compte, imposée par le serveur. Enfin, pour
+ * qui voit tout le groupe, **l'hôte** : sans cela le dirigeant aurait vu la même
+ * chose des deux côtés, et le découpage n'aurait rien voulu dire pour lui.
  *
- * `"tous"` est le groupe entier — la vue du dirigeant, et le défaut.
+ * `"tous"` reste le groupe entier : c'est ce que rend le développement, où il
+ * n'y a qu'un CRM sur `localhost`, et le repli d'un compte sans société.
  */
 export type Scope = "tous" | "ompt-structure" | "ompt-groupe";
 
-/** Les seules sociétés qui émettent des devis aujourd'hui. */
+/**
+ * Les sociétés du groupe qui ont un CRM.
+ *
+ * Elle ne sert plus à peindre un sélecteur mais à nommer une société et à
+ * proposer les valeurs attribuables dans les réglages — deux emplois où la
+ * liste doit rester unique.
+ */
 export const SCOPES: Array<{ id: Scope; label: string; hint: string }> = [
   { id: "tous", label: "Tout le groupe", hint: "Les deux sociétés" },
   {
     id: "ompt-structure",
     label: "STRUCTURE",
-    hint: "Le bureau d'études — études, sondages, plans d'exécution",
+    hint: "Le bureau d\'études — études, sondages, plans d\'exécution",
   },
   {
     id: "ompt-groupe",
@@ -38,104 +46,71 @@ export const SCOPES: Array<{ id: Scope; label: string; hint: string }> = [
   },
 ];
 
-const CLE = "danilov-crm.scope";
-
-function valide(value: string | null): Scope {
-  return value === "ompt-structure" || value === "ompt-groupe" ? value : "tous";
+/**
+ * La société que l'hôte désigne, ou `null` quand il n'en désigne aucune.
+ *
+ * Fonction pure, pour que la règle se lise et se teste sans navigateur. Le
+ * préfixe suffit : en production le CRM n'est servi que sur les deux
+ * sous-domaines, le portail occupant le domaine principal.
+ */
+export function scopeFromHost(hostname: string): Scope | null {
+  if (hostname.startsWith("groupe.")) return "ompt-groupe";
+  if (hostname.startsWith("structure.")) return "ompt-structure";
+  return null;
 }
 
 /*
- * Un « external store » au sens de React, comme les préférences d'affichage :
- * une valeur qui vit hors de l'arbre et que plusieurs écrans lisent.
- * `useSyncExternalStore` s'en charge sans effet de synchronisation, et sert un
- * instantané serveur distinct — ce qui évite l'écart d'hydratation qu'un
- * `useState(() => localStorage…)` provoquerait.
+ * Un « external store » au sens de React, comme les préférences d'affichage.
+ *
+ * L'hôte vit hors de l'arbre et ne change jamais sans rechargement de page :
+ * il n'y a donc rien à quoi s'abonner, et l'abonnement est un no-op. Ce qui
+ * compte ici, c'est l'**instantané serveur distinct** — le serveur n'a pas de
+ * `window`, et lire l'hôte pendant le rendu donnerait deux réponses, donc
+ * l'écart d'hydratation que ce produit évite partout.
  */
-let cache: Scope | null = null;
-const listeners = new Set<() => void>();
-
-function lire(): Scope {
-  if (typeof window === "undefined") return "tous";
-  if (cache === null) {
-    try {
-      cache = valide(window.localStorage.getItem(CLE));
-    } catch {
-      // Navigation privée, stockage refusé : le groupe entier fait un défaut
-      // honnête, et l'écran fonctionne sans mémoire.
-      cache = "tous";
-    }
-  }
-  return cache;
+function souscrire(): () => void {
+  return () => {};
 }
 
-function serveur(): Scope {
-  return "tous";
+function lire(): Scope | null {
+  if (typeof window === "undefined") return null;
+  return scopeFromHost(window.location.hostname);
 }
 
-function souscrire(listener: () => void) {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
-}
-
-export function setScope(scope: Scope) {
-  cache = scope;
-  try {
-    window.localStorage.setItem(CLE, scope);
-  } catch {
-    // Sans stockage, le choix vaut pour la session : mieux que rien.
-  }
-  for (const listener of listeners) listener();
-}
-
-/** Le périmètre choisi dans ce navigateur, avant que le compte ait son mot à dire. */
-function useStoredScope(): Scope {
-  return useSyncExternalStore(souscrire, lire, serveur);
+function serveur(): Scope | null {
+  return null;
 }
 
 /**
- * La société du compte l'emporte sur la lentille du navigateur.
+ * La société du compte l'emporte sur ce que l'hôte ne dit pas.
  *
  * Fonction pure, pour que la règle se lise et se teste sans React.
  *
- * Une société que cette liste ne connaît pas — les trois sociétés dormantes du
- * groupe — retombe sur le choix stocké. Ce n'est pas une faille : le serveur
- * filtre sur la **vraie** valeur du compte, jamais sur ce que le navigateur
- * demande, si bien que la seule conséquence possible est un libellé inexact,
- * jamais une donnée de trop.
+ * L'ordre est celui de l'autorité : l'hôte d'abord — c'est l'adresse qu'on a
+ * tapée —, puis la société du compte, puis tout le groupe. Une société que
+ * cette liste ne connaît pas (les trois sociétés dormantes) retombe sur tout le
+ * groupe côté affichage ; ce n'est pas une faille, le serveur filtrant sur la
+ * **vraie** valeur du compte et jamais sur ce que le navigateur demande.
  */
-export function resolveScope(company: string, stored: Scope): Scope {
+export function resolveScope(host: Scope | null, company: string): Scope {
+  if (host) return host;
   if (company === "ompt-structure" || company === "ompt-groupe") return company;
-  return stored;
+  return "tous";
 }
 
 /**
- * Le périmètre qui **s'applique**, et non celui qu'on a choisi.
+ * Le périmètre qui **s'applique**.
  *
- * Un compte lié à une société lit la sienne, quoi qu'il ait coché ici : le
- * serveur impose déjà cette société, et afficher un autre périmètre ferait
- * mentir les compteurs sans rien montrer de plus.
- *
- * La résolution vit à cet endroit unique plutôt que dans les huit écrans qui
- * lisent le périmètre — la refaire huit fois la ferait diverger au premier
+ * La résolution vit à cet endroit unique plutôt que dans les cinq écrans qui
+ * lisent le périmètre : la refaire cinq fois la ferait diverger au premier
  * ajustement, et « où en est-on » ne voudrait plus dire la même chose d'un
- * écran à l'autre. C'est pourquoi ce module dépend désormais de `auth` :
- * l'inverse n'existe pas, il n'y a donc aucun cycle.
+ * écran à l'autre. C'est pourquoi ce module dépend de `auth` — l'inverse
+ * n'existe pas, il n'y a donc aucun cycle.
  */
 export function useScope(): Scope {
-  const stored = useStoredScope();
+  const host = useSyncExternalStore(souscrire, lire, serveur);
   const { account } = useAuth();
-  return resolveScope(account?.issuer ?? "", stored);
-}
-
-/**
- * Vrai quand la société est imposée par le compte.
- *
- * Le sélecteur s'efface alors : offrir un choix que le serveur ignore est pire
- * que de ne pas l'offrir — on cliquerait, et rien ne changerait.
- */
-export function useScopeLocked(): boolean {
-  const { account } = useAuth();
-  return (account?.issuer ?? "") !== "";
+  return resolveScope(host, account?.issuer ?? "");
 }
 
 /**
@@ -152,11 +127,9 @@ export function useScopeLocked(): boolean {
  * **« Tout le groupe » n'est pas dans cette liste**, et ce n'est pas un oubli.
  * Radix interdit la chaîne vide comme valeur d'option : `SelectField` la traduit
  * en sentinelle interne et n'affiche l'option « aucune valeur » que si on lui
- * passe un `emptyLabel`. Une option de valeur vide fabriquée ici ne
- * correspondait donc à rien, et le champ s'affichait muet là où il devait dire
- * « Tout le groupe ». C'est à l'appelant de donner cet `emptyLabel` — et
- * seulement s'il est lui-même non lié, sans quoi il proposerait un périmètre
- * que le serveur lui refuserait.
+ * passe un `emptyLabel`. C'est à l'appelant de le donner — et seulement s'il est
+ * lui-même non lié, sans quoi il proposerait un périmètre que le serveur lui
+ * refuserait.
  */
 export function companyOptions(
   actorCompany: string,
@@ -167,15 +140,7 @@ export function companyOptions(
   ).map((entry) => ({ value: entry.id, label: entry.label }));
 }
 
-/**
- * Le libellé d'une société à partir d'une chaîne quelconque.
- *
- * L'API rend la société d'un compte en `string` — vide pour tout le groupe — et
- * non dans le type fermé `Scope` : les cinq sociétés du groupe existent en base,
- * `Scope` n'en nomme que deux. Passer par une assertion de type aurait affirmé
- * une garantie que la donnée ne porte pas ; cette fonction se contente de ce
- * qu'elle sait, et rend la valeur brute pour ce qu'elle ne connaît pas.
- */
+/** Le libellé d'une société à partir d'une chaîne quelconque. */
 export function companyLabel(value: string): string {
   if (value === "") return "Tout le groupe";
   return SCOPES.find((entry) => entry.id === value)?.label ?? value;
@@ -184,6 +149,9 @@ export function companyLabel(value: string): string {
 /**
  * Le paramètre à passer à l'API. Vide pour le groupe entier — le serveur ne
  * filtre alors rien, plutôt que de recevoir une valeur qu'il devrait ignorer.
+ *
+ * Le serveur impose de toute façon la société d'un compte lié : ce paramètre ne
+ * vaut que pour un compte qui voit tout le groupe.
  */
 export function scopeParam(scope: Scope): string | undefined {
   return scope === "tous" ? undefined : scope;

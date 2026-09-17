@@ -15,14 +15,12 @@ export {
   type Entity,
   type EntityRole,
 } from "./lib/entities";
-export { ScopeSwitcher } from "./components/scope-switcher";
 export {
-  SCOPES,
   companyLabel,
   companyOptions,
+  scopeFromHost,
   scopeName,
   scopeParam,
-  setScope,
   useScope,
   type Scope,
 } from "./lib/scope";

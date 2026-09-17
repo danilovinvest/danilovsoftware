@@ -27,7 +27,7 @@ import {
 import { NAV_ACTIVE_CLASS, NAV_ITEM_CLASS } from "@/shared/ui/nav";
 import { cn } from "@/lib/utils";
 import { NAV_SECTIONS } from "../lib/navigation";
-import { ScopeSwitcher, useScope } from "@/modules/group";
+import { useScope } from "@/modules/group";
 import { SidebarSearch } from "./sidebar-search";
 
 /**
@@ -98,7 +98,6 @@ function WorkspaceNav() {
       */}
       <SidebarHeader className="gap-3 px-3 pt-1 pb-1">
         <SidebarSearch />
-        <ScopeSwitcher />
       </SidebarHeader>
 
       <SidebarContent className="gap-0 px-3 pb-3">
