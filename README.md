@@ -11,4 +11,6 @@ cargo tauri build      # paquets .app/.dmg (macOS) ou .msi/.exe (Windows)
 
 Prérequis : Rust stable, `cargo install tauri-cli --version "^2"`, bun.
 
+Publier une version : `scripts/release.sh X.Y.Z` (voir `CLAUDE.md`).
+
 Voir `CLAUDE.md` pour ce que l'application change par rapport au CRM web.

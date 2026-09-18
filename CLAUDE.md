@@ -103,10 +103,56 @@ ligne de React et de Radix tomberaient. Les scripts, eux, restent hachés par
 Tauri. L'adresse de l'API est écrite dans `connect-src` en plus de `config.rs` :
 changer l'une impose de changer l'autre.
 
+## Publier une version
+
+```bash
+scripts/release.sh 0.2.0     # depuis main, arbre propre, à jour avec origin
+```
+
+Le script écrit la version (`package.json`, que lit `tauri.conf.json`, et
+`Cargo.toml`), commite, étiquette `v0.2.0` et pousse. L'étiquette déclenche
+`.github/workflows/release.yml` : un brouillon de release, les paquets macOS
+(universel, `.dmg` + archive de mise à jour) et Windows (NSIS `-setup.exe`) en
+parallèle, puis la publication **seulement si les deux ont réussi**. Les notes
+sont les commits depuis la version précédente ; réécrites sur la page de la
+release, elles changent ce que l'avis de mise à jour affiche.
+
+`.github/workflows/ci.yml` vérifie chaque poussée **sur Linux seulement** — le
+dépôt est privé et une minute macOS y coûte dix minutes Linux. Une release
+coûte de l'ordre de 250 minutes du forfait gratuit (2 000 par mois).
+
+**Les mises à jour passent par l'API, parce que le dépôt est privé.**
+L'application n'a aucun identifiant GitHub : elle interroge
+`<API>/v1/desktop/update/latest.json`, que l'API relaie depuis la dernière
+release publiée avec un jeton en lecture seule (`crm/api/internal/desktop/
+releases.go`). `<API>/v1/desktop/install/{macos|windows}` renvoie vers
+l'installateur du jour : c'est le lien à donner pour une première installation.
+
+**Ce qui rend une mise à jour sûre, c'est la signature.** La clé privée vit
+dans les secrets du dépôt (`TAURI_SIGNING_PRIVATE_KEY`,
+`TAURI_SIGNING_PRIVATE_KEY_PASSWORD`) et dans `~/.tauri/ompt-crm.key` du poste
+qui l'a créée ; la publique est dans `tauri.conf.json`. **La perdre, c'est ne
+plus jamais pouvoir mettre à jour les applications installées** : elles
+refuseraient toute version signée d'une autre clé. Elle se garde dans un
+gestionnaire de mots de passe.
+
+La coque cherche au démarrage puis toutes les quatre heures, et **n'impose
+jamais la relance** (`shared/desktop/update-notice.tsx`) : elle ferait perdre
+une saisie en cours. Une compilation de développement ne cherche rien.
+
+**Sans certificat, les systèmes préviennent à la première installation** : sur
+macOS le paquet est signé *ad hoc* (`signingIdentity: "-"`), il faut l'ouvrir
+une fois par clic droit → Ouvrir ; Windows affiche SmartScreen (« Informations
+complémentaires » → « Exécuter quand même »). Les mises à jour, elles, ne
+déclenchent aucun avertissement : elles arrivent par la coque, pas par un
+navigateur.
+
 ## Ce qui n'est pas fait
 
-- Pas de signature ni de notarisation, pas de mise à jour automatique, et les
-  icônes sont celles de Tauri.
+- Pas de certificat Apple ni Windows, donc pas de notarisation : les secrets
+  `APPLE_CERTIFICATE`, `APPLE_ID`… lus par `tauri-action` suffiront à
+  l'activer le jour où le compte Apple Developer existe. Les icônes sont
+  encore celles de Tauri.
 - `GET /v1/auth/sessions` reconnaît « cet appareil » au cookie : la ligne de
   l'application n'est jamais marquée courante.
 - La visite guidée ne sait pas montrer l'écran de connexion (hors `AppShell`).
