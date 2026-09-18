@@ -21,6 +21,7 @@ import { formatDate, formatRelative } from "@/shared/lib/format";
 import { createMcpToken, mcpConnectorUrl, revokeMcpToken } from "../lib/api";
 import { useMcpTokens } from "../hooks/use-settings";
 import { SettingsPage, SettingsRows, SettingsRow, SettingsSection } from "./settings-page";
+import { openExternal } from "@/shared/desktop/links";
 
 /**
  * Connecter un assistant au CRM.
@@ -85,7 +86,8 @@ export function AssistantPanel() {
     const adresse = secret ?? (await create());
     if (!adresse) return;
     await copy(adresse);
-    window.open(url, "_blank", "noopener,noreferrer");
+    // Dans le navigateur du système : la webview n'ouvre pas de nouvel onglet.
+    await openExternal(url);
   }
 
   async function revoke(id: string) {

@@ -31,6 +31,7 @@ import {
   personName,
 } from "../lib/labels";
 import type { Occurrence } from "../lib/types";
+import { customerHref } from "@/shared/lib/routes";
 
 /**
  * La fiche d'un événement.
@@ -94,7 +95,7 @@ export function EventDialog({
               {event.customer_id && (
                 <Row icon={UserIcon}>
                   <Link
-                    href={`/customers/${event.customer_id}`}
+                    href={customerHref(event.customer_id)}
                     className="text-info inline-flex items-center gap-1 hover:underline"
                   >
                     {event.customer_name || "Voir la fiche"}

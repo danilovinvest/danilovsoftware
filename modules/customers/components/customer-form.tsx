@@ -21,6 +21,7 @@ import {
 } from "../lib/labels";
 import { useAction } from "../hooks/use-customers";
 import type { Customer, CustomerPayload } from "../lib/types";
+import { customerHref } from "@/shared/lib/routes";
 
 function emptyPayload(): CustomerPayload {
   return {
@@ -87,7 +88,7 @@ export function CustomerForm({
     const saved = await save.run(values);
     if (!saved) return;
     if (onSaved) onSaved(saved);
-    else router.push(`/customers/${saved.id}`);
+    else router.push(customerHref(saved.id));
   }
 
   return (

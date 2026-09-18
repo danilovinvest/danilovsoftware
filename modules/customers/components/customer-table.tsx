@@ -32,6 +32,7 @@ import { readJalons } from "../lib/jalons";
 import { EnumBadge } from "./enum-badge";
 import { ProjectCycle } from "./project-cycle";
 import type { CustomerListItem, ProjectSummary, Review } from "../lib/types";
+import { customerHref } from "@/shared/lib/routes";
 
 
 /**
@@ -169,7 +170,7 @@ export function CustomerTable({
 
                       <TableCell>
                         <Link
-                          href={`/customers/${customer.id}`}
+                          href={customerHref(customer.id)}
                           className="font-medium hover:underline"
                         >
                           {customer.display_name}
@@ -243,7 +244,7 @@ export function CustomerTable({
                           <TableCell className="py-2">
                             <div className="border-border ml-1 border-l pl-3">
                               <Link
-                                href={`/customers/${customer.id}`}
+                                href={customerHref(customer.id)}
                                 className="text-sm hover:underline"
                               >
                                 {project.label}

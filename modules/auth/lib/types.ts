@@ -81,19 +81,6 @@ export type Passkey = {
 };
 
 /**
- * Le début d'une cérémonie : ce que le navigateur doit demander à
- * l'authentificateur, et le défi scellé à renvoyer tel quel.
- *
- * `options` n'est pas retypé champ par champ : c'est le protocole WebAuthn, le
- * serveur le produit déjà dans la forme attendue, et en tenir une seconde
- * définition ici la ferait diverger à la première mise à jour.
- */
-export type PasskeyChallenge = {
-  options: { publicKey: Record<string, unknown> };
-  challenge: string;
-};
-
-/**
  * Un appareil connecté, tel que listé dans les réglages.
  *
  * La rotation des refresh tokens ne laisse qu'une ligne vivante par chaîne :
@@ -108,39 +95,4 @@ export type DeviceSession = {
   expires_at: string;
   /** Vrai pour l'appareil qui consulte la liste. */
   current: boolean;
-};
-
-/**
- * Ce qu'un visiteur non authentifié peut lire d'un lien d'invitation.
- *
- * L'adresse est masquée (« c•••@exemple.fr ») : elle confirme au destinataire
- * que le lien lui est destiné sans livrer d'adresse à qui l'aurait intercepté.
- * Un jeton inconnu, expiré, révoqué ou déjà consommé rend tous la même 404 —
- * les distinguer révélerait qu'une invitation a existé.
- */
-export type InvitationPreview = {
-  email_hint: string;
-  first_name: string;
-  last_name: string;
-  role_name: string;
-  expires_at: string;
-};
-
-/**
- * Ce qu'un visiteur non authentifié lit d'un lien d'enrôlement de clé.
- *
- * Même masquage que l'invitation, au caractère près : deux masquages divergents
- * feraient du plus bavard un moyen de tester si une adresse a un compte. Il n'y
- * a ni rôle ni société ici — le compte existe déjà et les porte ; les recopier
- * serait une seconde vérité sur la même personne.
- *
- * `key_count` sert à parler juste : « votre première clé » et « une clé de
- * plus » ne se disent pas pareil.
- */
-export type PasskeyEnrollPreview = {
-  email_hint: string;
-  first_name: string;
-  last_name: string;
-  key_count: number;
-  expires_at: string;
 };

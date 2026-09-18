@@ -38,6 +38,7 @@ import { formatAgo, formatDate, plural } from "@/shared/lib/format";
 import { ErrorNotice, Skeleton, Spinner } from "@/shared/ui/feedback";
 import { useGoogleCalendar } from "../hooks/use-settings";
 import { SettingsPage, SettingsRow, SettingsRows, SettingsSection } from "./settings-page";
+import { openExternal } from "@/shared/desktop/links";
 
 /**
  * Les agendas du CRM, et l'import depuis Google.
@@ -62,6 +63,12 @@ export function AgendaPanel() {
   const [newName, setNewName] = useState("");
   const outcome = useAuthorizationOutcome();
   const journal = useSyncRuns(60);
+
+  // Au retour de Google, l'écran est resté ouvert pendant le consentement :
+  // il relit ses comptes lui-même au lieu d'attendre une recharge de page.
+  useEffect(() => {
+    if (outcome.connected) reload();
+  }, [outcome.connected, reload]);
 
   // Une copie du miroir qui s'achève peut avoir rapporté de quoi importer.
   const lastRunId = journal.last?.id ?? null;
@@ -88,9 +95,13 @@ export function AgendaPanel() {
     setPending(true);
     setError(null);
     try {
-      window.location.href = await authorizeUrl();
+      // Google refuse de s'afficher dans une webview : le consentement se
+      // donne dans le navigateur du système, qui rend ensuite la main à
+      // l'application (`omptcrm://app/settings/agenda`).
+      await openExternal(await authorizeUrl());
     } catch (cause) {
       setError(errorMessage(cause));
+    } finally {
       setPending(false);
     }
   }

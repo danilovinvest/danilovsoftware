@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import { refreshSession, setAccessToken } from "@/shared/api/client";
+import { loginNative, logoutNative } from "@/shared/desktop/session";
 import * as authApi from "./lib/api";
 import type { Account, Permission, SessionResponse } from "./lib/types";
 
@@ -19,8 +20,8 @@ type AuthState = {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   /**
-   * Adopte une session déjà obtenue de l'API — aujourd'hui l'acceptation d'une
-   * invitation, qui ouvre une session sans passer par le formulaire.
+   * Adopte une session déjà obtenue — aujourd'hui la connexion par passkey,
+   * que le navigateur du système rend à la coque (`shared/desktop/session.ts`).
    */
   adoptSession: (session: SessionResponse) => void;
   logout: () => Promise<void>;
@@ -88,13 +89,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     renewRef.current = () => void renew();
   }, [renew]);
 
-  // Au chargement, la session est reconstruite depuis le cookie httpOnly :
-  // rien n'est conservé côté navigateur entre deux visites.
+  // Au lancement, la session est reconstruite par la coque depuis le
+  // trousseau du système : rien n'est conservé dans la page entre deux
+  // lancements.
   useEffect(() => {
     // `renew` est asynchrone : il n'écrit l'état qu'après la réponse du serveur.
     // La règle ne peut pas le prouver et signale l'appel ; lire une session
-    // depuis un cookie httpOnly est précisément une synchronisation avec un
-    // système externe, ce que l'effet est fait pour porter.
+    // depuis le trousseau du système est précisément une synchronisation avec
+    // un système externe, ce que l'effet est fait pour porter.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void renew();
     return clearTimer;
@@ -105,12 +107,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       account,
       loading,
       login: async (email, password) => {
-        applySession(await authApi.login(email, password));
+        applySession(await loginNative<SessionResponse>(email, password));
       },
       adoptSession: applySession,
       logout: async () => {
         try {
-          await authApi.logout();
+          await logoutNative();
         } finally {
           forget();
         }

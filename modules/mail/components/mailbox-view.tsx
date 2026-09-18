@@ -31,6 +31,7 @@ import { AttachDialog } from "./attach-dialog";
 import { MailKindBadge } from "./mail-kind-badge";
 import { MATCHED_BY } from "../lib/labels";
 import type { AttachResult, BrowseMessage, MailKind, MailScope } from "../lib/types";
+import { customerHref } from "@/shared/lib/routes";
 
 /**
  * La boîte de l'entreprise, en entier.
@@ -463,7 +464,7 @@ function Reader({
             />
             {message.matched && message.customer_id ? (
               <Button size="xs" variant="outline" asChild>
-                <Link href={`/customers/${message.customer_id}`}>{message.customer_name}</Link>
+                <Link href={customerHref(message.customer_id)}>{message.customer_name}</Link>
               </Button>
             ) : (
               <>

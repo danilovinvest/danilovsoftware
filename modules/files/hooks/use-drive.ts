@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ApiError } from "@/shared/api/errors";
 import * as api from "../lib/api";
 import type { DriveAccount, DriveListing, DriveRun } from "../lib/types";
@@ -41,12 +41,15 @@ export function useDrive() {
     return () => controller.abort();
   }, [key]);
 
+  // Stable, pour qu'un écran puisse relire au retour de Microsoft sans boucler.
+  const reload = useCallback(() => setToken((value) => value + 1), []);
+
   return {
     accounts: resolved.accounts,
     configured: resolved.configured,
     loading: resolved.key !== key,
     error: resolved.error,
-    reload: () => setToken((value) => value + 1),
+    reload,
   };
 }
 
@@ -126,9 +129,11 @@ export function useDriveRuns() {
     return () => clearTimeout(timer);
   }, [resolved.syncing, resolved.key]);
 
+  const reload = useCallback(() => setToken((value) => value + 1), []);
+
   return {
     runs: resolved.runs,
     syncing: resolved.syncing,
-    reload: () => setToken((value) => value + 1),
+    reload,
   };
 }

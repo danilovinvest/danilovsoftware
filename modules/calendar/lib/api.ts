@@ -130,9 +130,9 @@ export function importFromGoogle() {
 /**
  * Rend l'URL de l'écran de consentement Google.
  *
- * Le navigateur y est envoyé par `window.location`, jamais par `fetch` : Google
- * refuse d'être affiché dans un cadre ou appelé depuis une autre origine, et
- * c'est bien le propre d'un écran de consentement — il doit se voir.
+ * L'adresse s'ouvre dans le navigateur du système, jamais dans l'application :
+ * Google refuse d'être affiché dans une webview, et c'est bien le propre d'un
+ * écran de consentement — il doit se voir, barre d'adresse comprise.
  */
 export async function authorizeUrl() {
   const { url } = await apiFetch<{ url: string }>("/v1/calendar/google/authorize", {

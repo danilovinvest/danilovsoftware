@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/dialog";
 import { HUE } from "@/shared/ui/hue";
 import { cn } from "@/lib/utils";
+import { appHref } from "@/shared/lib/routes";
 import { NAV_SECTIONS, type Hue } from "../lib/navigation";
 import { search, type Hit, type SearchResult } from "../lib/search";
 import { setSearchOpen, useSearchOpen } from "../lib/search-palette";
@@ -154,7 +155,9 @@ export function CommandSearch({ className }: { className?: string }) {
     if (!entry) return;
     setSearchOpen(false);
     setQuery("");
-    router.push(entry.href);
+    // Les liens de la recherche sont fabriqués par le serveur, sous l'ancienne
+    // forme `/customers/<id>` : ils sont traduits à l'arrivée.
+    router.push(appHref(entry.href));
   }
 
   return (

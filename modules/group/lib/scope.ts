@@ -7,21 +7,17 @@ import { ENTITY_BY_ID } from "./entities";
 /**
  * Le périmètre de travail : sur quelle société on est.
  *
- * **C'est l'hôte qui le dit, désormais.** Chaque société a son adresse —
- * `groupe.…` et `structure.…` — et le portail sur le domaine principal est
- * l'endroit où l'on choisit. Le sélecteur qui vivait en tête de la barre
- * latérale a donc disparu : sur le CRM de GROUPE, proposer « STRUCTURE » ou
- * « tout le groupe » contredisait l'adresse même de la page.
- *
- * Il a été trois choses successives, et l'ordre a son sens. D'abord une
+ * Il a été quatre choses successives, et l'ordre a son sens. D'abord une
  * **lentille** choisie dans le navigateur, que le serveur croyait sur parole —
  * retirer le paramètre de l'URL suffisait à voir l'autre société. Puis une
- * **appartenance** portée par le compte, imposée par le serveur. Enfin, pour
- * qui voit tout le groupe, **l'hôte** : sans cela le dirigeant aurait vu la même
- * chose des deux côtés, et le découpage n'aurait rien voulu dire pour lui.
+ * **appartenance** portée par le compte, imposée par le serveur. Puis, pour qui
+ * voit tout le groupe, **l'hôte** — `groupe.…` ou `structure.…`. Enfin, dans
+ * l'application de bureau, qui n'a plus d'hôte, **un choix** gardé sur le
+ * poste : le sélecteur de l'en-tête (`workspace-switcher.tsx`).
  *
- * `"tous"` reste le groupe entier : c'est ce que rend le développement, où il
- * n'y a qu'un CRM sur `localhost`, et le repli d'un compte sans société.
+ * Ce choix ne vaut que pour un compte qui voit tout le groupe. Un compte lié à
+ * une société la garde quoi qu'il choisisse — le serveur l'impose, et
+ * l'en-tête ne lui propose rien.
  */
 export type Scope = "tous" | "ompt-structure" | "ompt-groupe";
 
@@ -46,68 +42,83 @@ export const SCOPES: Array<{ id: Scope; label: string; hint: string }> = [
   },
 ];
 
-/**
- * La société que l'hôte désigne, ou `null` quand il n'en désigne aucune.
- *
- * Fonction pure, pour que la règle se lise et se teste sans navigateur. Le
- * préfixe suffit : en production le CRM n'est servi que sur les deux
- * sous-domaines, le portail occupant le domaine principal.
- */
-export function scopeFromHost(hostname: string): Scope | null {
-  if (hostname.startsWith("groupe.")) return "ompt-groupe";
-  if (hostname.startsWith("structure.")) return "ompt-structure";
-  return null;
+const STORAGE_KEY = "danilov-crm.workspace";
+
+function isScope(value: unknown): value is Scope {
+  return value === "tous" || value === "ompt-structure" || value === "ompt-groupe";
 }
 
 /*
- * Un « external store » au sens de React, comme les préférences d'affichage.
- *
- * L'hôte vit hors de l'arbre et ne change jamais sans rechargement de page :
- * il n'y a donc rien à quoi s'abonner, et l'abonnement est un no-op. Ce qui
- * compte ici, c'est l'**instantané serveur distinct** — le serveur n'a pas de
- * `window`, et lire l'hôte pendant le rendu donnerait deux réponses, donc
- * l'écart d'hydratation que ce produit évite partout.
+ * Un « external store » au sens de React, comme les préférences d'affichage :
+ * le choix vit dans `localStorage`, hors de l'arbre, et tous les écrans qui le
+ * lisent doivent changer ensemble quand on le change. L'instantané serveur est
+ * distinct — l'export statique se prépare sans `window`.
  */
-function souscrire(): () => void {
-  return () => {};
+const listeners = new Set<() => void>();
+let cache: Scope | null | undefined;
+
+function souscrire(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
 }
 
 function lire(): Scope | null {
-  if (typeof window === "undefined") return null;
-  return scopeFromHost(window.location.hostname);
+  if (cache !== undefined) return cache;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    cache = isScope(raw) ? raw : null;
+  } catch {
+    // Stockage refusé : le groupe entier, sans mémoire d'une fois sur l'autre.
+    cache = null;
+  }
+  return cache;
 }
 
 function serveur(): Scope | null {
   return null;
 }
 
+/** Retient la société choisie sur ce poste. */
+export function chooseScope(scope: Scope): void {
+  cache = scope;
+  try {
+    window.localStorage.setItem(STORAGE_KEY, scope);
+  } catch {
+    // Le choix vaut pour la session même si on ne peut pas l'écrire.
+  }
+  for (const listener of listeners) listener();
+}
+
 /**
- * La société du compte l'emporte, puis l'hôte, puis tout le groupe.
+ * La société du compte l'emporte, puis le choix du poste, puis tout le groupe.
  *
  * Fonction pure, pour que la règle se lise et se teste sans React.
  *
- * **L'ordre est celui de l'autorité, et il a été corrigé.** La première version
- * mettait l'hôte devant : un compte lié à GROUPE qui ouvrait `structure.` voyait
- * alors les libellés de STRUCTURE — sa navigation, ses écrans — pendant que le
- * serveur lui renvoyait, à juste titre, les données de GROUPE. Aucune fuite,
- * puisque `Identity.CompanyFilter` impose la société du compte quoi qu'on
- * demande ; mais un écran qui se contredit fait douter du reste, et c'est
- * exactement ce que ce produit refuse ailleurs.
+ * **L'ordre est celui de l'autorité, et il a été corrigé.** Une première
+ * version mettait l'hôte devant : un compte lié à GROUPE qui ouvrait
+ * `structure.` voyait les libellés de STRUCTURE pendant que le serveur lui
+ * renvoyait, à juste titre, les données de GROUPE. Aucune fuite, puisque
+ * `Identity.CompanyFilter` impose la société du compte ; mais un écran qui se
+ * contredit fait douter du reste.
  *
- * Une société du compte est une **appartenance**, imposée par le serveur ; un
- * hôte n'est qu'un **choix**, celui de l'adresse qu'on a tapée. Une
- * appartenance prime sur un choix. L'hôte ne décide donc que pour qui ne porte
- * aucune société — le dirigeant et le trousseau de secours — et c'est
- * précisément le cas pour lequel il a été introduit.
+ * Une société du compte est une **appartenance**, imposée par le serveur ; ce
+ * que le poste retient n'est qu'un **choix**. Une appartenance prime sur un
+ * choix, qui ne décide donc que pour qui ne porte aucune société — le dirigeant
+ * et le trousseau de secours.
  *
  * Une société que cette liste ne connaît pas (les trois sociétés dormantes du
- * groupe) retombe sur l'hôte, puis sur tout le groupe : côté affichage
+ * groupe) retombe sur le choix, puis sur tout le groupe : côté affichage
  * seulement, le serveur filtrant toujours sur la vraie valeur.
  */
-export function resolveScope(host: Scope | null, company: string): Scope {
+export function resolveScope(chosen: Scope | null, company: string): Scope {
   if (company === "ompt-structure" || company === "ompt-groupe") return company;
-  if (host) return host;
+  if (chosen) return chosen;
   return "tous";
+}
+
+/** Vrai quand le compte porte sa société : il n'a alors rien à choisir. */
+export function scopeLocked(company: string): boolean {
+  return company === "ompt-structure" || company === "ompt-groupe";
 }
 
 /**
@@ -120,9 +131,9 @@ export function resolveScope(host: Scope | null, company: string): Scope {
  * n'existe pas, il n'y a donc aucun cycle.
  */
 export function useScope(): Scope {
-  const host = useSyncExternalStore(souscrire, lire, serveur);
+  const chosen = useSyncExternalStore(souscrire, lire, serveur);
   const { account } = useAuth();
-  return resolveScope(host, account?.issuer ?? "");
+  return resolveScope(chosen, account?.issuer ?? "");
 }
 
 /**

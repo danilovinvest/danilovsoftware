@@ -9,6 +9,7 @@ import { EmptyState } from "@/shared/ui/feedback";
 import { useDrive } from "../hooks/use-drive";
 import { ListSkeleton } from "@/shared/ui/loading";
 import { DriveExplorer } from "./drive-explorer";
+import { apiBase } from "@/shared/lib/env";
 
 /**
  * OneDrive : l'arborescence de l'entreprise, telle qu'elle est.
@@ -91,10 +92,9 @@ export function OneDriveView() {
  * renvoie Microsoft désignent presque toujours une de ces cases mal remplie.
  */
 function EntraGuide() {
-  const redirect =
-    typeof window === "undefined"
-      ? "https://votre-domaine/v1/files/callback"
-      : `${window.location.origin}/v1/files/callback`;
+  // L'adresse de rappel est celle de l'API, jamais celle de la page : dans
+  // l'application, la page vit sur `tauri://localhost`.
+  const redirect = `${apiBase()}/v1/files/callback`;
 
   const steps: Array<{ title: string; body: React.ReactNode }> = [
     {

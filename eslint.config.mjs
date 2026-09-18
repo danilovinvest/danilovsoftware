@@ -17,6 +17,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // La compilation de la coque Rust : du code produit par Tauri, pas le nôtre.
+    "src-tauri/target/**",
+    "src-tauri/gen/**",
   ]),
 ]);
 

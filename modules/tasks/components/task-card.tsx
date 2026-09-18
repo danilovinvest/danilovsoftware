@@ -18,6 +18,7 @@ import { DUE_ACCENT, DUE_TEXT, TASK_PRIORITY, TASK_SIZE } from "../lib/labels";
 import { AssigneePicker } from "./assignee-picker";
 import { AutoTaskBadge } from "./auto-task-badge";
 import type { Colleague, Task } from "../lib/types";
+import { customerHref } from "@/shared/lib/routes";
 
 /**
  * Carte du tableau, sur le patron d'un tableau GitHub Projects.
@@ -60,7 +61,9 @@ export function TaskCard({
   const done = task.status === "terminee";
   const due = describeDue(task.due_at, done);
 
-  const customers = task.targets.filter((t) => t.customer_id);
+  const customers = task.targets.filter(
+    (t): t is typeof t & { customer_id: string } => Boolean(t.customer_id),
+  );
   const projects = task.targets.filter((t) => t.project_id);
   const size = task.size ? TASK_SIZE[task.size] : null;
 
@@ -113,7 +116,7 @@ export function TaskCard({
             {customers.map((target) => (
               <Link
                 key={target.id}
-                href={`/customers/${target.customer_id}`}
+                href={customerHref(target.customer_id)}
                 onPointerDown={(event) => event.stopPropagation()}
                 className="hover:text-foreground flex min-w-0 items-center gap-1"
               >
@@ -131,7 +134,7 @@ export function TaskCard({
               return target.owner_id ? (
                 <Link
                   key={target.id}
-                  href={`/customers/${target.owner_id}`}
+                  href={customerHref(target.owner_id)}
                   onPointerDown={(event) => event.stopPropagation()}
                   className="hover:text-foreground flex min-w-0 items-center gap-1"
                 >

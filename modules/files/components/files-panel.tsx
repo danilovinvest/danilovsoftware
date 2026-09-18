@@ -1,7 +1,8 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { openExternal } from "@/shared/desktop/links";
+import { useEffect, useState } from "react";
 import {
   CloudIcon,
   ExternalLinkIcon,
@@ -40,9 +41,17 @@ export function FilesPanel() {
   const [pending, setPending] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  // Le retour de Microsoft passe par l'URL : la route de rappel redirige ici
-  // avec son résultat, succès comme échec.
+  // Le retour de Microsoft passe par l'URL : la route de rappel ramène
+  // l'application ici (`omptcrm://app/settings/fichiers`) avec son résultat,
+  // succès comme échec. L'écran ne se recharge pas — il est resté ouvert
+  // pendant le consentement — donc il relit ses comptes lui-même.
   const returned = params.get("erreur");
+  const connected = params.get("connecte");
+  useEffect(() => {
+    if (!connected && !returned) return;
+    reload();
+    reloadRuns();
+  }, [connected, returned, reload, reloadRuns]);
 
   async function guard(action: () => Promise<unknown>) {
     setPending(true);
@@ -127,8 +136,11 @@ export function FilesPanel() {
               disabled={pending}
               onClick={() =>
                 guard(async () => {
+                  // Le consentement se donne dans le navigateur du système :
+                  // Microsoft s'y reconnaît, et la webview n'a pas de barre
+                  // d'adresse pour qu'on vérifie où l'on tape son mot de passe.
                   const { url } = await api.authorizeUrl();
-                  window.location.href = url;
+                  await openExternal(url);
                 })
               }
             >

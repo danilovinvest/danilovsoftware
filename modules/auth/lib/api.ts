@@ -1,24 +1,9 @@
 import { apiFetch } from "@/shared/api/client";
-import type {
-  Account,
-  DeviceSession,
-  InvitationPreview,
-  Passkey,
-  PasskeyChallenge,
-  PasskeyEnrollPreview,
-  SessionResponse,
-} from "./types";
+import type { Account, DeviceSession, Passkey } from "./types";
 
-export function login(email: string, password: string) {
-  return apiFetch<SessionResponse>("/v1/auth/login", {
-    method: "POST",
-    body: { email, password },
-  });
-}
-
-export function logout() {
-  return apiFetch<void>("/v1/auth/logout", { method: "POST" });
-}
+// Se connecter et se déconnecter passent par la coque, qui garde le refresh
+// token : voir `shared/desktop/session.ts`. Les routes à cookie de l'API
+// n'ont aucun sens depuis `tauri://localhost`.
 
 export function me() {
   return apiFetch<Account>("/v1/auth/me");
@@ -55,43 +40,11 @@ export function logoutAll() {
 /* --- Passkeys ------------------------------------------------------------- */
 
 /*
- * Deux temps par cérémonie, et le défi fait l'aller-retour.
- *
- * Le serveur ne garde rien entre les deux : le défi revient scellé, signé par
- * lui, ce qui lui évite une table de défis à écrire puis à purger à chaque
- * tentative — y compris les tentatives abandonnées, qui sont la majorité.
+ * Aucune cérémonie WebAuthn ici : une clé ne se signe que sur le domaine du CRM,
+ * donc dans le navigateur du système — la connexion passe par la coque
+ * (`shared/desktop/session.ts`), la création par un lien d'enrôlement. Restent
+ * la liste et ce qu'on fait d'une clé existante.
  */
-
-export function beginPasskeyLogin() {
-  return apiFetch<PasskeyChallenge>("/v1/auth/passkey/login/begin", {
-    method: "POST",
-  });
-}
-
-/** Ouvre la session : la réponse est celle d'une connexion, cookie compris. */
-export function finishPasskeyLogin(challenge: string, credential: unknown) {
-  return apiFetch<SessionResponse>("/v1/auth/passkey/login/finish", {
-    method: "POST",
-    body: { challenge, credential },
-  });
-}
-
-export function beginPasskeyRegistration() {
-  return apiFetch<PasskeyChallenge>("/v1/auth/passkey/register/begin", {
-    method: "POST",
-  });
-}
-
-export function finishPasskeyRegistration(
-  challenge: string,
-  credential: unknown,
-  name: string,
-) {
-  return apiFetch<Passkey>("/v1/auth/passkey/register/finish", {
-    method: "POST",
-    body: { challenge, credential, name },
-  });
-}
 
 export function listPasskeys(signal?: AbortSignal) {
   return apiFetch<{ items: Passkey[]; configured: boolean }>("/v1/auth/passkeys", {
@@ -110,17 +63,6 @@ export function deletePasskey(id: string) {
   return apiFetch<void>(`/v1/auth/passkeys/${id}`, { method: "DELETE" });
 }
 
-/* --- Enrôler une clé par lien --------------------------------------------- */
-
-/*
- * Trois routes publiques, et publiques par nécessité : la personne n'a ni clé
- * ni forcément mot de passe — c'est exactement ce que le lien vient réparer.
- * Exiger une session pour en ouvrir une serait circulaire.
- *
- * Elles ne disent rien de qui possède un compte : un jeton inconnu, expiré,
- * révoqué ou déjà utilisé rendent tous la même 404.
- */
-
 /*
  * Un lien d'enrôlement **pour soi-même**, sous simple session.
  *
@@ -137,52 +79,4 @@ export function createMyPasskeyEnrollment() {
   return apiFetch<{ token: string }>("/v1/auth/passkeys/enrollments/me", {
     method: "POST",
   });
-}
-
-export function previewPasskeyEnrollment(token: string, signal?: AbortSignal) {
-  return apiFetch<PasskeyEnrollPreview>(`/v1/auth/passkey/enroll/${token}`, { signal });
-}
-
-export function beginPasskeyEnrollment(token: string) {
-  return apiFetch<PasskeyChallenge>(`/v1/auth/passkey/enroll/${token}/begin`, {
-    method: "POST",
-  });
-}
-
-/** Ouvre la session : la clé vient d'être créée, se reconnecter serait un pas de trop. */
-export function finishPasskeyEnrollment(
-  token: string,
-  challenge: string,
-  credential: unknown,
-  name: string,
-) {
-  return apiFetch<SessionResponse>(`/v1/auth/passkey/enroll/${token}/finish`, {
-    method: "POST",
-    body: { challenge, credential, name },
-  });
-}
-
-/* --- Invitations ---------------------------------------------------------- */
-
-/** Route publique : elle ne demande aucun jeton d'accès. */
-export function previewInvitation(token: string, signal?: AbortSignal) {
-  return apiFetch<InvitationPreview>(
-    `/v1/auth/invitation/${encodeURIComponent(token)}`,
-    { signal },
-  );
-}
-
-/**
- * Accepte le lien et ouvre la session dans la foulée : le compte vient d'être
- * créé et l'invité a choisi son mot de passe, lui demander de se connecter
- * juste après serait un pas de plus pour rien.
- */
-export function acceptInvitation(
-  token: string,
-  payload: { first_name: string; last_name: string; password: string },
-) {
-  return apiFetch<SessionResponse>(
-    `/v1/auth/invitation/${encodeURIComponent(token)}/accept`,
-    { method: "POST", body: payload },
-  );
 }

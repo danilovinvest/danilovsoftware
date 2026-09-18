@@ -1,10 +1,11 @@
 import { apiBase } from "@/shared/lib/env";
+import { refreshNative } from "@/shared/desktop/session";
 import { ApiError } from "./errors";
 
 /**
  * Le jeton d'accès ne vit qu'en mémoire : ni localStorage ni cookie lisible,
- * donc rien à voler pour un script injecté. Il est reconstruit au chargement de
- * la page à partir du cookie de refresh (httpOnly).
+ * donc rien à voler pour un script injecté. Il est reconstruit au lancement par
+ * la coque, qui garde le refresh token dans le trousseau du système.
  */
 let accessToken: string | null = null;
 let refreshPromise: Promise<MinimalSession | null> | null = null;
@@ -21,25 +22,21 @@ export function getAccessToken() {
 }
 
 /**
- * Renouvelle la session à partir du cookie httpOnly.
+ * Renouvelle la session par la coque.
  *
- * C'est le SEUL endroit du front qui appelle /v1/auth/refresh : les appels
- * concurrents partagent la même promesse. L'API fait tourner le refresh token
- * à chaque appel et révoque toutes les sessions si un jeton déjà consommé est
- * rejoué — deux refresh en parallèle déconnecteraient donc l'utilisateur.
+ * C'est le SEUL endroit de l'interface qui demande un renouvellement : les
+ * appels concurrents partagent la même promesse. L'API fait tourner le refresh
+ * token à chaque appel et révoque toutes les sessions si un jeton consommé est
+ * rejoué — la coque sérialise de son côté, et cette promesse partagée évite de
+ * lui envoyer dix demandes quand dix requêtes rencontrent le même 401.
+ *
+ * Une API injoignable rend `null` sans rien oublier : la coque garde le jeton,
+ * qui resservira au prochain essai.
  */
 export function refreshSession<T extends MinimalSession>(): Promise<T | null> {
-  refreshPromise ??= fetch(`${apiBase()}/v1/auth/refresh`, {
-    method: "POST",
-    credentials: "include",
-  })
-    .then(async (response) => {
-      if (!response.ok) {
-        accessToken = null;
-        return null;
-      }
-      const session = (await response.json()) as MinimalSession;
-      accessToken = session.access_token;
+  refreshPromise ??= refreshNative<T & { token_type: string; expires_in: number; user: unknown }>()
+    .then((session) => {
+      accessToken = session?.access_token ?? null;
       return session;
     })
     .catch(() => null)
@@ -89,7 +86,7 @@ export async function apiFetchBlob(
 
   let response: Response;
   try {
-    response = await fetch(buildUrl(path, query), { headers, credentials: "include", signal });
+    response = await fetch(buildUrl(path, query), { headers, signal });
   } catch (cause) {
     if (cause instanceof DOMException && cause.name === "AbortError") throw cause;
     throw new ApiError(0, "network_error", "L'API est injoignable.");
@@ -130,7 +127,6 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
     response = await fetch(url, {
       method,
       headers,
-      credentials: "include",
       signal,
       body: body === undefined ? undefined : isForm ? (body as FormData) : JSON.stringify(body),
     });

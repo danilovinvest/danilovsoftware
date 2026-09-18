@@ -1,31 +1,25 @@
 export { AuthProvider, useAuth, usePermission } from "./auth-context";
 export { LoginForm } from "./components/login-form";
 export { PasskeyLoginButton } from "./components/passkey-login-button";
-export { InvitationForm } from "./components/invitation-form";
-export { PasskeyEnrollForm } from "./components/passkey-enroll-form";
 export { RequireAuth } from "./components/require-auth";
 export type {
   Account,
   DeviceSession,
-  InvitationPreview,
   Passkey,
-  PasskeyEnrollPreview,
   Permission,
   RoleSlug,
 } from "./lib/types";
 /*
- * Les clés d'accès : la cérémonie reste dans ce module.
- *
- * Les réglages demandent « enregistre une clé », pas « commence une cérémonie,
- * traduis deux champs de base64url, puis termine-la » — le protocole est
- * l'affaire du module d'authentification.
+ * Les clés d'accès. Aucune cérémonie WebAuthn ne vit dans l'application : une
+ * clé ne se signe que sur le domaine du CRM, donc dans un navigateur. L'écran
+ * les liste, les renomme, les retire, et émet le lien qui en crée une.
  */
 export {
-  ceremonyCancelled,
-  passkeysSupported,
-  registerPasskey,
-} from "./lib/passkeys";
-export { deletePasskey, listPasskeys, renamePasskey } from "./lib/api";
+  createMyPasskeyEnrollment,
+  deletePasskey,
+  listPasskeys,
+  renamePasskey,
+} from "./lib/api";
 // Opérations d'un compte sur lui-même, consommées par le module réglages.
 export {
   changePassword,

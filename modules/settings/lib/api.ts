@@ -1,5 +1,5 @@
 import { apiFetch, type Paginated } from "@/shared/api/client";
-import { apiBase } from "@/shared/lib/env";
+import { apiBase, webUrl } from "@/shared/lib/env";
 import type {
   Invitation,
   McpToken,
@@ -66,13 +66,12 @@ export function revokeInvitation(id: string) {
 }
 
 /**
- * Le lien que l'on copie. Il pointe vers le front, pas vers l'API : c'est le
- * front qui sert la page d'acceptation, et lui seul connaît son origine — la
- * faire deviner au serveur demanderait un réglage de plus à tenir à jour.
+ * Le lien que l'on copie. Il pointe vers le portail, qui sert la page
+ * d'acceptation : l'invité l'ouvre dans un navigateur, souvent sur un téléphone,
+ * et l'origine de l'application (`tauri://localhost`) n'y mènerait nulle part.
  */
 export function invitationUrl(token: string): string {
-  const origin = typeof window === "undefined" ? "" : window.location.origin;
-  return `${origin}/invitation/${token}`;
+  return `${webUrl()}/invitation/${token}`;
 }
 
 /* --- Enrôler une clé d'accès ---------------------------------------------- */
@@ -113,16 +112,12 @@ export function passkeyCoverage(signal?: AbortSignal) {
 }
 
 /*
- * L'adresse du lien, construite sur l'origine de la page.
- *
- * Elle est lue **à l'appel** et jamais au chargement du module : le portail et
- * les deux CRM sont trois hôtes, et un lien figé à la compilation enverrait la
- * personne sur celui qui n'est pas le sien. La clé, elle, vaut pour les trois —
- * le RPID est l'apex.
+ * L'adresse du lien, sur le portail : la clé se crée dans un navigateur, sur le
+ * domaine du CRM — le RPID est l'apex, et elle vaut ensuite pour les trois
+ * hôtes comme pour l'application.
  */
 export function passkeyEnrollUrl(token: string): string {
-  const origin = typeof window === "undefined" ? "" : window.location.origin;
-  return `${origin}/cle/${token}`;
+  return `${webUrl()}/cle/${token}`;
 }
 
 /* --- Rôles ---------------------------------------------------------------- */

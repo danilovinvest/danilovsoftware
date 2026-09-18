@@ -34,6 +34,7 @@ import { ErrorNotice } from "@/shared/ui/feedback";
 import { STUDY_STATUS, WORKSITE_STATUS } from "../lib/labels";
 import { isSilent } from "../lib/derive";
 import type { Metier, ReadWorksite, WorksiteQuote } from "../lib/types";
+import { customerHref } from "@/shared/lib/routes";
 
 /** Le devis signé de l'affaire, celui qui porte le règlement. */
 function signedQuote(w: ReadWorksite["worksite"]): WorksiteQuote | null {
@@ -402,7 +403,7 @@ function Body({
         )}
 
         <Button asChild variant="outline" size="sm" className="self-start">
-          <Link href={`/customers/${w.customer_id}`}>
+          <Link href={customerHref(w.customer_id)}>
             Ouvrir la fiche client
           </Link>
         </Button>

@@ -13,6 +13,7 @@ import * as api from "../lib/api";
 import { INTERVENTION_SCOPE, PROJECT_STAGE } from "../lib/labels";
 import { EnumBadge } from "./enum-badge";
 import type { MyProject } from "../lib/types";
+import { customerHref } from "@/shared/lib/routes";
 
 /**
  * « Mes dossiers » — ce qui m'attend, et rien d'autre.
@@ -104,7 +105,7 @@ function MyProjectRow({ project }: { project: MyProject }) {
 
   return (
     <Link
-      href={`/customers/${project.customer_id}`}
+      href={customerHref(project.customer_id)}
       className="hover:bg-muted/30 flex flex-wrap items-center gap-x-4 gap-y-1.5 px-4 py-3 transition-colors"
     >
       <div className="min-w-0 flex-1">

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DEMOS, type Demo, type DemoStep } from "../lib/demos";
@@ -30,8 +30,11 @@ export function DemoOverlay() {
 
   return createPortal(
     // La clé remonte le projecteur à chaque étape : la recherche de la zone
-    // repart de zéro au lieu d'hériter du halo précédent.
-    <Spotlight key={`${demo.id}·${tour.step}`} demo={demo} index={tour.step} step={step} />,
+    // repart de zéro au lieu d'hériter du halo précédent. La borne Suspense
+    // tient `useSearchParams`, que l'export statique exige de borner.
+    <Suspense>
+      <Spotlight key={`${demo.id}·${tour.step}`} demo={demo} index={tour.step} step={step} />
+    </Suspense>,
     document.body,
   );
 }
@@ -39,6 +42,10 @@ export function DemoOverlay() {
 function Spotlight({ demo, index, step }: { demo: Demo; index: number; step: DemoStep }) {
   const router = useRouter();
   const pathname = usePathname();
+  const search = useSearchParams().toString();
+  // Une fiche porte son identifiant en paramètre (`shared/lib/routes.ts`) :
+  // l'écran d'une étape se compare donc au chemin **et** à ses paramètres.
+  const here = search ? `${pathname}?${search}` : pathname;
   const [box, setBox] = useState<Box | null>(null);
   const [missing, setMissing] = useState(false);
   const last = index === demo.steps.length - 1;
@@ -52,7 +59,7 @@ function Spotlight({ demo, index, step }: { demo: Demo; index: number; step: Dem
     puis suit sa position — le contenu défile, la fenêtre change de taille.
   */
   useEffect(() => {
-    if (step.path && pathname !== step.path) {
+    if (step.path && here !== step.path) {
       router.push(step.path);
       return;
     }
@@ -87,7 +94,7 @@ function Spotlight({ demo, index, step }: { demo: Demo; index: number; step: Dem
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [pathname, router, step]);
+  }, [here, router, step]);
 
   // Les flèches avancent, Échap quitte : on présente, on ne vise pas des boutons.
   useEffect(() => {

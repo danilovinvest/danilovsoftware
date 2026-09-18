@@ -30,7 +30,6 @@ export async function analyze(file?: File): Promise<Plan> {
     return fetch(`${apiBase()}/v1/imports/excel/analyze`, {
       method: "POST",
       headers,
-      credentials: "include",
       body,
     });
   };

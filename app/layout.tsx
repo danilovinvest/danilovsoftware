@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist_Mono, Inter, Space_Grotesk } from "next/font/google";
 import { AuthProvider } from "@/modules/auth";
 import { PreferencesProvider, THEME_BOOTSTRAP_SCRIPT } from "@/modules/settings";
+import { DesktopBridge } from "@/shared/desktop/desktop-bridge";
 import "./globals.css";
 
 /** Inter est la famille du design system repris de Twenty (FONT_COMMON). */
@@ -53,7 +54,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             soit peint : c'est ce qui évite l'éclair clair au chargement. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
         <PreferencesProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <DesktopBridge />
+            {children}
+          </AuthProvider>
         </PreferencesProvider>
       </body>
     </html>

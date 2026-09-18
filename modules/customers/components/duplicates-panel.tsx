@@ -15,6 +15,7 @@ import * as api from "../lib/api";
 import { CUSTOMER_STATUS } from "../lib/labels";
 import { EnumBadge } from "./enum-badge";
 import type { DuplicatePair, DuplicateSide } from "../lib/types";
+import { customerHref } from "@/shared/lib/routes";
 
 /**
  * Les fiches en double, et de quoi les fondre.
@@ -202,7 +203,7 @@ function Fiche({ side }: { side: DuplicateSide }) {
     <div className="bg-muted/30 flex min-w-0 flex-col gap-1 rounded-lg border p-2.5">
       <span className="flex flex-wrap items-center gap-2">
         <Link
-          href={`/customers/${side.id}`}
+          href={customerHref(side.id)}
           className="hover:text-primary truncate text-sm font-medium"
         >
           {side.name}

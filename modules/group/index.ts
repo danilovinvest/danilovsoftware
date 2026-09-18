@@ -16,9 +16,11 @@ export {
   type EntityRole,
 } from "./lib/entities";
 export {
+  chooseScope,
   companyLabel,
   companyOptions,
-  scopeFromHost,
+  SCOPES,
+  scopeLocked,
   scopeName,
   scopeParam,
   useScope,

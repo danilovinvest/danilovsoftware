@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
-  LayoutGridIcon,
   PanelLeftCloseIcon,
   PanelLeftOpenIcon,
   SettingsIcon,
@@ -15,6 +14,7 @@ import { BrandText } from "@/shared/ui/logo";
 import { WORKSPACE } from "@/shared/lib/workspace";
 import { cn } from "@/lib/utils";
 import { AccountMenu } from "./workspace-menu";
+import { WorkspaceSwitcher } from "./workspace-switcher";
 import { CommandSearch } from "./command-search";
 import { NotificationsMenu } from "./notifications-menu";
 import { DemoMenu } from "@/modules/devtools";
@@ -46,7 +46,6 @@ export const HEADER_BUTTON =
  */
 export function ShellHeader({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const { open, openMobile, isMobile, toggleSidebar } = useSidebar();
   const canInvite = usePermission("users:write");
   const inSettings = pathname.startsWith("/settings");
@@ -76,38 +75,13 @@ export function ShellHeader({ children }: { children: React.ReactNode }) {
           <ToggleIcon />
         </button>
         {/*
-          Le retour au portail, à gauche comme dans toute application qui en a
-          un : c'est un geste de sortie vers le haut, pas une entrée de
-          navigation. De là on rejoint l'autre société, la messagerie, le
-          coffre — tout ce qui n'est pas ce CRM.
-
-          L'hôte est lu **au clic** et jamais au rendu : le serveur n'a pas de
-          `window`, et le lire pendant le rendu donnerait deux réponses, donc
-          l'écart d'hydratation que ce produit évite partout. En développement,
-          un hôte sans point n'a pas d'apex : la racine est alors une
-          navigation interne, donc l'affaire du routeur.
+          La société, à gauche, là où vivait le retour au portail : c'est le
+          même geste — « je vais travailler ailleurs » — maintenant que
+          l'application n'a plus d'adresse à changer.
         */}
-        <button
-          type="button"
-          onClick={() => {
-            const hote = window.location.hostname;
-            if (!hote.includes(".") || hote.endsWith("localhost")) {
-              router.push("/");
-              return;
-            }
-            const apex = hote.split(".").slice(-2).join(".");
-            window.location.href = `${window.location.protocol}//${apex}/`;
-          }}
-          data-demo="retour-portail"
-          aria-label="Revenir au portail"
-          title="Revenir au portail"
-          className={cn(
-            HEADER_BUTTON,
-            "hidden size-9 rounded-xl sm:flex [&_svg]:size-[18px]",
-          )}
-        >
-          <LayoutGridIcon />
-        </button>
+        <WorkspaceSwitcher
+          className={cn(HEADER_BUTTON, "hidden size-9 rounded-xl sm:flex [&_svg]:size-[18px]")}
+        />
         <Link
           href="/dashboard"
           aria-label={`${WORKSPACE.name} — tableau de bord`}

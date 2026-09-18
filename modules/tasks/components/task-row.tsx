@@ -12,6 +12,7 @@ import { DUE_TEXT } from "../lib/labels";
 import { TaskStatusBadge } from "./task-badge";
 import { AutoTaskBadge } from "./auto-task-badge";
 import type { Task, TaskStatus } from "../lib/types";
+import { customerHref } from "@/shared/lib/routes";
 
 /**
  * Une tâche en une ligne. Le geste principal — la cocher — est la case à
@@ -97,7 +98,7 @@ export function TaskRow({
             const fiche = target.customer_id ?? target.owner_id;
             return fiche ? (
               <Badge key={target.id} variant="outline" asChild>
-                <Link href={`/customers/${fiche}`}>{target.label}</Link>
+                <Link href={customerHref(fiche)}>{target.label}</Link>
               </Badge>
             ) : (
               <Badge key={target.id} variant="outline">

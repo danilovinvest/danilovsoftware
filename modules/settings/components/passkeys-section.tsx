@@ -1,23 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { CheckIcon, KeyRoundIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import { CheckIcon, ExternalLinkIcon, KeyRoundIcon, PencilIcon, Trash2Icon } from "lucide-react";
 import {
-  ceremonyCancelled,
+  createMyPasskeyEnrollment,
   deletePasskey,
-  passkeysSupported,
-  registerPasskey,
   renamePasskey,
   type Passkey,
 } from "@/modules/auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ErrorNotice, Skeleton } from "@/shared/ui/feedback";
+import { ErrorNotice, Skeleton, Spinner } from "@/shared/ui/feedback";
+import { QrCode } from "@/shared/ui/qr-code";
 import { errorMessage } from "@/shared/api/errors";
+import { openExternal } from "@/shared/desktop/links";
 import { formatDate } from "@/shared/lib/format";
 
 import { usePasskeys } from "../hooks/use-settings";
+import { passkeyEnrollUrl } from "../lib/api";
 import { SettingsSection } from "./settings-page";
 
 /**
@@ -29,29 +30,37 @@ import { SettingsSection } from "./settings-page";
  *
  * Elle est posée entre le mot de passe et les appareils, parce que c'est la même
  * question posée trois fois : comment j'entre, et depuis où.
+ *
+ * **Aucune clé ne se crée dans l'application.** Une passkey est liée au domaine
+ * du CRM, et la page de l'application vit sur `tauri://localhost`. « Ajouter »
+ * émet donc un lien d'enrôlement pour soi-même — la route que l'accueil d'un
+ * nouvel arrivant emprunte déjà — et le montre de deux façons : un QR code pour
+ * le téléphone, où la clé doit vivre, et un bouton qui l'ouvre dans le
+ * navigateur de cet ordinateur. Émettre un second lien remplace le premier : on
+ * ne met personne dehors en se remplaçant soi-même.
  */
 export function PasskeysSection() {
   const { passkeys, configured, loading, error, reload } = usePasskeys();
-  const [name, setName] = useState("");
+  const [link, setLink] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
 
   async function add() {
-    if (!passkeysSupported()) {
-      setFailure("Ce navigateur ne sait pas créer de clé d'accès.");
-      return;
-    }
     setPending(true);
     setFailure(null);
     try {
-      await registerPasskey(name);
-      setName("");
-      reload();
+      const created = await createMyPasskeyEnrollment();
+      setLink(passkeyEnrollUrl(created.token));
     } catch (cause) {
-      if (!ceremonyCancelled(cause)) setFailure(errorMessage(cause));
+      setFailure(errorMessage(cause));
     } finally {
       setPending(false);
     }
+  }
+
+  function done() {
+    setLink(null);
+    reload();
   }
 
   return (
@@ -76,8 +85,9 @@ export function PasskeysSection() {
             <Skeleton className="h-10 w-full" />
           ) : passkeys.length === 0 ? (
             <p className="text-muted-foreground text-xs">
-              Aucune clé pour l&apos;instant. Enregistrez-en une sur cet appareil
-              pour vous connecter ensuite sans saisir votre adresse.
+              Aucune clé pour l&apos;instant. Créez-en une sur votre téléphone ou
+              dans le navigateur de cet ordinateur pour vous connecter ensuite
+              sans saisir votre adresse.
             </p>
           ) : (
             <div className="divide-y rounded-lg border">
@@ -87,27 +97,44 @@ export function PasskeysSection() {
             </div>
           )}
 
-          <div className="flex flex-wrap items-end gap-2">
-            {/* Le nom est facultatif : sans lui, le serveur nomme la clé
-                d'après ce qu'elle dit d'elle-même plutôt que de laisser une
-                ligne anonyme qu'on n'oserait pas supprimer. */}
-            <Input
-              className="max-w-56"
-              placeholder="iPhone de Grygoriy (facultatif)"
-              aria-label="Nom de la clé"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-            />
-            <Button
-              size="sm"
-              data-demo="passkey-add"
-              disabled={pending || !configured}
-              onClick={add}
-            >
-              <KeyRoundIcon />
-              {pending ? "Enregistrement…" : "Ajouter une clé"}
-            </Button>
-          </div>
+          {link === null ? (
+            <div>
+              <Button
+                size="sm"
+                data-demo="passkey-add"
+                disabled={pending || !configured}
+                onClick={add}
+              >
+                {pending ? <Spinner /> : <KeyRoundIcon />}
+                Ajouter une clé
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-3 rounded-lg border p-4">
+              {/* Le QR code d'abord : c'est le chemin le plus court vers le
+                  téléphone, l'appareil qu'on a toujours sur soi. */}
+              <QrCode
+                value={link}
+                label="QR code de votre lien d'enrôlement"
+                className="size-40 rounded-md"
+              />
+              <p className="text-muted-foreground text-center text-xs">
+                Scannez-le avec votre téléphone, ou créez la clé sur cet
+                ordinateur. Le lien sert une fois et vaut 7 jours.
+              </p>
+              <div className="flex flex-wrap justify-center gap-2">
+                <Button size="sm" variant="outline" onClick={() => void openExternal(link)}>
+                  <ExternalLinkIcon />
+                  Ouvrir dans le navigateur
+                </Button>
+                {/* La liste ne sait pas qu'une clé vient d'être créée ailleurs :
+                    « Terminé » la relit. */}
+                <Button size="sm" onClick={done}>
+                  Terminé
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </SettingsSection>

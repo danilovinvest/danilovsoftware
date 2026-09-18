@@ -24,6 +24,7 @@ import type {
   ProjectPayload,
   ProjectStage,
 } from "../lib/types";
+import { customerHref } from "@/shared/lib/routes";
 
 const STEPS = [
   { title: "Le client", hint: "Qui appelle, et d'où vient la demande" },
@@ -108,7 +109,7 @@ export function CustomerWizard() {
 
   async function finish() {
     const created = await submit.run();
-    if (created) router.push(`/customers/${created.id}`);
+    if (created) router.push(customerHref(created.id));
   }
 
   return (

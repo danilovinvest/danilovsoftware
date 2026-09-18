@@ -1,48 +1,59 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { KeyRoundIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ErrorNotice } from "@/shared/ui/feedback";
 import { errorMessage } from "@/shared/api/errors";
+import { loginWithBrowser } from "@/shared/desktop/session";
 import { useAuth } from "../auth-context";
-import { ceremonyCancelled, loginWithPasskey, passkeysSupported } from "../lib/passkeys";
+import type { SessionResponse } from "../lib/types";
 
 /**
- * Se connecter sans rien taper.
+ * Se connecter par sa clé d'accès — dans le navigateur du système.
  *
- * Les clés sont enregistrées découvrables : le navigateur sait, pour ce
- * domaine, lesquelles il détient, et c'est lui qui demande laquelle utiliser.
- * Réclamer une adresse avant de prouver son identité par une empreinte serait
- * un pas de plus sans rien de gagné.
+ * **Aucune clé ne se signe dans l'application.** Une passkey est liée au
+ * domaine du CRM, et la page de l'application vit sur `tauri://localhost` :
+ * aucun authentificateur n'accepterait. Le bouton ouvre donc le portail dans le
+ * navigateur, où la clé fonctionne telle quelle, et l'application reprend la
+ * main quand le navigateur la lui rend (`omptcrm://auth`).
  *
- * **La compatibilité est vérifiée au clic, pas au rendu.** Lire `window` pour
- * décider d'afficher le bouton donnerait deux réponses — le serveur n'a pas de
- * `window`, le navigateur en a un — donc un écart d'hydratation, et le bouton
- * resterait caché sur un appareil parfaitement capable. Un refus expliqué vaut
- * mieux qu'un bouton absent.
+ * Pendant ce temps l'écran le dit, et offre d'abandonner : la personne peut
+ * fermer l'onglet sans rien terminer, et rien ne reviendrait alors jamais.
  */
 export function PasskeyLoginButton({ onSignedIn }: { onSignedIn: () => void }) {
   const { adoptSession } = useAuth();
-  const [pending, setPending] = useState(false);
+  const [waiting, setWaiting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const cancelRef = useRef<(() => void) | null>(null);
+
+  // Quitter l'écran libère l'écoute : un retour tardif ne doit pas ouvrir une
+  // session derrière un écran qui n'est plus là.
+  useEffect(() => () => cancelRef.current?.(), []);
 
   async function connect() {
-    if (!passkeysSupported()) {
-      setError("Ce navigateur ne sait pas utiliser de clé d'accès.");
-      return;
-    }
-    setPending(true);
+    cancelRef.current?.();
+    setWaiting(true);
     setError(null);
+    const attempt = loginWithBrowser<SessionResponse>();
+    cancelRef.current = attempt.cancel;
     try {
-      adoptSession(await loginWithPasskey());
+      adoptSession(await attempt.session);
       onSignedIn();
     } catch (cause) {
-      // Fermer la feuille de Touch ID n'est pas un échec : on se tait.
-      if (!ceremonyCancelled(cause)) setError(errorMessage(cause));
+      setError(errorMessage(cause));
     } finally {
-      setPending(false);
+      if (cancelRef.current === attempt.cancel) {
+        cancelRef.current = null;
+        setWaiting(false);
+      }
     }
+  }
+
+  function abandon() {
+    cancelRef.current?.();
+    cancelRef.current = null;
+    setWaiting(false);
   }
 
   return (
@@ -57,16 +68,27 @@ export function PasskeyLoginButton({ onSignedIn }: { onSignedIn: () => void }) {
 
       {error && <ErrorNotice message={error} />}
 
-      <Button
-        type="button"
-        variant="outline"
-        size="lg"
-        disabled={pending}
-        onClick={connect}
-      >
-        <KeyRoundIcon />
-        {pending ? "Vérification…" : "Se connecter avec une clé d'accès"}
-      </Button>
+      {waiting ? (
+        <div className="bg-muted/50 flex flex-col gap-2 rounded-lg border p-3 text-sm">
+          <p>
+            Terminez la connexion dans votre navigateur avec votre clé d&apos;accès.
+            L&apos;application reprendra la main d&apos;elle-même.
+          </p>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={connect}>
+              Rouvrir le navigateur
+            </Button>
+            <Button type="button" variant="ghost" size="sm" onClick={abandon}>
+              Annuler
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <Button type="button" variant="outline" size="lg" onClick={connect}>
+          <KeyRoundIcon />
+          Se connecter avec une clé d&apos;accès
+        </Button>
+      )}
     </div>
   );
 }

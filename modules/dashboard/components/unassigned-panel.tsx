@@ -16,6 +16,7 @@ import { errorMessage } from "@/shared/api/errors";
 import { formatDate } from "@/shared/lib/format";
 import { ErrorNotice } from "@/shared/ui/feedback";
 import { Panel, RowShell } from "@/shared/ui/panel";
+import { customerHref } from "@/shared/lib/routes";
 
 /**
  * « À attribuer » : les dossiers actifs que personne ne porte.
@@ -97,7 +98,7 @@ export function UnassignedPanel() {
         )}
         {page?.items.map((item) => (
           <RowShell key={item.id}>
-            <Link href={`/customers/${item.customer_id}`} className="min-w-0 flex-1">
+            <Link href={customerHref(item.customer_id)} className="min-w-0 flex-1">
               <span className="block truncate text-[13px] font-semibold">{item.customer_name}</span>
               <span className="text-muted-foreground block truncate text-[11px]">
                 {item.reference && <span className="font-mono">{item.reference} · </span>}
