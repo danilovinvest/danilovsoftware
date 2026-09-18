@@ -40,6 +40,51 @@ const FICHE_ETUDE = "/customers/7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "cycle-dates-sondage-deux-societes",
+    title: "Le cycle d'une affaire : les dates rendues, le sondage à sa place, deux sociétés",
+    date: "2026-09-18",
+    steps: [
+      {
+        /*
+          SCI Baleine : l'affaire porte douze crans franchis et quatre dates de
+          rendez-vous que la règle de monotonie masquait. C'est la fiche citée
+          par le dirigeant.
+        */
+        path: "/customers/9b327b3b-6696-4f21-bb56-22a3858dac98",
+        target: '[data-demo="project-cycle"]',
+        title: "Les dates des rendez-vous passés sont revenues",
+        body: "La frise masquait toute date qui reculait par rapport à la précédente. L'intention était bonne — « RDV 18 juin » suivi de « Signé 12 juin » fait douter de tout le reste — mais la règle se retournait contre elle : les dates d'une affaire ne sont pas saisies dans l'ordre où les crans se franchissent, et il suffisait qu'un rendez-vous soit enregistré après coup pour qu'il disparaisse de l'écran. Un rendez-vous passé n'en a pas moins eu lieu. La règle est retirée : chaque cran affiche la date qu'il porte, et l'ordre de la frise reste celui des étapes, pas celui du calendrier. Mesuré sur cette affaire : quatre dates réapparaissent.",
+      },
+      {
+        path: "/customers/9b327b3b-6696-4f21-bb56-22a3858dac98",
+        target: '[data-demo="next-action"]',
+        title: "On ne réclame plus une facture d'acompte déjà encaissée",
+        body: "« Facture d'acompte à émettre », lisait-on ici, alors que l'acompte était encaissé et que le dossier était parti au contrôle. La cause : « à faire maintenant » cherchait le premier cran non franchi en partant du début, sans regarder ce qui l'était plus loin. Or un cran postérieur franchi rend les précédents caducs — on ne calcule pas une note de structure avant d'avoir été payé. La prochaine action se lit désormais après le dernier cran franchi, et cette affaire affiche « Calcul à réaliser — l'acompte est encaissé : l'ingénieur peut commencer. »",
+      },
+      {
+        /*
+          ROUGET : devis `etude + sondages`, donc mission « étude » — le cas où
+          le cran sondage doit s'intercaler sans remplacer la mission déduite.
+        */
+        path: "/customers/aeb64050-c806-4628-bc3a-7f1d5974956e",
+        target: '[data-demo="cran-sondage"]',
+        title: "Le sondage se place entre l'acompte et la facture",
+        body: "Le sondage n'existait comme étape que pour les affaires dont c'est la mission entière. Une étude qui comporte aussi un sondage — ce que porte cette affaire, dont les devis sont une étude et des sondages — n'avait nulle part où le dire : le terrain se fait pourtant après l'acompte et avant qu'on facture le solde. Les deux crans s'insèrent donc dans la frise de l'étude, juste après l'acompte, sans déplacer la mission déduite des devis. Mesuré ici : le sondage tombe en septième position, entre l'acompte en sixième et le solde en douzième.",
+      },
+      {
+        /*
+          Reuvenn Keil : une affaire portant des devis des deux sociétés. Elles
+          sont trente et une fiches dans ce cas, sept affaires — le cas est réel
+          et rare, donc il se démontre sur une fiche nommée.
+        */
+        path: "/customers/f8000da5-ce8a-497b-881c-3fa59a9226c9",
+        target: '[data-demo="project-cycle-second"]',
+        title: "Une affaire des deux sociétés porte deux frises",
+        body: "L'étude et les travaux ne se déroulent pas pareil : là où les travaux réservent une date et commandent des matériaux, l'étude remet un rapport de visite puis des plans d'exécution. Une affaire qui porte des devis des deux sociétés n'avait qu'une frise, celle de la société dominante, et la moitié de son parcours n'apparaissait nulle part. Elle en a désormais deux, chacune coiffée du nom de sa société. La seconde se lit seulement : cocher un de ses crans écrirait sur un devis qui appartient à l'autre société, et l'écran le dit au lieu d'offrir un bouton sans effet.",
+      },
+    ],
+  },
+  {
     id: "chercher-dans-les-courriels",
     title: "« Chercher dans les courriels » répond enfin",
     date: "2026-09-17",
