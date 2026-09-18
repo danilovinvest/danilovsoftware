@@ -92,15 +92,21 @@ s'ouvre désormais dans le navigateur.
 et un lien ordinaire remplacerait l'interface sans barre d'adresse pour revenir.
 
 **Les liens qu'on envoie pointent vers le portail** (`webUrl()`) : invitation,
-enrôlement d'une clé. `window.location.origin` vaudrait `tauri://localhost`.
+enrôlement d'une clé. `window.location.origin` vaudrait `tauri://localhost`. Le
+portail sert donc `/invitation/<jeton>` et `/cle/<jeton>` (`panel`, depuis le
+18/09) ; le CRM web garde les siennes pour les liens déjà envoyés.
+
+**La CSP est stricte, et une seule exception y est voulue.**
+`dangerousDisableAssetCspModification: ["style-src"]` : sans elle, Tauri ajoute
+un nonce à `style-src`, et un nonce annule `'unsafe-inline'` — les styles en
+ligne de React et de Radix tomberaient. Les scripts, eux, restent hachés par
+Tauri. L'adresse de l'API est écrite dans `connect-src` en plus de `config.rs` :
+changer l'une impose de changer l'autre.
 
 ## Ce qui n'est pas fait
 
-- Les pages `/invitation/<jeton>` et `/cle/<jeton>` ne vivent pas encore sur le
-  portail : les liens émis depuis l'application y mènent à une 404 tant qu'elles
-  n'y ont pas déménagé depuis `crm/apps`.
-- Pas de CSP (`"csp": null`), pas de signature ni de notarisation, pas de mise à
-  jour automatique.
+- Pas de signature ni de notarisation, pas de mise à jour automatique, et les
+  icônes sont celles de Tauri.
 - `GET /v1/auth/sessions` reconnaît « cet appareil » au cookie : la ligne de
   l'application n'est jamais marquée courante.
 - La visite guidée ne sait pas montrer l'écran de connexion (hors `AppShell`).
