@@ -121,6 +121,24 @@ export function deletePasskey(id: string) {
  * révoqué ou déjà utilisé rendent tous la même 404.
  */
 
+/*
+ * Un lien d'enrôlement **pour soi-même**, sous simple session.
+ *
+ * C'est ce que l'accueil d'un nouvel arrivant affiche en QR code : il crée son
+ * compte sur un ordinateur, sa clé doit naître dans son téléphone, et le
+ * téléphone n'a pas de session. Émettre pour autrui demande `users:write` ; pour
+ * soi, non — s'attribuer une façon d'entrer n'est pas gérer des comptes.
+ *
+ * Le type de retour n'est pas partagé avec le module des réglages : seul le
+ * jeton sert ici, et importer le type d'un autre module pour deux champs en
+ * ferait une dépendance qu'aucun des deux ne veut.
+ */
+export function createMyPasskeyEnrollment() {
+  return apiFetch<{ token: string }>("/v1/auth/passkeys/enrollments/me", {
+    method: "POST",
+  });
+}
+
 export function previewPasskeyEnrollment(token: string, signal?: AbortSignal) {
   return apiFetch<PasskeyEnrollPreview>(`/v1/auth/passkey/enroll/${token}`, { signal });
 }

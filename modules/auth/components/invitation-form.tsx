@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { KeyRoundIcon } from "lucide-react";
+import { CheckIcon, CopyIcon, KeyRoundIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Wordmark } from "@/shared/ui/logo";
+import { QrCode } from "@/shared/ui/qr-code";
 import { ApiError } from "@/shared/api/errors";
 import { ErrorNotice, Spinner } from "@/shared/ui/feedback";
 import { TextField } from "@/shared/ui/form";
@@ -24,6 +26,24 @@ import type { InvitationPreview } from "../lib/types";
  * distingue l'invitation d'un compte créé d'office : personne, pas même celui
  * qui invite, ne connaît le secret.
  */
+/*
+L'adresse du lien d'enrôlement, bâtie sur l'origine de la page.
+
+Lue **à l'appel** et jamais au chargement du module : le serveur n'a pas de
+`window`, et le CRM vit sur trois hôtes — une adresse figée enverrait l'arrivant
+sur celui qui n'est pas le sien. La clé, elle, vaut pour les trois : son RPID est
+l'apex.
+
+La même fonction existe dans le module des réglages. La recopier ici plutôt que
+de l'importer est délibéré : un module n'emprunte qu'à la surface publique d'un
+autre, et trois lignes ne valent pas une dépendance entre l'authentification et
+les réglages.
+*/
+function enrollUrl(token: string): string {
+  const origin = typeof window === "undefined" ? "" : window.location.origin;
+  return `${origin}/cle/${token}`;
+}
+
 export function InvitationForm({ token }: { token: string }) {
   const router = useRouter();
   const { adoptSession } = useAuth();
@@ -37,6 +57,9 @@ export function InvitationForm({ token }: { token: string }) {
   // propose la clé. C'est le seul instant où l'on est sûr que la personne est
   // devant son appareil, et la clé est la façon d'entrer que le CRM veut.
   const [created, setCreated] = useState(false);
+  /** Le jeton du lien à scanner, quand le serveur a pu l'émettre. */
+  const [enrollToken, setEnrollToken] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string>>({});
@@ -81,6 +104,25 @@ export function InvitationForm({ token }: { token: string }) {
       adoptSession(session);
       setCreated(true);
       setPending(false);
+
+      /*
+        Le lien de son téléphone, demandé ici et pas dans un effet.
+
+        La session vient d'être ouverte et la personne est devant l'écran : c'est
+        le seul instant où les deux sont vrais. Le demander depuis un effet
+        obligerait à un `setState` dans un effet, que ce dépôt proscrit, et pour
+        rien — ce n'est pas une synchronisation avec un système extérieur, c'est
+        la suite d'un geste.
+
+        Un échec ne casse pas l'accueil : le bouton « sur cet appareil » reste, et
+        la clé pourra s'ajouter plus tard depuis les réglages.
+      */
+      try {
+        const { token: cle } = await authApi.createMyPasskeyEnrollment();
+        setEnrollToken(cle);
+      } catch {
+        setEnrollToken(null);
+      }
     } catch (cause) {
       if (cause instanceof ApiError && cause.isValidation) setFields(cause.fields);
       else setError(cause instanceof Error ? cause.message : "Échec de l'inscription.");
@@ -117,14 +159,68 @@ export function InvitationForm({ token }: { token: string }) {
           <Wordmark className="h-7 self-start" />
           <h1 className="text-base font-semibold">Votre compte est créé</h1>
           <p className="text-muted-foreground text-sm">
-            Ajoutez une clé d&apos;accès : vous entrerez ensuite par votre
-            empreinte, votre visage ou le code de votre appareil, sans mot de
-            passe à retenir. La clé reste dans cet appareil — le CRM n&apos;en
-            reçoit que la moitié publique.
+            Il reste à créer votre <strong>clé d&apos;accès</strong> : vous
+            entrerez ensuite par votre empreinte, votre visage ou le code de
+            votre appareil, sans mot de passe à retenir.
           </p>
         </div>
 
         {error && <ErrorNotice message={error} />}
+
+        {/*
+          Le QR d'abord, et c'est délibéré.
+
+          Une clé d'accès vit dans **l'appareil** qui la crée. Or on accepte une
+          invitation sur l'ordinateur qu'on a sous la main : créer la clé ici la
+          laisserait sur cet ordinateur, et le téléphone — celui qu'on a toujours
+          sur soi — n'ouvrirait rien. Scanner déplace la création là où elle doit
+          se faire, en un geste et sans rien retaper.
+
+          Le lien reste affiché en dessous pour qui n'a pas de caméra, et le
+          bouton « sur cet appareil » garde sa place pour qui arrive déjà depuis
+          son téléphone.
+        */}
+        {enrollToken !== null && (
+          <div className="flex flex-col items-center gap-3 rounded-lg border p-4">
+            <QrCode
+              value={enrollUrl(enrollToken)}
+              label="QR code pour créer votre clé d'accès sur votre téléphone"
+              className="size-44 rounded-md"
+            />
+            <p className="text-center text-sm font-medium">
+              Scannez avec votre téléphone
+            </p>
+            <p className="text-muted-foreground text-center text-xs">
+              C&apos;est là que la clé doit vivre : c&apos;est l&apos;appareil que
+              vous aurez toujours sur vous. Valable 7 jours, un seul usage.
+            </p>
+            <div className="flex w-full gap-2">
+              <Input
+                readOnly
+                value={enrollUrl(enrollToken)}
+                onFocus={(event) => event.currentTarget.select()}
+                className="font-mono text-xs"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(enrollUrl(enrollToken));
+                    setCopied(true);
+                  } catch {
+                    // Un navigateur peut refuser le presse-papiers : le champ
+                    // reste sélectionnable, et c'est ce qui compte.
+                    setCopied(false);
+                  }
+                }}
+              >
+                {copied ? <CheckIcon /> : <CopyIcon />}
+                {copied ? "Copié" : "Copier"}
+              </Button>
+            </div>
+          </div>
+        )}
 
         <Button
           type="button"
@@ -151,7 +247,11 @@ export function InvitationForm({ token }: { token: string }) {
           }}
         >
           {pending ? <Spinner /> : <KeyRoundIcon />}
-          {pending ? "Création…" : "Créer ma clé d'accès"}
+          {pending
+            ? "Création…"
+            : enrollToken !== null
+              ? "Ou créer la clé sur cet appareil"
+              : "Créer ma clé d'accès"}
         </Button>
 
         <Button variant="ghost" onClick={() => router.replace("/dashboard")}>
