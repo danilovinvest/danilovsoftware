@@ -115,11 +115,49 @@ const ETUDES_ORDRE: Record<ProjectMission, CycleStep[]> = {
   ],
 };
 
+/*
+Le parcours d'une affaire, et le sondage qui s'y glisse.
+
+**Un sondage accompagne souvent une étude**, et la mission ne le dit pas : la
+déduction fait gagner l'étude sur le sondage, à juste titre — c'est l'étude
+qu'on livre. Mais le sondage se fait quand même, et aucun cran ne le portait.
+Mesuré le 17/09 : sur les sept affaires qui ont un devis de sondage, **trois**
+tombent sur une autre mission (`etude+sondages`, `attestation+sondages`), donc
+trois affaires où l'on sonde sans que la frise le montre.
+
+Le cran s'insère donc **après l'acompte** — ou après la signature pour
+l'attestation, qui n'a pas d'acompte — et dans les deux cas **avant la
+facture** : on sonde pour savoir quoi calculer, et on solde après avoir rendu.
+C'est ce que le dirigeant a demandé, et l'ordre de la mission « sondage » le
+faisait déjà : il n'y avait qu'à l'étendre aux deux autres.
+
+Le drapeau vient des **devis**, pas de la mission : c'est le seul endroit qui
+sache qu'un sondage est vendu sur cette affaire-là.
+*/
 export function cycleOrder(
   metier: Metier,
   mission: ProjectMission = "etude_structurelle",
+  avecSondage = false,
 ): CycleStep[] {
-  return metier === "travaux" ? TRAVAUX_ORDRE : ETUDES_ORDRE[mission];
+  if (metier === "travaux") return TRAVAUX_ORDRE;
+
+  const ordre = ETUDES_ORDRE[mission];
+  // La mission « sondage » le porte déjà, au bon endroit.
+  if (!avecSondage || mission === "sondage") return ordre;
+
+  // Après l'acompte quand il existe, après la signature sinon : les deux
+  // laissent le sondage avant le solde, qui est la facture.
+  const ancre = ordre.includes("acompte")
+    ? ordre.indexOf("acompte")
+    : ordre.indexOf("signe");
+  if (ancre < 0) return ordre;
+
+  return [
+    ...ordre.slice(0, ancre + 1),
+    "sondage",
+    "rapport_sondage",
+    ...ordre.slice(ancre + 1),
+  ];
 }
 
 /** Conservé pour ce qui n'a pas besoin de distinguer : la frise des travaux. */
@@ -598,7 +636,18 @@ export function readCycle(
     },
   };
 
-  const raw: Entry[] = cycleOrder(metier, mission).map((step) => ({ step, ...entries[step] }));
+  /*
+    Un sondage est vendu sur cette affaire : la frise doit le montrer.
+
+    `hasSurvey` existait déjà et disait exactement cela — je l'avais réécrit à
+    la main avant de m'en apercevoir. Le type est `sondages`, au pluriel, quand
+    la *mission* est `sondage` au singulier : les deux se lisent à un caractère
+    près, et c'est une raison de plus de n'avoir qu'un seul endroit qui compare.
+  */
+  const raw: Entry[] = cycleOrder(metier, mission, hasSurvey(quotes)).map((step) => ({
+    step,
+    ...entries[step],
+  }));
 
   /*
   Les dates ne peuvent pas reculer.
@@ -609,12 +658,18 @@ export function readCycle(
   toute la frise. Une date qui recule est donc masquée — le cran reste franchi,
   on avoue seulement qu'on ne sait pas quand.
   */
-  let floor: string | null = null;
-  for (const entry of raw) {
-    if (!entry.done || entry.at === null) continue;
-    if (floor !== null && entry.at < floor) entry.at = null;
-    else floor = entry.at;
-  }
+  /*
+    Et cette règle est retirée, à la demande du dirigeant.
+
+    Masquer une date qui recule protégeait la lecture de la frise ; le prix
+    était qu'un **rendez-vous réellement tenu disparaissait**. Le cas est
+    fréquent et n'a rien d'une incohérence d'import : on marque « premier
+    contact » aujourd'hui, en rattrapant une affaire ancienne, et le RDV de juin
+    passe alors sous le plancher. « Il faut remettre la date des RDV même s'ils
+    sont passés » — et c'est juste : une date qu'on a est plus utile qu'une
+    frise parfaitement ordonnée. Deux dates qui se croisent disent quelque chose
+    de vrai sur la saisie ; les cacher ne le corrige pas, ça le dissimule.
+  */
 
   const firstOpen = raw.findIndex((entry) => !entry.done);
   const paused = project.outcome !== null && isPaused(project.outcome);
@@ -962,7 +1017,33 @@ export function nextAction(
   jalons: Jalons,
   now: number,
 ): NextAction {
-  const at = (step: CycleStep) => points.find((point) => point.step === step)!;
+  /*
+    Un cran postérieur déjà franchi rend les précédents caducs.
+
+    « Facture d'acompte à émettre alors que les autres étapes sont déjà
+    faites » : mesuré sur la SCI La Baleine, dont le devis était `realise` sans
+    qu'aucune marque ne porte le devis ni la signature. Chaque branche testait
+    son cran **sans jamais regarder plus loin**, si bien que l'écran réclamait
+    de l'argent déjà encaissé dès qu'une marque manquait en amont.
+
+    La correction vit dans `at`, et non dans chaque branche : tout cran situé
+    avant le dernier franchi est **rendu comme franchi**, donc les branches
+    d'avant se taisent d'elles-mêmes et la prochaine action est la première
+    vraie. Une seule ligne de vérité plutôt que dix tests à tenir d'accord — un
+    garde-fou recopié est un garde-fou qu'on oublie.
+
+    La frise, elle, ne change pas : elle continue de montrer le trou en gris,
+    parce qu'il est réel et qu'on doit pouvoir le combler.
+  */
+  const dernierFranchi = points.reduce(
+    (last, point, index) => (point.state === "done" ? index : last),
+    -1,
+  );
+  const at = (step: CycleStep) => {
+    const index = points.findIndex((point) => point.step === step);
+    const point = points[index]!;
+    return index < dernierFranchi ? { ...point, state: "done" as StepState } : point;
+  };
   const paused = project.outcome !== null && isPaused(project.outcome);
   const closed = project.outcome !== null && !paused;
   const note = project.outcome_note.trim();

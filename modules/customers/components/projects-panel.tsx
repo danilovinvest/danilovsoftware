@@ -465,6 +465,43 @@ function ProjectBlock({
 
   const points = readCycle(project, quotes, interactions, jalons, now, undefined, marks);
   const action = nextAction(points, project, quotes, jalons, now);
+
+  /*
+    Deux sociétés sur une même affaire : deux frises.
+
+    Le même chantier peut porter l'étude de STRUCTURE et les travaux de GROUPE —
+    mesuré le 17/09 : **neuf affaires**. Une seule frise devait alors choisir un
+    métier, et l'autre moitié du travail n'apparaissait nulle part : un parcours
+    d'étude affiché sur une affaire qui attend un chantier, ou l'inverse.
+
+    La seconde frise se **lit seulement**, et c'est délibéré. Cocher un cran
+    écrit sur le devis porteur — l'acompte, le solde — et ce devis appartient à
+    l'une des deux sociétés : rendre les deux frises cliquables ferait écrire
+    l'acompte de GROUPE sur un devis de STRUCTURE, sans que rien ne le dise. On
+    montre, on ne laisse pas écrire au mauvais endroit.
+
+    Les neuf affaires concernées sont toutes au devis ou à la proposition : les
+    deux frises y sont donc presque identiques aujourd'hui, et ne divergeront
+    qu'après la signature. C'est normal, et c'est justement le moment où la
+    distinction comptera.
+  */
+  const devisStructure = quotes.filter((quote) => quote.issuer === "ompt-structure");
+  const devisGroupe = quotes.filter((quote) => quote.issuer === "ompt-groupe");
+  const melangee = devisStructure.length > 0 && devisGroupe.length > 0;
+  const metierPrincipal = projectMetier(project, quotes);
+  const pointsSecond = melangee
+    ? readCycle(
+        project,
+        metierPrincipal === "etudes" ? devisGroupe : devisStructure,
+        interactions,
+        jalons,
+        now,
+        metierPrincipal === "etudes" ? "travaux" : "etudes",
+        marks,
+      )
+    : null;
+  const titreFrise = (metier: "etudes" | "travaux") =>
+    metier === "etudes" ? "OMPT STRUCTURE · étude" : "OMPT GROUPE · travaux";
   const lead = leadQuote(quotes);
   /** Les preuves jointes aux crans de cette affaire. */
   const preuves = (customer.step_proofs ?? []).filter((proof) => proof.project_id === project.id);
@@ -799,6 +836,11 @@ function ProjectBlock({
               on parle. Dans la liste et le tableau de bord, elle se lit.
             */}
             <div data-demo="project-cycle">
+            {melangee && (
+              <span className="text-muted-foreground mb-1.5 block text-[11px] font-medium tracking-wide uppercase">
+                {titreFrise(metierPrincipal)}
+              </span>
+            )}
             <ProjectCycle
               points={points}
               edit={
@@ -838,6 +880,21 @@ function ProjectBlock({
               }
             />
             </div>
+
+            {pointsSecond && (
+              <div className="flex flex-col gap-1.5" data-demo="project-cycle-second">
+                <span className="text-muted-foreground block text-[11px] font-medium tracking-wide uppercase">
+                  {titreFrise(metierPrincipal === "etudes" ? "travaux" : "etudes")}
+                </span>
+                <ProjectCycle points={pointsSecond} />
+                <p className="text-muted-foreground text-[11px]">
+                  Cette affaire porte des devis des deux sociétés, donc deux
+                  parcours. Cette frise se lit seulement : cocher un cran
+                  écrirait sur le devis porteur, qui appartient à l&apos;autre
+                  société.
+                </p>
+              </div>
+            )}
 
             {/*
               L'affaire ne dit pas de quoi il s'agit.
