@@ -1,0 +1,122 @@
+# Publication d'une version : `scripts/release.sh 0.2.0` pousse l'étiquette
+# `v0.2.0`, et ce flux construit, signe et publie les paquets.
+#
+# Trois temps, et l'ordre est la garantie :
+#   1. une release **brouillon** est créée, une seule fois ;
+#   2. macOS et Windows s'y déposent en parallèle, avec `latest.json` ;
+#   3. seulement si les deux ont réussi, le brouillon est publié.
+# L'API relaie la dernière release **publiée** (`/releases/latest` ignore les
+# brouillons) : une application ne voit donc jamais une version à moitié
+# construite — un Windows proposé sans son macOS, ou l'inverse.
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+# Deux étiquettes poussées ensemble ne publient pas en même temps.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  brouillon:
+    name: Brouillon de release
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      id: ${{ steps.create.outputs.id }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      # L'étiquette et `package.json` doivent dire la même version : c'est
+      # `package.json` que la coque compare à la release pour se mettre à jour.
+      - name: L'étiquette correspond à package.json
+        run: |
+          expected="v$(jq -r .version package.json)"
+          if [ "$GITHUB_REF_NAME" != "$expected" ]; then
+            echo "::error::Étiquette $GITHUB_REF_NAME, mais package.json dit $expected"
+            exit 1
+          fi
+      # Les notes sont les commits depuis la version précédente. L'API relaie
+      # le texte de la release, pas celui de `latest.json` : le réécrire sur la
+      # page de la release, même après publication, change ce que l'avis de
+      # mise à jour affiche dans l'application.
+      - name: Créer le brouillon
+        id: create
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          previous="$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)"
+          range="${previous:+$previous..}$GITHUB_REF_NAME"
+          git log --no-merges --pretty='- %s' "$range" > notes.md
+          url="$(gh release create "$GITHUB_REF_NAME" --draft \
+            --title "OMPT CRM $GITHUB_REF_NAME" --notes-file notes.md)"
+          id="$(gh api "repos/$GITHUB_REPOSITORY/releases" \
+            --jq ".[] | select(.tag_name == \"$GITHUB_REF_NAME\") | .id" | head -1)"
+          echo "Brouillon : $url (id $id)"
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+
+  paquets:
+    name: Paquets ${{ matrix.name }}
+    needs: brouillon
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          # Un seul paquet « universel » pour les deux familles de Mac : un
+          # seul téléchargement à donner, et une seule tâche macOS à payer.
+          - name: macOS (universel)
+            runner: macos-latest
+            args: --target universal-apple-darwin
+            targets: aarch64-apple-darwin,x86_64-apple-darwin
+          - name: Windows
+            runner: windows-latest
+            args: ""
+            targets: ""
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.targets }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+          key: ${{ matrix.runner }}
+      - run: bun install --frozen-lockfile
+      - uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          # La clé qui signe les mises à jour. Sa moitié publique est dans
+          # tauri.conf.json : la perdre, c'est ne plus jamais pouvoir mettre à
+          # jour les applications installées.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          releaseId: ${{ needs.brouillon.outputs.id }}
+          tauriScript: bun tauri
+          args: ${{ matrix.args }}
+          updaterJsonPreferNsis: true
+          retryAttempts: 2
+
+  publier:
+    name: Publier
+    needs: [brouillon, paquets]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Publier la release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/${{ needs.brouillon.outputs.id }}" \
+            -F draft=false -f make_latest=true --jq .html_url

@@ -4,18 +4,20 @@
 //! par la webview du système. La coque ne fait que ce que la page ne peut pas
 //! faire elle-même depuis `tauri://localhost` : garder le refresh token hors du
 //! JavaScript, ouvrir le navigateur du système, et reprendre la main quand il
-//! la rend par `omptcrm://`.
+//! la rend par `omptcrm://`, et se mettre à jour.
 
 mod config;
 mod keychain;
 mod links;
 mod session;
+mod updates;
 
 use tauri::{AppHandle, State, WebviewWindowBuilder};
 use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_opener::OpenerExt;
 
 use session::{Failure, Session, SessionView};
+use updates::{Available, Pending};
 
 #[tauri::command]
 async fn session_refresh(session: State<'_, Session>) -> Result<Option<SessionView>, Failure> {
@@ -51,6 +53,23 @@ fn session_login_browser(app: AppHandle, session: State<'_, Session>) -> Result<
         })
 }
 
+/// Cherche une version plus récente. La page le demande au démarrage, puis de
+/// temps en temps : une application qu'on ne ferme jamais doit aussi l'apprendre.
+#[tauri::command]
+async fn update_check(
+    app: AppHandle,
+    pending: State<'_, Pending>,
+) -> Result<Option<Available>, String> {
+    updates::check(&app, &pending).await
+}
+
+/// Installe la version trouvée, puis relance. Toujours au clic : une relance
+/// imposée ferait perdre une saisie en cours.
+#[tauri::command]
+async fn update_install(app: AppHandle, pending: State<'_, Pending>) -> Result<(), String> {
+    updates::install(&app, &pending).await
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let mut builder = tauri::Builder::default();
@@ -68,12 +87,16 @@ pub fn run() {
     builder
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(Session::new())
+        .manage(Pending::default())
         .invoke_handler(tauri::generate_handler![
             session_refresh,
             session_login,
             session_logout,
             session_login_browser,
+            update_check,
+            update_install,
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {

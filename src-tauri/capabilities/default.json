@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "La page ne reçoit que les événements du cœur et l'ouverture de liens externes. Les liens profonds sont traités par la coque, jamais par la page.",
+  "description": "La page ne reçoit que les événements du cœur et l'ouverture de liens externes. Les liens profonds et les mises à jour sont traités par la coque, jamais par la page.",
   "windows": [
     "main"
   ],

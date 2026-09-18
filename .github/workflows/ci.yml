@@ -1,0 +1,72 @@
+# Vérifications de chaque poussée et de chaque demande de fusion.
+#
+# Tout tourne sur Linux, et c'est le choix qui compte : le dépôt est privé, et
+# GitHub y facture une minute macOS dix fois une minute Linux. Les paquets
+# macOS et Windows ne se construisent qu'à la publication (release.yml) ;
+# ici on vérifie ce qui casse le plus souvent — l'interface et la coque.
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["**.md"]
+  pull_request:
+    paths-ignore: ["**.md"]
+
+# Une poussée qui en remplace une autre annule la vérification devenue inutile.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  interface:
+    name: Interface (lint, types, export statique)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
+      - run: bun run typecheck
+      # L'export statique est ce que l'application embarque : une route qui ne
+      # s'exporte pas ne casse qu'ici, jamais dans `next dev`.
+      - run: bun run build
+
+  coque:
+    name: Coque Rust (fmt, clippy, tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: src-tauri
+    steps:
+      - uses: actions/checkout@v7
+      # Les bibliothèques de la webview Linux : Tauri les lie même pour une
+      # simple vérification, faute de quoi `clippy` échoue à l'édition des liens.
+      - name: Dépendances système
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      # `generate_context!` lit `frontendDist` à la compilation : un dossier
+      # vide suffit ici, l'interface est vérifiée par l'autre tâche.
+      - run: mkdir -p ../out
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets --locked -- -D warnings
+      - run: cargo test --locked
