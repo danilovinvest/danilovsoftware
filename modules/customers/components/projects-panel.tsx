@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  ArrowUpRightIcon,
   ChevronRightIcon,
   FilePlusIcon,
   FileTextIcon,
@@ -869,6 +871,29 @@ function ProjectBlock({
             {project.total_amount_ttc === "0" ? "—" : formatAmount(project.total_amount_ttc)}
           </span>
         </CollapsibleTrigger>
+
+        {/*
+          Le chemin vers le chantier, sous l'adresse et hors du bouton qui
+          déplie l'affaire : un lien dans un bouton serait invalide, et le clic
+          déplierait l'affaire au lieu de l'ouvrir. Même forme que le lien vers
+          la fiche d'un rendez-vous de l'agenda.
+
+          Seulement pour une affaire signée ou réalisée : les écrans Chantiers
+          et Études ne listent que celles-là, et un lien vers une liste où
+          l'affaire n'est pas mènerait nulle part.
+        */}
+        {(project.stage === "gagne" || project.stage === "realise") && (
+          <div className="-mt-2 pb-2.5 pl-11">
+            <Link
+              href={`/${metier === "etudes" ? "etudes" : "chantiers"}?affaire=${project.id}`}
+              data-demo="project-worksite-link"
+              className="text-info inline-flex items-center gap-1 text-xs hover:underline"
+            >
+              {metier === "etudes" ? "Voir l'étude" : "Voir le chantier"}
+              <ArrowUpRightIcon className="size-3" />
+            </Link>
+          </div>
+        )}
 
         <CollapsibleContent>
           <div className="flex flex-col gap-4 border-t px-4 py-4">
