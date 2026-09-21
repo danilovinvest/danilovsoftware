@@ -344,7 +344,23 @@ function StepDot({
     n'éteint pas un cran que le fait franchit par ailleurs, et un bouton sans
     effet vaut moins qu'une phrase qui l'explique.
   */
-  const corrigible = write.target === "mark";
+  /*
+    Un cran qui sait écrire sait retirer.
+
+    La règle ne reconnaissait que les marques, si bien qu'un jalon posé par
+    erreur — « matériaux commandés » cliqué de travers — affichait « rien à
+    retirer ici » au-dessus d'une date bien réelle. Les quatre cibles que le
+    cran possède se retirent toutes : sa marque, son jalon, sa liste de
+    matériaux, la date de chantier de l'affaire.
+
+    L'acompte et le solde restent dehors : ils vivent sur le devis, et c'est
+    leur éditeur qui porte son propre « Retirer l'encaissement ».
+  */
+  const corrigible =
+    write.target === "mark" ||
+    write.target === "jalon" ||
+    write.target === "materials" ||
+    write.target === "worksite_date";
   const parLeFait =
     point.state === "done" && !corrigible && (point.byFact || marked === null);
   // L'acompte et le solde vivent sur le devis. Sans devis, il n'y a pas où
