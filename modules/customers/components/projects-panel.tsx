@@ -896,7 +896,7 @@ function ProjectBlock({
                       },
                       onBalance: solder,
                       onBalanceRemove: retirerSolde,
-                      negotiationNote: jalons.negotiation_note,
+                      negotiationNote: marks.negotiation_note,
                       onNote: (note) => onOverride({ negotiation_note: note }),
                       proofs: (step) => preuves.filter((proof) => proof.step === step),
                       autoProofs: (step) => autoProofsOf(step, quotes, interactions),
