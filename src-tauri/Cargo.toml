@@ -1,6 +1,6 @@
 [package]
 name = "ompt-crm"
-version = "0.1.0"
+version = "0.1.1"
 description = "OMPT CRM, application de bureau"
 authors = ["OMPT"]
 license = ""
