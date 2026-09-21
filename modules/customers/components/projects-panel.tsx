@@ -7,6 +7,7 @@ import {
   FilePlusIcon,
   FileTextIcon,
   HardHatIcon,
+  ListOrderedIcon,
   PlusIcon,
   PencilIcon,
   Trash2Icon,
@@ -39,6 +40,7 @@ import {
   leadQuote,
   projectMetier,
   nextAction,
+  parcoursOf,
   readCycle,
   revisions,
   stepMarkedAt,
@@ -56,6 +58,8 @@ import {
   type StepMarks,
 } from "../lib/jalons";
 import { useAction } from "../hooks/use-customers";
+import { useCycleOrders } from "../hooks/use-cycle-orders";
+import { CycleOrderDialog } from "./cycle-order-dialog";
 import { EnumBadge } from "./enum-badge";
 import { InteractionDialog } from "./interaction-dialog";
 import { DeleteProjectDialog } from "./delete-project-dialog";
@@ -486,7 +490,12 @@ function ProjectBlock({
   /** Le tiroir qui complète l'affaire, ouvert depuis l'alerte du dessus. */
   const [completer, setCompleter] = useState(false);
 
-  const points = readCycle(project, quotes, interactions, jalons, now, undefined, marks);
+  /** L'ordre choisi des crans, et qui peut le changer : c'est un réglage de l'entreprise. */
+  const orders = useCycleOrders();
+  const canOrder = usePermission("system:admin");
+  const [ordering, setOrdering] = useState(false);
+
+  const points = readCycle(project, quotes, interactions, jalons, now, undefined, marks, orders);
   const action = nextAction(points, project, quotes, jalons, now);
 
   /*
@@ -521,6 +530,7 @@ function ProjectBlock({
         now,
         metierPrincipal === "etudes" ? "travaux" : "etudes",
         marks,
+        orders,
       )
     : null;
   const titreFrise = (metier: "etudes" | "travaux") =>
@@ -868,10 +878,26 @@ function ProjectBlock({
               on parle. Dans la liste et le tableau de bord, elle se lit.
             */}
             <div data-demo="project-cycle">
-            {melangee && (
-              <span className="text-muted-foreground mb-1.5 block text-[11px] font-medium tracking-wide uppercase">
-                {titreFrise(metierPrincipal)}
-              </span>
+            {(melangee || canOrder) && (
+              <div className="mb-1.5 flex items-center gap-2">
+                {melangee && (
+                  <span className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
+                    {titreFrise(metierPrincipal)}
+                  </span>
+                )}
+                {canOrder && (
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    className="text-muted-foreground ml-auto h-6"
+                    data-demo="frise-reordonner"
+                    onClick={() => setOrdering(true)}
+                  >
+                    <ListOrderedIcon />
+                    Réordonner la frise
+                  </Button>
+                )}
+              </div>
             )}
             <ProjectCycle
               points={points}
@@ -1179,6 +1205,13 @@ function ProjectBlock({
           open={changerSociete}
           onOpenChange={setChangerSociete}
           onSaved={onChanged}
+        />
+      )}
+      {canOrder && (
+        <CycleOrderDialog
+          open={ordering}
+          onOpenChange={setOrdering}
+          initial={parcoursOf(metierPrincipal, mission)}
         />
       )}
       <DeleteProjectDialog

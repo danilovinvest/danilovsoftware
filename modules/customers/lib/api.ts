@@ -15,6 +15,7 @@ import type {
   StepProofInput,
   CustomerPayload,
   CustomerStats,
+  CycleOrderRow,
   DuplicatePair,
   EnrichResult,
   FoundContact,
@@ -29,6 +30,7 @@ import type {
   Review,
   StagePayload,
 } from "./types";
+import type { CycleStep, Parcours } from "./cycle";
 
 /** Toutes les requêtes du module passent par ici : un seul endroit à relire. */
 
@@ -240,6 +242,28 @@ export function getProjectDeletion(id: string, signal?: AbortSignal) {
 }
 
 /** Les sous-traitants réguliers de l'entreprise. */
+/**
+ * L'ordre des crans des frises, un par parcours réordonné.
+ *
+ * Un parcours absent de la liste suit l'ordre par défaut : il n'y a pas de
+ * copie de cet ordre-là en base.
+ */
+export function listCycleOrders(signal?: AbortSignal) {
+  return apiFetch<CycleOrderRow[]>("/v1/cycle-orders", { signal });
+}
+
+export function setCycleOrder(parcours: Parcours, steps: CycleStep[]) {
+  return apiFetch<CycleOrderRow>(`/v1/cycle-orders/${parcours}`, {
+    method: "PUT",
+    body: { steps },
+  });
+}
+
+/** Rétablit l'ordre par défaut, en retirant l'ordre choisi. */
+export function resetCycleOrder(parcours: Parcours) {
+  return apiFetch<void>(`/v1/cycle-orders/${parcours}`, { method: "DELETE" });
+}
+
 export function listSubcontractors(signal?: AbortSignal) {
   return apiFetch<{ items: Subcontractor[] }>("/v1/subcontractors", { signal });
 }

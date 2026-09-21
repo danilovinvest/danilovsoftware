@@ -7,6 +7,7 @@ import { TONE_SOFT, TONE_TEXT } from "@/shared/ui/panel";
 import { leadProject, nextAction, readCycle } from "../lib/cycle";
 import { readJalons, readMarks } from "../lib/jalons";
 import { ProjectCycle } from "./project-cycle";
+import { useCycleOrders } from "../hooks/use-cycle-orders";
 import type { CustomerDetail } from "../lib/types";
 
 /**
@@ -27,6 +28,7 @@ export function CustomerHeadline({
   className?: string;
 }) {
   const [now] = useState(() => Date.now());
+  const orders = useCycleOrders();
 
   const reads = customer.projects.map((project) => {
     const quotes = customer.quotes.filter((quote) => quote.project_id === project.id);
@@ -36,7 +38,7 @@ export function CustomerHeadline({
     // sont sur le même écran, et les laisser lire deux vérités les ferait se
     // contredire à un clic d'intervalle.
     const marks = readMarks(project.id, customer.milestones);
-    const points = readCycle(project, quotes, interactions, jalons, now, undefined, marks);
+    const points = readCycle(project, quotes, interactions, jalons, now, undefined, marks, orders);
     return { project, quotes, action: nextAction(points, project, quotes, jalons, now), points };
   });
 

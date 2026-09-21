@@ -666,6 +666,13 @@ export type ProjectPayload = Omit<
  * dur : ils changent, et un nom écrit dans le code ne se corrige pas depuis
  * l'écran.
  */
+/** L'ordre choisi pour un parcours. Les crans sont du texte : le front ignore ceux qu'il ne connaît pas. */
+export type CycleOrderRow = {
+  parcours: string;
+  steps: string[];
+  updated_at: string;
+};
+
 export type Subcontractor = {
   id: string;
   name: string;

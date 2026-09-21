@@ -40,6 +40,26 @@ const FICHE_ETUDE = "/customers/fiche?id=7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "frise-reordonnable",
+    title: "La frise se réordonne au glisser-déposer",
+    date: "2026-09-21",
+    steps: [
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="frise-reordonner"]',
+        title: "L'ordre des crans appartient à l'entreprise",
+        body: "La frise suivait un ordre écrit dans le code. Elle le garde par défaut, et ce bouton ouvre la fenêtre qui le change — réservée aux comptes qui règlent le CRM, parce que l'ordre choisi vaut pour toutes les affaires du parcours, sur toutes les fiches et pour tout le monde.",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="frise-reordonner"]',
+        target: '[data-demo="frise-ordre"]',
+        title: "Un ordre par parcours, glissé comme une tâche",
+        body: "Même geste que le tableau des tâches. Il y a quatre parcours et non deux sociétés : GROUPE fait des travaux, STRUCTURE a trois missions qui n'ont pas les mêmes crans. Déplacer un cran ne coche ni ne décoche rien — seul l'ordre change, et le cran en cours devient le premier non franchi dans le nouvel ordre. Les crans du sondage, en pointillé, se rangent même quand l'affaire n'en vend pas : c'est là qu'ils tomberont le jour où elle en vendra un. « Ordre par défaut » retire l'ordre choisi au lieu d'en enregistrer une copie, qui divergerait du code au premier cran ajouté.",
+      },
+    ],
+  },
+  {
     id: "virements-d-un-acompte",
     title: "Les virements d'un acompte, un par ligne",
     date: "2026-09-21",

@@ -82,6 +82,8 @@ export type CycleStep =
  */
 export type Metier = "etudes" | "travaux";
 
+const NO_ORDERS: CycleOrders = {};
+
 const TRAVAUX_ORDRE: CycleStep[] = [
   "contact", "rdv", "devis", "negociation", "signe",
   "acompte", "chantier", "materiaux", "solde", "avis",
@@ -138,6 +140,17 @@ export function cycleOrder(
   metier: Metier,
   mission: ProjectMission = "etude_structurelle",
   avecSondage = false,
+  orders: CycleOrders = NO_ORDERS,
+): CycleStep[] {
+  const base = defaultCycleOrder(metier, mission, avecSondage);
+  return applyOrder(base, orders[parcoursOf(metier, mission)]);
+}
+
+/** L'ordre écrit dans le code, celui qui s'applique tant que personne n'en choisit un autre. */
+export function defaultCycleOrder(
+  metier: Metier,
+  mission: ProjectMission = "etude_structurelle",
+  avecSondage = false,
 ): CycleStep[] {
   if (metier === "travaux") return TRAVAUX_ORDRE;
 
@@ -158,6 +171,64 @@ export function cycleOrder(
     "rapport_sondage",
     ...ordre.slice(ancre + 1),
   ];
+}
+
+/*
+  L'ordre des crans, choisi par l'entreprise.
+
+  « Je veux pouvoir la réordonner à ma guise » : l'ordre ci-dessus reste celui
+  par défaut, et un ordre enregistré le remplace pour un **parcours** — les
+  travaux de GROUPE, ou l'une des trois missions de STRUCTURE, qui n'ont pas
+  les mêmes crans et ne peuvent donc pas partager un ordre.
+
+  L'ordre ne change que **l'ordre**. Ce qui franchit un cran, ce qu'il écrit et
+  ce que « à faire maintenant » propose restent attachés au cran, jamais à sa
+  place : déplacer « Négociation » avant « Contact » ne coche ni ne décoche
+  rien. Le cran courant, lui, suit l'ordre — c'est le premier non franchi de la
+  frise telle qu'on l'a voulue.
+*/
+export type Parcours = "travaux" | ProjectMission;
+
+export type CycleOrders = Partial<Record<Parcours, readonly string[]>>;
+
+export const PARCOURS: Array<{ key: Parcours; label: string; metier: Metier }> = [
+  { key: "travaux", label: "GROUPE · travaux", metier: "travaux" },
+  { key: "etude_structurelle", label: "STRUCTURE · étude structurelle", metier: "etudes" },
+  { key: "rapport_attestation", label: "STRUCTURE · rapport / attestation", metier: "etudes" },
+  { key: "sondage", label: "STRUCTURE · sondage", metier: "etudes" },
+];
+
+export function parcoursOf(metier: Metier, mission: ProjectMission = "etude_structurelle"): Parcours {
+  return metier === "travaux" ? "travaux" : mission;
+}
+
+/**
+ * Pose un ordre choisi sur l'ordre par défaut.
+ *
+ * Les deux ne coïncident pas toujours, et la règle tient en deux phrases. Un
+ * cran de l'ordre choisi que ce parcours n'affiche pas est **ignoré** — le
+ * sondage d'une étude qui n'en vend pas, un cran retiré du code. Un cran du
+ * parcours absent de l'ordre choisi est **rajouté après son prédécesseur par
+ * défaut** — un cran ajouté demain apparaît à sa place naturelle au lieu de
+ * disparaître d'une frise réordonnée hier.
+ */
+export function applyOrder(base: CycleStep[], custom?: readonly string[]): CycleStep[] {
+  if (!custom || custom.length === 0) return base;
+  const known = new Set<string>(base);
+  const kept = custom.filter(
+    (step, index): step is CycleStep => known.has(step) && custom.indexOf(step) === index,
+  );
+  if (kept.length === 0) return base;
+
+  return base.reduce<CycleStep[]>((order, step, index) => {
+    if (order.includes(step)) return order;
+    const before = base
+      .slice(0, index)
+      .reverse()
+      .find((previous) => order.includes(previous));
+    const at = before === undefined ? 0 : order.indexOf(before) + 1;
+    return [...order.slice(0, at), step, ...order.slice(at)];
+  }, kept);
 }
 
 /** Conservé pour ce qui n'a pas besoin de distinguer : la frise des travaux. */
@@ -226,7 +297,7 @@ export type CyclePoint = {
   state: StepState;
   /** Quand le cran a été franchi. Nul tant qu'il ne l'est pas. */
   at: string | null;
-  /** Jours d'attente sur le cran courant. Nul ailleurs. */
+  /** Jours d'attente d'un cran ouvert. Nul sur un cran franchi. La frise ne l'affiche que sur le courant. */
   waiting: number | null;
   /** Une phrase, pour l'infobulle et pour la lecture d'ensemble. */
   detail: string;
@@ -239,6 +310,15 @@ export type CyclePoint = {
    * cran franchi.
    */
   byFact: boolean;
+  /**
+   * La place du cran dans l'ordre **par défaut** de son parcours.
+   *
+   * La frise peut suivre un ordre choisi, mais ce qui s'enchaîne dans le métier
+   * ne change pas avec elle : on ne solde pas avant d'avoir signé parce qu'on a
+   * rangé « Solde » en tête. `nextAction` raisonne sur ce rang, jamais sur la
+   * position affichée.
+   */
+  rank: number;
 };
 
 // ---------------------------------------------------------------------------
@@ -401,6 +481,12 @@ export function readCycle(
     reçoit avec les jalons, les passe.
   */
   marks: StepMarks = EMPTY_MARKS,
+  /*
+    L'ordre choisi par l'entreprise, parcours par parcours.
+
+    Vide par défaut, et la frise suit alors l'ordre du code. Voir `applyOrder`.
+  */
+  orders: CycleOrders = NO_ORDERS,
 ): CyclePoint[] {
   const mine = interactions.filter((i) => i.project_id === project.id);
   const lead = leadQuote(quotes);
@@ -673,7 +759,8 @@ export function readCycle(
     la *mission* est `sondage` au singulier : les deux se lisent à un caractère
     près, et c'est une raison de plus de n'avoir qu'un seul endroit qui compare.
   */
-  const raw: Entry[] = cycleOrder(metier, mission, hasSurvey(quotes)).map((step) => ({
+  const byDefault = defaultCycleOrder(metier, mission, hasSurvey(quotes));
+  const raw: Entry[] = cycleOrder(metier, mission, hasSurvey(quotes), orders).map((step) => ({
     step,
     ...entries[step],
   }));
@@ -713,7 +800,15 @@ export function readCycle(
     else if (isCurrent) state = "current";
     else state = "todo";
 
-    const waiting = isCurrent && !entry.done ? daysSince(now, entry.since) : null;
+    /*
+      L'attente de tout cran ouvert, et plus seulement du cran courant.
+
+      La frise ne l'affiche que sur le courant. Mais `nextAction` choisit son
+      cran sur l'ordre par défaut, qui n'est plus forcément l'ordre affiché : il
+      lisait alors une attente nulle, et « 39 jours sans réponse » devenait
+      « en attente de réponse ».
+    */
+    const waiting = entry.done ? null : daysSince(now, entry.since);
     return {
       step: entry.step,
       state,
@@ -721,6 +816,7 @@ export function readCycle(
       waiting,
       detail: describe(entry.step, state, entry.at, waiting, project.outcome),
       byFact: entry.done && entry.fact,
+      rank: byDefault.indexOf(entry.step),
     };
   });
 }
@@ -1064,14 +1160,22 @@ export function nextAction(
     La frise, elle, ne change pas : elle continue de montrer le trou en gris,
     parce qu'il est réel et qu'on doit pouvoir le combler.
   */
+  /*
+    Le rang par défaut, et non la position affichée.
+
+    La frise peut suivre un ordre choisi par l'entreprise. Raisonner sur la
+    position rendait « Affaire terminée » une affaire dont seul le devis était
+    parti, dès qu'on avait rangé « Devis » en dernier : tout ce qui le précédait
+    à l'écran devenait franchi. Ce qui s'enchaîne dans le métier ne bouge pas
+    avec l'affichage.
+  */
   const dernierFranchi = points.reduce(
-    (last, point, index) => (point.state === "done" ? index : last),
+    (last, point) => (point.state === "done" ? Math.max(last, point.rank) : last),
     -1,
   );
   const at = (step: CycleStep) => {
-    const index = points.findIndex((point) => point.step === step);
-    const point = points[index]!;
-    return index < dernierFranchi ? { ...point, state: "done" as StepState } : point;
+    const point = points.find((candidate) => candidate.step === step)!;
+    return point.rank < dernierFranchi ? { ...point, state: "done" as StepState } : point;
   };
   const paused = project.outcome !== null && isPaused(project.outcome);
   const closed = project.outcome !== null && !paused;
