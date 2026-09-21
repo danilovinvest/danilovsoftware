@@ -339,6 +339,8 @@ export type Quote = {
    * déplacent, et c'est le chiffre du relevé qui fait foi.
    */
   balance_amount: string | null;
+  /** Le jour où le solde a été encaissé. Nul pour les soldes reçus avant qu'il existe. */
+  balance_paid_at: string | null;
   comment: string;
   /**
    * Le document du devis, chez Microsoft. Vide pour un devis saisi à la main.
@@ -738,6 +740,7 @@ export type QuotePayload = Omit<
   | "updated_at"
   | "deposit_invoiced_at"
   | "deposit_paid_at"
+  | "balance_paid_at"
   // La provenance d'un montant est un fait du serveur : la lecture des PDF la
   // pose, une correction humaine la reprend. Un formulaire ne l'envoie jamais.
   | "amount_source"

@@ -578,17 +578,20 @@ function ProjectBlock({
     « facturé » ne doit pas effacer ce qu'on a saisi.
   */
   const porteur = quotes.find((q) => q.status === "accepte" || q.status === "realise") ?? lead;
-  const setDeposit = useAction((status: "en_attente" | "recu", amount?: string | null) => {
-    if (!porteur) throw new Error("Aucun devis à mettre à jour sur cette affaire.");
-    return api.setQuoteDeposit(porteur.id, {
-      status,
-      amount: amount === undefined ? porteur.deposit_amount : amount,
-    });
-  });
+  const setDeposit = useAction(
+    (status: "en_attente" | "recu", amount?: string | null, paidAt?: string) => {
+      if (!porteur) throw new Error("Aucun devis à mettre à jour sur cette affaire.");
+      return api.setQuoteDeposit(porteur.id, {
+        status,
+        amount: amount === undefined ? porteur.deposit_amount : amount,
+        paid_at: paidAt,
+      });
+    },
+  );
 
   /** Encaisse l'acompte avec son montant, ou corrige le montant. */
-  async function encaisser(amount: string | null): Promise<boolean> {
-    const ok = (await setDeposit.run("recu", amount)) !== null;
+  async function encaisser(amount: string | null, paidAt?: string): Promise<boolean> {
+    const ok = (await setDeposit.run("recu", amount, paidAt)) !== null;
     if (ok) onChanged();
     return ok;
   }
@@ -611,17 +614,20 @@ function ProjectBlock({
     Deux actions distinctes parce qu'un solde encaissé n'implique pas un
     acompte, ni l'inverse — on peut solder une prestation payée en une fois.
   */
-  const setBalance = useAction((status: "en_attente" | "recu", amount?: string | null) => {
-    if (!porteur) throw new Error("Aucun devis à mettre à jour sur cette affaire.");
-    return api.setQuoteBalance(porteur.id, {
-      status,
-      amount: amount === undefined ? porteur.balance_amount : amount,
-    });
-  });
+  const setBalance = useAction(
+    (status: "en_attente" | "recu", amount?: string | null, paidAt?: string) => {
+      if (!porteur) throw new Error("Aucun devis à mettre à jour sur cette affaire.");
+      return api.setQuoteBalance(porteur.id, {
+        status,
+        amount: amount === undefined ? porteur.balance_amount : amount,
+        paid_at: paidAt,
+      });
+    },
+  );
 
   /** Encaisse le solde avec son montant, ou corrige le montant. */
-  async function solder(amount: string | null): Promise<boolean> {
-    const ok = (await setBalance.run("recu", amount)) !== null;
+  async function solder(amount: string | null, paidAt?: string): Promise<boolean> {
+    const ok = (await setBalance.run("recu", amount, paidAt)) !== null;
     if (ok) onChanged();
     return ok;
   }
@@ -938,12 +944,16 @@ function ProjectBlock({
                       deposit: {
                         amount: jalons.deposit_amount,
                         total: depositTotalOf(porteur),
+                        // La date réelle, jamais le repli sur l'émission du
+                        // devis : la préremplir la ferait passer pour un fait.
+                        paidAt: porteur?.deposit_paid_at ?? null,
                       },
                       onDeposit: encaisser,
                       onDepositRemove: retirerAcompte,
                       balance: {
                         amount: porteur?.balance_amount ?? null,
                         total: depositTotalOf(porteur),
+                        paidAt: porteur?.balance_paid_at ?? null,
                       },
                       onBalance: solder,
                       onBalanceRemove: retirerSolde,
@@ -1253,6 +1263,7 @@ function ProjectBlock({
         open={acompte}
         onOpenChange={setAcompte}
         amount={jalons.deposit_amount}
+        paidAt={porteur?.deposit_paid_at ?? null}
         paid={jalons.deposit_paid_at !== null}
         total={depositTotalOf(porteur)}
         pending={setDeposit.pending}

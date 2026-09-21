@@ -323,7 +323,8 @@ export function updateQuote(id: string, payload: QuotePayload) {
  */
 export function setQuoteDeposit(
   id: string,
-  payload: { status: PaymentStatus; amount: string | null },
+  /** `paid_at` (AAAA-MM-JJ) corrige le jour de l'encaissement ; absent, il ne change pas. */
+  payload: { status: PaymentStatus; amount: string | null; paid_at?: string },
 ) {
   return apiFetch<Quote>(`/v1/quotes/${id}/deposit`, { method: "PUT", body: payload });
 }
@@ -337,7 +338,8 @@ export function setQuoteDeposit(
  */
 export function setQuoteBalance(
   id: string,
-  payload: { status: PaymentStatus; amount: string | null },
+  /** `paid_at` (AAAA-MM-JJ) corrige le jour de l'encaissement ; absent, il ne change pas. */
+  payload: { status: PaymentStatus; amount: string | null; paid_at?: string },
 ) {
   return apiFetch<Quote>(`/v1/quotes/${id}/balance`, { method: "PUT", body: payload });
 }
