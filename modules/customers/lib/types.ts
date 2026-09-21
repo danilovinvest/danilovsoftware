@@ -503,7 +503,25 @@ export type QuotePayment = {
   created_by_name: string;
 };
 
+/**
+ * De qui vient un client recommandé : une fiche, ou l'interlocuteur d'une fiche.
+ * `customer_id` est toujours la fiche à ouvrir.
+ */
+export type Referrer = {
+  kind: "fiche" | "interlocuteur";
+  id: string;
+  name: string;
+  customer_id: string;
+  /** La fiche de l'interlocuteur. Vide pour une fiche. */
+  parent_name: string;
+};
+
+/** Une ligne du menu des parrains. */
+export type ReferrerCandidate = Referrer & { status: string; city: string };
+
 export type CustomerDetail = Customer & {
+  /** De qui vient ce client, quand il a été recommandé. */
+  referrer: Referrer | null;
   contacts: Contact[];
   projects: Project[];
   quotes: Quote[];

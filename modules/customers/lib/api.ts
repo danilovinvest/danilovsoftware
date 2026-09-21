@@ -16,6 +16,8 @@ import type {
   CustomerPayload,
   CustomerStats,
   CycleOrderRow,
+  Referrer,
+  ReferrerCandidate,
   DuplicatePair,
   EnrichResult,
   FoundContact,
@@ -262,6 +264,28 @@ export function setCycleOrder(parcours: Parcours, steps: CycleStep[]) {
 /** Rétablit l'ordre par défaut, en retirant l'ordre choisi. */
 export function resetCycleOrder(parcours: Parcours) {
   return apiFetch<void>(`/v1/cycle-orders/${parcours}`, { method: "DELETE" });
+}
+
+/** Tout ce qui peut avoir recommandé un client : fiches, archives comprises, et interlocuteurs. */
+export function searchReferrers(q: string, exclude: string | null, signal?: AbortSignal) {
+  return apiFetch<ReferrerCandidate[]>("/v1/referrers", {
+    query: { q, exclude: exclude ?? undefined },
+    signal,
+  });
+}
+
+/** Pose ou retire le parrain. Sa propre route : le formulaire de la fiche l'effacerait. */
+export function setCustomerReferrer(
+  id: string,
+  referrer: Pick<Referrer, "kind" | "id"> | null,
+) {
+  return apiFetch<{ referrer: Referrer | null }>(`/v1/customers/${id}/referrer`, {
+    method: "PUT",
+    body: {
+      customer_id: referrer?.kind === "fiche" ? referrer.id : null,
+      contact_id: referrer?.kind === "interlocuteur" ? referrer.id : null,
+    },
+  });
 }
 
 export function listSubcontractors(signal?: AbortSignal) {
