@@ -22,6 +22,20 @@ export type AutoProof = {
 
 const isInvoice = (quote: Quote) => quote.reference.toUpperCase().startsWith("FA");
 
+/*
+  Une facture d'acompte se reconnaît à ce qu'elle dit d'elle-même.
+
+  Les deux crans montraient toutes les factures de l'affaire, si bien que la
+  facture de solde apparaissait sous l'acompte — « il y a une facture jointe à
+  la facture d'acompte ». Mesuré le 21/09 : 30 affaires portent plusieurs
+  factures. La ligne que la lecture du PDF a retenue les départage — « Total
+  acompte HT », « Montant acompte HT » d'un côté, « Montant de la facture HT »
+  de l'autre —, et le nom du fichier ou l'intitulé à défaut (« Acompte N°1 sur
+  devis… »).
+*/
+const isDepositInvoice = (quote: Quote) =>
+  /acompte/i.test(`${quote.amount_evidence} ${quote.drive_name} ${quote.label}`);
+
 function quoteProof(quote: Quote, prefix: string): AutoProof {
   return {
     label: `${prefix} ${quote.reference || quote.label || ""}`.trim(),
@@ -62,8 +76,13 @@ export function autoProofsOf(
     case "signe":
       return signes.map((quote) => quoteProof(quote, "Devis signé"));
     case "acompte":
+      return factures
+        .filter(isDepositInvoice)
+        .map((quote) => quoteProof(quote, "Facture d'acompte"));
     case "solde":
-      return factures.map((quote) => quoteProof(quote, "Facture"));
+      return factures
+        .filter((quote) => !isDepositInvoice(quote))
+        .map((quote) => quoteProof(quote, "Facture"));
     default:
       return [];
   }
