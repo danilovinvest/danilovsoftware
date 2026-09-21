@@ -52,6 +52,14 @@ export function updateUser(id: string, payload: UserPayload) {
   return apiFetch<WorkspaceUser>(`/v1/users/${id}`, { method: "PATCH", body: payload });
 }
 
+/**
+ * Retire un membre. La suppression est douce : le compte ne se connecte plus,
+ * ses sessions, connecteurs et liens de clé tombent, mais ce qu'il a écrit reste.
+ */
+export function deleteUser(id: string) {
+  return apiFetch<void>(`/v1/users/${id}`, { method: "DELETE" });
+}
+
 export function listInvitations(signal?: AbortSignal) {
   return apiFetch<{ items: Invitation[] }>("/v1/invitations", { signal });
 }
@@ -135,8 +143,12 @@ export function updateRole(slug: string, payload: RolePayload) {
   return apiFetch<Role>(`/v1/roles/${slug}`, { method: "PATCH", body: payload });
 }
 
-export function deleteRole(slug: string) {
-  return apiFetch<void>(`/v1/roles/${slug}`, { method: "DELETE" });
+/** `replacement` : le rôle que prennent ses porteurs. Requis s'il en a. */
+export function deleteRole(slug: string, replacement?: string) {
+  return apiFetch<void>(`/v1/roles/${slug}`, {
+    method: "DELETE",
+    query: { replacement },
+  });
 }
 
 export function getRolePermissions(slug: string, signal?: AbortSignal) {

@@ -40,6 +40,33 @@ const FICHE_ETUDE = "/customers/fiche?id=7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "retirer-un-membre",
+    title: "Retirer un membre",
+    date: "2026-09-21",
+    steps: [
+      {
+        path: "/settings/membres",
+        target: '[data-demo="member-remove"]',
+        title: "La corbeille qui manquait",
+        body: "Le serveur savait retirer un compte, aucun écran ne le proposait. La corbeille n'apparaît que sur un compte de rang inférieur, jamais sur le sien, et la confirmation dit ce qui part — sessions, connecteurs, liens de clé — et ce qui reste : fiches, tâches et échanges ne partent pas avec lui.",
+      },
+    ],
+  },
+  {
+    id: "supprimer-un-role-porte",
+    title: "Supprimer un rôle, même attribué",
+    date: "2026-09-21",
+    steps: [
+      {
+        path: "/settings/roles",
+        click: 'button[title^="Supprimer "]',
+        target: '[data-demo="role-delete"]',
+        title: "On nomme qui le remplace",
+        body: "Un rôle porté faisait griser la corbeille. Il se supprime maintenant en choisissant le rôle que prennent ses porteurs, parmi ceux qu'on a le droit d'attribuer : ils y passent et l'ancien disparaît dans une seule transaction, sans jamais laisser personne sans rôle. Leurs sessions sont fermées, pour que le nouveau rôle s'applique tout de suite.",
+      },
+    ],
+  },
+  {
     id: "parrain-d-un-client",
     title: "De qui vient un client recommandé",
     date: "2026-09-21",

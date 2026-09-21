@@ -179,8 +179,14 @@ export function CommandSearch({ className }: { className?: string }) {
           qui se lisait « Mar… » au-dessus d'une barre de recherche démesurée.
           L'icône seule dit la même chose et rend la largeur au reste.
         */
+        /*
+          Une largeur fixe, jamais `w-full`. Le bloc de droite de l'en-tête se
+          dimensionne sur son contenu : un pourcentage s'y résolvait après
+          coup, la recherche s'élargissait à 288 px et poussait la cloche,
+          les boutons et l'avatar hors du cadre, dans les réglages.
+        */
         className={cn(
-          "bg-background text-muted-foreground hover:border-brand-text/40 hover:text-foreground focus-visible:ring-ring flex size-7 shrink-0 items-center justify-center gap-2 rounded-lg border text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none sm:h-7 sm:w-full sm:max-w-72 sm:justify-start sm:px-2.5",
+          "bg-background text-muted-foreground hover:border-brand-text/40 hover:text-foreground focus-visible:ring-ring flex size-7 shrink-0 items-center justify-center gap-2 rounded-lg border text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none sm:h-7 sm:w-56 sm:justify-start sm:px-2.5 lg:w-72",
           className,
         )}
       >
