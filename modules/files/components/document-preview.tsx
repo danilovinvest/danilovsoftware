@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { DownloadIcon, ExternalLinkIcon, EyeIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import {
 import { apiFetchBlob } from "@/shared/api/client";
 import { errorMessage } from "@/shared/api/errors";
 import { cn } from "@/lib/utils";
+import { PdfPages } from "./pdf-pages";
 
 /**
  * Voir un document sans quitter le CRM.
@@ -79,10 +80,15 @@ export function PreviewButton({ url, name }: { url: string; name: string }) {
   );
 }
 
-type Loaded = { url: string; objectUrl: string; type: string } | { url: string; error: string };
+type Loaded =
+  | { url: string; objectUrl: string; type: string; blob: Blob }
+  | { url: string; error: string };
 
 function Preview({ url, name }: { url: string; name: string }) {
   const [loaded, setLoaded] = useState<Loaded | null>(null);
+  /** Le document que pdf.js n'a pas su lire : celui-là retombe sur le lecteur du navigateur. */
+  const [illisible, setIllisible] = useState<string | null>(null);
+  const echecPdf = useCallback(() => setIllisible(url), [url]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -90,7 +96,7 @@ function Preview({ url, name }: { url: string; name: string }) {
     apiFetchBlob("/v1/files/preview", { query: { url }, signal: controller.signal })
       .then((blob) => {
         objectUrl = URL.createObjectURL(blob);
-        setLoaded({ url, objectUrl, type: blob.type });
+        setLoaded({ url, objectUrl, type: blob.type, blob });
       })
       .catch((cause) => {
         if (!controller.signal.aborted) setLoaded({ url, error: errorMessage(cause) });
@@ -145,9 +151,20 @@ function Preview({ url, name }: { url: string; name: string }) {
           // Un fichier déjà dans le navigateur : rien à optimiser côté serveur.
           <Image src={ready.objectUrl} alt={name} fill unoptimized className="object-contain" />
         )}
-        {ready && "objectUrl" in ready && !ready.type.startsWith("image/") && (
-          <iframe src={ready.objectUrl} title={name} className="h-full w-full bg-white" />
+        {/*
+          Un PDF — ou un document Office que Microsoft a converti en PDF — est
+          dessiné par pdf.js : le lecteur du navigateur est un greffon, que la
+          politique de sécurité de l'application Windows bloque dans un cadre.
+        */}
+        {ready && "objectUrl" in ready && ready.type === "application/pdf" && illisible !== url && (
+          <PdfPages blob={ready.blob} name={name} onFail={echecPdf} />
         )}
+        {ready &&
+          "objectUrl" in ready &&
+          !ready.type.startsWith("image/") &&
+          (ready.type !== "application/pdf" || illisible === url) && (
+            <iframe src={ready.objectUrl} title={name} className="h-full w-full bg-white" />
+          )}
       </div>
     </>
   );
