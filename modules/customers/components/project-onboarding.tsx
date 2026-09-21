@@ -219,6 +219,10 @@ export function ProjectOnboardingDrawer({
           rdv_at: milestones?.rdv_at ?? null,
           quote_sent_at: milestones?.quote_sent_at ?? null,
           negotiation_at: milestones?.negotiation_at ?? null,
+          // Renvoyée telle quelle : la route remplace la ligne entière, et
+          // compléter une affaire ne doit pas effacer ce qu'on a noté de sa
+          // négociation.
+          negotiation_note: milestones?.negotiation_note ?? "",
           signed_at: milestones?.signed_at ?? null,
         });
       }

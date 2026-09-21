@@ -269,6 +269,8 @@ function Body({
           rdv_at: w.rdv_at,
           quote_sent_at: w.quote_sent_at,
           negotiation_at: w.negotiation_at,
+          // Renvoyée telle quelle, pour la même raison que les marques.
+          negotiation_note: w.negotiation_note ?? "",
           signed_at: w.signed_at,
         });
       }

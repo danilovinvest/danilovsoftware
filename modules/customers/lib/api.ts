@@ -209,6 +209,7 @@ export function setMilestones(
     rdv_at: string | null;
     quote_sent_at: string | null;
     negotiation_at: string | null;
+    negotiation_note: string;
     signed_at: string | null;
   },
 ) {

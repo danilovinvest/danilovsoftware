@@ -114,6 +114,8 @@ export type Worksite = {
   rdv_at: string | null;
   quote_sent_at: string | null;
   negotiation_at: string | null;
+  /** La note de négociation : renvoyée telle quelle quand cet écran écrit un jalon. */
+  negotiation_note: string;
   signed_at: string | null;
   quotes: WorksiteQuote[];
 };
