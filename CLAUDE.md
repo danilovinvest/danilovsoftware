@@ -163,6 +163,39 @@ release, elles changent ce que l'avis de mise à jour affiche.
 dépôt est privé et une minute macOS y coûte dix minutes Linux. Une release
 coûte de l'ordre de 250 minutes du forfait gratuit (2 000 par mois).
 
+### Ce qui échoue en silence, et ce qui le refuse
+
+Les trois premières tentatives (21/09) ont toutes réussi en apparence tout en
+ne produisant rien. C'est le mode de panne propre à une chaîne de publication :
+**personne ne regarde le résultat, on regarde la couleur de la tâche**. Chacun
+est donc fermé par un refus, pas seulement par un correctif.
+
+- **Un `releaseId` vide fait sauter tous les dépôts.** Le brouillon était créé
+  par `gh release create` puis relu dans la liste des releases, qui ne le
+  rendait pas encore ; `tauri-action` recevait une chaîne vide, écrivait
+  « skipping all uploads… » et **se déclarait en succès**. La création passe
+  donc par `gh api -X POST`, qui rend l'identifiant, la tâche échoue s'il est
+  vide, et les tâches de paquets refusent de démarrer sans lui.
+- **Les deux tâches écrivent le même `latest.json`.** `tauri-action` relit le
+  manifeste déjà déposé pour y ajouter sa plateforme : deux dépôts simultanés
+  se lisent avant de s'écrire, et le second perd le premier. D'où
+  `max-parallel: 1`, et une publication qui **refuse** un manifeste ne couvrant
+  pas les deux systèmes.
+- **Bash n'est pas le shell par défaut sur Windows.** Un `if [ -z … ]` y rend
+  une `ParserError` PowerShell — et il a fait échouer une release **après** que
+  macOS ait été construit et facturé. Le `defaults.run.shell: bash` de la tâche
+  le règle pour toutes les étapes à venir.
+
+**Windows passe avant macOS dans la matrice**, pour la même raison : la tâche
+macOS coûte cinq fois la tâche Windows, et avec `fail-fast` échouer sur la
+moins chère épargne la plus chère.
+
+**Une version ratée ne se rejoue pas**, c'est la limite connue : le workflow ne
+se déclenche que sur une étiquette, et rejouer le run reprendrait le workflow
+tel qu'il était à cette étiquette. Il faut donc un nouveau numéro — `v0.1.1` et
+`v0.1.2` n'ont jamais été publiées et leurs étiquettes restent, trace des
+tentatives.
+
 **Les mises à jour passent par l'API, parce que le dépôt est privé.**
 L'application n'a aucun identifiant GitHub : elle interroge
 `<API>/v1/desktop/update/latest.json`, que l'API relaie depuis la dernière
