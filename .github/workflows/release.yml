@@ -52,8 +52,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           previous="$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)"
-          range="${previous:+$previous..}$GITHUB_REF_NAME"
-          git log --no-merges --pretty='- %s' "$range" > notes.md
+          if [ -n "$previous" ]; then
+            git log --no-merges --pretty='- %s' "$previous..$GITHUB_REF_NAME" > notes.md
+          else
+            # Sans étiquette précédente, l'intervalle serait *tout* l'historique
+            # — l'interface a été reprise du CRM web avec ses 349 commits, et
+            # ce texte est celui que l'application affiche comme notes de mise
+            # à jour. On annonce la première version, rien de plus.
+            echo "- Première version publiée." > notes.md
+          fi
           url="$(gh release create "$GITHUB_REF_NAME" --draft \
             --title "OMPT CRM $GITHUB_REF_NAME" --notes-file notes.md)"
           id="$(gh api "repos/$GITHUB_REPOSITORY/releases" \
