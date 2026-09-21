@@ -110,8 +110,18 @@ portail sert donc `/invitation/<jeton>` et `/cle/<jeton>` (`panel`, depuis le
 `dangerousDisableAssetCspModification: ["style-src"]` : sans elle, Tauri ajoute
 un nonce à `style-src`, et un nonce annule `'unsafe-inline'` — les styles en
 ligne de React et de Radix tomberaient. Les scripts, eux, restent hachés par
-Tauri. L'adresse de l'API est écrite dans `connect-src` en plus de `config.rs` :
-changer l'une impose de changer l'autre.
+Tauri.
+
+**L'adresse de l'API est écrite dans `connect-src` en plus d'être compilée, et
+la compilation le vérifie.** La CSP l'emporte sur tout : bâtir avec un
+`OMPT_API_URL` absent de `connect-src` donnait une application où le navigateur
+refuse **chaque** appel API — sans erreur réseau, sans message, seulement une
+console que personne n'ouvre. `build.rs` relit donc `tauri.conf.json` et
+s'arrête en nommant les deux valeurs. C'est aussi lui qui porte les défauts et
+les passe au compilateur (`cargo:rustc-env`), `config.rs` ne faisant plus que
+les lire : une variable **vide y vaut absente**, sans quoi une variable de dépôt
+déclarée mais non remplie bâtirait une application dont l'API est la chaîne
+vide.
 
 ## Publier une version
 

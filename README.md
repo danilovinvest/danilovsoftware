@@ -6,7 +6,7 @@ L'API vit dans le dépôt `crm`.
 ```bash
 bun install
 cargo tauri dev        # développement
-cargo tauri build      # paquets .app/.dmg (macOS) ou .msi/.exe (Windows)
+cargo tauri build      # paquets .app/.dmg (macOS) ou -setup.exe (Windows)
 ```
 
 Prérequis : Rust stable, `cargo install tauri-cli --version "^2"`, bun.
