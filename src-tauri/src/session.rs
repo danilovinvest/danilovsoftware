@@ -89,6 +89,20 @@ struct Pending {
 /// Au-delà, un retour du navigateur ne correspond plus à rien : on l'écarte.
 const PENDING_TTL: Duration = Duration::from_secs(10 * 60);
 
+/// Le nom du système, tel qu'il se lit dans la liste des appareils.
+///
+/// `std::env::consts::OS` rend « macos » et « windows » ; on écrit les noms
+/// comme la marque les écrit, puisque c'est un libellé que quelqu'un lit. Les
+/// autres valeurs passent telles quelles — l'application ne cible que ces deux
+/// systèmes, et inventer un nom pour un troisième serait le nommer de travers.
+fn system_name() -> &'static str {
+    match std::env::consts::OS {
+        "macos" => "macOS",
+        "windows" => "Windows",
+        other => other,
+    }
+}
+
 pub struct Session {
     http: reqwest::Client,
     lock: Mutex<()>,
@@ -97,8 +111,16 @@ pub struct Session {
 
 impl Session {
     pub fn new() -> Self {
+        // Le système est nommé : c'est ce user-agent que l'API enregistre sur
+        // la session, et que la liste des appareils affiche. Sans lui, quelqu'un
+        // qui ouvre le CRM sur deux postes voit deux lignes identiques et ne
+        // sait pas laquelle fermer.
         let http = reqwest::Client::builder()
-            .user_agent(concat!("OMPT CRM desktop/", env!("CARGO_PKG_VERSION")))
+            .user_agent(format!(
+                "OMPT CRM desktop/{} ({})",
+                env!("CARGO_PKG_VERSION"),
+                system_name()
+            ))
             .timeout(Duration::from_secs(30))
             .build()
             .expect("client HTTP");
