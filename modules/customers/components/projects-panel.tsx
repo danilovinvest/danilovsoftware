@@ -586,30 +586,37 @@ function ProjectBlock({
   }
 
   /*
-    Le solde suit la même route que l'acompte : c'est le devis qui porte le
-    règlement, et le serveur horodate la date à partir du statut. Deux actions
-    distinctes parce qu'un solde encaissé n'implique pas un acompte, ni
-    l'inverse — on peut solder une prestation payée en une fois.
+    Le solde suit exactement l'acompte : sa propre route, qui ne touche que lui.
+
+    Il passait par le devis entier — le défaut même que la route d'acompte
+    ferme — et cet écran-ci le connaissait assez pour ne rien perdre, mais
+    `updateQuote` efface la provenance du montant lu dans le PDF dès que les
+    montants diffèrent : solder un devis remettait sa lecture en file.
+
+    Deux actions distinctes parce qu'un solde encaissé n'implique pas un
+    acompte, ni l'inverse — on peut solder une prestation payée en une fois.
   */
-  const setBalance = useAction((status: "en_attente" | "recu") => {
-    const target = quotes.find((q) => q.status === "accepte" || q.status === "realise") ?? lead;
-    if (!target) throw new Error("Aucun devis à mettre à jour sur cette affaire.");
-    return api.updateQuote(target.id, {
-      reference: target.reference,
-      kind: target.kind,
-      label: target.label,
-      status: target.status,
-      issued_at: target.issued_at,
-      amount_ht: target.amount_ht,
-      amount_ttc: target.amount_ttc,
-      vat_rate: target.vat_rate,
-      amount_note: target.amount_note,
-      deposit_status: target.deposit_status,
-      deposit_amount: target.deposit_amount,
-      balance_status: status,
-      comment: target.comment,
+  const setBalance = useAction((status: "en_attente" | "recu", amount?: string | null) => {
+    if (!porteur) throw new Error("Aucun devis à mettre à jour sur cette affaire.");
+    return api.setQuoteBalance(porteur.id, {
+      status,
+      amount: amount === undefined ? porteur.balance_amount : amount,
     });
   });
+
+  /** Encaisse le solde avec son montant, ou corrige le montant. */
+  async function solder(amount: string | null): Promise<boolean> {
+    const ok = (await setBalance.run("recu", amount)) !== null;
+    if (ok) onChanged();
+    return ok;
+  }
+
+  /** Retire l'encaissement du solde. Le montant reste sur le devis. */
+  async function retirerSolde(): Promise<boolean> {
+    const ok = (await setBalance.run("en_attente")) !== null;
+    if (ok) onChanged();
+    return ok;
+  }
 
   /** Les deux fenêtres qui touchent à l'affaire elle-même : sa société, sa suppression. */
   const [changerSociete, setChangerSociete] = useState(false);
@@ -880,6 +887,12 @@ function ProjectBlock({
                       },
                       onDeposit: encaisser,
                       onDepositRemove: retirerAcompte,
+                      balance: {
+                        amount: porteur?.balance_amount ?? null,
+                        total: depositTotalOf(porteur),
+                      },
+                      onBalance: solder,
+                      onBalanceRemove: retirerSolde,
                       proofs: (step) => preuves.filter((proof) => proof.step === step),
                       autoProofs: (step) => autoProofsOf(step, quotes, interactions),
                       customerId: customer.id,

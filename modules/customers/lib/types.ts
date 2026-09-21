@@ -325,6 +325,12 @@ export type Quote = {
    */
   deposit_amount: string | null;
   balance_status: PaymentStatus;
+  /**
+   * Le montant du solde, jumeau de celui de l'acompte. Ce n'est pas le reste à
+   * payer calculé du devis : un avenant ou une remise de fin de chantier le
+   * déplacent, et c'est le chiffre du relevé qui fait foi.
+   */
+  balance_amount: string | null;
   comment: string;
   /**
    * Le document du devis, chez Microsoft. Vide pour un devis saisi à la main.

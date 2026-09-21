@@ -40,6 +40,20 @@ const FICHE_ETUDE = "/customers/fiche?id=7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "montant-du-solde",
+    title: "Le solde dit enfin combien",
+    date: "2026-09-21",
+    steps: [
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="cran-solde"]',
+        target: '[data-demo="reglement-editeur"]',
+        title: "Encaisser le solde, c'est dire combien",
+        body: "« Solde encaissé » était une case : on affirmait avoir été payé sans jamais écrire le montant, alors que c'est ce chiffre qu'on rapproche du relevé de banque. L'acompte avait reçu son montant en juin ; le solde en avait autant besoin, et pour la même raison — ce n'est pas le reste à payer calculé du devis, un avenant ou une remise de fin de chantier le déplacent. C'est le même éditeur que l'acompte, pas un second : seuls les mots changent. Mesuré en production : quatre devis sont marqués soldés, aucun ne portait de montant. Le formulaire du devis porte le même champ, qui n'apparaît que si un solde est attendu ou reçu. Au passage, encaisser un solde ne renvoie plus le devis entier : il a sa route à lui, comme l'acompte — le remplacement complet effaçait la provenance du montant lu dans le PDF, si bien que solder un devis remettait sa lecture en file d'attente.",
+      },
+    ],
+  },
+  {
     id: "dates-de-chantier-dans-la-fiche",
     title: "Les deux bornes du chantier, dans la fiche",
     date: "2026-09-21",

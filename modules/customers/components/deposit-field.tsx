@@ -72,8 +72,33 @@ export function DepositTag({
  * la fiche d'un chantier : quatre saisies du même montant auraient divergé au
  * premier ajustement.
  */
+/**
+ * Lequel des deux règlements l'éditeur saisit.
+ *
+ * Un seul éditeur pour les deux : l'acompte et le solde vivent sur le même
+ * devis, se saisissent au même endroit et se corrigent de la même façon. En
+ * écrire un second aurait donné deux champs à tenir d'accord au premier
+ * ajustement — ce que la doctrine du CRM refuse partout ailleurs. Seuls les
+ * mots changent, et ils vivent ici.
+ */
+export type ReglementKind = "acompte" | "solde";
+
+const REGLEMENT: Record<ReglementKind, { nom: string; bouton: string; sansMontant: string }> = {
+  acompte: {
+    nom: "L'acompte",
+    bouton: "Acompte encaissé",
+    sansMontant: "Facultatif : vide, l'acompte est encaissé sans montant connu.",
+  },
+  solde: {
+    nom: "Le solde",
+    bouton: "Solde encaissé",
+    sansMontant: "Facultatif : vide, le solde est encaissé sans montant connu.",
+  },
+};
+
 export function DepositEditor({
   amount,
+  kind = "acompte",
   paid,
   total,
   pending,
@@ -83,7 +108,9 @@ export function DepositEditor({
 }: {
   /** Le montant déjà connu, s'il y en a un. */
   amount: string | null;
-  /** L'acompte est-il déjà encaissé ? Il décide des libellés. */
+  /** Acompte ou solde. Par défaut l'acompte, le premier des deux à exister. */
+  kind?: ReglementKind;
+  /** Le règlement est-il déjà encaissé ? Il décide des libellés. */
   paid: boolean;
   total: DepositTotal | null;
   pending?: boolean;
@@ -99,6 +126,7 @@ export function DepositEditor({
   onClose: () => void;
 }) {
   const id = useId();
+  const mots = REGLEMENT[kind];
   const [draft, setDraft] = useState(() => (amount ? amount.replace(".", ",") : ""));
   const parsed = parseAmountInput(draft);
   const illisible = parsed === undefined;
@@ -114,6 +142,7 @@ export function DepositEditor({
   return (
     <form
       className="flex flex-col gap-3"
+      data-demo="reglement-editeur"
       onSubmit={(event) => {
         event.preventDefault();
         if (illisible || pending) return;
@@ -147,12 +176,12 @@ export function DepositEditor({
               ? `Soit ${percent} % du devis ${total.tax} (${formatAmount(total.value)}).`
               : total
                 ? `Devis à ${formatAmount(total.value)} ${total.tax}.`
-                : "Facultatif : vide, l'acompte est encaissé sans montant connu."}
+                : mots.sansMontant}
         </p>
       </div>
 
       <p className="text-muted-foreground/70 text-[11px]">
-        L&apos;acompte vit sur le devis : son statut et son montant changent.
+        {mots.nom} vit sur le devis : son statut et son montant changent.
       </p>
 
       <div className="flex items-center justify-end gap-2">
@@ -169,7 +198,7 @@ export function DepositEditor({
           </Button>
         )}
         <Button type="submit" size="xs" disabled={pending || illisible}>
-          {paid ? "Enregistrer" : "Acompte encaissé"}
+          {paid ? "Enregistrer" : mots.bouton}
         </Button>
       </div>
     </form>
