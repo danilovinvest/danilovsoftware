@@ -24,6 +24,13 @@ ENV NEXT_PUBLIC_DEV_LOGIN=$NEXT_PUBLIC_DEV_LOGIN
 ENV NEXT_PUBLIC_DEV_ACCOUNTS=$NEXT_PUBLIC_DEV_ACCOUNTS
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# La version du bundle. Le bandeau la compare à celle de l'API : différentes,
+# c'est qu'un déploiement a eu lieu depuis le chargement de la page.
+ARG NEXT_PUBLIC_BUILD_COMMIT
+ARG NEXT_PUBLIC_BUILT_AT
+ENV NEXT_PUBLIC_BUILD_COMMIT=$NEXT_PUBLIC_BUILD_COMMIT
+ENV NEXT_PUBLIC_BUILT_AT=$NEXT_PUBLIC_BUILT_AT
+
 RUN bun run build
 
 # --- Exécution ---------------------------------------------------------------
