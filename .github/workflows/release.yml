@@ -61,11 +61,23 @@ jobs:
             # à jour. On annonce la première version, rien de plus.
             echo "- Première version publiée." > notes.md
           fi
-          url="$(gh release create "$GITHUB_REF_NAME" --draft \
-            --title "OMPT CRM $GITHUB_REF_NAME" --notes-file notes.md)"
-          id="$(gh api "repos/$GITHUB_REPOSITORY/releases" \
-            --jq ".[] | select(.tag_name == \"$GITHUB_REF_NAME\") | .id" | head -1)"
-          echo "Brouillon : $url (id $id)"
+          # **La création rend l'identifiant ; on ne le cherche pas après.**
+          # Le premier jet créait le brouillon avec `gh release create` puis le
+          # relisait dans la liste des releases — qui ne le rendait pas encore.
+          # `tauri-action` recevait un `releaseId` vide, écrivait « skipping all
+          # uploads » et **se déclarait en succès** : quinze minutes de
+          # construction et de signature pour une release à zéro fichier.
+          id="$(gh api -X POST "repos/$GITHUB_REPOSITORY/releases" \
+            -f tag_name="$GITHUB_REF_NAME" \
+            -f name="OMPT CRM $GITHUB_REF_NAME" \
+            -f body="$(cat notes.md)" \
+            -F draft=true \
+            --jq .id)"
+          if [ -z "$id" ]; then
+            echo "::error::La création du brouillon n'a rendu aucun identifiant."
+            exit 1
+          fi
+          echo "Brouillon $id pour $GITHUB_REF_NAME"
           echo "id=$id" >> "$GITHUB_OUTPUT"
 
   paquets:
@@ -97,6 +109,15 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     steps:
+      # `tauri-action` **saute silencieusement tous les dépôts** quand son
+      # `releaseId` est vide, et rend la tâche verte. On refuse donc de
+      # construire sans lui plutôt que de payer une heure de machine pour rien.
+      - name: Le brouillon existe
+        run: |
+          if [ -z "${{ needs.brouillon.outputs.id }}" ]; then
+            echo "::error::Aucun identifiant de brouillon : rien ne serait déposé."
+            exit 1
+          fi
       - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
         with:
