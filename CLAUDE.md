@@ -42,6 +42,16 @@ sur `tauri://localhost`, que la production admet.
 - `src-tauri/` — la coque : `config.rs` (les deux adresses), `keychain.rs`,
   `session.rs`, `links.rs`, `lib.rs`.
 
+**Les icônes sont générées, jamais retouchées.** `src-tauri/icons/source.svg`
+est la seule source ; `bun tauri icon src-tauri/icons/source.svg` regénère les
+PNG, l'ICNS et l'ICO du dossier. Le tracé du profilé y est **repris tel quel**
+de `public/omptcrm.svg`, comme dans `shared/ui/logo.tsx` et `app/icon.svg` : la
+même marque à trois endroits, qui doivent se ressembler. La plaque occupe 824
+des 1024 points, la grille d'Apple — une image pleine cadre se pose dans le
+dock plus grosse que ses voisines. La commande écrit aussi `icons/android/` et
+`icons/ios/` : l'application ne cible ni l'un ni l'autre, ces dossiers ne se
+committent pas.
+
 ## Ce que l'application change, et pourquoi
 
 **Tout le CRM supposait « même origine », et l'application la perd.** Sa page
@@ -151,8 +161,7 @@ navigateur.
 
 - Pas de certificat Apple ni Windows, donc pas de notarisation : les secrets
   `APPLE_CERTIFICATE`, `APPLE_ID`… lus par `tauri-action` suffiront à
-  l'activer le jour où le compte Apple Developer existe. Les icônes sont
-  encore celles de Tauri.
+  l'activer le jour où le compte Apple Developer existe.
 - `GET /v1/auth/sessions` reconnaît « cet appareil » au cookie : la ligne de
   l'application n'est jamais marquée courante.
 - La visite guidée ne sait pas montrer l'écran de connexion (hors `AppShell`).
