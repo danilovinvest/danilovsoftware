@@ -46,6 +46,7 @@ const EMPTY_PROJECT: ProjectPayload = {
   site_city: "",
   notes: "",
   started_at: null,
+  finished_at: null,
   closed_at: null,
   mission: null,
   promised_at: null,
@@ -86,6 +87,7 @@ function projectToPayload(project: Project): ProjectPayload {
     site_city: project.site_city,
     notes: project.notes,
     started_at: project.started_at,
+    finished_at: project.finished_at,
     closed_at: project.closed_at,
     mission: project.mission,
     promised_at: project.promised_at,
@@ -163,13 +165,33 @@ export function ProjectDialog({
             value={values.stage}
             onValueChange={(value) => setValues({ ...values, stage: value as ProjectStage })}
           />
+          {/*
+            Les deux bornes du chantier.
+
+            Le début existait seul : c'est la colonne que l'écran Chantiers lit,
+            et un chantier terminé n'avait aucun endroit où le dire — sauf par
+            un événement d'agenda, qui l'écrivait sans que la fiche puisse le
+            montrer ni le corriger. Ici seulement la date se retire, l'agenda
+            n'écrivant que sous `coalesce`.
+          */}
           <TextField
-            label="Début"
+            label="Début du chantier"
+            data-demo="project-dates"
             type="date"
             value={values.started_at ?? ""}
             onChange={(event) =>
               setValues({ ...values, started_at: event.target.value || null })
             }
+          />
+          <TextField
+            label="Fin du chantier"
+            data-demo="project-dates"
+            type="date"
+            value={values.finished_at ?? ""}
+            onChange={(event) =>
+              setValues({ ...values, finished_at: event.target.value || null })
+            }
+            hint="Vide tant que le chantier n'est pas terminé."
           />
           {/*
             La mission et les deux délais.

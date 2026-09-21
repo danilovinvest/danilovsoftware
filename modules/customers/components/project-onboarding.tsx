@@ -157,6 +157,7 @@ export function ProjectOnboardingDrawer({
         site_city: city,
         notes: project.notes,
         started_at: project.started_at,
+        finished_at: project.finished_at,
         closed_at: project.closed_at,
         mission: project.mission,
         promised_at: project.promised_at,
