@@ -122,6 +122,14 @@ export type CustomerListItem = {
    * qualité de client.
    */
   is_client: boolean;
+  /**
+   * La société de la fiche : union de ses devis et de ses affaires attribuées.
+   *
+   * « mixte » quand elle porte les deux, vide quand rien ne la range — et ces
+   * deux réponses restent grises dans la liste. Elle ne suit pas le périmètre
+   * demandé : la question est « de qui est-elle », pas « compte-t-elle ici ».
+   */
+  issuer: string;
   reference: string;
   display_name: string;
   kind: CustomerKind;
