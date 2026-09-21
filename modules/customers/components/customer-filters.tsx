@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { SearchIcon, XIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { SelectField } from "@/shared/ui/form";
+import { useScope } from "@/modules/group";
 import { cn } from "@/lib/utils";
 import {
   CUSTOMER_SOURCE,
@@ -50,6 +51,11 @@ const STATUS_TABS: Array<{ value: CustomerStatus | "all"; label: string }> = [
   { value: "all", label: "Toutes" },
 ];
 
+const SOCIETES = [
+  { value: "ompt-groupe", label: "GROUPE" },
+  { value: "ompt-structure", label: "STRUCTURE" },
+];
+
 export function CustomerFiltersBar({
   filters,
   onChange,
@@ -93,6 +99,12 @@ export function CustomerFiltersBar({
   }, [debouncedCity]);
 
   const activeStatus = filters.status?.length === 1 ? filters.status[0] : "all";
+  /*
+    Le filtre société n'existe que là où l'adresse n'en fixe aucune : sur
+    groupe.… ou structure.…, ou pour un compte lié, le serveur impose la sienne
+    et l'offrir serait promettre un choix qu'il ignore.
+  */
+  const choixSociete = useScope() === "tous";
   const cycle = filters.cycle ?? "tous";
   const review = filters.review ?? "";
 
@@ -202,6 +214,17 @@ export function CustomerFiltersBar({
           value={city}
           onChange={(event) => setCity(event.target.value)}
         />
+        {choixSociete && (
+          <SelectField
+            id="filtre-societe"
+            options={SOCIETES}
+            emptyLabel="Tout le groupe"
+            placeholder="Société"
+            wrapperClassName="w-40"
+            value={filters.issuer ?? ""}
+            onValueChange={(value) => onChange({ issuer: value || undefined })}
+          />
+        )}
         <SelectField
           options={toOptions(CUSTOMER_SOURCE)}
           emptyLabel="Toutes les sources"

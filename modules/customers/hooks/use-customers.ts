@@ -24,7 +24,12 @@ export function useCustomers(filters: CustomerFilters) {
     de l'autre société. Il fait partie de la question, pas de la recherche.
   */
   const scope = useScope();
-  const question: CustomerFilters = { ...filters, issuer: scopeParam(scope) };
+  /*
+    La société de l'adresse l'emporte ; sans elle, celle choisie dans les
+    filtres. Le dirigeant et l'application de bureau n'ont pas d'adresse qui
+    fixe une société, et ne pouvaient donc pas trier STRUCTURE de GROUPE.
+  */
+  const question: CustomerFilters = { ...filters, issuer: scopeParam(scope) ?? filters.issuer };
   // Les filtres sont sérialisés pour servir de dépendance stable : un objet
   // littéral changerait d'identité à chaque rendu et relancerait la requête.
   const key = `${JSON.stringify(question)}#${reloadToken}`;
@@ -60,12 +65,12 @@ export function useCustomers(filters: CustomerFilters) {
   return { data: resolved.data, loading, error: resolved.error, reload };
 }
 
-export function useCustomerStats() {
+export function useCustomerStats(chosen?: string) {
   const [stats, setStats] = useState<CustomerStats | null>(null);
   // Les comptes suivent le périmètre : en mode STRUCTURE, « à relancer » doit
   // compter les études et non les chantiers.
   const scope = useScope();
-  const issuer = scopeParam(scope) ?? "";
+  const issuer = scopeParam(scope) ?? chosen ?? "";
 
   useEffect(() => {
     const controller = new AbortController();
@@ -132,6 +137,7 @@ export function useCustomerFilters() {
         filters.search ||
           filters.city ||
           filters.source?.length ||
+          filters.issuer ||
           filters.sort !== DEFAULTS.sort ||
           filters.status?.join() !== DEFAULTS.status?.join(),
       ),
