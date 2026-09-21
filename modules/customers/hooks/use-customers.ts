@@ -89,29 +89,51 @@ export function useDebounced<T>(value: T, delay = 300): T {
   return debounced;
 }
 
+/**
+ * Ce que la liste montre quand on arrive, sans avoir rien demandé.
+ *
+ * **Les clients d'abord, par ordre alphabétique.** On ouvre cette liste pour
+ * retrouver quelqu'un qu'on connaît, pas pour parcourir ce qui a bougé : un
+ * classement par date oblige à lire trois cent soixante lignes pour trouver un
+ * nom qu'on sait déjà, là où l'alphabet mène au bon endroit du premier coup.
+ * Et les prospects se cherchent, quand un client s'ouvre.
+ *
+ * Le tri par nom existait déjà dans le sélecteur, et « Clients » dans les
+ * onglets : seuls les défauts changent, rien ne disparaît.
+ */
+const DEFAULTS: CustomerFilters = {
+  sort: "name",
+  status: ["client"],
+  page: 1,
+  per_page: 25,
+};
+
 /** État de filtres du tableau, avec remise à la page 1 dès qu'un filtre change. */
 export function useCustomerFilters() {
-  const [filters, setFilters] = useState<CustomerFilters>({
-    sort: "recent",
-    page: 1,
-    per_page: 25,
-  });
+  const [filters, setFilters] = useState<CustomerFilters>(DEFAULTS);
 
   const update = useCallback((patch: Partial<CustomerFilters>) => {
     setFilters((current) => ({ ...current, ...patch, page: patch.page ?? 1 }));
   }, []);
 
   const reset = useCallback(() => {
-    setFilters({ sort: "recent", page: 1, per_page: 25 });
+    setFilters(DEFAULTS);
   }, []);
 
+  /*
+    « Il y a un filtre » se juge **par rapport au défaut**, pas à l'absence de
+    valeur. Compter le statut dès qu'il est renseigné ferait apparaître « Tout
+    effacer » à l'ouverture, au-dessus d'une liste que personne n'a filtrée —
+    et le bouton effacerait alors un réglage qu'on n'a pas posé.
+  */
   const active = useMemo(
     () =>
       Boolean(
         filters.search ||
           filters.city ||
-          filters.status?.length ||
-          filters.source?.length,
+          filters.source?.length ||
+          filters.sort !== DEFAULTS.sort ||
+          filters.status?.join() !== DEFAULTS.status?.join(),
       ),
     [filters],
   );

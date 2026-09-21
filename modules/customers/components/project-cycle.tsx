@@ -293,13 +293,21 @@ function StepDot({
   compact: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  // La date où c'est arrivé : cocher le jour du clic était faux dès qu'on
-  // rattrapait une étape de la semaine dernière.
-  const [markDate, setMarkDate] = useState(() => new Date().toISOString().slice(0, 10));
   const write = stepWrite(point.step);
   const nbPreuves = edit.proofs(point.step).length + edit.autoProofs(point.step).length;
   const marked = edit.markedAt(point.step);
   const entry = CYCLE_LABEL[point.step];
+  /*
+    La date où c'est arrivé : cocher le jour du clic était faux dès qu'on
+    rattrapait une étape de la semaine dernière.
+
+    Le champ part de la date **déjà posée** quand il y en a une — on vient
+    corriger, pas resaisir, et repartir d'aujourd'hui ferait écrire la
+    mauvaise date à qui clique sans regarder.
+  */
+  const [markDate, setMarkDate] = useState(() =>
+    (marked ?? new Date().toISOString()).slice(0, 10),
+  );
 
   /*
     Franchi par un fait qu'on ne tient pas ici : le clic ne pourrait rien
@@ -311,7 +319,23 @@ function StepDot({
     cran resterait vert — un bouton qui ne retire rien, et deux écrans de la
     même affaire qui se contredisent.
   */
-  const parLeFait = point.state === "done" && (point.byFact || marked === null);
+  /*
+    **Les cinq crans à marque se corrigent toujours**, même franchis par un
+    fait. C'est ce qui manquait : sur une affaire dont le rendez-vous était
+    déjà consigné, le panneau ne proposait que « Déjà franchi… rien à retirer
+    ici », et il n'y avait aucun moyen de corriger une date fausse.
+
+    Ce qui rendait ce refus juste a disparu avec lui : la marque l'emporte
+    désormais sur le fait pour la date affichée (`readCycle`), donc écrire ici
+    se voit, et « Retirer » rend la date déduite au lieu de ne rien faire.
+
+    Les autres cibles gardent le refus. Retirer un jalon ou un statut de devis
+    n'éteint pas un cran que le fait franchit par ailleurs, et un bouton sans
+    effet vaut moins qu'une phrase qui l'explique.
+  */
+  const corrigible = write.target === "mark";
+  const parLeFait =
+    point.state === "done" && !corrigible && (point.byFact || marked === null);
   // L'acompte et le solde vivent sur le devis. Sans devis, il n'y a pas où
   // écrire, et le dire vaut mieux qu'un bouton qui échoue.
   const sansDevis = write.target === "quote" && !edit.hasQuote;
@@ -436,27 +460,32 @@ function StepDot({
                   Nouveau devis
                 </Button>
               ) : (
-                marked === null && (
-                  <>
-                    <input
-                      type="date"
-                      value={markDate}
-                      onChange={(event) => setMarkDate(event.target.value)}
-                      aria-label="Date où c'est arrivé"
-                      className="bg-background h-6 rounded-md border px-1 text-[11px]"
-                    />
-                    <Button
-                      size="xs"
-                      disabled={edit.pending || !markDate}
-                      onClick={async () => {
-                        await edit.onMark(point.step, new Date(`${markDate}T12:00:00`).toISOString());
-                        setOpen(false);
-                      }}
-                    >
-                      Marquer franchi
-                    </Button>
-                  </>
-                )
+                /*
+                  Le champ reste ouvert une fois la date posée : elle se
+                  corrigeait en retirant puis en re-marquant, deux gestes pour
+                  une faute de frappe, et le premier faisait disparaître le
+                  cran entre les deux.
+                */
+                <>
+                  <input
+                    type="date"
+                    value={markDate}
+                    onChange={(event) => setMarkDate(event.target.value)}
+                    aria-label={marked === null ? "Date où c'est arrivé" : "Corriger la date"}
+                    className="bg-background h-6 rounded-md border px-1 text-[11px]"
+                  />
+                  <Button
+                    size="xs"
+                    disabled={edit.pending || !markDate}
+                    onClick={async () => {
+                      await edit.onMark(point.step, new Date(`${markDate}T12:00:00`).toISOString());
+                      setOpen(false);
+                    }}
+                  >
+                    {marked === null ? "Marquer franchi" : "Changer la date"}
+                  </Button>
+                </>
+
               )}
             </div>
           )}

@@ -6,6 +6,7 @@ import {
   ChevronRightIcon,
   FilePlusIcon,
   FileTextIcon,
+  HardHatIcon,
   PlusIcon,
   PencilIcon,
   Trash2Icon,
@@ -960,6 +961,46 @@ function ProjectBlock({
 
                 <div className="flex items-center gap-2">
                   <EnumBadge value={project.stage} entries={PROJECT_STAGE} />
+                  {/*
+                    Ouvrir l'affaire côté exécution.
+
+                    **Le bouton ne s'affiche que pour une affaire signée**, parce
+                    qu'un chantier *est* une affaire d'étape `gagne` ou
+                    `realise` : `GET /v1/worksites` ne sert que celles-là, et
+                    proposer le passage sur une affaire en négociation mènerait
+                    à un panneau vide.
+
+                    Il emmène l'identifiant : l'écran lit `?affaire=` et ouvre
+                    la bonne fiche, là où une liste de quarante-neuf obligerait
+                    à y rechercher ce qu'on vient de quitter. Il n'y a pas de
+                    route `/chantiers/{id}` et il n'en faut pas — une route
+                    dynamique ne s'exporte pas en statique, ce dont
+                    l'application de bureau dépend.
+
+                    L'écran suit le métier : une étude va dans Études, des
+                    travaux dans Chantiers. Envoyer une étude vers Chantiers
+                    l'afficherait sous une frise qui n'est pas la sienne.
+                  */}
+                  {(project.stage === "gagne" || project.stage === "realise") && (
+                    <Button
+                      size="xs"
+                      variant="outline"
+                      data-demo="project-worksite"
+                      title={
+                        metier === "etudes"
+                          ? "Ouvrir cette étude dans Études"
+                          : "Ouvrir ce chantier dans Chantiers"
+                      }
+                      onClick={() =>
+                        router.push(
+                          `${metier === "etudes" ? "/etudes" : "/chantiers"}?affaire=${project.id}`,
+                        )
+                      }
+                    >
+                      <HardHatIcon />
+                      {metier === "etudes" ? "Étude" : "Chantier"}
+                    </Button>
+                  )}
                   {canWrite && (
                     <Button
                       size="xs"
