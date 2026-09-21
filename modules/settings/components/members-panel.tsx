@@ -3,7 +3,7 @@
 import { companyLabel } from "@/modules/group";
 
 import { useMemo, useState } from "react";
-import { KeyRoundIcon, PencilIcon, SearchIcon, UserPlusIcon, XIcon } from "lucide-react";
+import { KeyRoundIcon, PencilIcon, SearchIcon, Trash2Icon, UserPlusIcon, XIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +31,7 @@ import {
 import type { WorkspaceUser } from "../lib/types";
 import { InviteWizard } from "./invite-wizard";
 import { MemberDialog } from "./member-dialog";
+import { MemberDeleteDialog } from "./member-delete-dialog";
 import { PasskeyLinkDialog } from "./passkey-link-dialog";
 import { SettingsPage, SettingsSection } from "./settings-page";
 
@@ -44,6 +45,8 @@ import { SettingsPage, SettingsSection } from "./settings-page";
 export function MembersPanel() {
   const { account } = useAuth();
   const canWrite = usePermission("users:write");
+  const canDelete = usePermission("users:delete");
+  const [removing, setRemoving] = useState<{ id: string; name: string } | null>(null);
 
   const { users, total, loading, error, reload } = useWorkspaceUsers();
   const { roles } = useRoles();
@@ -111,6 +114,11 @@ export function MembersPanel() {
         .includes(needle),
     );
   }, [users, search]);
+
+  /** Même règle que l'API : jamais soi-même, et seulement un rang inférieur. */
+  function canRemove(user: WorkspaceUser): boolean {
+    return canDelete && user.id !== account?.id && actorRank > rankOf(user.role);
+  }
 
   /** Même règle que l'API : rang strictement supérieur, ou soi-même. */
   function canEdit(user: WorkspaceUser): boolean {
@@ -321,6 +329,19 @@ export function MembersPanel() {
                                 <PencilIcon className="size-3.5" />
                               </Button>
                             )}
+                            {canRemove(user) && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-muted-foreground hover:text-destructive size-7"
+                                data-demo="member-remove"
+                                onClick={() => setRemoving({ id: user.id, name })}
+                                title={`Retirer ${name}`}
+                                aria-label={`Retirer ${name}`}
+                              >
+                                <Trash2Icon className="size-3.5" />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -422,6 +443,17 @@ export function MembersPanel() {
           )}
         </SettingsSection>
       )}
+
+      <MemberDeleteDialog
+        member={removing}
+        onOpenChange={(open) => {
+          if (!open) setRemoving(null);
+        }}
+        onDeleted={() => {
+          setRemoving(null);
+          reload();
+        }}
+      />
 
       {editing && (
         <MemberDialog

@@ -12,10 +12,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { usePermission } from "@/modules/auth";
-import { errorMessage } from "@/shared/api/errors";
+import { useAuth, usePermission } from "@/modules/auth";
 import { ErrorNotice, Skeleton } from "@/shared/ui/feedback";
-import { deleteRole } from "../lib/api";
 import {
   usePermissionCatalog,
   useRoles,
@@ -23,6 +21,7 @@ import {
 } from "../hooks/use-settings";
 import type { Role } from "../lib/types";
 import { RoleDialog } from "./role-dialog";
+import { RoleDeleteDialog } from "./role-delete-dialog";
 import { RoleWizard } from "./role-wizard";
 import { RoleMembersDialog } from "./role-members-dialog";
 import { RolePermissionsDialog } from "./role-permissions-dialog";
@@ -31,10 +30,10 @@ import { SettingsPage, SettingsSection } from "./settings-page";
 /**
  * Les rôles de l'espace de travail.
  *
- * Trois actions par ligne, et trois refus assumés : un rôle livré avec le CRM
- * ne se renomme ni ne se supprime, un rôle souverain n'a pas de matrice de
- * permissions à éditer — il les détient toutes, présentes et futures — et un
- * rôle encore porté par un compte ne se supprime pas.
+ * Trois actions par ligne, et deux refus assumés : un rôle livré avec le CRM
+ * ne se supprime pas, et un rôle souverain n'a pas de matrice de permissions à
+ * éditer — il les détient toutes, présentes et futures. Un rôle encore porté se
+ * supprime en nommant son remplaçant : personne ne reste sans rôle.
  */
 export function RolesPanel() {
   const canWrite = usePermission("roles:write");
@@ -49,21 +48,11 @@ export function RolesPanel() {
   const [creating, setCreating] = useState(false);
   const [permissionsOf, setPermissionsOf] = useState<Role | null>(null);
   const [membersOf, setMembersOf] = useState<Role | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [removing, setRemoving] = useState<string | null>(null);
-
-  async function remove(role: Role) {
-    setRemoving(role.slug);
-    setActionError(null);
-    try {
-      await deleteRole(role.slug);
-      reload();
-    } catch (cause) {
-      setActionError(errorMessage(cause));
-    } finally {
-      setRemoving(null);
-    }
-  }
+  const [removing, setRemoving] = useState<Role | null>(null);
+  const { account } = useAuth();
+  // Le rang de l'appelant vient de la table des rôles, comme dans l'écran des
+  // membres : le front ne rejoue pas la hiérarchie, il la lit.
+  const actorRank = roles.find((role) => role.slug === account?.role)?.rank ?? 0;
 
   return (
     <SettingsPage
@@ -82,7 +71,6 @@ export function RolesPanel() {
           )
         }
       >
-        {actionError && <ErrorNotice message={actionError} />}
         {catalog.error && <ErrorNotice message={catalog.error} />}
 
         {error ? (
@@ -185,15 +173,8 @@ export function RolesPanel() {
                                     variant="ghost"
                                     size="icon"
                                     className="text-destructive size-7"
-                                    disabled={
-                                      removing === role.slug || role.user_count > 0
-                                    }
-                                    onClick={() => remove(role)}
-                                    title={
-                                      role.user_count > 0
-                                        ? "Des comptes portent encore ce rôle"
-                                        : `Supprimer ${role.name}`
-                                    }
+                                    onClick={() => setRemoving(role)}
+                                    title={`Supprimer ${role.name}`}
                                   >
                                     <Trash2Icon className="size-3.5" />
                                   </Button>
@@ -215,6 +196,20 @@ export function RolesPanel() {
           </p>
         )}
       </SettingsSection>
+
+      <RoleDeleteDialog
+        role={removing}
+        roles={roles}
+        actorRank={actorRank}
+        onOpenChange={(open) => {
+          if (!open) setRemoving(null);
+        }}
+        onDeleted={() => {
+          setRemoving(null);
+          reload();
+          workspace.reload();
+        }}
+      />
 
       {creating && (
         <RoleWizard
