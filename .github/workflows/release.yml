@@ -66,6 +66,15 @@ jobs:
     needs: brouillon
     strategy:
       fail-fast: true
+      # **Une plateforme à la fois, et ce n'est pas une économie.** Les deux
+      # tâches écrivent le *même* `latest.json` : `tauri-action` relit celui que
+      # la release porte déjà pour y ajouter sa plateforme, donc deux dépôts
+      # simultanés se liraient avant de s'écrire et le second perdrait le
+      # premier. La release sortirait avec une seule plateforme — et rien ne le
+      # dirait, les clients de l'autre système recevant « rien de neuf » pour
+      # toujours. Le temps d'attente double, la facture non : elle se compte en
+      # minutes de machine, pas en minutes d'horloge.
+      max-parallel: 1
       matrix:
         include:
           # Un seul paquet « universel » pour les deux familles de Mac : un
@@ -114,6 +123,30 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      # Le manifeste décide de tout ce qui suit : c'est lui que l'API relaie, et
+      # une plateforme absente est un système entier qui ne se mettra plus
+      # jamais à jour, sans message ni erreur. On refuse de publier un
+      # brouillon incomplet plutôt que de découvrir le trou à l'usage.
+      - name: Le manifeste couvre les deux systèmes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          id="$(gh api "repos/$GITHUB_REPOSITORY/releases/${{ needs.brouillon.outputs.id }}" \
+            --jq '.assets[] | select(.name == "latest.json") | .id')"
+          if [ -z "$id" ]; then
+            echo "::error::Aucun latest.json dans la release : rien à relayer."
+            exit 1
+          fi
+          gh api "repos/$GITHUB_REPOSITORY/releases/assets/$id" \
+            -H "Accept: application/octet-stream" > latest.json
+          echo "Plateformes : $(jq -r '.platforms | keys | join(", ")' latest.json)"
+          for system in darwin windows; do
+            if ! jq -e --arg s "$system" '.platforms | keys | any(startswith($s))' latest.json >/dev/null; then
+              echo "::error::Le manifeste ne porte aucune plateforme $system."
+              exit 1
+            fi
+          done
+
       - name: Publier la release
         env:
           GH_TOKEN: ${{ github.token }}
