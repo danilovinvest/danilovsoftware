@@ -318,6 +318,27 @@ export function setQuoteBalance(
 }
 
 /**
+ * Ajouter un virement à un règlement.
+ *
+ * Rend le devis mis à jour : son montant suit la somme de ses virements, et
+ * l'écran doit pouvoir l'afficher sans recharger la fiche entière.
+ */
+export function addQuotePayment(
+  quoteId: string,
+  payload: { paid_at: string; amount: string; reference?: string; kind?: "acompte" | "solde" },
+) {
+  return apiFetch<Quote>(`/v1/quotes/${quoteId}/payments`, { method: "POST", body: payload });
+}
+
+/**
+ * Retirer un virement. Retirer le dernier rend le montant du devis à vide : la
+ * somme d'aucune ligne n'est pas zéro euro, c'est « on ne sait plus ».
+ */
+export function removeQuotePayment(quoteId: string, paymentId: string) {
+  return apiFetch<Quote>(`/v1/quotes/${quoteId}/payments/${paymentId}`, { method: "DELETE" });
+}
+
+/**
  * Joindre une preuve à un cran. Elle ne coche pas le cran : l'état reste celui
  * des faits et des marques, et l'écran fait les deux gestes s'il le faut.
  */

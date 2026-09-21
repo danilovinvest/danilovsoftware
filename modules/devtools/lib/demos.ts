@@ -40,6 +40,20 @@ const FICHE_ETUDE = "/customers/fiche?id=7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "virements-d-un-acompte",
+    title: "Les virements d'un acompte, un par ligne",
+    date: "2026-09-21",
+    steps: [
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="tab-devis"]',
+        target: '[data-demo="quote-payment-add"]',
+        title: "Un acompte se paie rarement d'un coup",
+        body: "« 2 400 € encaissés » ne disait ni combien de virements ni quand : le client fractionne, une avance tombe à la signature et le reste à la commande des matériaux, et le devis ne portait qu'un nombre. Chaque virement a désormais sa ligne — sa date, son montant, la référence qui permet de le retrouver sur le relevé. Le bloc reste replié tant qu'aucun virement n'est saisi : un formulaire vide sous chacun des cinq cent trente-six devis ferait de la liste un écran de saisie. Et la somme fait autorité dès qu'une ligne existe : le serveur la recopie dans le montant de l'acompte, pour que le CRM n'affiche jamais deux nombres qui pourraient se contredire. Retirer le dernier virement rend le montant à vide — la somme d'aucune ligne n'est pas zéro euro, c'est « on ne sait plus ». Le statut, lui, ne bouge pas : un premier virement sur trois ne rend pas l'acompte encaissé, et c'est à l'entreprise de le dire.",
+      },
+    ],
+  },
+  {
     id: "societe-de-la-fiche",
     title: "La société se lit sur la ligne, sans cliquer",
     date: "2026-09-21",

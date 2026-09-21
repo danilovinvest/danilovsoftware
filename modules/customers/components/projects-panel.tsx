@@ -75,10 +75,12 @@ import { ProjectJalons } from "./project-jalons";
 import { ProjectNextAction } from "./project-next-action";
 import { ProjectTimeline } from "./project-timeline";
 import { ProjectDialog, QuoteDialog } from "./project-dialogs";
+import { QuotePayments } from "./quote-payments";
 import { RelanceDialog } from "./relance-dialog";
 import type {
   CustomerDetail,
   ProofBatch,
+  QuotePayment,
   StepProofInput,
   Interaction,
   InteractionKind,
@@ -1097,7 +1099,7 @@ function ProjectBlock({
 
               <TabsContent value="devis" className="pt-4">
                 <div className="flex flex-col gap-3">
-                  <QuoteList quotes={quotes} onChanged={onChanged} />
+                  <QuoteList quotes={quotes} payments={customer.payments} onChanged={onChanged} />
                   {/* La sous-traitance se lit en face des devis : c'est là que la
                       marge a un sens. */}
                   <SubcontractingPanel
@@ -1265,7 +1267,16 @@ function ProjectBlock({
  * moins cher, racontent une remise — l'écart est affiché, parce que c'est lui
  * qu'on cherche.
  */
-function QuoteList({ quotes, onChanged }: { quotes: Quote[]; onChanged: () => void }) {
+function QuoteList({
+  quotes,
+  payments,
+  onChanged,
+}: {
+  quotes: Quote[];
+  /** Les virements de toute la fiche : chaque ligne y prend les siens. */
+  payments: QuotePayment[];
+  onChanged: () => void;
+}) {
   const canDelete = usePermission("quotes:delete");
   const canWrite = usePermission("quotes:write");
   const remove = useAction((id: string) => api.deleteQuote(id));
@@ -1428,6 +1439,27 @@ function QuoteList({ quotes, onChanged }: { quotes: Quote[]; onChanged: () => vo
 
               {quote.comment && (
                 <p className="text-muted-foreground w-full text-xs">{quote.comment}</p>
+              )}
+
+              {/*
+                Les virements de l'acompte, quand il y en a.
+
+                Ils prennent toute la largeur de la ligne — le `li` est en
+                `flex-wrap`, donc ce bloc passe seul en dessous — et ne
+                s'affichent que si un acompte est attendu ou reçu : un
+                formulaire de virement sous une facture déjà soldée n'aurait
+                rien à recevoir. Le solde se fractionne de la même façon en
+                base et n'a pas encore d'écran.
+              */}
+              {quote.deposit_status !== "non_applicable" && (
+                <QuotePayments
+                  quoteId={quote.id}
+                  payments={payments.filter(
+                    (payment) => payment.quote_id === quote.id && payment.kind === "acompte",
+                  )}
+                  canWrite={canWrite}
+                  onChanged={onChanged}
+                />
               )}
 
               {/*
