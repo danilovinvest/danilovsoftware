@@ -108,6 +108,14 @@ jobs:
             targets: ""
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
+    # **Bash, y compris sur Windows.** Le shell par défaut y est PowerShell, qui
+    # refuse `if [ -z … ]` par une `ParserError` — la garde ajoutée juste en
+    # dessous a fait échouer une release entière pour cette seule raison. Les
+    # runners GitHub embarquent bash sur les trois systèmes ; le fixer une fois
+    # ici évite d'y repenser à chaque étape ajoutée.
+    defaults:
+      run:
+        shell: bash
     steps:
       # `tauri-action` **saute silencieusement tous les dépôts** quand son
       # `releaseId` est vide, et rend la tâche verte. On refuse donc de
