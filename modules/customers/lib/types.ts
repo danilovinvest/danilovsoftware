@@ -87,6 +87,8 @@ export type ProjectSummary = {
   source_status: string;
   site_city: string;
   started_at: string | null;
+  /** La fin du chantier : une date de début seule ne dit pas s'il est terminé. */
+  finished_at: string | null;
   quote_count: number;
   total_amount_ttc: string;
   last_reminder_at: string | null;
@@ -207,6 +209,15 @@ export type Project = {
   site_city: string;
   notes: string;
   started_at: string | null;
+  /**
+   * La fin du chantier.
+   *
+   * La colonne existait depuis la migration 40 et l'agenda l'écrivait déjà,
+   * mais l'API ne la servait pas et aucun formulaire ne l'envoyait : une
+   * affaire terminée ne savait le dire qu'à l'événement qui l'avait datée.
+   * À ne pas confondre avec `closed_at`, qui clôt l'affaire commerciale.
+   */
+  finished_at: string | null;
   closed_at: string | null;
   /** Le dossier OneDrive relié par la copie ; vide sinon. */
   drive_path: string;

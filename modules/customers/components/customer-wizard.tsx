@@ -66,6 +66,7 @@ function emptyProject(): ProjectPayload {
     site_city: "",
     notes: "",
     started_at: null,
+    finished_at: null,
     closed_at: null,
     mission: null,
     promised_at: null,
@@ -93,6 +94,7 @@ export function CustomerWizard() {
         ...project,
         site_city: project.site_city || customer.city,
         started_at: project.started_at ?? customer.requested_at,
+        finished_at: project.finished_at,
       });
     }
     return created;

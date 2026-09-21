@@ -232,6 +232,9 @@ function Body({
           site_address: w.site_address, site_postal_code: w.site_postal_code,
           site_city: w.city, notes: w.notes,
           started_at: value ? value.slice(0, 10) : null,
+          // Renvoyée telle quelle, pour la même raison que le reste : la route
+          // remplace l'affaire entière.
+          finished_at: w.finished_at,
           closed_at: w.closed_at,
           mission: w.mission,
           promised_at: w.promised_at,

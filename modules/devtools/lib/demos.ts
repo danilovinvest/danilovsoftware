@@ -40,6 +40,35 @@ const FICHE_ETUDE = "/customers/fiche?id=7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "dates-de-chantier-dans-la-fiche",
+    title: "Les deux bornes du chantier, dans la fiche",
+    date: "2026-09-21",
+    steps: [
+      {
+        /*
+          Le Faucheur porte deux affaires datées — c'est la fiche où la mention
+          apparaît deux fois, donc celle où le changement se voit.
+        */
+        path: "/customers/fiche?id=77c807e5-f0c4-4bad-b0f7-d404d2a00782",
+        target: '[data-demo="project-periode"]',
+        title: "La ligne de l'affaire dit quand le chantier a lieu",
+        body: "Il fallait déplier l'affaire, puis ouvrir son formulaire, pour savoir si un chantier était daté. La ligne repliée le dit maintenant d'elle-même : « du 3 au 17 juin » quand les deux bornes sont connues, « depuis le 3 juin » quand il a commencé sans finir, « terminé le 17 juin » quand seule la fin est saisie. Rien ne s'affiche quand aucune date n'existe — une mention vide pousserait le nom du responsable hors de la ligne. Mesuré en production : 140 affaires sur 522 portent une date de démarrage, et aucune n'en portait de fin, faute d'un endroit où la saisir.",
+      },
+      {
+        /*
+          La fiche d'exemple des démos : une seule affaire, dépliée d'office,
+          donc « Modifier » est atteignable en un clic. Le Faucheur en porte
+          plusieurs et resterait replié.
+        */
+        path: FICHE_ETUDE,
+        click: '[data-demo="project-edit"]',
+        target: '[data-demo="project-dates"]',
+        title: "Et la fin du chantier se saisit enfin",
+        body: "La colonne existait depuis mars et l'agenda l'écrivait déjà : poser un événement « Chantier » avec sa date de fin la renseignait. Mais l'API ne la servait dans aucune réponse et aucun formulaire ne l'envoyait — une affaire terminée ne savait le dire qu'à l'événement qui l'avait datée, sans que la fiche puisse le montrer ni le corriger. C'est ici, et ici seulement, qu'une date se retire : un événement d'agenda n'écrit que ce qu'il sait et n'efface jamais, la fiche voit l'état complet et fait autorité.",
+      },
+    ],
+  },
+  {
     id: "application-de-bureau",
     title: "Le CRM devient une application de bureau",
     date: "2026-09-18",

@@ -189,6 +189,9 @@ export function ProjectsPanel({
           site_city: project.site_city,
           notes: project.notes,
           started_at: date ? date.slice(0, 10) : null,
+          // Renvoyée telle quelle : réserver un démarrage ne doit pas effacer
+          // une fin de chantier déjà saisie.
+          finished_at: project.finished_at,
           closed_at: project.closed_at,
           mission: project.mission,
           promised_at: project.promised_at,
@@ -410,6 +413,22 @@ function NewProjectButton({ onClick }: { onClick: () => void }) {
       Nouveau projet
     </Button>
   );
+}
+
+/**
+ * Les deux bornes du chantier, dites en une phrase.
+ *
+ * Trois cas, et aucun ne se confond : « du 3 au 17 juin » quand tout est connu,
+ * « depuis le 3 juin » quand il a commencé sans finir, « terminé le 17 juin »
+ * quand seule la fin est saisie — ce qui arrive sur une affaire reprise. Vide
+ * quand aucune date n'existe : une mention « — · — » n'apprendrait rien et
+ * pousserait le nom du responsable hors de la ligne.
+ */
+function periodeChantier(started: string | null, finished: string | null): string {
+  if (started && finished) return `du ${formatDate(started)} au ${formatDate(finished)}`;
+  if (started) return `depuis le ${formatDate(started)}`;
+  if (finished) return `terminé le ${formatDate(finished)}`;
+  return "";
 }
 
 // ---------------------------------------------------------------------------
@@ -757,6 +776,7 @@ function ProjectBlock({
   const site = [project.site_address, project.site_postal_code, project.site_city]
     .filter(Boolean)
     .join(", ");
+  const periode = periodeChantier(project.started_at, project.finished_at);
 
   return (
     <Card className="gap-0 overflow-hidden py-0">
@@ -808,6 +828,7 @@ function ProjectBlock({
             </div>
             <div className="text-muted-foreground truncate text-xs">
               {site || "Chantier non renseigné"}
+              {periode && <span data-demo="project-periode"> · {periode}</span>}
               {project.manager_name && ` · ${project.manager_name}`}
             </div>
           </div>

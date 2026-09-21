@@ -55,6 +55,8 @@ export type Worksite = {
   city: string;
 
   started_at: string | null;
+  /** La fin du chantier : renvoyée telle quelle quand cet écran réserve une date. */
+  finished_at: string | null;
   closed_at: string | null;
   created_at: string;
 
