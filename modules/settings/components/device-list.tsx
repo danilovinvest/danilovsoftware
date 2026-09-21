@@ -42,6 +42,15 @@ function formatLastSeen(iso: string): string {
  * d'embarquer une bibliothèque de détection pour une ligne de texte.
  */
 function describeDevice(userAgent: string) {
+  // L'application de bureau n'est pas un navigateur, et son user-agent ne
+  // ressemble à aucun : sans cette branche elle s'affichait « Navigateur
+  // inconnu ». Le CRM web montre la même liste — quelqu'un qui a installé
+  // l'application y voit sa session, et doit la reconnaître.
+  const app = /^OMPT CRM desktop\/[^ ]+ \(([^)]+)\)/.exec(userAgent);
+  if (app) {
+    return { label: `Application OMPT sur ${app[1]}`, Icon: MonitorIcon };
+  }
+
   const browser =
     /Edg\//.test(userAgent) ? "Edge"
     : /OPR\//.test(userAgent) ? "Opera"
