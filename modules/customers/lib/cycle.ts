@@ -431,19 +431,32 @@ export function readCycle(
     retire rien — deux vues de la même affaire se contrediraient au clic
     suivant.
   */
+  /*
+    **Une date écrite par quelqu'un l'emporte sur une date déduite.**
+
+    Les cinq crans à marque lisaient d'abord le fait — le premier échange, le
+    rendez-vous consigné, la date d'émission du devis — et la marque ne servait
+    qu'à défaut. La conséquence se voyait à l'écran : sur une affaire dont le
+    rendez-vous était déjà consigné, saisir une date ne changeait rien,
+    puisqu'elle n'était jamais lue. Corriger une frise était impossible
+    précisément là où il y avait quelque chose à corriger.
+
+    L'ordre s'inverse donc pour la **date**, et pour elle seule : ce qui
+    franchit le cran reste le fait **ou** la marque, exactement comme avant.
+    Retirer la marque fait réapparaître la date déduite, ce qui rend au bouton
+    « Retirer » un effet visible qu'il n'avait pas.
+  */
   const contactFait = mine.length > 0 || stage !== "demande_recue";
   const contactDone = contactFait || marks.contact_at !== null;
-  const contactAt = earliest(
-    firstContact?.occurred_at,
-    marks.contact_at ?? undefined,
-    contactDone ? anchor : undefined,
-  );
+  const contactAt =
+    marks.contact_at ??
+    earliest(firstContact?.occurred_at, contactDone ? anchor : undefined);
 
   const rdvFait =
     (rdv !== null && rdv.occurred_at <= new Date(now).toISOString()) ||
     afterStage(stage, "rdv_planifie");
   const rdvDone = rdvFait || marks.rdv_at !== null;
-  const rdvAt = rdv?.occurred_at ?? marks.rdv_at ?? (rdvDone ? project.started_at : null);
+  const rdvAt = marks.rdv_at ?? rdv?.occurred_at ?? (rdvDone ? project.started_at : null);
 
   const devisFactAt = sent?.issued_at ?? signed?.issued_at ?? (lead?.issued_at ?? null);
   // « Devis envoyé » veut dire envoyé : le cran est franchi à cette étape, pas
@@ -452,7 +465,7 @@ export function readCycle(
   const devisFait =
     devisFactAt !== null || atOrAfterStage(stage, "devis_envoye") || signed !== null;
   const devisDone = devisFait || marks.quote_sent_at !== null;
-  const devisAt = devisFactAt ?? marks.quote_sent_at;
+  const devisAt = marks.quote_sent_at ?? devisFactAt;
 
   /*
     « Négociation » et « Signé » se cochent séparément.
@@ -467,9 +480,9 @@ export function readCycle(
     signed?.issued_at ?? (stage === "gagne" || stage === "realise" ? project.started_at : null);
   const signeFait = signed !== null || stage === "gagne" || stage === "realise";
   const signeDone = signeFait || marks.signed_at !== null;
-  const signeAt = signeFactAt ?? marks.signed_at;
+  const signeAt = marks.signed_at ?? signeFactAt;
   const negoDone = signeFait || marks.negotiation_at !== null;
-  const negoAt = signeFactAt ?? marks.negotiation_at;
+  const negoAt = marks.negotiation_at ?? signeFactAt;
 
   const deposit: PaymentStatus = signed?.deposit_status ?? lead?.deposit_status ?? "non_applicable";
   const acompteDone = deposit === "recu";
