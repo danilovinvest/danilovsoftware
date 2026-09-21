@@ -475,12 +475,38 @@ export type StepProofInput = {
   mail_message_id: string | null;
 };
 
+/**
+ * Un virement, une ligne d'un règlement.
+ *
+ * Un acompte se paie rarement d'un coup, et le devis ne portait qu'un nombre :
+ * « 2 400 € encaissés » ne disait ni combien de virements ni quand. La somme
+ * des lignes **fait autorité** dès qu'il en existe une — le serveur la recopie
+ * dans le montant du devis — pour que le CRM n'affiche jamais deux nombres qui
+ * pourraient se contredire.
+ */
+export type QuotePayment = {
+  id: string;
+  quote_id: string;
+  /** « acompte » ou « solde ». Seul l'acompte a un écran pour l'instant. */
+  kind: "acompte" | "solde";
+  /** Le jour où il est tombé, en `AAAA-MM-JJ`. */
+  paid_at: string;
+  amount: string;
+  /** De quoi le retrouver sur le relevé. Vide quand on ne l'a pas. */
+  reference: string;
+  note: string;
+  created_at: string;
+  created_by_name: string;
+};
+
 export type CustomerDetail = Customer & {
   contacts: Contact[];
   projects: Project[];
   quotes: Quote[];
   interactions: Interaction[];
   milestones: Milestones[];
+  /** Les virements des devis de la fiche, chacun disant son `quote_id`. */
+  payments: QuotePayment[];
   /** Les preuves jointes aux crans de la frise, toutes affaires confondues. */
   step_proofs: StepProof[];
 };
