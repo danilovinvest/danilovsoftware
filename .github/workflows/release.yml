@@ -96,16 +96,22 @@ jobs:
       max-parallel: 1
       matrix:
         include:
+          # **Windows d'abord, et c'est une question de facture.** GitHub compte
+          # une minute macOS pour dix minutes Linux et une minute Windows pour
+          # deux : la tâche macOS coûte cinq fois la tâche Windows. Avec
+          # `fail-fast` et une plateforme à la fois, échouer sur la moins chère
+          # épargne la plus chère — l'inverse paie macOS avant de découvrir que
+          # Windows ne passe pas, ce qui est exactement arrivé.
+          - name: Windows
+            runner: windows-latest
+            args: ""
+            targets: ""
           # Un seul paquet « universel » pour les deux familles de Mac : un
           # seul téléchargement à donner, et une seule tâche macOS à payer.
           - name: macOS (universel)
             runner: macos-latest
             args: --target universal-apple-darwin
             targets: aarch64-apple-darwin,x86_64-apple-darwin
-          - name: Windows
-            runner: windows-latest
-            args: ""
-            targets: ""
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     # **Bash, y compris sur Windows.** Le shell par défaut y est PowerShell, qui
