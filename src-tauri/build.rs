@@ -13,8 +13,14 @@
 //! les lire. La CSP, elle, est relue et confrontée. Une divergence arrête la
 //! compilation en nommant les deux valeurs, là où elle produisait un paquet
 //! muet.
+//!
+//! La lecture de la politique vit dans `src/csp.rs`, inclus ici : un script de
+//! construction n'est pas compilé par `cargo test`, et cette règle-là mérite
+//! des tests.
 
 use std::{env, fs};
+
+include!("src/csp.rs");
 
 /// L'API du CRM. `OMPT_API_URL` l'emporte, et doit alors figurer dans la CSP.
 const DEFAULT_API_URL: &str = "https://testbeforeproduction.xyz";
@@ -27,6 +33,7 @@ const CONFIG: &str = "tauri.conf.json";
 
 fn main() {
     println!("cargo:rerun-if-changed={CONFIG}");
+    println!("cargo:rerun-if-changed=src/csp.rs");
 
     let api = resolve("OMPT_API_URL", DEFAULT_API_URL);
     let web = resolve("OMPT_WEB_URL", DEFAULT_WEB_URL);
@@ -50,25 +57,20 @@ fn resolve(name: &str, default: &str) -> String {
     }
 }
 
-/// La page ne peut appeler que ce que `connect-src` autorise. On compare aux
-/// sources telles qu'elles sont écrites : une source de CSP est une chaîne
-/// exacte, pas une URL à normaliser — `https://exemple.fr` et
-/// `https://exemple.fr/` n'y sont pas la même chose.
+/// La page ne peut appeler que ce que la CSP autorise.
 fn check_connect_src(api: &str) {
     let raw = fs::read_to_string(CONFIG).unwrap_or_else(|e| panic!("{CONFIG} illisible : {e}"));
-    let config: serde_json::Value =
+    let config: Value =
         serde_json::from_str(&raw).unwrap_or_else(|e| panic!("{CONFIG} illisible : {e}"));
 
-    let connect = config["app"]["security"]["csp"]["connect-src"]
-        .as_str()
-        .unwrap_or_else(|| panic!("{CONFIG} : app.security.csp.connect-src absent ou non textuel"));
-
-    if !connect.split_whitespace().any(|source| source == api) {
+    let connect = connect(&config);
+    if !connect.allows(api) {
         panic!(
             "OMPT_API_URL vaut « {api} », que la CSP n'autorise pas.\n\
-             connect-src dit : {connect}\n\
+             Les appels réseau de la page sont bornés par : {}\n\
              Ajouter l'adresse à app.security.csp.connect-src dans {CONFIG}, \
-             sans quoi le navigateur refusera chaque appel à l'API en silence."
+             sans quoi le navigateur refusera chaque appel à l'API en silence.",
+            connect.describe()
         );
     }
 }

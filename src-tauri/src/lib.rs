@@ -12,6 +12,13 @@ mod links;
 mod session;
 mod updates;
 
+// `csp` n'appartient pas à la coque : il est inclus par `build.rs`, qui lit la
+// CSP de `tauri.conf.json` avant de compiler. Il est déclaré ici **sous
+// `cfg(test)` seulement**, pour que `cargo test` couvre sa règle sans que
+// l'application n'embarque un analyseur dont elle n'a aucun usage.
+#[cfg(test)]
+mod csp;
+
 use tauri::{AppHandle, State, WebviewWindowBuilder};
 use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_opener::OpenerExt;

@@ -117,7 +117,13 @@ la compilation le vérifie.** La CSP l'emporte sur tout : bâtir avec un
 `OMPT_API_URL` absent de `connect-src` donnait une application où le navigateur
 refuse **chaque** appel API — sans erreur réseau, sans message, seulement une
 console que personne n'ouvre. `build.rs` relit donc `tauri.conf.json` et
-s'arrête en nommant les deux valeurs. C'est aussi lui qui porte les défauts et
+s'arrête en nommant les deux valeurs. Il lit la politique par `src/csp.rs`,
+qu'il **inclut** (`include!`) : un script de construction n'est pas compilé par
+`cargo test`, et cette règle-là mérite des tests — d'où un module déclaré sous
+`cfg(test)` seulement, que l'application n'embarque pas. Elle couvre les
+**trois formes** que Tauri accepte (politique en une chaîne, objet de
+directives, directive en tableau) et le repli sur `default-src` : n'en lire
+qu'une refusait une configuration valide en annonçant « connect-src absent ». C'est aussi lui qui porte les défauts et
 les passe au compilateur (`cargo:rustc-env`), `config.rs` ne faisant plus que
 les lire : une variable **vide y vaut absente**, sans quoi une variable de dépôt
 déclarée mais non remplie bâtirait une application dont l'API est la chaîne
