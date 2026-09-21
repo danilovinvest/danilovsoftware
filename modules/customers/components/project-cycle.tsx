@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CheckIcon, PaperclipIcon, PauseIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
 import { DateField } from "@/shared/ui/date-time-field";
 import { cn } from "@/lib/utils";
 import { DepositEditor, type DepositTotal, type ReglementKind } from "./deposit-field";
@@ -98,6 +99,14 @@ export type CycleEdit = {
   onBalance: (amount: string | null) => boolean | Promise<boolean>;
   /** Retire l'encaissement du solde. Rend la réussite. */
   onBalanceRemove: () => boolean | Promise<boolean>;
+  /**
+   * Ce qui se passe pendant la négociation, et le moyen de l'écrire.
+   *
+   * Le seul cran qui porte autre chose qu'une date, et c'est voulu : c'est le
+   * seul où l'on attende, et où « pourquoi ça bloque » décide de la relance.
+   */
+  negotiationNote: string;
+  onNote: (note: string) => boolean | Promise<boolean>;
   /**
    * Les preuves d'un cran : celles qu'on a jointes, et celles que l'affaire
    * porte déjà (le PDF d'un devis, une facture, un rendez-vous consigné).
@@ -344,7 +353,23 @@ function StepDot({
     n'éteint pas un cran que le fait franchit par ailleurs, et un bouton sans
     effet vaut moins qu'une phrase qui l'explique.
   */
-  const corrigible = write.target === "mark";
+  /*
+    Un cran qui sait écrire sait retirer.
+
+    La règle ne reconnaissait que les marques, si bien qu'un jalon posé par
+    erreur — « matériaux commandés » cliqué de travers — affichait « rien à
+    retirer ici » au-dessus d'une date bien réelle. Les quatre cibles que le
+    cran possède se retirent toutes : sa marque, son jalon, sa liste de
+    matériaux, la date de chantier de l'affaire.
+
+    L'acompte et le solde restent dehors : ils vivent sur le devis, et c'est
+    leur éditeur qui porte son propre « Retirer l'encaissement ».
+  */
+  const corrigible =
+    write.target === "mark" ||
+    write.target === "jalon" ||
+    write.target === "materials" ||
+    write.target === "worksite_date";
   const parLeFait =
     point.state === "done" && !corrigible && (point.byFact || marked === null);
   // L'acompte et le solde vivent sur le devis. Sans devis, il n'y a pas où
@@ -452,6 +477,17 @@ function StepDot({
                   ? `${write.note} Cette affaire n'en porte aucun.`
                   : write.note}
             </p>
+          )}
+
+          {point.step === "negociation" && !sansDevis && (
+            <NoteNegociation
+              // Le brouillon repart de ce que porte l'affaire à chaque
+              // ouverture, comme les autres saisies du panneau.
+              key={edit.negotiationNote}
+              value={edit.negotiationNote}
+              pending={edit.pending}
+              onSave={edit.onNote}
+            />
           )}
 
           {!parLeFait && !saisi && (
@@ -609,5 +645,60 @@ function MiniCycle({ points, className }: { points: CyclePoint[]; className?: st
         />
       ))}
     </span>
+  );
+}
+
+/**
+ * Pourquoi la négociation traîne, écrit sur le cran.
+ *
+ * Le cran ne portait qu'une date : on lisait « en attente depuis 23 j » sans
+ * jamais savoir sur quoi ça bloque — le prix, un délai, un confrère, un tiers
+ * qu'on attend. C'est pourtant la seule chose qui permette de décider de la
+ * relance, et la relance a justement un champ de motif qui ne remonte nulle
+ * part sur la frise.
+ *
+ * Il s'enregistre à part de la date : on note souvent avant de savoir si le
+ * cran est franchi, et exiger les deux ensemble obligerait à cocher pour
+ * pouvoir écrire.
+ */
+function NoteNegociation({
+  value,
+  pending,
+  onSave,
+}: {
+  value: string;
+  pending?: boolean;
+  onSave: (note: string) => boolean | Promise<boolean>;
+}) {
+  const [draft, setDraft] = useState(value);
+  const modifie = draft.trim() !== value.trim();
+
+  return (
+    <div className="flex flex-col gap-1" data-demo="negociation-note">
+      <label className="text-muted-foreground text-[11px]">Ce qui bloque</label>
+      <Textarea
+        rows={2}
+        placeholder="Le prix, un délai, un confrère, un tiers qu'on attend…"
+        className="min-h-14 text-xs"
+        value={draft}
+        disabled={pending}
+        onChange={(event) => setDraft(event.target.value)}
+      />
+      {modifie && (
+        <div className="flex items-center justify-end gap-2">
+          <Button
+            size="xs"
+            variant="ghost"
+            disabled={pending}
+            onClick={() => setDraft(value)}
+          >
+            Annuler
+          </Button>
+          <Button size="xs" disabled={pending} onClick={() => void onSave(draft.trim())}>
+            Enregistrer
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }

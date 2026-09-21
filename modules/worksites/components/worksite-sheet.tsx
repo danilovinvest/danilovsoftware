@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { customerHref } from "@/shared/lib/routes";
 import { TONE_SOFT } from "@/shared/ui/panel";
 import { euros, formatAmount, formatDate, formatDateTime } from "@/shared/lib/format";
 import { usePermission } from "@/modules/auth";
@@ -34,7 +35,6 @@ import { ErrorNotice } from "@/shared/ui/feedback";
 import { STUDY_STATUS, WORKSITE_STATUS } from "../lib/labels";
 import { isSilent } from "../lib/derive";
 import type { Metier, ReadWorksite, WorksiteQuote } from "../lib/types";
-import { customerHref } from "@/shared/lib/routes";
 
 /** Le devis signé de l'affaire, celui qui porte le règlement. */
 function signedQuote(w: ReadWorksite["worksite"]): WorksiteQuote | null {
@@ -270,6 +270,8 @@ function Body({
           rdv_at: w.rdv_at,
           quote_sent_at: w.quote_sent_at,
           negotiation_at: w.negotiation_at,
+          // Renvoyée telle quelle, pour la même raison que les marques.
+          negotiation_note: w.negotiation_note ?? "",
           signed_at: w.signed_at,
         });
       }

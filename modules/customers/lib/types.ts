@@ -425,6 +425,8 @@ export type Milestones = {
   rdv_at: string | null;
   quote_sent_at: string | null;
   negotiation_at: string | null;
+  /** Ce qui se passe pendant la négociation : le prix, un délai, un tiers. */
+  negotiation_note: string;
   signed_at: string | null;
 };
 

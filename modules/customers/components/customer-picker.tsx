@@ -606,6 +606,7 @@ function jalonsDuPremierContact() {
     rdv_at: null,
     quote_sent_at: null,
     negotiation_at: null,
+    negotiation_note: "",
     signed_at: null,
   };
 }

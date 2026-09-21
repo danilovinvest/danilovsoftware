@@ -203,6 +203,14 @@ export type StepMarks = {
   rdv_at: string | null;
   quote_sent_at: string | null;
   negotiation_at: string | null;
+  /*
+    Ce qui se passe pendant la négociation.
+
+    La seule marque qui porte autre chose qu'une date, et c'est voulu : c'est
+    le seul cran où l'on attende, et où la question « pourquoi ça bloque »
+    décide de la relance. Vide quand personne n'a rien écrit.
+  */
+  negotiation_note: string;
   signed_at: string | null;
 };
 
@@ -211,6 +219,7 @@ export const EMPTY_MARKS: StepMarks = {
   rdv_at: null,
   quote_sent_at: null,
   negotiation_at: null,
+  negotiation_note: "",
   signed_at: null,
 };
 
@@ -226,6 +235,7 @@ export function readMarks(
     rdv_at: m.rdv_at ?? null,
     quote_sent_at: m.quote_sent_at ?? null,
     negotiation_at: m.negotiation_at ?? null,
+    negotiation_note: m.negotiation_note ?? "",
     signed_at: m.signed_at ?? null,
   };
 }

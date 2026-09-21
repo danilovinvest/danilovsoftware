@@ -36,32 +36,29 @@ import type { CustomerListItem, ProjectSummary, Review } from "../lib/types";
 
 
 /**
- * La société d'une fiche, dite par la couleur de sa ligne.
+ * La société d'une fiche, dite par un badge plein.
  *
  * Demandé par le dirigeant : « je veux pouvoir voir dans la fiche mais sans
- * cliquer dessus si c'est une affaire de groupe ou structure ». Il fallait
- * déplier une ligne, puis lire la société de chaque affaire, pour une question
- * qui se pose en parcourant deux cents lignes.
+ * cliquer dessus si c'est une affaire de groupe ou structure ». La première
+ * réponse teintait la **ligne entière** ; il l'a refusée — « trop light, trop
+ * pastel, et trop bizarre » — et il a raison sur le fond : un fond de ligne
+ * doit rester assez pâle pour ne pas effacer le texte qu'il porte, donc il ne
+ * peut pas être franc. Un badge, lui, n'a rien à laisser lisible derrière lui.
  *
- * Les teintes sont celles de la couche sémantique et non des valeurs écrites à
- * la main : elles suivent le thème clair comme sombre et chaque palette. Le
- * cran soft, et non le plein — une ligne de tableau remplie à la teinte
- * effacerait le texte qu'elle porte.
+ * Cran 9 de la teinte en fond et `--background` en encre, jamais du blanc :
+ * l'échelle bascule en thème sombre et un blanc en dur y disparaîtrait. C'est
+ * `TONE_BUTTON` sans son survol, la même construction que les boutons teintés.
  *
- * **Deux cas restent gris, et c'est un choix.** Une fiche mixte porte les deux
- * sociétés (34 sur 418) : lui donner la couleur de l'une serait faux une fois
- * sur deux, et la fiche reste entière des deux côtés — c'est la doctrine du
- * périmètre. Une fiche sans devis ni affaire attribuée (116) n'est rangée
- * nulle part. Une troisième couleur pour « on ne sait pas » ferait trois
- * couleurs à apprendre pour deux sociétés.
- *
- * Dépliée, la ligne garde sa teinte au cran supérieur : l'état déplié se lit
- * déjà au chevron, et perdre la couleur au moment où l'on regarde les affaires
- * serait perdre la réponse en posant la question.
+ * **Deux cas n'ont pas de badge, et c'est un choix.** Une fiche mixte porte les
+ * deux sociétés (34 sur 418) : lui en donner un serait faux une fois sur deux,
+ * et la fiche reste entière des deux côtés — c'est la doctrine du périmètre.
+ * Une fiche sans devis ni affaire attribuée (116) n'est rangée nulle part.
+ * Une troisième pastille pour « on ne sait pas » ferait trois choses à
+ * apprendre pour deux sociétés, et remplirait la colonne de bruit.
  */
-const ISSUER_ROW: Record<string, { base: string; open: string }> = {
-  "ompt-groupe": { base: "bg-info-soft/40", open: "bg-info-soft" },
-  "ompt-structure": { base: "bg-success-soft/40", open: "bg-success-soft" },
+const ISSUER_BADGE: Record<string, { label: string; className: string }> = {
+  "ompt-groupe": { label: "GROUPE", className: "bg-info text-background" },
+  "ompt-structure": { label: "STRUCTURE", className: "bg-success text-background" },
 };
 
 /**
@@ -178,29 +175,11 @@ export function CustomerTable({
                 );
                 const lead = leadProject(reads);
 
-                const societe = ISSUER_ROW[customer.issuer];
+                const societe = ISSUER_BADGE[customer.issuer];
 
                 return (
                   <Fragment key={customer.id}>
-                    <TableRow
-                      /*
-                        La teinte passe **après** le fond de l'état déplié :
-                        `cn` résout les conflits de classes par la dernière,
-                        et la couleur de la société doit l'emporter.
-                      */
-                      className={cn(
-                        open && "bg-muted/40",
-                        societe && (open ? societe.open : societe.base),
-                      )}
-                      title={
-                        societe
-                          ? customer.issuer === "ompt-groupe"
-                            ? "Affaire OMPT GROUPE"
-                            : "Affaire OMPT STRUCTURE"
-                          : undefined
-                      }
-                      data-demo={societe ? "fiche-societe" : undefined}
-                    >
+                    <TableRow className={cn(open && "bg-muted/40")}>
                       <TableCell className="pr-0">
                         {hasProjects && (
                           <Button
@@ -224,6 +203,18 @@ export function CustomerTable({
                         >
                           {customer.display_name}
                         </Link>
+                        {societe && (
+                          <span
+                            data-demo="fiche-societe"
+                            title={`Affaire OMPT ${societe.label}`}
+                            className={cn(
+                              "ml-2 rounded-md px-1.5 py-0.5 text-[0.6rem] font-semibold tracking-wide",
+                              societe.className,
+                            )}
+                          >
+                            {societe.label}
+                          </span>
+                        )}
                         <p className="text-muted-foreground truncate font-mono text-xs">
                           {customer.reference}
                           {customer.city && ` · ${customer.city}`}

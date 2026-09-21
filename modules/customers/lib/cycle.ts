@@ -462,27 +462,37 @@ export function readCycle(
   // « Devis envoyé » veut dire envoyé : le cran est franchi à cette étape, pas
   // à la suivante. Utiliser `afterStage` laisserait le devis « à faire » sur
   // toutes les affaires dont c'est justement l'étape courante.
-  const devisFait =
-    devisFactAt !== null || atOrAfterStage(stage, "devis_envoye") || signed !== null;
+  /*
+    Un devis signé ne coche plus « Devis envoyé ».
+
+    C'était une implication d'un cran vers un autre, et le dirigeant les
+    refuse toutes : « arrête de faire en sorte que les étapes dépendent des
+    autres ». Restent les deux faits **propres** à ce cran — la date d'émission
+    d'un devis, et l'étape de l'affaire qui dit qu'il est parti.
+  */
+  const devisFait = devisFactAt !== null || atOrAfterStage(stage, "devis_envoye");
   const devisDone = devisFait || marks.quote_sent_at !== null;
   const devisAt = marks.quote_sent_at ?? devisFactAt;
 
   /*
-    « Négociation » et « Signé » se cochent séparément.
+    « Négociation » et « Signé » sont **indépendants**, dans les deux sens.
 
-    Le fait franchit les deux d'un coup — on ne signe pas sans avoir négocié, et
-    un devis accepté prouve les deux. Une **marque** ne franchit que son cran :
-    cocher « Signé » ne coche pas « Négociation », sans quoi la frise
-    redeviendrait ordonnée et l'on ne pourrait plus laisser un cran gris
-    derrière un cran vert. C'est exactement ce qui était demandé.
+    Un devis accepté cochait la négociation : « on ne signe pas sans avoir
+    négocié ». Le raisonnement est juste dans la vie et faux dans un écran —
+    il coche un cran que personne n'a franchi, et c'est ce que le dirigeant a
+    vu et refusé. Mesuré le 21/09 : **111 affaires sur 523** portent un devis
+    accepté et voyaient donc leur négociation verte sans qu'on l'ait dit.
+
+    La négociation ne se lit plus que de sa marque. Elle est de toute façon le
+    seul cran où il y ait quelque chose à raconter — d'où son commentaire.
   */
   const signeFactAt =
     signed?.issued_at ?? (stage === "gagne" || stage === "realise" ? project.started_at : null);
   const signeFait = signed !== null || stage === "gagne" || stage === "realise";
   const signeDone = signeFait || marks.signed_at !== null;
   const signeAt = marks.signed_at ?? signeFactAt;
-  const negoDone = signeFait || marks.negotiation_at !== null;
-  const negoAt = marks.negotiation_at ?? signeFactAt;
+  const negoDone = marks.negotiation_at !== null;
+  const negoAt = marks.negotiation_at;
 
   const deposit: PaymentStatus = signed?.deposit_status ?? lead?.deposit_status ?? "non_applicable";
   const acompteDone = deposit === "recu";
@@ -504,9 +514,14 @@ export function readCycle(
   // Le jalon compte autant que l'échange : c'est lui que pose la fiche, et que
   // pose un événement de rendez-vous depuis l'agenda.
   const rapportAt = rapport?.occurred_at ?? jalons.visit_report_sent_at;
-  // Ce qui le franchit **sans** son jalon : l'échange qui le consigne, ou le
-  // devis, puisqu'on ne chiffre pas une étude sans avoir visité.
-  const rapportFait = rapport !== null || devisDone;
+  /*
+    Le devis ne prouve plus le rapport de visite.
+
+    « On ne chiffre pas une étude sans avoir visité » : vrai, et c'était une
+    implication de plus. Seul l'échange qui consigne le rapport le franchit
+    désormais, à côté de son jalon.
+  */
+  const rapportFait = rapport !== null;
 
   // --- Chaque cran --------------------------------------------------------
   /*
@@ -535,23 +550,24 @@ export function readCycle(
     jalons.materials_ordered_at;
 
   /*
-    Une étape plus avancée prouve celles d'avant.
+    Une étape plus avancée ne prouve plus celles d'avant.
 
-    Un dossier envoyé a été calculé et validé, un rapport envoyé a été rédigé :
-    les laisser gris derrière un cran vert ferait croire à un trou dans la
-    production. Ce sont des faits, pas des marques — le panneau du cran le dit,
-    au lieu d'offrir un « Retirer » qui ne retirerait rien.
+    « Un dossier envoyé a été calculé et validé, un rapport envoyé a été
+    rédigé » : le raisonnement tenait, et il cochait quatre crans que personne
+    n'avait franchis. C'est précisément ce que le dirigeant a refusé, et le
+    prix qu'on payait était double — un cran vert qu'on n'avait pas posé, et
+    un « Retirer » impossible, puisqu'un fait déduit ne se retire pas.
+
+    Chaque cran de production ne se lit donc plus que de **son** jalon, qui
+    s'écrit et s'efface d'un clic. Un trou au milieu de la production est
+    désormais une information : il dit qu'une étape n'a pas été cochée.
   */
-  const dossierFait = jalons.plans_sent_at !== null;
-  const calculFait = jalons.final_ready_at !== null || dossierFait;
-  const redactionFait = jalons.report_sent_at !== null;
-  const sondageFait = jalons.survey_report_sent_at !== null;
 
   const entries: Record<CycleStep, Omit<Entry, "step">> = {
     contact: { done: contactDone, fact: contactFait, at: contactAt, since: contactAt ?? anchor },
     rdv: { done: rdvDone, fact: rdvFait, at: rdvAt, since: rdvAt ?? contactAt ?? anchor },
     rapport: {
-      done: rapportAt !== null || devisDone,
+      done: rapportAt !== null,
       fact: rapportFait,
       at: rapportAt,
       since: rdvAt ?? contactAt ?? anchor,
@@ -589,14 +605,14 @@ export function readCycle(
       since: jalons.worksite_date,
     },
     calcul: {
-      done: jalons.calc_done_at !== null || calculFait,
-      fact: calculFait,
+      done: jalons.calc_done_at !== null,
+      fact: false,
       at: jalons.calc_done_at,
       since: jalons.calc_started_at ?? depuisAcompte,
     },
     dossier: {
-      done: jalons.final_ready_at !== null || dossierFait,
-      fact: dossierFait,
+      done: jalons.final_ready_at !== null,
+      fact: false,
       at: jalons.final_ready_at,
       since: jalons.plans_review_at ?? jalons.plans_started_at ?? jalons.calc_done_at ?? depuisAcompte,
     },
@@ -607,8 +623,8 @@ export function readCycle(
       since: jalons.final_ready_at ?? depuisAcompte,
     },
     redaction: {
-      done: jalons.report_written_at !== null || redactionFait,
-      fact: redactionFait,
+      done: jalons.report_written_at !== null,
+      fact: false,
       at: jalons.report_written_at,
       since: signeAt,
     },
@@ -619,8 +635,8 @@ export function readCycle(
       since: jalons.report_validated_at ?? jalons.report_written_at ?? signeAt,
     },
     sondage: {
-      done: jalons.survey_done_at !== null || sondageFait,
-      fact: sondageFait,
+      done: jalons.survey_done_at !== null,
+      fact: false,
       at: jalons.survey_done_at,
       since: depuisAcompte,
     },

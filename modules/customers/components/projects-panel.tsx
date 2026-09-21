@@ -230,6 +230,7 @@ export function ProjectsPanel({
         rdv_at: suivant.rdv_at,
         quote_sent_at: suivant.quote_sent_at,
         negotiation_at: suivant.negotiation_at,
+        negotiation_note: suivant.negotiation_note,
         signed_at: suivant.signed_at,
       });
       // `useAction` rend ce que l'action renvoie, et l'appelant s'en sert pour
@@ -895,6 +896,8 @@ function ProjectBlock({
                       },
                       onBalance: solder,
                       onBalanceRemove: retirerSolde,
+                      negotiationNote: marks.negotiation_note,
+                      onNote: (note) => onOverride({ negotiation_note: note }),
                       proofs: (step) => preuves.filter((proof) => proof.step === step),
                       autoProofs: (step) => autoProofsOf(step, quotes, interactions),
                       customerId: customer.id,
