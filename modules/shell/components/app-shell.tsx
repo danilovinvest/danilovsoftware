@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { AppSidebar } from "./app-sidebar";
 import { PageTitleProvider, usePageTitle } from "./page-title";
 import { ShellHeader } from "./shell-header";
+import { StatusBar } from "./status-bar";
 
 /**
  * Largeur de la colonne. Plus large que les 236 px de Twenty : les entrées ont
@@ -70,6 +71,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 {children}
               </main>
             </div>
+            {/* Le pied de page coiffe toute la largeur, comme l'en-tête : il
+                parle du CRM entier, pas de l'écran ouvert. */}
+            <StatusBar />
           </SidebarProvider>
         </div>
       </TooltipProvider>

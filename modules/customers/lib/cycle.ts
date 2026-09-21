@@ -82,6 +82,8 @@ export type CycleStep =
  */
 export type Metier = "etudes" | "travaux";
 
+const NO_ORDERS: CycleOrders = {};
+
 const TRAVAUX_ORDRE: CycleStep[] = [
   "contact", "rdv", "devis", "negociation", "signe",
   "acompte", "chantier", "materiaux", "solde", "avis",
@@ -138,6 +140,17 @@ export function cycleOrder(
   metier: Metier,
   mission: ProjectMission = "etude_structurelle",
   avecSondage = false,
+  orders: CycleOrders = NO_ORDERS,
+): CycleStep[] {
+  const base = defaultCycleOrder(metier, mission, avecSondage);
+  return applyOrder(base, orders[parcoursOf(metier, mission)]);
+}
+
+/** L'ordre écrit dans le code, celui qui s'applique tant que personne n'en choisit un autre. */
+export function defaultCycleOrder(
+  metier: Metier,
+  mission: ProjectMission = "etude_structurelle",
+  avecSondage = false,
 ): CycleStep[] {
   if (metier === "travaux") return TRAVAUX_ORDRE;
 
@@ -158,6 +171,64 @@ export function cycleOrder(
     "rapport_sondage",
     ...ordre.slice(ancre + 1),
   ];
+}
+
+/*
+  L'ordre des crans, choisi par l'entreprise.
+
+  « Je veux pouvoir la réordonner à ma guise » : l'ordre ci-dessus reste celui
+  par défaut, et un ordre enregistré le remplace pour un **parcours** — les
+  travaux de GROUPE, ou l'une des trois missions de STRUCTURE, qui n'ont pas
+  les mêmes crans et ne peuvent donc pas partager un ordre.
+
+  L'ordre ne change que **l'ordre**. Ce qui franchit un cran, ce qu'il écrit et
+  ce que « à faire maintenant » propose restent attachés au cran, jamais à sa
+  place : déplacer « Négociation » avant « Contact » ne coche ni ne décoche
+  rien. Le cran courant, lui, suit l'ordre — c'est le premier non franchi de la
+  frise telle qu'on l'a voulue.
+*/
+export type Parcours = "travaux" | ProjectMission;
+
+export type CycleOrders = Partial<Record<Parcours, readonly string[]>>;
+
+export const PARCOURS: Array<{ key: Parcours; label: string; metier: Metier }> = [
+  { key: "travaux", label: "GROUPE · travaux", metier: "travaux" },
+  { key: "etude_structurelle", label: "STRUCTURE · étude structurelle", metier: "etudes" },
+  { key: "rapport_attestation", label: "STRUCTURE · rapport / attestation", metier: "etudes" },
+  { key: "sondage", label: "STRUCTURE · sondage", metier: "etudes" },
+];
+
+export function parcoursOf(metier: Metier, mission: ProjectMission = "etude_structurelle"): Parcours {
+  return metier === "travaux" ? "travaux" : mission;
+}
+
+/**
+ * Pose un ordre choisi sur l'ordre par défaut.
+ *
+ * Les deux ne coïncident pas toujours, et la règle tient en deux phrases. Un
+ * cran de l'ordre choisi que ce parcours n'affiche pas est **ignoré** — le
+ * sondage d'une étude qui n'en vend pas, un cran retiré du code. Un cran du
+ * parcours absent de l'ordre choisi est **rajouté après son prédécesseur par
+ * défaut** — un cran ajouté demain apparaît à sa place naturelle au lieu de
+ * disparaître d'une frise réordonnée hier.
+ */
+export function applyOrder(base: CycleStep[], custom?: readonly string[]): CycleStep[] {
+  if (!custom || custom.length === 0) return base;
+  const known = new Set<string>(base);
+  const kept = custom.filter(
+    (step, index): step is CycleStep => known.has(step) && custom.indexOf(step) === index,
+  );
+  if (kept.length === 0) return base;
+
+  return base.reduce<CycleStep[]>((order, step, index) => {
+    if (order.includes(step)) return order;
+    const before = base
+      .slice(0, index)
+      .reverse()
+      .find((previous) => order.includes(previous));
+    const at = before === undefined ? 0 : order.indexOf(before) + 1;
+    return [...order.slice(0, at), step, ...order.slice(at)];
+  }, kept);
 }
 
 /** Conservé pour ce qui n'a pas besoin de distinguer : la frise des travaux. */
@@ -401,6 +472,12 @@ export function readCycle(
     reçoit avec les jalons, les passe.
   */
   marks: StepMarks = EMPTY_MARKS,
+  /*
+    L'ordre choisi par l'entreprise, parcours par parcours.
+
+    Vide par défaut, et la frise suit alors l'ordre du code. Voir `applyOrder`.
+  */
+  orders: CycleOrders = NO_ORDERS,
 ): CyclePoint[] {
   const mine = interactions.filter((i) => i.project_id === project.id);
   const lead = leadQuote(quotes);
@@ -673,7 +750,7 @@ export function readCycle(
     la *mission* est `sondage` au singulier : les deux se lisent à un caractère
     près, et c'est une raison de plus de n'avoir qu'un seul endroit qui compare.
   */
-  const raw: Entry[] = cycleOrder(metier, mission, hasSurvey(quotes)).map((step) => ({
+  const raw: Entry[] = cycleOrder(metier, mission, hasSurvey(quotes), orders).map((step) => ({
     step,
     ...entries[step],
   }));

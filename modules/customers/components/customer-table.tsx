@@ -24,11 +24,13 @@ import {
   leadProject,
   nextAction,
   readCycle,
+  type CycleOrders,
   type Metier,
   type NextAction,
 } from "../lib/cycle";
 import { useScope } from "@/modules/group";
-import { readJalons } from "../lib/jalons";
+import { EMPTY_MARKS, readJalons } from "../lib/jalons";
+import { useCycleOrders } from "../hooks/use-cycle-orders";
 import { EnumBadge } from "./enum-badge";
 import { ProjectCycle } from "./project-cycle";
 import type { CustomerListItem, ProjectSummary, Review } from "../lib/types";
@@ -89,6 +91,7 @@ export function CustomerTable({
   // en mode STRUCTURE ce sont des études qu'on regarde, pas des chantiers.
   const scope = useScope();
   const metier: Metier = scope === "ompt-structure" ? "etudes" : "travaux";
+  const orders = useCycleOrders();
 
   /*
     Les cases cochées pendant la session, par-dessus ce que le serveur a servi.
@@ -170,7 +173,7 @@ export function CustomerTable({
                 const open = expanded.has(customer.id);
                 const hasProjects = customer.projects.length > 0;
                 const reads = customer.projects.map((project) =>
-                  read(project, now, metier),
+                  read(project, now, metier, orders),
                 );
                 const lead = leadProject(reads);
 
@@ -418,9 +421,9 @@ function ActionCell({ action }: { action: NextAction }) {
  * l'étape enregistrée. C'est le compromis assumé : la liste situe, la fiche
  * détaille.
  */
-function read(project: ProjectSummary, now: number, metier: Metier) {
+function read(project: ProjectSummary, now: number, metier: Metier, orders: CycleOrders) {
   const jalons = readJalons(project.id, [], undefined, project);
-  const points = readCycle(project, [], [], jalons, now, metier);
+  const points = readCycle(project, [], [], jalons, now, metier, EMPTY_MARKS, orders);
   return {
     project,
     points,
