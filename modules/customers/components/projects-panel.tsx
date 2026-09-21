@@ -82,6 +82,7 @@ import { ProjectNextAction } from "./project-next-action";
 import { ProjectTimeline } from "./project-timeline";
 import { ProjectDialog, QuoteDialog } from "./project-dialogs";
 import { QuotePayments } from "./quote-payments";
+import { JoinedQuoteDocs } from "./joined-quote-docs";
 import { RelanceDialog } from "./relance-dialog";
 import type {
   CustomerDetail,
@@ -1164,6 +1165,7 @@ function ProjectBlock({
               <TabsContent value="devis" className="pt-4">
                 <div className="flex flex-col gap-3">
                   <QuoteList quotes={quotes} payments={customer.payments} onChanged={onChanged} />
+                  <JoinedQuoteDocs proofs={preuves} />
                   {/* La sous-traitance se lit en face des devis : c'est là que la
                       marge a un sens. */}
                   <SubcontractingPanel
