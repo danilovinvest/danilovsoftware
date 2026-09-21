@@ -147,7 +147,9 @@ export function readJalons(
         : null,
     deposit_amount: signed?.deposit_amount ?? null,
     balance_paid_at:
-      signed && signed.balance_status === "recu" ? signed.issued_at : null,
+      signed && signed.balance_status === "recu"
+        ? (signed.balance_paid_at ?? signed.issued_at)
+        : null,
     rib_sent_at: m?.rib_sent_at ?? null,
     insurance_sent_at: m?.insurance_sent_at ?? null,
     worksite_date: project?.started_at ?? null,

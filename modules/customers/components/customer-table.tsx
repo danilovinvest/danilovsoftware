@@ -79,9 +79,12 @@ const ISSUER_BADGE: Record<string, { label: string; className: string }> = {
 export function CustomerTable({
   items,
   loading,
+  issuer,
 }: {
   items: CustomerListItem[];
   loading: boolean;
+  /** La société choisie dans les filtres, quand l'adresse n'en fixe aucune. */
+  issuer?: string;
 }) {
   // Les affaires arrivent déjà avec la ligne du client : déplier ne déclenche
   // aucune requête.
@@ -91,7 +94,8 @@ export function CustomerTable({
   // Sans devis dans la liste, le périmètre est le meilleur indice du métier :
   // en mode STRUCTURE ce sont des études qu'on regarde, pas des chantiers.
   const scope = useScope();
-  const metier: Metier = scope === "ompt-structure" ? "etudes" : "travaux";
+  const metier: Metier =
+    (scope === "tous" ? issuer : scope) === "ompt-structure" ? "etudes" : "travaux";
   const orders = useCycleOrders();
 
   /*

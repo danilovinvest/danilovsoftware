@@ -167,11 +167,14 @@ function Body({
   }
 
   /** Encaisse l'acompte avec son montant, ou corrige le montant. */
-  function encaisser(amount: string | null): Promise<boolean> {
-    return appliquer({
-      deposit_paid_at: jalons.deposit_paid_at ?? new Date().toISOString(),
-      deposit_amount: amount,
-    });
+  function encaisser(amount: string | null, paidAt?: string): Promise<boolean> {
+    return appliquer(
+      {
+        deposit_paid_at: paidAt ?? jalons.deposit_paid_at ?? new Date().toISOString(),
+        deposit_amount: amount,
+      },
+      paidAt,
+    );
   }
 
   /** Retire l'encaissement. `appliquer` rend la réussite et affiche l'échec. */
@@ -186,7 +189,8 @@ function Body({
    * la fois — la liste et sa date. Deux appels sur une route qui remplace la
    * ligne entière se seraient écrasés l'un l'autre.
    */
-  async function appliquer(patch: Partial<Jalons>): Promise<boolean> {
+  /** `paidAt` : le jour d'encaissement corrigé à la main, seul envoyé au serveur. */
+  async function appliquer(patch: Partial<Jalons>, paidAt?: string): Promise<boolean> {
     setOptimiste((current) => ({ ...current, ...patch }));
     setEnCours(true);
     setEchec(null);
@@ -214,6 +218,7 @@ function Body({
         await setQuoteDeposit(cible.id, {
           status,
           amount: "deposit_amount" in patch ? (patch.deposit_amount ?? null) : cible.deposit_amount,
+          paid_at: paidAt,
         });
       } else if ("worksite_date" in patch) {
         // Réserver une date, c'est renseigner `started_at` de l'affaire : la

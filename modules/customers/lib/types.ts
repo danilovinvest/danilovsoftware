@@ -339,6 +339,8 @@ export type Quote = {
    * déplacent, et c'est le chiffre du relevé qui fait foi.
    */
   balance_amount: string | null;
+  /** Le jour où le solde a été encaissé. Nul pour les soldes reçus avant qu'il existe. */
+  balance_paid_at: string | null;
   comment: string;
   /**
    * Le document du devis, chez Microsoft. Vide pour un devis saisi à la main.
@@ -501,7 +503,25 @@ export type QuotePayment = {
   created_by_name: string;
 };
 
+/**
+ * De qui vient un client recommandé : une fiche, ou l'interlocuteur d'une fiche.
+ * `customer_id` est toujours la fiche à ouvrir.
+ */
+export type Referrer = {
+  kind: "fiche" | "interlocuteur";
+  id: string;
+  name: string;
+  customer_id: string;
+  /** La fiche de l'interlocuteur. Vide pour une fiche. */
+  parent_name: string;
+};
+
+/** Une ligne du menu des parrains. */
+export type ReferrerCandidate = Referrer & { status: string; city: string };
+
 export type CustomerDetail = Customer & {
+  /** De qui vient ce client, quand il a été recommandé. */
+  referrer: Referrer | null;
   contacts: Contact[];
   projects: Project[];
   quotes: Quote[];
@@ -738,6 +758,7 @@ export type QuotePayload = Omit<
   | "updated_at"
   | "deposit_invoiced_at"
   | "deposit_paid_at"
+  | "balance_paid_at"
   // La provenance d'un montant est un fait du serveur : la lecture des PDF la
   // pose, une correction humaine la reprend. Un formulaire ne l'envoie jamais.
   | "amount_source"

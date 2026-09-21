@@ -197,7 +197,12 @@ export function CustomerPicker({
           <NouvelleFiche
             fiche={nouvelle}
             projet={projet}
-            onSaved={(maj) => setCreee(maj)}
+            onSaved={(maj) => {
+              setCreee(maj);
+              // Le nom corrigé remonte à l'écran qui l'affiche : l'agenda garde
+              // le nom de la fiche rattachée à côté de son identifiant.
+              onChange(maj.id, maj.display_name);
+            }}
             onProjet={(maj) => setProjet(maj)}
             onError={setEchec}
           />
@@ -214,17 +219,19 @@ export function CustomerPicker({
   const attente = cherche.length >= 2 && items === null;
 
   /*
-    La fiche du même nom existe déjà : on ne propose pas de la créer deux fois.
+    Une fiche du même nom existe déjà : on propose quand même d'en créer une.
 
-    La comparaison est exacte, à la casse près. Elle ne cherche pas à deviner
-    qu'« Olga Mamakina » est peut-être « Mamakina Olga » : c'est le travail de
-    l'écran des doublons, qui propose et ne tranche pas — et une proposition de
-    fusion n'a rien à faire au milieu d'un appel téléphonique.
+    On ne la proposait plus, et c'était faux. Deux clients portent le même nom
+    de famille — le dirigeant a dû taper « vidal ch » pour que « Créer » réapparaisse
+    à côté du Vidal existant, puis corriger le nom depuis la fiche. L'homonyme
+    reste en tête de liste, et le bouton dit qu'il s'agit d'**une autre** fiche :
+    le doublon par erreur se voit, l'homonyme réel se crée. Les vrais doublons
+    se rattrapent dans l'écran des doublons, qui propose et ne tranche pas.
   */
   const dejaLa = (items ?? []).some(
     (item) => item.display_name.trim().toLowerCase() === cherche.toLowerCase(),
   );
-  const offreCreation = allowCreate && peutEcrire && cherche.length >= 2 && !dejaLa;
+  const offreCreation = allowCreate && peutEcrire && cherche.length >= 2;
 
   async function creer() {
     setCreation(true);
@@ -337,7 +344,7 @@ export function CustomerPicker({
                 )}
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm">
-                    Créer la fiche « {cherche} »
+                    {dejaLa ? "Créer une autre fiche" : "Créer la fiche"} « {cherche} »
                   </span>
                   <span className="text-muted-foreground/70 block text-[11px]">
                     Prospect, source téléphone. Le reste se complète après
@@ -407,19 +414,37 @@ function NouvelleFiche({
   onProjet: (projet: Project) => void;
   onError: (message: string | null) => void;
 }) {
+  const [name, setName] = useState(fiche.display_name);
   const [phone, setPhone] = useState(fiche.phone);
   const [email, setEmail] = useState(fiche.email);
   const [pending, setPending] = useState(false);
   const [fait, setFait] = useState(false);
 
-  const change = phone.trim() !== fiche.phone || email.trim() !== fiche.email;
+  const change =
+    (name.trim() !== fiche.display_name && name.trim() !== "") ||
+    phone.trim() !== fiche.phone ||
+    email.trim() !== fiche.email;
+
+  /*
+    Chaque champ s'enregistre quand on le quitte.
+
+    Ils n'étaient écrits qu'au clic sur « Noter », et personne ne le voyait : on
+    tapait le numéro et l'adresse, on enregistrait l'événement, et la fiche
+    restait vide. Quitter le champ — y compris pour cliquer « Enregistrer » dans
+    l'agenda — suffit désormais. Le bouton reste, pour qui veut le voir se
+    confirmer.
+  */
+  function auDepart() {
+    if (change && !pending) void enregistrer();
+  }
 
   async function enregistrer() {
     setPending(true);
     onError(null);
     try {
       const maj = await updateCustomer(fiche.id, {
-        display_name: fiche.display_name,
+        // Un nom vidé n'efface pas la fiche : on garde celui qu'elle porte.
+        display_name: name.trim() || fiche.display_name,
         kind: fiche.kind,
         status: fiche.status,
         source: fiche.source,
@@ -508,6 +533,21 @@ function NouvelleFiche({
           ))}
         </div>
       )}
+      {/*
+        Le nom se corrige ici aussi : il a été tapé comme une recherche, donc
+        souvent incomplet — « vidal ch » pour Vidal Charles.
+      */}
+      <Input
+        value={name}
+        placeholder="Nom de la fiche"
+        aria-label="Nom de la fiche"
+        className="h-8 text-xs"
+        onChange={(event) => {
+          setName(event.target.value);
+          setFait(false);
+        }}
+        onBlur={auDepart}
+      />
       <div className="flex items-end gap-1.5">
         <Input
           value={phone}
@@ -520,6 +560,7 @@ function NouvelleFiche({
             setPhone(event.target.value);
             setFait(false);
           }}
+          onBlur={auDepart}
         />
         <Input
           value={email}
@@ -531,6 +572,7 @@ function NouvelleFiche({
             setEmail(event.target.value);
             setFait(false);
           }}
+          onBlur={auDepart}
         />
         <Button
           size="xs"

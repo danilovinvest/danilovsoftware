@@ -83,9 +83,9 @@ export type CycleEdit = {
    * L'acompte du devis qui porte le règlement : ce qu'il vaut, et à quoi il se
    * compare. Encaisser, c'est dire combien.
    */
-  deposit: { amount: string | null; total: DepositTotal | null };
+  deposit: { amount: string | null; total: DepositTotal | null; paidAt: string | null };
   /** Encaisse avec ce montant, ou le corrige. Rend la réussite. */
-  onDeposit: (amount: string | null) => boolean | Promise<boolean>;
+  onDeposit: (amount: string | null, paidAt?: string) => boolean | Promise<boolean>;
   /** Retire l'encaissement. Rend la réussite : le panneau reste ouvert sur un échec. */
   onDepositRemove: () => boolean | Promise<boolean>;
   /**
@@ -94,9 +94,9 @@ export type CycleEdit = {
    * Jumeau de l'acompte, et pour la même raison : « solde encaissé » était une
    * case qui affirmait avoir été payé sans dire combien.
    */
-  balance: { amount: string | null; total: DepositTotal | null };
+  balance: { amount: string | null; total: DepositTotal | null; paidAt: string | null };
   /** Encaisse le solde avec ce montant, ou le corrige. Rend la réussite. */
-  onBalance: (amount: string | null) => boolean | Promise<boolean>;
+  onBalance: (amount: string | null, paidAt?: string) => boolean | Promise<boolean>;
   /** Retire l'encaissement du solde. Rend la réussite. */
   onBalanceRemove: () => boolean | Promise<boolean>;
   /**
@@ -448,6 +448,7 @@ function StepDot({
                 key={`${reglement}·${marked ?? "vide"}·${(reglement === "acompte" ? edit.deposit.amount : edit.balance.amount) ?? "vide"}`}
                 kind={reglement}
                 amount={reglement === "acompte" ? edit.deposit.amount : edit.balance.amount}
+                paidAt={reglement === "acompte" ? edit.deposit.paidAt : edit.balance.paidAt}
                 paid={marked !== null}
                 total={reglement === "acompte" ? edit.deposit.total : edit.balance.total}
                 pending={edit.pending}

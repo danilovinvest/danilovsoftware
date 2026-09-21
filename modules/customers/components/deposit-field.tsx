@@ -83,6 +83,13 @@ export function DepositTag({
  */
 export type ReglementKind = "acompte" | "solde";
 
+/** Le jour local, AAAA-MM-JJ : `toISOString` donnerait la veille après 22 h l'été. */
+function aujourdhui(): string {
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}
+
 const REGLEMENT: Record<ReglementKind, { nom: string; bouton: string; sansMontant: string }> = {
   acompte: {
     nom: "L'acompte",
@@ -99,6 +106,7 @@ const REGLEMENT: Record<ReglementKind, { nom: string; bouton: string; sansMontan
 export function DepositEditor({
   amount,
   kind = "acompte",
+  paidAt,
   paid,
   total,
   pending,
@@ -108,6 +116,8 @@ export function DepositEditor({
 }: {
   /** Le montant déjà connu, s'il y en a un. */
   amount: string | null;
+  /** Le jour de l'encaissement déjà connu, s'il y en a un. */
+  paidAt?: string | null;
   /** Acompte ou solde. Par défaut l'acompte, le premier des deux à exister. */
   kind?: ReglementKind;
   /** Le règlement est-il déjà encaissé ? Il décide des libellés. */
@@ -120,7 +130,7 @@ export function DepositEditor({
    * Rend la réussite de l'écriture : le panneau ne se ferme que sur un succès,
    * sans quoi un montant tapé disparaîtrait sans un mot.
    */
-  onSave: (amount: string | null) => boolean | Promise<boolean>;
+  onSave: (amount: string | null, paidAt?: string) => boolean | Promise<boolean>;
   /** Retire l'encaissement. Absent, le bouton ne s'affiche pas. */
   onRemove?: () => boolean | Promise<boolean>;
   onClose: () => void;
@@ -129,6 +139,16 @@ export function DepositEditor({
   const mots = REGLEMENT[kind];
   const [draft, setDraft] = useState(() => (amount ? amount.replace(".", ",") : ""));
   const parsed = parseAmountInput(draft);
+  /*
+    Le jour de l'encaissement se corrige, comme toutes les dates de la frise.
+
+    Il ne part au serveur que **s'il a changé**. Un écran qui corrige seulement
+    le montant ne doit pas réécrire la date — surtout pas avec aujourd'hui, ni
+    avec une date de repli que l'écran affiche faute de mieux.
+  */
+  const jourInitial = paidAt ? paidAt.slice(0, 10) : paid ? "" : aujourdhui();
+  const [jour, setJour] = useState(jourInitial);
+  const jourChange = jour !== "" && jour !== jourInitial ? jour : undefined;
   const illisible = parsed === undefined;
   const percent =
     parsed && total && Number(total.value) > 0
@@ -146,7 +166,7 @@ export function DepositEditor({
       onSubmit={(event) => {
         event.preventDefault();
         if (illisible || pending) return;
-        void envoyer(() => onSave(parsed ?? null));
+        void envoyer(() => onSave(parsed ?? null, jourChange));
       }}
     >
       <div>
@@ -178,6 +198,21 @@ export function DepositEditor({
                 ? `Devis à ${formatAmount(total.value)} ${total.tax}.`
                 : mots.sansMontant}
         </p>
+      </div>
+
+      <div>
+        <label htmlFor={`${id}-jour`} className="text-muted-foreground mb-1 block text-[11px]">
+          Encaissé le
+        </label>
+        <Input
+          id={`${id}-jour`}
+          type="date"
+          value={jour}
+          disabled={pending}
+          className="h-8 text-sm"
+          data-demo="reglement-date"
+          onChange={(event) => setJour(event.target.value)}
+        />
       </div>
 
       <p className="text-muted-foreground/70 text-[11px]">

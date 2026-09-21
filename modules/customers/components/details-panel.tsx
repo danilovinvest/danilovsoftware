@@ -1,10 +1,14 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { usePermission } from "@/modules/auth";
 import { formatDate } from "@/shared/lib/format";
+import * as api from "../lib/api";
 import { CUSTOMER_SOURCE } from "../lib/labels";
 import { ContactsCard } from "./contacts-card";
 import { EnumBadge } from "./enum-badge";
+import { ReferrerPicker } from "./referrer-picker";
 import type { CustomerDetail } from "../lib/types";
 
 /** Onglet « Détails » : ce qu'on consulte de temps en temps, pas tous les jours. */
@@ -30,6 +34,9 @@ export function DetailsPanel({
           <Row label="Source">
             <EnumBadge value={customer.source} entries={CUSTOMER_SOURCE} />
           </Row>
+          {(customer.source === "recommandation" || customer.referrer) && (
+            <Parrain customer={customer} onChanged={onChanged} />
+          )}
           <Row label="Demande reçue le">{formatDate(customer.requested_at)}</Row>
           <Row label="Responsable">{customer.owner_name || "Non assigné"}</Row>
           <Row label="Raison sociale">{customer.company_name || "—"}</Row>
@@ -54,6 +61,44 @@ export function DetailsPanel({
           </CardContent>
         </Card>
       )}
+    </div>
+  );
+}
+
+/**
+ * « Recommandé par », qui s'écrit à la volée : choisir ou retirer enregistre.
+ *
+ * Il passe par sa propre route, jamais par le formulaire de la fiche, qui
+ * remplace la ligne entière et l'effacerait.
+ */
+function Parrain({ customer, onChanged }: { customer: CustomerDetail; onChanged: () => void }) {
+  const canWrite = usePermission("customers:write");
+  const [pending, setPending] = useState(false);
+  const [echec, setEchec] = useState<string | null>(null);
+
+  async function changer(referrer: Parameters<typeof api.setCustomerReferrer>[1]) {
+    setPending(true);
+    setEchec(null);
+    try {
+      await api.setCustomerReferrer(customer.id, referrer);
+      onChanged();
+    } catch {
+      setEchec("Le parrain n'a pas pu être enregistré.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-1" data-demo="fiche-parrain">
+      <span className="text-muted-foreground text-xs">Recommandé par</span>
+      <ReferrerPicker
+        value={customer.referrer}
+        exclude={customer.id}
+        disabled={!canWrite || pending}
+        onChange={(referrer) => void changer(referrer)}
+      />
+      {echec && <p className="text-danger text-[11px]">{echec}</p>}
     </div>
   );
 }

@@ -32,7 +32,7 @@
         "font-src": "'self' data:",
         "connect-src": "'self' ipc: http://ipc.localhost https://testbeforeproduction.xyz http://localhost:8080",
         "frame-src": "'self' blob:",
-        "object-src": "'none'",
+        "object-src": "'self' blob:",
         "base-uri": "'self'",
         "form-action": "'none'"
       },

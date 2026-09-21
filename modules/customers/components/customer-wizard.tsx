@@ -17,12 +17,14 @@ import {
   toOptions,
 } from "../lib/labels";
 import { useAction } from "../hooks/use-customers";
+import { ReferrerPicker } from "./referrer-picker";
 import type {
   CustomerKind,
   CustomerPayload,
   CustomerSource,
   ProjectPayload,
   ProjectStage,
+  Referrer,
 } from "../lib/types";
 import { customerHref } from "@/shared/lib/routes";
 
@@ -85,9 +87,15 @@ export function CustomerWizard() {
   const [customer, setCustomer] = useState<CustomerPayload>(emptyCustomer);
   const [project, setProject] = useState<ProjectPayload>(emptyProject);
   const [stepError, setStepError] = useState<string | null>(null);
+  /** Le parrain, quand la source est une recommandation. Écrit après la fiche. */
+  const [referrer, setReferrer] = useState<Referrer | null>(null);
 
   const submit = useAction(async () => {
     const created = await api.createCustomer(customer);
+    // Le parrain a sa propre route : la fiche doit exister avant qu'on la relie.
+    if (customer.source === "recommandation" && referrer) {
+      await api.setCustomerReferrer(created.id, referrer);
+    }
     // L'affaire est facultative : sans intitulé, on s'arrête à la fiche.
     if (project.label.trim() !== "") {
       await api.createProject(created.id, {
@@ -158,6 +166,12 @@ export function CustomerWizard() {
                   setCustomer({ ...customer, source: value as CustomerSource })
                 }
               />
+              {customer.source === "recommandation" && (
+                <div className="flex flex-col gap-1.5 sm:col-span-2">
+                  <span className="text-xs font-medium">Recommandé par</span>
+                  <ReferrerPicker value={referrer} onChange={setReferrer} />
+                </div>
+              )}
               <TextField
                 label="Téléphone"
                 placeholder="06 62 46 48 67"
@@ -250,7 +264,7 @@ export function CustomerWizard() {
             </div>
           )}
 
-          {step === 2 && <Summary customer={customer} project={project} />}
+          {step === 2 && <Summary customer={customer} project={project} referrer={referrer} />}
         </CardContent>
       </Card>
 
@@ -286,9 +300,11 @@ export function CustomerWizard() {
 function Summary({
   customer,
   project,
+  referrer,
 }: {
   customer: CustomerPayload;
   project: ProjectPayload;
+  referrer: Referrer | null;
 }) {
   const contact = [customer.phone, customer.email, customer.city]
     .filter(Boolean)
@@ -298,7 +314,14 @@ function Summary({
     <dl className="divide-y text-sm">
       <SummaryLine label="Client" value={customer.display_name} />
       <SummaryLine label="Type" value={CUSTOMER_KIND[customer.kind].label} />
-      <SummaryLine label="Source" value={CUSTOMER_SOURCE[customer.source].label} />
+      <SummaryLine
+        label="Source"
+        value={
+          customer.source === "recommandation" && referrer
+            ? `${CUSTOMER_SOURCE[customer.source].label} · ${referrer.name}`
+            : CUSTOMER_SOURCE[customer.source].label
+        }
+      />
       <SummaryLine label="Coordonnées" value={contact || "aucune"} />
       <SummaryLine label="Demande reçue le" value={formatDate(customer.requested_at)} />
       <SummaryLine

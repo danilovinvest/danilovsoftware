@@ -34,7 +34,7 @@ export function CustomersView() {
   const cycle = (filters.cycle ?? "tous") as CycleFilter;
   const review = filters.review ?? "";
   const { data, loading, error } = useCustomers(filters);
-  const stats = useCustomerStats();
+  const stats = useCustomerStats(filters.issuer);
   const canCreate = usePermission("customers:write");
 
   const counts = useMemo(() => {
@@ -141,7 +141,7 @@ export function CustomersView() {
           />
         ) : (
           <>
-            <CustomerTable items={data?.items ?? []} loading={loading} />
+            <CustomerTable items={data?.items ?? []} loading={loading} issuer={filters.issuer} />
             <Pagination
               page={data?.page ?? 1}
               totalPages={data?.total_pages ?? 1}

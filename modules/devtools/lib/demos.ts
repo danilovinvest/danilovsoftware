@@ -40,6 +40,61 @@ const FICHE_ETUDE = "/customers/fiche?id=7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "parrain-d-un-client",
+    title: "De qui vient un client recommandé",
+    date: "2026-09-21",
+    steps: [
+      {
+        path: "/customers/fiche?id=0b66bb72-7660-43a3-aa42-5be6e5ffe2b6",
+        click: '[id$="-trigger-details"]',
+        target: '[data-demo="fiche-parrain"]',
+        title: "Recommandé par, choisi parmi tout le CRM",
+        body: "La source disait « Recommandation » sans dire par qui. La recherche porte sur toutes les fiches, archivées comprises, et sur les interlocuteurs de chacune — c'est souvent l'architecte ou le voisin d'un client qui recommande. La personne introuvable se crée d'ici, comme une fiche. Le même champ apparaît à la création d'un client dès que la source est « Recommandation ». Le parrain s'ouvre d'un clic, et s'écrit par sa propre route : corriger le téléphone de la fiche ne l'efface pas.",
+      },
+    ],
+  },
+  {
+    id: "filtre-societe-des-fiches",
+    title: "Filtrer les fiches par société",
+    date: "2026-09-21",
+    steps: [
+      {
+        path: "/customers",
+        target: "#filtre-societe",
+        title: "GROUPE ou STRUCTURE, sans changer d'adresse",
+        body: "Le sélecteur de périmètre avait été retiré au profit de l'adresse — groupe.…, structure.… —, si bien que le dirigeant et l'application de bureau ne pouvaient plus trier les deux sociétés. Le filtre n'apparaît que là où l'adresse n'impose aucune société : ailleurs, le serveur impose la sienne et l'offrir serait promettre un choix qu'il ignore.",
+      },
+    ],
+  },
+  {
+    id: "date-d-encaissement",
+    title: "Le jour de l'acompte et du solde se corrige",
+    date: "2026-09-21",
+    steps: [
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="cran-acompte"]',
+        target: '[data-demo="reglement-date"]',
+        title: "Encaissé le",
+        body: "Toutes les dates de la frise se corrigeaient, sauf ces deux-là : le serveur posait le jour du clic, et le solde n'avait même aucune date — la frise affichait celle de l'émission du devis. Le jour se saisit maintenant avec le montant, et ne part au serveur que s'il a changé : corriger un montant ne réécrit jamais la date.",
+      },
+    ],
+  },
+  {
+    id: "devis-joints-a-la-frise",
+    title: "Les devis joints à la frise, dans l'onglet Devis",
+    date: "2026-09-21",
+    steps: [
+      {
+        path: "/customers/fiche?id=d8ba1e88-9e2b-4cf0-bc13-54946efe1c93",
+        click: '[data-demo="tab-devis"]',
+        target: '[data-demo="joined-quote-docs"]',
+        title: "Joint au cran, rappelé sous les devis",
+        body: "Un fichier déposé sur le cran Devis, Négociation ou Signé devenait une preuve du cran, visible seulement en rouvrant le cran. Il s'affiche maintenant sous la liste des devis, avec le cran d'où il vient, et s'ouvre du même clic. Ce n'est pas un devis du CRM — ni référence, ni montant, ni statut — et l'écran ne prétend pas le contraire.",
+      },
+    ],
+  },
+  {
     id: "lien-vers-le-chantier",
     title: "Une affaire signée mène à son chantier",
     date: "2026-09-21",

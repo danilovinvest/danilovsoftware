@@ -16,6 +16,8 @@ import type {
   CustomerPayload,
   CustomerStats,
   CycleOrderRow,
+  Referrer,
+  ReferrerCandidate,
   DuplicatePair,
   EnrichResult,
   FoundContact,
@@ -264,6 +266,28 @@ export function resetCycleOrder(parcours: Parcours) {
   return apiFetch<void>(`/v1/cycle-orders/${parcours}`, { method: "DELETE" });
 }
 
+/** Tout ce qui peut avoir recommandé un client : fiches, archives comprises, et interlocuteurs. */
+export function searchReferrers(q: string, exclude: string | null, signal?: AbortSignal) {
+  return apiFetch<ReferrerCandidate[]>("/v1/referrers", {
+    query: { q, exclude: exclude ?? undefined },
+    signal,
+  });
+}
+
+/** Pose ou retire le parrain. Sa propre route : le formulaire de la fiche l'effacerait. */
+export function setCustomerReferrer(
+  id: string,
+  referrer: Pick<Referrer, "kind" | "id"> | null,
+) {
+  return apiFetch<{ referrer: Referrer | null }>(`/v1/customers/${id}/referrer`, {
+    method: "PUT",
+    body: {
+      customer_id: referrer?.kind === "fiche" ? referrer.id : null,
+      contact_id: referrer?.kind === "interlocuteur" ? referrer.id : null,
+    },
+  });
+}
+
 export function listSubcontractors(signal?: AbortSignal) {
   return apiFetch<{ items: Subcontractor[] }>("/v1/subcontractors", { signal });
 }
@@ -323,7 +347,8 @@ export function updateQuote(id: string, payload: QuotePayload) {
  */
 export function setQuoteDeposit(
   id: string,
-  payload: { status: PaymentStatus; amount: string | null },
+  /** `paid_at` (AAAA-MM-JJ) corrige le jour de l'encaissement ; absent, il ne change pas. */
+  payload: { status: PaymentStatus; amount: string | null; paid_at?: string },
 ) {
   return apiFetch<Quote>(`/v1/quotes/${id}/deposit`, { method: "PUT", body: payload });
 }
@@ -337,7 +362,8 @@ export function setQuoteDeposit(
  */
 export function setQuoteBalance(
   id: string,
-  payload: { status: PaymentStatus; amount: string | null },
+  /** `paid_at` (AAAA-MM-JJ) corrige le jour de l'encaissement ; absent, il ne change pas. */
+  payload: { status: PaymentStatus; amount: string | null; paid_at?: string },
 ) {
   return apiFetch<Quote>(`/v1/quotes/${id}/balance`, { method: "PUT", body: payload });
 }
