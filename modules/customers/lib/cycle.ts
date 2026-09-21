@@ -538,9 +538,23 @@ export function readCycle(
     marks.contact_at ??
     earliest(firstContact?.occurred_at, contactDone ? anchor : undefined);
 
+  /*
+    Le RDV ne se déduit plus que d'un devis.
+
+    Toute étape au-delà de « RDV planifié » le franchissait. « Étude à produire »
+    cochait donc un rendez-vous qui n'avait pas eu lieu : c'est le cas de
+    Montaigne, sans échange, sans agenda, sans devis, avec dans son dossier la
+    seule étude de l'architecte. Le dirigeant l'a relevé le 21/09.
+
+    Reste la règle de l'entreprise, « RDV obligatoire avant tout devis » : un
+    devis au dossier, ou une étape « devis envoyé » ou plus loin, le prouve.
+    La tenir garde vert le RDV des affaires réalisées. Mesuré le 21/09 : 457
+    affaires sur 523 n'ont un RDV vert que par leur étape.
+  */
   const rdvFait =
     (rdv !== null && rdv.occurred_at <= new Date(now).toISOString()) ||
-    afterStage(stage, "rdv_planifie");
+    quotes.length > 0 ||
+    atOrAfterStage(stage, "devis_envoye");
   const rdvDone = rdvFait || marks.rdv_at !== null;
   const rdvAt = marks.rdv_at ?? rdv?.occurred_at ?? (rdvDone ? project.started_at : null);
 
@@ -889,11 +903,6 @@ const STAGE_RANK: ProjectStage[] = [
   "gagne",
   "realise",
 ];
-
-/** L'étape est-elle strictement au-delà de la référence ? */
-function afterStage(stage: ProjectStage, reference: ProjectStage): boolean {
-  return STAGE_RANK.indexOf(stage) > STAGE_RANK.indexOf(reference);
-}
 
 /** L'étape a-t-elle atteint la référence, ou l'a-t-elle dépassée ? */
 function atOrAfterStage(stage: ProjectStage, reference: ProjectStage): boolean {

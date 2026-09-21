@@ -40,6 +40,19 @@ const FICHE_ETUDE = "/customers/fiche?id=7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "lien-vers-le-chantier",
+    title: "Une affaire signée mène à son chantier",
+    date: "2026-09-21",
+    steps: [
+      {
+        path: "/customers/fiche?id=77c807e5-f0c4-4bad-b0f7-d404d2a00782",
+        target: '[data-demo="project-worksite-link"]',
+        title: "Sous l'adresse, le chemin vers le chantier",
+        body: "Il fallait quitter la fiche, ouvrir Chantiers et y rechercher l'affaire qu'on venait de lire. Le lien ouvre directement la fiche latérale de ce chantier — ou de cette étude, pour STRUCTURE —, sur le modèle du lien vers la fiche d'un rendez-vous dans l'agenda. Il n'apparaît que sur une affaire signée ou réalisée : les écrans Chantiers et Études ne listent que celles-là.",
+      },
+    ],
+  },
+  {
     id: "frise-reordonnable",
     title: "La frise se réordonne au glisser-déposer",
     date: "2026-09-21",
