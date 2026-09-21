@@ -6,6 +6,7 @@
 //! JavaScript, ouvrir le navigateur du système, et reprendre la main quand il
 //! la rend par `omptcrm://`, et se mettre à jour.
 
+mod appearance;
 mod config;
 mod keychain;
 mod links;
@@ -77,6 +78,13 @@ async fn update_install(app: AppHandle, pending: State<'_, Pending>) -> Result<(
     updates::install(&app, &pending).await
 }
 
+/// Aligne le bandeau de la fenêtre sur le thème du CRM. La page l'annonce à
+/// chaque bascule, y compris celles que l'OS déclenche en mode « système ».
+#[tauri::command]
+fn window_theme(app: AppHandle, dark: bool) -> Result<(), String> {
+    appearance::apply(&app, dark)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let mut builder = tauri::Builder::default();
@@ -104,6 +112,7 @@ pub fn run() {
             session_login_browser,
             update_check,
             update_install,
+            window_theme,
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {

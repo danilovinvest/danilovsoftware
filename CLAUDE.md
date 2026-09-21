@@ -129,6 +129,22 @@ les lire : une variable **vide y vaut absente**, sans quoi une variable de dép�
 déclarée mais non remplie bâtirait une application dont l'API est la chaîne
 vide.
 
+**Le bandeau de la fenêtre suit le thème du CRM, pas celui du poste.** Le
+cadre, les feux de circulation et la barre de titre sont dessinés par le
+système, qui les accorde à l'apparence de la machine : un Mac en sombre posait
+un bandeau noir au-dessus d'une application en thème clair, deux moitiés de
+fenêtre qui ne se ressemblent pas. `appearance.rs` appelle `set_theme` — sur
+macOS et Linux l'apparence vaut pour toute l'application, sans conséquence ici
+puisqu'il n'y a qu'une fenêtre.
+
+**C'est la classe `dark` du document qui commande, pas les préférences.** Elle
+est le thème *résolu* — « système » y est déjà tranché — et c'est la seule
+chose que les deux chemins qui l'appliquent ont en commun : `applyPreferences`
+au rendu, et le script anti-scintillement qui la pose avant la première
+peinture. Lire les préférences ferait dépendre `shared/desktop` d'un module et
+manquerait le second chemin ; un `MutationObserver` les attrape tous les deux,
+y compris les bascules que l'OS déclenche en mode « système ».
+
 ## Publier une version
 
 ```bash
