@@ -297,7 +297,7 @@ export type CyclePoint = {
   state: StepState;
   /** Quand le cran a été franchi. Nul tant qu'il ne l'est pas. */
   at: string | null;
-  /** Jours d'attente sur le cran courant. Nul ailleurs. */
+  /** Jours d'attente d'un cran ouvert. Nul sur un cran franchi. La frise ne l'affiche que sur le courant. */
   waiting: number | null;
   /** Une phrase, pour l'infobulle et pour la lecture d'ensemble. */
   detail: string;
@@ -310,6 +310,15 @@ export type CyclePoint = {
    * cran franchi.
    */
   byFact: boolean;
+  /**
+   * La place du cran dans l'ordre **par défaut** de son parcours.
+   *
+   * La frise peut suivre un ordre choisi, mais ce qui s'enchaîne dans le métier
+   * ne change pas avec elle : on ne solde pas avant d'avoir signé parce qu'on a
+   * rangé « Solde » en tête. `nextAction` raisonne sur ce rang, jamais sur la
+   * position affichée.
+   */
+  rank: number;
 };
 
 // ---------------------------------------------------------------------------
@@ -750,6 +759,7 @@ export function readCycle(
     la *mission* est `sondage` au singulier : les deux se lisent à un caractère
     près, et c'est une raison de plus de n'avoir qu'un seul endroit qui compare.
   */
+  const byDefault = defaultCycleOrder(metier, mission, hasSurvey(quotes));
   const raw: Entry[] = cycleOrder(metier, mission, hasSurvey(quotes), orders).map((step) => ({
     step,
     ...entries[step],
@@ -790,7 +800,15 @@ export function readCycle(
     else if (isCurrent) state = "current";
     else state = "todo";
 
-    const waiting = isCurrent && !entry.done ? daysSince(now, entry.since) : null;
+    /*
+      L'attente de tout cran ouvert, et plus seulement du cran courant.
+
+      La frise ne l'affiche que sur le courant. Mais `nextAction` choisit son
+      cran sur l'ordre par défaut, qui n'est plus forcément l'ordre affiché : il
+      lisait alors une attente nulle, et « 39 jours sans réponse » devenait
+      « en attente de réponse ».
+    */
+    const waiting = entry.done ? null : daysSince(now, entry.since);
     return {
       step: entry.step,
       state,
@@ -798,6 +816,7 @@ export function readCycle(
       waiting,
       detail: describe(entry.step, state, entry.at, waiting, project.outcome),
       byFact: entry.done && entry.fact,
+      rank: byDefault.indexOf(entry.step),
     };
   });
 }
@@ -1141,14 +1160,22 @@ export function nextAction(
     La frise, elle, ne change pas : elle continue de montrer le trou en gris,
     parce qu'il est réel et qu'on doit pouvoir le combler.
   */
+  /*
+    Le rang par défaut, et non la position affichée.
+
+    La frise peut suivre un ordre choisi par l'entreprise. Raisonner sur la
+    position rendait « Affaire terminée » une affaire dont seul le devis était
+    parti, dès qu'on avait rangé « Devis » en dernier : tout ce qui le précédait
+    à l'écran devenait franchi. Ce qui s'enchaîne dans le métier ne bouge pas
+    avec l'affichage.
+  */
   const dernierFranchi = points.reduce(
-    (last, point, index) => (point.state === "done" ? index : last),
+    (last, point) => (point.state === "done" ? Math.max(last, point.rank) : last),
     -1,
   );
   const at = (step: CycleStep) => {
-    const index = points.findIndex((point) => point.step === step);
-    const point = points[index]!;
-    return index < dernierFranchi ? { ...point, state: "done" as StepState } : point;
+    const point = points.find((candidate) => candidate.step === step)!;
+    return point.rank < dernierFranchi ? { ...point, state: "done" as StepState } : point;
   };
   const paused = project.outcome !== null && isPaused(project.outcome);
   const closed = project.outcome !== null && !paused;
