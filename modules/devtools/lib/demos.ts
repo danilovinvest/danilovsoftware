@@ -40,6 +40,19 @@ const FICHE_ETUDE = "/customers/fiche?id=7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "societe-de-la-fiche",
+    title: "La société se lit sur la ligne, sans cliquer",
+    date: "2026-09-21",
+    steps: [
+      {
+        path: "/customers",
+        target: '[data-demo="fiche-societe"]',
+        title: "Bleu pour GROUPE, vert pour STRUCTURE",
+        body: "Il fallait déplier une fiche, puis lire la société de chacune de ses affaires, pour une question qu'on se pose en parcourant deux cents lignes. L'API ne servait d'ailleurs aucune société au niveau de la fiche : elle est calculée par la même règle que le filtre de périmètre — ses devis et ses affaires attribuées — pour qu'une ligne peinte en vert ne puisse pas manquer à la liste STRUCTURE. Mesuré le 21/09 sur 418 fiches : 193 GROUPE, 75 STRUCTURE, 34 mixtes, 116 que rien ne range. Les deux derniers cas restent gris — peindre une fiche mixte de la couleur de l'une des deux serait faux une fois sur deux. Au passage, la pastille de société d'un devis change de teinte pour parler la même langue : elle disait bleu pour STRUCTURE, ce qui aurait contredit la ligne.",
+      },
+    ],
+  },
+  {
     id: "montant-du-solde",
     title: "Le solde dit enfin combien",
     date: "2026-09-21",

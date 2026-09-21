@@ -173,8 +173,14 @@ export function toOptions<T extends string>(entries: Entry<T>) {
  * Deux entrées seulement : ce sont les deux seules qui facturent des devis.
  * Les autres sociétés du groupe — l'agence, la foncière — n'en émettent pas,
  * et leur donner une pastille laisserait croire qu'on peut leur en attribuer.
+ *
+ * **Les teintes sont celles que le dirigeant a nommées** : GROUPE en bleu,
+ * STRUCTURE en vert. Elles valaient bleu et orange, et la liste des fiches
+ * vient de les prendre pour teinter ses lignes : garder les deux conventions
+ * aurait fait dire « bleu = STRUCTURE » à la pastille au-dessus d'une ligne
+ * où bleu veut dire GROUPE. Un seul vocabulaire de couleurs, ou aucun.
  */
 export const QUOTE_ISSUER: Record<string, { label: string; tone: Tone }> = {
-  "ompt-structure": { label: "STRUCTURE", tone: "info" },
-  "ompt-groupe": { label: "GROUPE", tone: "warning" },
+  "ompt-structure": { label: "STRUCTURE", tone: "success" },
+  "ompt-groupe": { label: "GROUPE", tone: "info" },
 };
