@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DateField } from "@/shared/ui/date-time-field";
 import { cn } from "@/lib/utils";
-import { DepositEditor, type DepositTotal } from "./deposit-field";
+import { DepositEditor, type DepositTotal, type ReglementKind } from "./deposit-field";
 import { MaterialsEditor } from "./materials-field";
 import { StepProofs } from "./step-proofs";
 import type { AutoProof } from "../lib/proofs";
@@ -87,6 +87,17 @@ export type CycleEdit = {
   onDeposit: (amount: string | null) => boolean | Promise<boolean>;
   /** Retire l'encaissement. Rend la réussite : le panneau reste ouvert sur un échec. */
   onDepositRemove: () => boolean | Promise<boolean>;
+  /**
+   * Le solde du même devis : son montant, et le total auquel il se compare.
+   *
+   * Jumeau de l'acompte, et pour la même raison : « solde encaissé » était une
+   * case qui affirmait avoir été payé sans dire combien.
+   */
+  balance: { amount: string | null; total: DepositTotal | null };
+  /** Encaisse le solde avec ce montant, ou le corrige. Rend la réussite. */
+  onBalance: (amount: string | null) => boolean | Promise<boolean>;
+  /** Retire l'encaissement du solde. Rend la réussite. */
+  onBalanceRemove: () => boolean | Promise<boolean>;
   /**
    * Les preuves d'un cran : celles qu'on a jointes, et celles que l'affaire
    * porte déjà (le PDF d'un devis, une facture, un rendez-vous consigné).
@@ -344,9 +355,18 @@ function StepDot({
     réserve pour dans six semaines, et les matériaux se listent. Leur panneau
     porte donc ses propres boutons, et non le « Marquer franchi » commun.
   */
-  // L'acompte aussi se saisit, dès qu'un devis le porte : on dit combien.
-  const acompte = write.target === "quote" && write.field === "deposit" && edit.hasQuote;
-  const saisi = write.target === "worksite_date" || write.target === "materials" || acompte;
+  /*
+    L'acompte et le solde se saisissent, dès qu'un devis les porte : on dit
+    combien. Les deux mènent au même éditeur, qui ne change que ses mots.
+  */
+  const reglement: ReglementKind | null =
+    write.target === "quote" && edit.hasQuote
+      ? write.field === "deposit"
+        ? "acompte"
+        : "solde"
+      : null;
+  const saisi =
+    write.target === "worksite_date" || write.target === "materials" || reglement !== null;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -398,15 +418,16 @@ function StepDot({
                 onRemove={() => edit.onMaterials(null)}
                 onClose={() => setOpen(false)}
               />
-            ) : acompte ? (
+            ) : reglement ? (
               <DepositEditor
-                key={`${marked ?? "vide"}·${edit.deposit.amount ?? "vide"}`}
-                amount={edit.deposit.amount}
+                key={`${reglement}·${marked ?? "vide"}·${(reglement === "acompte" ? edit.deposit.amount : edit.balance.amount) ?? "vide"}`}
+                kind={reglement}
+                amount={reglement === "acompte" ? edit.deposit.amount : edit.balance.amount}
                 paid={marked !== null}
-                total={edit.deposit.total}
+                total={reglement === "acompte" ? edit.deposit.total : edit.balance.total}
                 pending={edit.pending}
-                onSave={edit.onDeposit}
-                onRemove={edit.onDepositRemove}
+                onSave={reglement === "acompte" ? edit.onDeposit : edit.onBalance}
+                onRemove={reglement === "acompte" ? edit.onDepositRemove : edit.onBalanceRemove}
                 onClose={() => setOpen(false)}
               />
             ) : (

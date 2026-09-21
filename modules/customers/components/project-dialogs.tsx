@@ -66,6 +66,7 @@ const EMPTY_QUOTE: QuotePayload = {
   deposit_status: "non_applicable",
   deposit_amount: null,
   balance_status: "non_applicable",
+  balance_amount: null,
   comment: "",
 };
 
@@ -335,6 +336,7 @@ function toPayload(quote: Quote): QuotePayload {
     deposit_status: quote.deposit_status,
     deposit_amount: quote.deposit_amount,
     balance_status: quote.balance_status,
+    balance_amount: quote.balance_amount,
     comment: quote.comment,
     issuer: quote.issuer,
   };
@@ -374,7 +376,11 @@ export function QuoteDialog({
     if (deposit === undefined) {
       throw new Error("Le montant de l'acompte est illisible : 2 400 ou 2 400,50.");
     }
-    const payload = { ...values, deposit_amount: deposit };
+    const balance = parseAmountInput(values.balance_amount);
+    if (balance === undefined) {
+      throw new Error("Le montant du solde est illisible : 2 400 ou 2 400,50.");
+    }
+    const payload = { ...values, deposit_amount: deposit, balance_amount: balance };
     return quote ? api.updateQuote(quote.id, payload) : api.createQuote(project?.id ?? "", payload);
   });
 
@@ -513,6 +519,20 @@ export function QuoteDialog({
               })
             }
           />
+          {/* Pas de solde, pas de montant : le serveur l'efface de lui-même. */}
+          {values.balance_status !== "non_applicable" && (
+            <TextField
+              label="Montant du solde"
+              data-demo="quote-balance-amount"
+              hint="Ce que le client a réglé, avenant ou remise compris"
+              inputMode="decimal"
+              placeholder="5 600"
+              value={values.balance_amount ?? ""}
+              onChange={(event) =>
+                setValues({ ...values, balance_amount: event.target.value || null })
+              }
+            />
+          )}
           <TextField
             label="Montant non chiffré"
             hint="Pour les fourchettes : « 5000-6000 € »"

@@ -304,6 +304,20 @@ export function setQuoteDeposit(
 }
 
 /**
+ * Le solde seul : statut et montant.
+ *
+ * Le jumeau de la route d'acompte, et il manquait : solder passait par le
+ * remplacement complet du devis, ce que cette paire de routes existe
+ * précisément pour éviter.
+ */
+export function setQuoteBalance(
+  id: string,
+  payload: { status: PaymentStatus; amount: string | null },
+) {
+  return apiFetch<Quote>(`/v1/quotes/${id}/balance`, { method: "PUT", body: payload });
+}
+
+/**
  * Joindre une preuve à un cran. Elle ne coche pas le cran : l'état reste celui
  * des faits et des marques, et l'écran fait les deux gestes s'il le faut.
  */
