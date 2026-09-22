@@ -14,6 +14,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { Permission } from "@/modules/auth";
+import type { Scope } from "@/modules/group";
 
 /**
  * Registre des modules du CRM. Ajouter un module = ajouter une entrée ici ;
@@ -258,9 +259,6 @@ export const NAVIGATION: NavItem[] = NAV_SECTIONS.flatMap(
   (section) => section.items,
 );
 
-/** Le périmètre tel que la navigation le lit : une société, ou tout le groupe. */
-type NavScope = "tous" | "ompt-structure" | "ompt-groupe";
-
 /**
  * Une entrée s'affiche-t-elle pour ce compte, dans ce périmètre ?
  *
@@ -270,7 +268,7 @@ type NavScope = "tous" | "ompt-structure" | "ompt-groupe";
 export function isNavItemVisible(
   item: NavItem,
   can: (permission: Permission) => boolean,
-  scope: NavScope,
+  scope: Scope,
 ): boolean {
   return (
     can(item.permission) &&
@@ -290,7 +288,7 @@ export function isNavItemVisible(
  */
 export function firstAllowedHref(
   can: (permission: Permission) => boolean,
-  scope: NavScope,
+  scope: Scope,
 ): string | null {
   return NAVIGATION.find((item) => isNavItemVisible(item, can, scope))?.href ?? null;
 }

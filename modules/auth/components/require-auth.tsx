@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
 import { useEffect } from "react";
 import { LockIcon, WifiOffIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -85,6 +86,22 @@ export function RequireAuth({
         <p className="text-muted-foreground text-xs">
           Votre rôle ne donne pas accès à cette section.
         </p>
+        {/*
+          Un refus sans issue laissait chercher la sortie (issue 95). L'accueil
+          renvoie de lui-même vers le premier écran que le rôle ouvre ; sur
+          l'accueil même, c'est qu'aucun ne l'est, et seul un administrateur
+          peut y remédier.
+        */}
+        {pathname === "/dashboard" ? (
+          <p className="text-muted-foreground max-w-sm text-xs">
+            Aucun écran n&apos;est ouvert à votre rôle : demandez à un administrateur de
+            vous en attribuer un.
+          </p>
+        ) : (
+          <Button asChild size="sm" variant="outline" className="mt-2">
+            <Link href="/dashboard">Revenir à l&apos;accueil</Link>
+          </Button>
+        )}
       </div>
     );
   }

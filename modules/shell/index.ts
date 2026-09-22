@@ -1,5 +1,6 @@
 export { AppShell } from "./components/app-shell";
 export { useSetPageTitle } from "./components/page-title";
+export { LandingGuard } from "./components/landing-guard";
 export {
   NAVIGATION,
   NAV_SECTIONS,

@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { Trash2Icon } from "lucide-react";
+import { useAuth, usePermission } from "@/modules/auth";
 import { useDirtyGuard } from "@/shared/lib/dirty-guard";
+import { askConfirm } from "@/shared/ui/confirm";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -97,7 +100,19 @@ export function TaskDialog({
   // Nulle par défaut : une tâche qu'on vient de saisir n'est pas estimée, et la
   // poser à « Regular » d'office ferait passer pour mesuré ce qui est ignoré.
   const [taskSize, setTaskSize] = useState<TaskSize | null>(task?.size ?? null);
-  const [assigneeId, setAssigneeId] = useState(task?.assignee_id ?? preset?.assignee_id ?? "");
+  /*
+   * Une tâche qu'on crée est à soi, sauf si l'on dit le contraire (issue 78).
+   *
+   * « Personne » par défaut faisait naître des tâches orphelines : on les
+   * saisissait pour soi sans penser à le dire, et elles n'apparaissaient
+   * ensuite ni dans « Mes tâches » ni dans la cloche. « Personne » reste un
+   * choix de la liste — une tâche à répartir plus tard existe.
+   */
+  const { account } = useAuth();
+  const canDelete = usePermission("tasks:delete");
+  const [assigneeId, setAssigneeId] = useState(
+    task ? (task.assignee_id ?? "") : (preset?.assignee_id ?? account?.id ?? ""),
+  );
   const [dueAt, setDueAt] = useState<string | null>(task?.due_at ?? preset?.due_at ?? null);
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string>>({});
@@ -106,6 +121,32 @@ export function TaskDialog({
   const saisie = JSON.stringify([title, customerId, projectId, body, status, priority, taskSize, assigneeId, dueAt]);
   const [ouverture] = useState(saisie);
   const close = useDirtyGuard(saisie !== ouverture, onOpenChange);
+
+  /*
+   * Supprimer depuis la boîte, où l'on est quand on décide qu'une tâche n'a
+   * plus lieu d'être. Le geste n'existait qu'en vue Liste, sur une corbeille
+   * sans libellé : depuis le tableau, on ne pouvait pas supprimer du tout.
+   */
+  async function remove() {
+    if (!task) return;
+    const ok = await askConfirm({
+      title: `Supprimer la tâche « ${task.title} »`,
+      description: "Elle disparaît du tableau, de la fiche et de la cloche.",
+      confirmLabel: "Supprimer",
+    });
+    if (!ok) return;
+    setPending(true);
+    setError(null);
+    try {
+      await api.deleteTask(task.id);
+      onOpenChange(false);
+      onSaved();
+    } catch (cause) {
+      setError(errorMessage(cause));
+    } finally {
+      setPending(false);
+    }
+  }
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -231,6 +272,7 @@ export function TaskDialog({
           />
           <DateTimeField label="Échéance" value={dueAt} onChange={setDueAt} />
           <SelectField
+            id="task-assignee-field"
             label="Assignée à"
             wrapperClassName="sm:col-span-2"
             placeholder="Personne"
@@ -273,6 +315,18 @@ export function TaskDialog({
         </form>
 
         <DialogFooter>
+          {task && canDelete && (
+            <Button
+              variant="ghost"
+              data-demo="task-dialog-delete"
+              className="text-danger hover:text-danger sm:mr-auto"
+              disabled={pending}
+              onClick={() => void remove()}
+            >
+              <Trash2Icon />
+              Supprimer
+            </Button>
+          )}
           <Button variant="outline" onClick={() => close(false)}>
             Annuler
           </Button>

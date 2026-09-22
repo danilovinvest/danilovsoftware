@@ -14,6 +14,7 @@ import * as api from "../lib/api";
 import { DUE_FILTERS, STATUS_ORDER, TASK_STATUS } from "../lib/labels";
 import { countLoaded, useServerCounts, useTasks } from "../hooks/use-tasks";
 import { useColleagues } from "@/shared/hooks/use-colleagues";
+import { useDebounced } from "@/shared/hooks/use-debounced";
 import { TaskBoard } from "./task-board";
 import { TaskDialog } from "./task-dialog";
 import { TaskRow } from "./task-row";
@@ -47,6 +48,13 @@ export function TasksView() {
     assignee_id: searchParams.get("assignee") === "mine" ? "mine" : undefined,
   }));
   const [search, setSearch] = useState("");
+  /*
+   * Le filtre part au serveur une fois la frappe posée, pas à chaque lettre
+   * (issue 78) : « relancer » faisait huit requêtes, et une réponse lente
+   * pouvait se poser sous une frappe plus récente. Il est dérivé plutôt que
+   * recopié dans les filtres par un effet.
+   */
+  const debouncedSearch = useDebounced(search.trim());
   /** Le nom de la fiche filtrée : le filtre ne transporte que son identifiant. */
   const [customerName, setCustomerName] = useState("");
   const [editing, setEditing] = useState<Task | null>(null);
@@ -83,11 +91,12 @@ export function TasksView() {
     Le nombre de pages chargées, attaché aux filtres qui l'ont demandé : changer
     de filtre repart d'une page sans qu'aucun effet ait à le remettre à zéro.
   */
-  const filtersKey = JSON.stringify(filters);
+  const query: TaskFilters = { ...filters, search: debouncedSearch || undefined };
+  const filtersKey = JSON.stringify(query);
   const [more, setMore] = useState({ filtersKey: "", pages: 1 });
   const pages = more.filtersKey === filtersKey ? more.pages : 1;
 
-  const { data, loading, error, reload } = useTasks(filters, pages);
+  const { data, loading, error, reload } = useTasks(query, pages);
   const [countsToken, setCountsToken] = useState(0);
 
   /**
@@ -115,7 +124,7 @@ export function TasksView() {
   */
   const total = data?.total ?? 0;
   const complete = data !== null && items.length >= total;
-  const serverCounts = useServerCounts(filters, data !== null && !complete, countsToken);
+  const serverCounts = useServerCounts(query, data !== null && !complete, countsToken);
   const counts = complete ? countLoaded(items) : data ? serverCounts : null;
 
   async function toggleDone(task: Task) {
@@ -173,7 +182,7 @@ export function TasksView() {
 
   const mine = filters.assignee_id === "mine";
   const filtered = Boolean(
-    filters.search || filters.status?.length || filters.due || filters.customer_id,
+    query.search || filters.status?.length || filters.due || filters.customer_id,
   );
 
   return (
@@ -264,10 +273,7 @@ export function TasksView() {
           placeholder="Filtrer par mot-clé ou par champ"
           className="h-10 pl-9"
           value={search}
-          onChange={(event) => {
-            setSearch(event.target.value);
-            update({ search: event.target.value || undefined });
-          }}
+          onChange={(event) => setSearch(event.target.value)}
         />
       </div>
 
