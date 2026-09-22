@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import {
   ArchiveIcon,
@@ -37,6 +37,7 @@ import { InteractionsPanel } from "./interactions-panel";
 import { ProjectsPanel } from "./projects-panel";
 import { SyncFooter } from "./sync-footer";
 import { askConfirm } from "@/shared/ui/confirm";
+import { lastListHref } from "../lib/list-query";
 
 /**
  * Fiche client en trois onglets plutôt qu'en une page dense : les affaires (le
@@ -45,7 +46,12 @@ import { askConfirm } from "@/shared/ui/confirm";
  */
 export function CustomerDetailView({ customerId }: { customerId: string }) {
   const router = useRouter();
-  const { customer, loading, error, reload } = useCustomer(customerId);
+  const { customer, loading, error, reload, mutate } = useCustomer(customerId);
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const VUES = ["affaires", "echanges", "taches", "courriels", "documents", "details"];
+  const vueDemandee = searchParams.get("vue") ?? "";
+  const vue = searchParams.get("affaire") || !VUES.includes(vueDemandee) ? "affaires" : vueDemandee;
   const [editing, setEditing] = useState(false);
   const [enriching, setEnriching] = useState(false);
 
@@ -97,8 +103,20 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
 
   return (
     <div className="flex flex-col gap-6">
+      {/*
+        Le retour ramène la liste telle qu'on l'a quittée — filtres, tri, page —
+        et non « Clients, page 1 ». Le lien reste `/customers` pour le rendu et
+        l'ouverture dans un nouvel onglet ; le clic lit la dernière liste.
+      */}
       <Button asChild variant="ghost" size="sm" className="-ml-2 w-fit">
-        <Link href="/customers">
+        <Link
+          href="/customers"
+          onClick={(event) => {
+            if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+            event.preventDefault();
+            router.push(lastListHref());
+          }}
+        >
           <ArrowLeftIcon />
           Retour aux fiches
         </Link>
@@ -234,7 +252,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
                   échouer silencieusement toute suite d'une suppression réussie,
                   et l'écran restait sur une fiche qui n'existait plus.
                 */
-                if ((await remove.run()) !== null) router.push("/customers");
+                if ((await remove.run()) !== null) router.push(lastListHref());
               }}
             >
               <ArchiveIcon />
@@ -265,7 +283,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
                   confirmLabel: "Supprimer définitivement",
                 });
                 if (!ok) return;
-                if ((await purge.run()) !== null) router.push("/customers");
+                if ((await purge.run()) !== null) router.push(lastListHref());
               }}
             >
               <Trash2Icon />
@@ -278,7 +296,23 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
       {remove.error && <ErrorNotice message={remove.error} />}
       {purge.error && <ErrorNotice message={purge.error} />}
 
-      <Tabs defaultValue="affaires">
+      {/*
+        L'onglet se lit dans l'adresse (`?vue=`) et s'y écrit : un lien vers
+        « les courriels de cette fiche » se partage, et une affaire désignée par
+        `?affaire=` ouvre forcément l'onglet des affaires.
+      */}
+      <Tabs
+        value={vue}
+        onValueChange={(next) => {
+          const params = new URLSearchParams(searchParams.toString());
+          params.delete("affaire");
+          params.delete("onglet");
+          if (next === "affaires") params.delete("vue");
+          else params.set("vue", next);
+          const qs = params.toString();
+          router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+        }}
+      >
         {/*
           Six onglets font 484 pixels, l'écran d'un téléphone en fait 390.
 
@@ -306,7 +340,17 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
 
         <TabsContent value="affaires" className="mt-4">
           <ProjectsPanel
+            focus={{
+              affaire: searchParams.get("affaire"),
+              onglet: searchParams.get("onglet"),
+            }}
             customer={customer}
+            onQuote={(updated) =>
+              mutate((current) => ({
+                ...current,
+                quotes: current.quotes.map((quote) => (quote.id === updated.id ? updated : quote)),
+              }))
+            }
             projects={customer.projects}
             quotes={customer.quotes}
             interactions={customer.interactions}

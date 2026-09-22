@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import pkg from "./package.json";
 
 const nextConfig: NextConfig = {
   /*
@@ -14,6 +15,9 @@ const nextConfig: NextConfig = {
   // Sans serveur, rien pour optimiser une image : le seul `next/image` du CRM
   // affiche déjà un blob tel quel.
   images: { unoptimized: true },
+  // La version de l'application, envoyée à l'API sur chaque appel : c'est
+  // elle que la version plancher de l'API compare (`X-App-Version`).
+  env: { NEXT_PUBLIC_APP_VERSION: pkg.version },
 };
 
 export default nextConfig;

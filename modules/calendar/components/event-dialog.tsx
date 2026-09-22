@@ -9,6 +9,7 @@ import {
   CopyIcon,
   PencilIcon,
   UserIcon,
+  UserCheckIcon,
   UsersIcon,
   VideoIcon,
 } from "lucide-react";
@@ -102,6 +103,10 @@ export function EventDialog({
                     <ArrowUpRightIcon className="size-3" />
                   </Link>
                 </Row>
+              )}
+
+              {event.assignee_name && (
+                <Row icon={UserCheckIcon}>Pour {event.assignee_name}</Row>
               )}
 
               {event.location && <Row icon={MapPinIcon}>{event.location}</Row>}

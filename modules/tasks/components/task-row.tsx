@@ -37,7 +37,12 @@ export function TaskRow({
 
   async function toggle() {
     const next: TaskStatus = done ? "a_faire" : "terminee";
-    await api.setTaskStatus(task.id, next);
+    try {
+      await api.setTaskStatus(task.id, next);
+    } catch (cause) {
+      notifyError(`La tâche n'a pas été mise à jour : ${errorMessage(cause)}`, () => void toggle());
+      return;
+    }
     onChanged();
   }
 

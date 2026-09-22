@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { EyeIcon, FileTextIcon, ReceiptTextIcon } from "lucide-react";
+import { CalendarPlusIcon, EyeIcon, FileTextIcon, ReceiptTextIcon } from "lucide-react";
+import { notifySuccess } from "@/shared/ui/toaster";
 import { PreviewLink } from "@/modules/files";
 import {
   Sheet,
@@ -24,6 +25,7 @@ import {
   paymentCarrier,
   depositTotalOf,
   missionOf,
+  PlanEvent,
   projectReference,
   setMilestones,
   setQuoteDeposit,
@@ -95,6 +97,15 @@ function Body({
   const status =
     metier === "etudes" ? STUDY_STATUS[read.study] : WORKSITE_STATUS[read.status];
   const canWrite = usePermission("customers:write");
+  /*
+    Poser le démarrage à l'agenda.
+
+    Réserver une date ne faisait qu'écrire `started_at` : l'équipe travaux ne
+    voyait rien dans son planning, et il fallait tout ressaisir dans l'agenda.
+    L'événement proposé est un chantier marqué « démarrage » : le déplacer dans
+    l'agenda déplacera la date de l'affaire.
+  */
+  const [agenda, setAgenda] = useState<string | null>(null);
 
   /*
     Les jalons s'affichent tout de suite, puis s'enregistrent.
@@ -227,6 +238,12 @@ function Body({
         // de sa liste, et effaçait ce qu'on avait corrigé depuis sur la fiche
         // client — une note, un ingénieur.
         await updateProject(w.id, { started_at: value ? value.slice(0, 10) : null });
+        if (value && metier === "travaux") {
+          notifySuccess(`Démarrage réservé au ${formatDate(value)}.`, {
+            label: "Créer l'événement",
+            onClick: () => setAgenda(value.slice(0, 10)),
+          });
+        }
       } else {
         // Seules les cases touchées partent, pour la même raison.
         const envoi: Record<string, unknown> = {};
@@ -484,4 +501,19 @@ function Section({
       )}
     </div>
   );
+}
+
+/** Le jour local, AAAA-MM-JJ. */
+function todayLocal(): string {
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}
+
+/** Une journée entière, bornes de l'agenda : la fin est exclusive. */
+function jourEntier(day: string): { from: Date; to: Date; allDay: boolean } {
+  const from = new Date(`${day.slice(0, 10)}T00:00:00`);
+  const to = new Date(from);
+  to.setDate(to.getDate() + 1);
+  return { from, to, allDay: true };
 }

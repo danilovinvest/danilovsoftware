@@ -63,13 +63,18 @@ export function OutcomeDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSaved: () => void;
-  /** Pose le rappel de reprise. Le dialogue ne sait pas comment, seulement quand. */
-  onScheduleResume: (date: string, outcome: ProjectOutcome, note: string) => void;
+  /**
+   * Pose le rappel de reprise. Le dialogue ne sait pas comment, seulement quand.
+   * Rend `null` si tout est posé, sinon ce qui a échoué.
+   */
+  onScheduleResume: (date: string, outcome: ProjectOutcome, note: string) => Promise<string | null>;
 }) {
   const choices = mode === "refuse" ? CLOSING : PAUSING;
   const [outcome, setOutcome] = useState<ProjectOutcome>(choices[0]);
   const [note, setNote] = useState(project.outcome_note);
   const [resumeAt, setResumeAt] = useState(() => defaultResume());
+  const [rappel, setRappel] = useState<string | null>(null);
+  const [posant, setPosant] = useState(false);
 
   const save = useAction(() =>
     api.setProjectStage(project.id, {
@@ -139,6 +144,7 @@ export function OutcomeDialog({
           )}
 
           {save.error && <ErrorNotice message={save.error} />}
+          {rappel && <ErrorNotice message={rappel} />}
         </div>
 
         <DialogFooter>
@@ -147,11 +153,24 @@ export function OutcomeDialog({
           </Button>
           <Button
             variant={mode === "refuse" ? "destructive" : "default"}
-            disabled={save.pending}
+            disabled={save.pending || posant}
             onClick={async () => {
+              setRappel(null);
               if (!(await save.run())) return;
+              /*
+                Le rappel est attendu, et son échec se dit. Il partait sans
+                attendre et avalait son erreur : on croyait qu'une tâche de
+                reprise existait, et l'affaire reportée s'oubliait.
+              */
               if (mode === "postpone" && resumeAt) {
-                onScheduleResume(resumeAt, outcome, note.trim());
+                setPosant(true);
+                const echec = await onScheduleResume(resumeAt, outcome, note.trim());
+                setPosant(false);
+                if (echec) {
+                  setRappel(echec);
+                  onSaved();
+                  return;
+                }
               }
               onOpenChange(false);
               onSaved();

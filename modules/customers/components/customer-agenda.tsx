@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { CalendarPlusIcon, ClockIcon } from "lucide-react";
+import { CalendarPlusIcon, ClockIcon, PhoneIcon } from "lucide-react";
 import { usePermission } from "@/modules/auth";
 import {
   EventForm,
@@ -61,6 +61,13 @@ export function CustomerAgenda({
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<CalendarEvent | null>(null);
+  /*
+    « Noter un appel » ouvre le même formulaire, daté de la demi-heure qui vient
+    de passer : un échange daté du passé se consigne. Il n'y avait que
+    « Planifier », si bien que noter un appel passait par un bouton qui disait
+    le contraire.
+  */
+  const [passe, setPasse] = useState<{ from: Date; to: Date; allDay: boolean } | null>(null);
 
   const charger = useCallback(() => {
     listCustomerEvents(customerId, 20)
@@ -115,17 +122,34 @@ export function CustomerAgenda({
             </p>
           </div>
           {canWrite && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setEditing(null);
-                setOpen(true);
-              }}
-            >
-              <CalendarPlusIcon />
-              Planifier un échange
-            </Button>
+            <div className="flex shrink-0 flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                data-demo="note-call"
+                onClick={() => {
+                  const to = new Date();
+                  setEditing(null);
+                  setPasse({ from: new Date(to.getTime() - 30 * 60_000), to, allDay: false });
+                  setOpen(true);
+                }}
+              >
+                <PhoneIcon />
+                Noter un appel
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setEditing(null);
+                  setPasse(null);
+                  setOpen(true);
+                }}
+              >
+                <CalendarPlusIcon />
+                Planifier
+              </Button>
+            </div>
           )}
         </div>
 
@@ -183,6 +207,7 @@ export function CustomerAgenda({
         onSaved={charger}
         calendars={calendars}
         event={editing}
+        range={editing ? null : passe}
         preset={
           editing
             ? null
@@ -190,6 +215,7 @@ export function CustomerAgenda({
                 kind: "echange",
                 customerId,
                 customerName,
+                title: passe ? `Appel — ${customerName}` : undefined,
               }
         }
       />

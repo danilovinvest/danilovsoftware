@@ -480,7 +480,7 @@ function Reader({
                 {/* Créer la fiche avec cette adresse suffit : la copie
                     suivante rapprochera d'elle-même les messages passés. */}
                 <Button size="xs" variant="ghost" asChild>
-                  <Link href={`/customers/nouveau?email=${encodeURIComponent(message.from_email)}`}>
+                  <Link href={`/customers/nouveau?email=${encodeURIComponent(message.from_email)}&name=${encodeURIComponent(message.from_name ?? "")}`}>
                     <UserPlusIcon />
                     Créer la fiche
                   </Link>

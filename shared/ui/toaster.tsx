@@ -49,7 +49,15 @@ export function notifyError(message: string, retry?: () => void) {
   });
 }
 
-/** Une écriture a réussi, et rien d'autre à l'écran ne le dit. */
-export function notifySuccess(message: string) {
-  toast.success(message, { duration: 3000 });
+/**
+ * Une écriture a réussi, et rien d'autre à l'écran ne le dit.
+ *
+ * `action` propose la suite logique du geste — « Créer l'événement » après une
+ * date de chantier — et laisse le toast plus longtemps, le temps de la lire.
+ */
+export function notifySuccess(message: string, action?: { label: string; onClick: () => void }) {
+  toast.success(message, {
+    duration: action ? 8000 : 3000,
+    action: action ? { label: action.label, onClick: () => action.onClick() } : undefined,
+  });
 }

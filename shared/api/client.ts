@@ -1,5 +1,6 @@
 import { apiBase } from "@/shared/lib/env";
 import { refreshNative } from "@/shared/desktop/session";
+import { APP_VERSION, markUpdateRequired } from "@/shared/desktop/update-required";
 import { ApiError } from "./errors";
 
 /**
@@ -98,6 +99,8 @@ export async function apiFetchBlob(
   const { query, signal, retryOnUnauthorized = true } = options;
   const headers: Record<string, string> = {};
   if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+  // La version voyage sur chaque appel : l'API refuse (426) celles qu'elle ne sert plus.
+  if (APP_VERSION) headers["X-App-Version"] = APP_VERSION;
 
   let response: Response;
   try {
@@ -115,6 +118,7 @@ export async function apiFetchBlob(
   if (!response.ok) {
     const payload = await response.json().catch(() => null);
     const error = payload?.error;
+    if (response.status === 426) markUpdateRequired(error?.min_version ?? "");
     throw new ApiError(
       response.status,
       error?.code ?? "internal_error",
@@ -136,6 +140,8 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   const isForm = typeof FormData !== "undefined" && body instanceof FormData;
   if (body !== undefined && !isForm) headers["Content-Type"] = "application/json";
   if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+  // La version voyage sur chaque appel : l'API refuse (426) celles qu'elle ne sert plus.
+  if (APP_VERSION) headers["X-App-Version"] = APP_VERSION;
 
   let response: Response;
   try {
@@ -163,6 +169,7 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
 
   if (!response.ok) {
     const error = payload?.error;
+    if (response.status === 426) markUpdateRequired(error?.min_version ?? "");
     throw new ApiError(
       response.status,
       error?.code ?? "internal_error",

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/shared/ui/feedback";
 import { useAuth } from "../auth-context";
 import type { Permission } from "../lib/types";
+import { useOnline } from "@/shared/hooks/use-online";
 
 /**
  * Garde de rendu côté client. Elle protège l'affichage, pas les données :
@@ -27,6 +28,7 @@ export function RequireAuth({
   children: React.ReactNode;
 }) {
   const { account, loading, offline, retry, can } = useAuth();
+  const online = useOnline();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -75,13 +77,15 @@ export function RequireAuth({
 
   return (
     <>
-      {offline && offlineBanner && (
+      {(offline || !online) && offlineBanner && (
         <div
           role="status"
           className="bg-warning-soft text-warning flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium"
         >
           <WifiOffIcon className="size-3.5" />
-          Connexion perdue — vos données restent affichées, le CRM réessaie tout seul.
+          {online
+            ? "Connexion perdue — vos données restent affichées, le CRM réessaie tout seul."
+            : "Hors ligne — ce poste n'a plus de réseau. Les données affichées peuvent dater."}
           <button type="button" className="underline" onClick={retry}>
             Réessayer
           </button>

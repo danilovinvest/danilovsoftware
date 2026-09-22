@@ -73,8 +73,8 @@ export function CommandSearch({ className }: { className?: string }) {
   // palette que celui-ci.
   const open = useSearchOpen();
   const [query, setQuery] = useState("");
-  const [resolved, setResolved] = useState<{ key: string; data: SearchResult }>({
-    key: "", data: VIDE,
+  const [resolved, setResolved] = useState<{ key: string; data: SearchResult; failed: boolean }>({
+    key: "", data: VIDE, failed: false,
   });
 
   const canCreate = usePermission("customers:write");
@@ -84,6 +84,9 @@ export function CommandSearch({ className }: { className?: string }) {
   const key = trimmed.length < MIN_QUERY ? "" : trimmed;
   const loading = key !== "" && resolved.key !== key;
   const data = resolved.key === key ? resolved.data : VIDE;
+  // Une panne n'est pas une absence de résultat : « rien ne correspond » ferait
+  // créer une fiche qui existe déjà.
+  const failed = resolved.key === key && resolved.failed;
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -106,10 +109,10 @@ export function CommandSearch({ className }: { className?: string }) {
     // suivante.
     const timer = setTimeout(() => {
       search(key, controller.signal)
-        .then((data) => setResolved({ key, data }))
+        .then((data) => setResolved({ key, data, failed: false }))
         .catch(() => {
           if (controller.signal.aborted) return;
-          setResolved({ key, data: VIDE });
+          setResolved({ key, data: VIDE, failed: true });
         });
     }, 200);
 
@@ -235,12 +238,18 @@ export function CommandSearch({ className }: { className?: string }) {
           </div>
 
           <div ref={listRef} className="max-h-[24rem] overflow-y-auto p-2">
-            {flat.length === 0 ? (
-              <p className="text-muted-foreground px-2 py-10 text-center text-sm">
-                {loading
-                  ? "Recherche…"
-                  : `Rien ne correspond à « ${trimmed} »`}
+            {failed && (
+              <p role="alert" className="text-danger bg-danger-soft/40 mb-2 rounded-lg px-3 py-2 text-xs">
+                Recherche indisponible : fiches, affaires, devis et courriels n&apos;ont pas pu être
+                interrogés. Réessayez dans un instant.
               </p>
+            )}
+            {flat.length === 0 ? (
+              failed ? null : (
+                <p className="text-muted-foreground px-2 py-10 text-center text-sm">
+                  {loading ? "Recherche…" : `Rien ne correspond à « ${trimmed} »`}
+                </p>
+              )
             ) : (
               groups.map((group) => (
                 <div key={group.key} className="mb-2 last:mb-0">

@@ -35,6 +35,11 @@ export function createTask(payload: TaskPayload) {
   return apiFetch<Task>("/v1/tasks", { method: "POST", body: payload });
 }
 
+/** Une tâche, pour l'ouvrir depuis un lien (`/tasks?tache=`). */
+export function getTask(id: string, signal?: AbortSignal) {
+  return apiFetch<Task>(`/v1/tasks/${id}`, { signal });
+}
+
 export function updateTask(id: string, payload: TaskPayload) {
   return apiFetch<Task>(`/v1/tasks/${id}`, { method: "PATCH", body: payload });
 }

@@ -56,5 +56,19 @@ export function useCustomer(id: string) {
 
   const reload = useCallback(() => setReloadToken((value) => value + 1), []);
 
-  return { customer: resolved.data, loading, error: resolved.error, reload };
+  /*
+    Range tout de suite ce qu'une écriture vient de rendre.
+
+    Chaque clic relisait toute la fiche avant que l'écran ne bouge. Une
+    écriture qui rend l'objet à jour (un devis encaissé) le pose en place
+    immédiatement ; le rechargement qui suit complète ce qu'elle a pu
+    entraîner ailleurs — une tâche automatique, un statut client.
+  */
+  const mutate = useCallback((update: (current: CustomerDetail) => CustomerDetail) => {
+    setResolved((previous) =>
+      previous.data ? { ...previous, data: update(previous.data) } : previous,
+    );
+  }, []);
+
+  return { customer: resolved.data, loading, error: resolved.error, reload, mutate };
 }

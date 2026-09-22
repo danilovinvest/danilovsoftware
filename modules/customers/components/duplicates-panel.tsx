@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRightIcon, CheckIcon, MergeIcon } from "lucide-react";
+import { ArrowRightIcon, CheckIcon, MergeIcon, XIcon } from "lucide-react";
 import { usePermission } from "@/modules/auth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState, ErrorNotice, Spinner } from "@/shared/ui/feedback";
 import { Bar } from "@/shared/ui/loading";
+import { askConfirm } from "@/shared/ui/confirm";
 import { errorMessage } from "@/shared/api/errors";
 import { plural } from "@/shared/lib/format";
 import { cn } from "@/lib/utils";
@@ -36,10 +37,14 @@ import { customerHref } from "@/shared/lib/routes";
  */
 export function DuplicatesPanel() {
   const canMerge = usePermission("customers:delete");
+  const canDismiss = usePermission("customers:write");
   const [pairs, setPairs] = useState<DuplicatePair[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<string | null>(null);
   const [done, setDone] = useState<Record<string, string>>({});
+  /** Les fiches absorbées : leurs autres paires ne se tranchent plus. */
+  const [absorbees, setAbsorbees] = useState<Set<string>>(() => new Set());
+  const [ecartees, setEcartees] = useState<Set<string>>(() => new Set());
 
   const charger = useCallback(() => {
     api
@@ -53,8 +58,24 @@ export function DuplicatesPanel() {
 
   useEffect(charger, [charger]);
 
-  async function fusionner(keep: DuplicateSide, drop: DuplicateSide) {
-    const cle = keep.id + drop.id;
+  async function fusionner(cle: string, keep: DuplicateSide, drop: DuplicateSide) {
+    /*
+      La fusion ne se défait pas : elle se confirme en disant ce qui part où.
+      Le bouton fusionnait au premier clic, et « Garder à gauche » se lit vite
+      pour « Garder à droite ».
+    */
+    const archivee = keep.status === "archive"
+      ? " Attention : la fiche gardée est archivée, tout ira dans une fiche que la liste ne montre pas."
+      : "";
+    const ok = await askConfirm({
+      title: `Fusionner « ${drop.name} » dans « ${keep.name} »`,
+      description:
+        `${plural(drop.projects, "affaire")}, ${plural(drop.quotes, "devis", "devis")} et ` +
+        `${plural(drop.mail, "courriel")} passent sur « ${keep.name} », qui complète ses champs vides sans rien écraser. ` +
+        `« ${drop.name} » est retirée. Cette fusion ne se défait pas.${archivee}`,
+      confirmLabel: "Fusionner",
+    });
+    if (!ok) return;
     setPending(cle);
     setError(null);
     try {
@@ -63,6 +84,20 @@ export function DuplicatesPanel() {
       // ferait sauter la liste sous le curseur au moment précis où l'on
       // enchaîne les décisions.
       setDone((current) => ({ ...current, [cle]: keep.name }));
+      setAbsorbees((current) => new Set(current).add(drop.id));
+    } catch (cause) {
+      setError(errorMessage(cause));
+    } finally {
+      setPending(null);
+    }
+  }
+
+  async function ecarter(cle: string, pair: DuplicatePair) {
+    setPending(cle);
+    setError(null);
+    try {
+      await api.dismissDuplicate(pair.left.id, pair.right.id);
+      setEcartees((current) => new Set(current).add(cle));
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
@@ -80,8 +115,12 @@ export function DuplicatesPanel() {
     );
   }
 
+  const cleDe = (pair: DuplicatePair) => pair.left.id + pair.right.id;
+  /** Une paire dont une fiche a été absorbée n'existe plus : elle se relit barrée. */
+  const perimee = (pair: DuplicatePair) =>
+    absorbees.has(pair.left.id) || absorbees.has(pair.right.id);
   const restantes = pairs.filter(
-    (pair) => !done[pair.left.id + pair.right.id] && !done[pair.right.id + pair.left.id],
+    (pair) => !done[cleDe(pair)] && !ecartees.has(cleDe(pair)) && !perimee(pair),
   );
 
   return (
@@ -107,41 +146,63 @@ export function DuplicatesPanel() {
           </p>
 
           {pairs.map((pair) => {
-            const cle = pair.left.id + pair.right.id;
+            const cle = cleDe(pair);
             const fusionnee = done[cle];
+            const ecartee = ecartees.has(cle);
+            const close = Boolean(fusionnee) || ecartee || perimee(pair);
             return (
               <Card
                 key={cle}
-                className={cn("gap-0 p-3", fusionnee && "opacity-60")}
+                className={cn("gap-0 p-3", close && "opacity-60")}
               >
                 <div className="flex items-center justify-between gap-2 pb-2">
                   <span className="text-muted-foreground text-[11px]">
                     {Math.round(pair.score * 100)} % de ressemblance
                   </span>
-                  {fusionnee && (
+                  {fusionnee ? (
                     <span className="text-success flex items-center gap-1 text-[11px] font-medium">
                       <CheckIcon className="size-3" />
                       Fusionnées dans « {fusionnee} »
                     </span>
-                  )}
+                  ) : ecartee ? (
+                    <span className="text-muted-foreground text-[11px] font-medium">
+                      Pas un doublon — ne reviendra plus
+                    </span>
+                  ) : perimee(pair) ? (
+                    <span className="text-muted-foreground text-[11px] font-medium">
+                      L&apos;une des deux vient d&apos;être absorbée
+                    </span>
+                  ) : canDismiss ? (
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      className="text-muted-foreground h-6"
+                      disabled={pending === cle}
+                      data-demo="duplicate-dismiss"
+                      onClick={() => ecarter(cle, pair)}
+                    >
+                      <XIcon />
+                      Pas un doublon
+                    </Button>
+                  ) : null}
                 </div>
 
                 <div className="grid gap-2 sm:grid-cols-[1fr_auto_1fr] sm:items-stretch">
                   <Fiche side={pair.left} />
                   <div className="flex flex-col items-center justify-center gap-1.5">
-                    {canMerge && !fusionnee ? (
+                    {canMerge && !close ? (
                       <>
                         <Bouton
                           titre={`Garder « ${pair.left.name} »`}
                           sens="gauche"
                           pending={pending === cle}
-                          onClick={() => fusionner(pair.left, pair.right)}
+                          onClick={() => fusionner(cle, pair.left, pair.right)}
                         />
                         <Bouton
                           titre={`Garder « ${pair.right.name} »`}
                           sens="droite"
                           pending={pending === cle}
-                          onClick={() => fusionner(pair.right, pair.left)}
+                          onClick={() => fusionner(cle, pair.right, pair.left)}
                         />
                       </>
                     ) : (

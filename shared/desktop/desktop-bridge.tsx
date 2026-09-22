@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { followDocumentTheme } from "./appearance";
 import { interceptExternalLinks, onNavigateRequest } from "./links";
 import { UpdateNotice } from "./update-notice";
+import { UpdateRequired } from "./update-required";
 
 /**
  * Ce que la page doit à la coque, posé une fois pour toute l'application.
@@ -22,5 +23,10 @@ export function DesktopBridge() {
   useEffect(() => onNavigateRequest((path) => router.push(path)), [router]);
   useEffect(() => followDocumentTheme(), []);
 
-  return <UpdateNotice />;
+  return (
+    <>
+      <UpdateNotice />
+      <UpdateRequired />
+    </>
+  );
 }

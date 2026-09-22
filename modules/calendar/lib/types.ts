@@ -146,6 +146,11 @@ export type CalendarEvent = {
    */
   project_id: string | null;
   project_name: string;
+  /** Pour qui : le collègue qui ira. Nul quand personne n'est désigné. */
+  assignee_id: string | null;
+  assignee_name: string;
+  /** Qui l'a posé. Nul pour un événement importé de Google. */
+  created_by: string | null;
   updated_at: string;
 };
 
@@ -185,6 +190,8 @@ export type EventInput = {
   color: number;
   /** L'affaire concernée. Nulle pour ce qui ne porte sur aucune affaire. */
   project_id: string | null;
+  /** Pour qui. Toujours envoyé : l'écriture remplace l'événement entier. */
+  assignee_id: string | null;
   /** Ce que l'événement inscrit dans la fiche. Toujours envoyé, jamais omis. */
   jalons: EventJalons;
 };

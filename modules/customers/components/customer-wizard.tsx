@@ -1,24 +1,20 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
-import { ArrowLeftIcon, ArrowRightIcon, CheckIcon } from "lucide-react";
+import { CheckIcon, ChevronRightIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { ErrorNotice } from "@/shared/ui/feedback";
-import { SummaryLine, WizardSteps } from "@/shared/ui/wizard";
 import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
-import { formatDate } from "@/shared/lib/format";
-import * as api from "../lib/api";
-import {
-  CUSTOMER_KIND,
-  CUSTOMER_SOURCE,
-  PROJECT_STAGE,
-  toOptions,
-} from "../lib/labels";
-import { useAction } from "../hooks/use-customers";
 import { useDirtyGuard } from "@/shared/lib/dirty-guard";
+import { customerHref } from "@/shared/lib/routes";
+import * as api from "../lib/api";
+import { CUSTOMER_KIND, CUSTOMER_SOURCE, PROJECT_STAGE, toOptions } from "../lib/labels";
+import { useAction } from "../hooks/use-customers";
 import { ReferrerPicker } from "./referrer-picker";
+import { SimilarCustomers } from "./similar-customers";
 import type {
   CustomerKind,
   CustomerPayload,
@@ -27,28 +23,30 @@ import type {
   ProjectStage,
   Referrer,
 } from "../lib/types";
-import { customerHref } from "@/shared/lib/routes";
 
-const STEPS = [
-  { title: "Le client", hint: "Qui appelle, et d'où vient la demande" },
-  { title: "La demande", hint: "Le chantier concerné — facultatif" },
-  { title: "Vérification", hint: "Un dernier coup d'œil avant création" },
-];
+/** Le jour local, AAAA-MM-JJ. */
+function aujourdhui(): string {
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}
 
-function emptyCustomer(): CustomerPayload {
+function emptyCustomer(email: string, name: string): CustomerPayload {
   return {
-    display_name: "",
+    display_name: name,
     kind: "particulier",
     status: "prospect",
-    source: "site_web",
+    // Posée vide, jamais « site web » d'office : une source préremplie se
+    // valide sans être lue, et fausse le compte de ce qui fait venir les clients.
+    source: "" as CustomerSource,
     company_name: "",
-    email: "",
+    email,
     phone: "",
     address_line: "",
     postal_code: "",
     city: "",
     country: "France",
-    requested_at: new Date().toISOString().slice(0, 10),
+    requested_at: aujourdhui(),
     notes: "",
     owner_id: null,
   };
@@ -77,26 +75,35 @@ function emptyProject(): ProjectPayload {
   };
 }
 
+const SOURCES = toOptions(CUSTOMER_SOURCE);
+
 /**
- * Création guidée : la fiche et sa première affaire se saisissent d'une traite.
- * Le formulaire complet reste utilisé pour la modification, où l'on sait déjà
- * ce qu'on cherche.
+ * Créer une fiche pendant l'appel : un écran, trois champs qui comptent.
+ *
+ * C'était un assistant en trois étapes, sans formulaire — Entrée ne faisait
+ * rien — et sans regarder ce qui existait déjà. On le remplit désormais d'une
+ * traite : le nom, le numéro, l'objet de la demande et d'où vient le client ;
+ * le reste attend sous « Plus de détails ». Les fiches qui ressemblent à celle
+ * qu'on tape s'affichent au fil de la saisie.
+ *
+ * Ouvert depuis un courriel (`?email=&name=`), il part de l'expéditeur : la
+ * fiche naît avec son adresse, et la copie suivante lui rattache ses messages.
  */
 export function CustomerWizard() {
   const router = useRouter();
-  const [step, setStep] = useState(0);
-  const [customer, setCustomer] = useState<CustomerPayload>(emptyCustomer);
+  const params = useSearchParams();
+  const [customer, setCustomer] = useState<CustomerPayload>(() => {
+    const email = params.get("email") ?? "";
+    const fiche = emptyCustomer(email, params.get("name") ?? "");
+    return email ? { ...fiche, source: "email" } : fiche;
+  });
   const [project, setProject] = useState<ProjectPayload>(emptyProject);
-  const [stepError, setStepError] = useState<string | null>(null);
+  const [details, setDetails] = useState(false);
+  const [missing, setMissing] = useState<Record<string, string>>({});
   /** Le parrain, quand la source est une recommandation. Écrit après la fiche. */
   const [referrer, setReferrer] = useState<Referrer | null>(null);
-  /*
-    Quitter l'assistant en cours de route prévient. Seul l'onglet est gardé : la
-    navigation interne de Next ne se laisse pas interrompre, et le bouton
-    « Précédent » ne perd rien.
-  */
   // Comparée à l'état réellement posé à l'ouverture, pas à un second appel des
-  // valeurs par défaut, qui peuvent dépendre de l'heure.
+  // valeurs par défaut, qui peuvent dépendre de l'heure ou de l'adresse.
   const [vierge] = useState(() => JSON.stringify([customer, project]));
   useDirtyGuard(JSON.stringify([customer, project]) !== vierge);
 
@@ -125,7 +132,7 @@ export function CustomerWizard() {
       await api.setCustomerReferrer(id, referrer);
       fait.current.referrer = true;
     }
-    // L'affaire est facultative : sans intitulé, on s'arrête à la fiche.
+    // L'affaire est facultative : sans objet, on s'arrête à la fiche.
     if (project.label.trim() !== "" && !fait.current.project) {
       await api.createProject(id, {
         ...project,
@@ -144,34 +151,26 @@ export function CustomerWizard() {
     return id;
   }, { inline: true });
 
-  function next() {
-    if (step === 0 && customer.display_name.trim() === "") {
-      setStepError("Le nom du client est requis pour continuer.");
-      return;
-    }
-    setStepError(null);
-    setStep((current) => Math.min(current + 1, STEPS.length - 1));
-  }
-
-  async function finish() {
+  async function finish(event: React.FormEvent) {
+    event.preventDefault();
+    const manque: Record<string, string> = {};
+    if (customer.display_name.trim() === "") manque.display_name = "Le nom du client est requis.";
+    if (!customer.source) manque.source = "Dites comment il nous a contactés.";
+    setMissing(manque);
+    if (Object.keys(manque).length > 0) return;
     const id = await submit.run();
     if (id) router.push(customerHref(id));
   }
 
+  const set = (patch: Partial<CustomerPayload>) => setCustomer({ ...customer, ...patch });
+
   return (
-    <div className="flex w-full flex-col gap-6">
-      <WizardSteps steps={STEPS} current={step} />
-
+    <form className="flex w-full flex-col gap-4" onSubmit={finish} noValidate>
       <Card>
-        <CardContent className="flex flex-col gap-5 py-6">
-          <div>
-            <h2 className="font-semibold">{STEPS[step].title}</h2>
-            <p className="text-muted-foreground text-sm">{STEPS[step].hint}</p>
-          </div>
-
-          {stepError && <ErrorNotice message={stepError} />}
+        <CardContent className="grid gap-4 py-6 sm:grid-cols-2">
           {submit.error && (
             <ErrorNotice
+              className="sm:col-span-2"
               message={
                 ficheCreee
                   ? `La fiche est créée, la suite a échoué : ${submit.error} « Créer la fiche » reprend sans la recréer.`
@@ -180,120 +179,127 @@ export function CustomerWizard() {
             />
           )}
 
-          {step === 0 && (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <TextField
-                label="Nom du client"
-                required
-                autoFocus
-                wrapperClassName="sm:col-span-2"
-                placeholder="Ex. Alain Cochin, LE BEFORE / Chloé Ballion"
-                value={customer.display_name}
-                error={submit.fields.display_name}
-                onChange={(event) =>
-                  setCustomer({ ...customer, display_name: event.target.value })
-                }
-              />
+          <TextField
+            label="Nom du client"
+            required
+            autoFocus
+            wrapperClassName="sm:col-span-2"
+            placeholder="Ex. Alain Cochin, LE BEFORE / Chloé Ballion"
+            value={customer.display_name}
+            error={missing.display_name ?? submit.fields.display_name}
+            onChange={(event) => set({ display_name: event.target.value })}
+          />
+          <TextField
+            label="Téléphone"
+            type="tel"
+            placeholder="06 62 46 48 67"
+            value={customer.phone}
+            onChange={(event) => set({ phone: event.target.value })}
+          />
+          <TextField
+            label="E-mail"
+            type="email"
+            value={customer.email}
+            error={submit.fields.email}
+            onChange={(event) => set({ email: event.target.value })}
+          />
+
+          <SimilarCustomers name={customer.display_name} phone={customer.phone} email={customer.email} />
+
+          <TextField
+            label="Objet de la demande"
+            wrapperClassName="sm:col-span-2"
+            hint="Facultatif : vide, la fiche naît seule et l'affaire s'ajoutera plus tard."
+            placeholder="Ex. Ouverture d'un mur porteur"
+            value={project.label}
+            onChange={(event) => setProject({ ...project, label: event.target.value })}
+          />
+
+          <fieldset className="flex flex-col gap-1.5 sm:col-span-2" data-demo="wizard-source">
+            <legend className="mb-1.5 text-xs font-medium">
+              Comment nous a-t-il contactés ? <span className="text-destructive">*</span>
+            </legend>
+            <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Source">
+              {SOURCES.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={customer.source === option.value}
+                  onClick={() => set({ source: option.value as CustomerSource })}
+                  className={cn(
+                    "rounded-md border px-2.5 py-1.5 text-xs transition-colors",
+                    customer.source === option.value
+                      ? "border-primary bg-primary/5 font-medium"
+                      : "hover:bg-muted/50 border-border",
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            {missing.source && <p className="text-destructive text-xs">{missing.source}</p>}
+          </fieldset>
+
+          {customer.source === "recommandation" && (
+            <div className="flex flex-col gap-1.5 sm:col-span-2">
+              <span className="text-xs font-medium">Recommandé par</span>
+              <ReferrerPicker value={referrer} onChange={setReferrer} />
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setDetails((open) => !open)}
+            aria-expanded={details}
+            className="text-muted-foreground hover:text-foreground flex w-fit items-center gap-1 text-xs sm:col-span-2"
+          >
+            <ChevronRightIcon className={cn("size-3.5 transition-transform", details && "rotate-90")} />
+            Plus de détails — type, ville, chantier, notes
+          </button>
+
+          {details && (
+            <>
               <SelectField
                 label="Type"
                 options={toOptions(CUSTOMER_KIND)}
                 value={customer.kind}
-                onValueChange={(value) =>
-                  setCustomer({ ...customer, kind: value as CustomerKind })
-                }
-              />
-              <SelectField
-                label="Comment nous a-t-il contactés ?"
-                options={toOptions(CUSTOMER_SOURCE)}
-                value={customer.source}
-                onValueChange={(value) =>
-                  setCustomer({ ...customer, source: value as CustomerSource })
-                }
-              />
-              {customer.source === "recommandation" && (
-                <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <span className="text-xs font-medium">Recommandé par</span>
-                  <ReferrerPicker value={referrer} onChange={setReferrer} />
-                </div>
-              )}
-              <TextField
-                label="Téléphone"
-                placeholder="06 62 46 48 67"
-                value={customer.phone}
-                onChange={(event) =>
-                  setCustomer({ ...customer, phone: event.target.value })
-                }
-              />
-              <TextField
-                label="E-mail"
-                type="email"
-                value={customer.email}
-                error={submit.fields.email}
-                onChange={(event) =>
-                  setCustomer({ ...customer, email: event.target.value })
-                }
-              />
-              <TextField
-                label="Ville"
-                placeholder="Cannes, Nice…"
-                value={customer.city}
-                onChange={(event) =>
-                  setCustomer({ ...customer, city: event.target.value })
-                }
+                onValueChange={(value) => set({ kind: value as CustomerKind })}
               />
               <TextField
                 label="Date de la demande"
                 type="date"
                 value={customer.requested_at ?? ""}
-                onChange={(event) =>
-                  setCustomer({ ...customer, requested_at: event.target.value || null })
-                }
+                onChange={(event) => set({ requested_at: event.target.value || null })}
               />
-            </div>
-          )}
-
-          {step === 1 && (
-            <div className="grid gap-4 sm:grid-cols-2">
               <TextField
-                label="Objet de la demande"
-                autoFocus
-                wrapperClassName="sm:col-span-2"
-                hint="Laissez vide pour créer la fiche seule ; l'affaire s'ajoutera plus tard."
-                placeholder="Ex. Ouverture d'un mur porteur"
-                value={project.label}
-                onChange={(event) => setProject({ ...project, label: event.target.value })}
+                label="Ville du client"
+                placeholder="Cannes, Nice…"
+                value={customer.city}
+                onChange={(event) => set({ city: event.target.value })}
+              />
+              <SelectField
+                label="Où en est-on ?"
+                options={toOptions(PROJECT_STAGE)}
+                value={project.stage}
+                onValueChange={(value) => setProject({ ...project, stage: value as ProjectStage })}
               />
               <TextField
                 label="Adresse du chantier"
                 wrapperClassName="sm:col-span-2"
                 value={project.site_address}
-                onChange={(event) =>
-                  setProject({ ...project, site_address: event.target.value })
-                }
+                onChange={(event) => setProject({ ...project, site_address: event.target.value })}
               />
               <TextField
                 label="Code postal"
                 value={project.site_postal_code}
-                onChange={(event) =>
-                  setProject({ ...project, site_postal_code: event.target.value })
-                }
+                onChange={(event) => setProject({ ...project, site_postal_code: event.target.value })}
               />
               <TextField
                 label="Ville du chantier"
                 placeholder={customer.city || "Comme le client"}
                 value={project.site_city}
-                onChange={(event) =>
-                  setProject({ ...project, site_city: event.target.value })
-                }
-              />
-              <SelectField
-                label="Où en est-on ?"
-                wrapperClassName="sm:col-span-2"
-                options={toOptions(PROJECT_STAGE)}
-                value={project.stage}
-                onValueChange={(value) =>
-                  setProject({ ...project, stage: value as ProjectStage })
-                }
+                onChange={(event) => setProject({ ...project, site_city: event.target.value })}
               />
               <TextAreaField
                 label="Notes"
@@ -301,82 +307,19 @@ export function CustomerWizard() {
                 className="min-h-20"
                 placeholder="Contexte, contraintes, ce qu'a dit le client…"
                 value={customer.notes}
-                onChange={(event) =>
-                  setCustomer({ ...customer, notes: event.target.value })
-                }
+                onChange={(event) => set({ notes: event.target.value })}
               />
-            </div>
+            </>
           )}
-
-          {step === 2 && <Summary customer={customer} project={project} referrer={referrer} />}
         </CardContent>
       </Card>
 
-      <div className="flex items-center justify-between">
-        <Button
-          variant="ghost"
-          disabled={step === 0 || submit.pending}
-          onClick={() => {
-            setStepError(null);
-            setStep((current) => Math.max(current - 1, 0));
-          }}
-        >
-          <ArrowLeftIcon />
-          Précédent
+      <div className="flex justify-end">
+        <Button type="submit" size="lg" disabled={submit.pending}>
+          <CheckIcon />
+          Créer la fiche
         </Button>
-
-        {step < STEPS.length - 1 ? (
-          <Button size="lg" onClick={next}>
-            Continuer
-            <ArrowRightIcon />
-          </Button>
-        ) : (
-          <Button size="lg" disabled={submit.pending} onClick={finish}>
-            <CheckIcon />
-            Créer la fiche
-          </Button>
-        )}
       </div>
-    </div>
-  );
-}
-
-function Summary({
-  customer,
-  project,
-  referrer,
-}: {
-  customer: CustomerPayload;
-  project: ProjectPayload;
-  referrer: Referrer | null;
-}) {
-  const contact = [customer.phone, customer.email, customer.city]
-    .filter(Boolean)
-    .join(" · ");
-
-  return (
-    <dl className="divide-y text-sm">
-      <SummaryLine label="Client" value={customer.display_name} />
-      <SummaryLine label="Type" value={CUSTOMER_KIND[customer.kind].label} />
-      <SummaryLine
-        label="Source"
-        value={
-          customer.source === "recommandation" && referrer
-            ? `${CUSTOMER_SOURCE[customer.source].label} · ${referrer.name}`
-            : CUSTOMER_SOURCE[customer.source].label
-        }
-      />
-      <SummaryLine label="Coordonnées" value={contact || "aucune"} />
-      <SummaryLine label="Demande reçue le" value={formatDate(customer.requested_at)} />
-      <SummaryLine
-        label="Affaire"
-        value={
-          project.label.trim() === ""
-            ? "aucune pour l'instant"
-            : `${project.label} — ${PROJECT_STAGE[project.stage].label}`
-        }
-      />
-      {customer.notes && <SummaryLine label="Notes" value={customer.notes} />}
-    </dl>
+    </form>
   );
 }

@@ -170,7 +170,11 @@ export function AutomationList() {
                 <span
                   className={cn(
                     "size-2 shrink-0 rounded-full",
-                    automation.active ? "bg-success" : "bg-muted-foreground/30",
+                    automation.last_run_error
+                      ? "bg-danger"
+                      : automation.active
+                        ? "bg-success"
+                        : "bg-muted-foreground/30",
                   )}
                 />
                 <span className="min-w-0 flex-1">
@@ -188,9 +192,20 @@ export function AutomationList() {
                   ) : (
                     "en pause"
                   )}
-                  <span className="text-muted-foreground/60 block">
+                  {/*
+                    L'échec se lit dans la liste, en rouge : l'écran ne montrait
+                    que la date du dernier passage, réussi ou non.
+                  */}
+                  <span
+                    className={cn(
+                      "block",
+                      automation.last_run_error ? "text-danger font-medium" : "text-muted-foreground/60",
+                    )}
+                    title={automation.last_run_error || undefined}
+                    data-demo={automation.last_run_error ? "automation-failed" : undefined}
+                  >
                     {automation.last_run_at
-                      ? `dernière ${formatRelative(automation.last_run_at)}`
+                      ? `${automation.last_run_error ? "échec" : "dernière"} ${formatRelative(automation.last_run_at)}`
                       : "jamais exécutée"}
                   </span>
                 </span>

@@ -19,6 +19,7 @@ import { ErrorNotice, Spinner } from "@/shared/ui/feedback";
 import { type DayEntry, DateField, TimeField } from "@/shared/ui/date-time-field";
 import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
 import { CustomerPicker, ProjectPicker } from "@/modules/customers";
+import { useColleagues } from "@/shared/hooks/use-colleagues";
 import { EventJalonsField } from "./event-jalons-field";
 import * as api from "../lib/api";
 import {
@@ -91,7 +92,7 @@ export function EventForm({
 }) {
   // Le formulaire est remonté à chaque ouverture : la clé change avec la cible,
   // et l'état initial se calcule une fois, dans l'initialiseur du useState.
-  const key = `${open}:${event?.id ?? template?.id ?? "nouveau"}:${range?.from.toISOString() ?? ""}:${range?.to.toISOString() ?? ""}:${preset?.customerId ?? ""}:${preset?.kind ?? ""}`;
+  const key = `${open}:${event?.id ?? template?.id ?? "nouveau"}:${range?.from.toISOString() ?? ""}:${range?.to.toISOString() ?? ""}:${preset?.customerId ?? ""}:${preset?.kind ?? ""}:${preset?.projectId ?? ""}`;
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       {/*
@@ -165,6 +166,8 @@ type Draft = {
   customerName: string;
   /** L'affaire concernée : c'est elle qui porte les jalons. */
   projectId: string | null;
+  /** Pour qui : le collègue qui ira. */
+  assigneeId: string | null;
   /** Ce que l'événement inscrit dans la fiche. Voir `EVENT_KIND_JALONS`. */
   jalons: EventJalons;
   /** La couleur, 1 à 11. Zéro : celle de l'agenda. Voir `EVENT_PALETTE`. */
@@ -205,6 +208,7 @@ function FormBody({
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
+  const colleagues = useColleagues();
   const set = <K extends keyof Draft>(field: K, value: Draft[K]) =>
     setDraft((current) => ({ ...current, [field]: value }));
 
@@ -247,6 +251,7 @@ function FormBody({
         all_day: draft.allDay,
         customer_id: draft.customerId,
         project_id: draft.projectId,
+        assignee_id: draft.assigneeId,
         kind: draft.kind,
         color: draft.color,
         // Le formulaire affiche les deux cases : il en dit l'état complet.
@@ -462,6 +467,20 @@ function FormBody({
         {/* Le rattachement à une fiche : c'est lui qui fait apparaître
             l'événement dans l'onglet « Échanges » du client. Facultatif — une
             réunion interne ne concerne personne. */}
+        {/*
+          Pour qui. Le secrétariat pose les rendez-vous des chargés d'affaires,
+          et l'agenda ne savait pas le dire : chacun cherchait les siens parmi
+          ceux de tout le monde.
+        */}
+        <SelectField
+          id="event-assignee"
+          label="Pour qui"
+          emptyLabel="Personne en particulier"
+          options={colleagues.map((colleague) => ({ value: colleague.id, label: colleague.name }))}
+          value={draft.assigneeId ?? ""}
+          onValueChange={(value) => set("assigneeId", value || null)}
+        />
+
         <CustomerPicker
           label="Client ou prospect"
           value={draft.customerId}
@@ -603,6 +622,16 @@ export type EventPreset = {
   customerId?: string | null;
   customerName?: string;
   title?: string;
+  /** L'affaire concernée : sans elle, aucun jalon ne s'inscrit. */
+  projectId?: string | null;
+  /** Pour qui, quand l'écran appelant le sait. */
+  assigneeId?: string | null;
+  location?: string;
+  /**
+   * L'événement marque le démarrage du chantier : le poser inscrit la date sur
+   * l'affaire, le déplacer la déplace (voir `marks_worksite_start`).
+   */
+  worksiteStart?: boolean;
 };
 
 function initial(
@@ -633,6 +662,7 @@ function initial(
   */
   const vierge = {
     projectId: event?.project_id ?? null,
+    assigneeId: event?.assignee_id ?? null,
     jalons: {
       ...EMPTY_JALONS,
       is_worksite_start: event?.marks_worksite_start ?? false,
@@ -693,6 +723,7 @@ function initial(
         color: template.event_color,
         customerId: template.customer_id,
         customerName: template.customer_name,
+        assigneeId: template.assignee_id,
         title: `${template.title} (copie)`,
         location: template.location,
         description: template.description,
@@ -713,15 +744,16 @@ function initial(
       calendarId: copy?.calendarId ?? calendars[0]?.id ?? "",
       // Une duplication ne reprend ni l'affaire ni les jalons : recopier un
       // « PV signé » sur un événement neuf inscrirait deux fois le même fait.
-      projectId: null,
-      jalons: { ...EMPTY_JALONS },
+      projectId: preset?.projectId ?? null,
+      assigneeId: preset?.assigneeId ?? copy?.assigneeId ?? null,
+      jalons: { ...EMPTY_JALONS, is_worksite_start: preset?.worksiteStart ?? false },
       kind: preset?.kind ?? copy?.kind ?? rattachement.kind,
       // Une duplication reprend la couleur : c'est ce qui fait qu'on duplique.
       color: copy?.color ?? 0,
       customerId: preset?.customerId ?? copy?.customerId ?? null,
       customerName: preset?.customerName ?? copy?.customerName ?? "",
       title: preset?.title ?? copy?.title ?? "",
-      location: copy?.location ?? "",
+      location: preset?.location ?? copy?.location ?? "",
       description: copy?.description ?? "",
       allDay: true,
       date: dateValue(from),
@@ -733,14 +765,15 @@ function initial(
 
   return {
     calendarId: copy?.calendarId ?? calendars[0]?.id ?? "",
-    projectId: null,
-    jalons: { ...EMPTY_JALONS },
+    projectId: preset?.projectId ?? null,
+    assigneeId: preset?.assigneeId ?? copy?.assigneeId ?? null,
+    jalons: { ...EMPTY_JALONS, is_worksite_start: preset?.worksiteStart ?? false },
     kind: preset?.kind ?? copy?.kind ?? rattachement.kind,
     color: copy?.color ?? 0,
     customerId: preset?.customerId ?? copy?.customerId ?? null,
     customerName: preset?.customerName ?? copy?.customerName ?? "",
     title: preset?.title ?? copy?.title ?? "",
-    location: copy?.location ?? "",
+    location: preset?.location ?? copy?.location ?? "",
     description: copy?.description ?? "",
     allDay: false,
     date: dateValue(from),

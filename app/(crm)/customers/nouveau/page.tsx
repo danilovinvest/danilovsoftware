@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
 import { ArrowLeftIcon } from "lucide-react";
 import { RequireAuth } from "@/modules/auth";
@@ -20,7 +21,10 @@ export default function NewCustomerPage() {
           </Button>
           <h1 className="mt-2 text-xl font-semibold">Nouvelle fiche client</h1>
         </div>
-        <CustomerWizard />
+        {/* L'assistant lit l'adresse (`?email=`) : Next exige une frontière. */}
+        <Suspense>
+          <CustomerWizard />
+        </Suspense>
       </div>
     </RequireAuth>
   );

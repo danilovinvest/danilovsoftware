@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -25,6 +25,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState, ErrorNotice } from "@/shared/ui/feedback";
 import { TONE_SOFT } from "@/shared/ui/panel";
 import { formatAmount, formatDate } from "@/shared/lib/format";
+import { errorMessage } from "@/shared/api/errors";
+import { notifySuccess } from "@/shared/ui/toaster";
 import { cn } from "@/lib/utils";
 import * as api from "../lib/api";
 import { deadlineOf, deliveredAt, missionOf, projectReference } from "../lib/mission";
@@ -84,6 +86,7 @@ import { ProjectDialog, QuoteDialog } from "./project-dialogs";
 import { QuotePayments } from "./quote-payments";
 import { JoinedQuoteDocs } from "./joined-quote-docs";
 import { paymentCarrier } from "../lib/settlement";
+import { PlanEvent } from "./plan-event";
 import { RelanceDialog } from "./relance-dialog";
 import type {
   CustomerDetail,
@@ -111,12 +114,21 @@ import { askConfirm } from "@/shared/ui/confirm";
  * la base et propose le geste suivant.
  */
 export function ProjectsPanel({
+  focus = { affaire: null, onglet: null },
+  onQuote,
   customer,
   projects,
   quotes,
   interactions,
   onChanged,
 }: {
+  /** Un devis que l'écriture vient de rendre : l'écran le pose sans attendre. */
+  onQuote?: (quote: Quote) => void;
+  /**
+   * L'affaire désignée par l'adresse (`?affaire=&onglet=`) : elle s'ouvre, sur
+   * son onglet, et vient à l'écran. Sans elle, la première s'ouvre.
+   */
+  focus?: { affaire: string | null; onglet: string | null };
   customer: CustomerDetail;
   projects: Project[];
   quotes: Quote[];
@@ -313,11 +325,14 @@ export function ProjectsPanel({
             canWriteQuotes={canWriteQuotes}
             // La première affaire s'ouvre : sur la majorité des fiches il n'y en
             // a qu'une, et la refermer d'office ferait un clic pour rien.
-            defaultOpen={index === 0}
+            defaultOpen={focus.affaire ? project.id === focus.affaire : index === 0}
+            focused={project.id === focus.affaire}
+            initialTab={project.id === focus.affaire ? focus.onglet : null}
             onOverride={(patch) => poserJalon(project, patch)}
             onAddQuote={() => setQuoteFor(project)}
             onEdit={() => setEditing(project)}
             onChanged={onChanged}
+            onQuote={onQuote}
           />
         );
       })}
@@ -418,6 +433,9 @@ function ProjectBlock({
   canWrite,
   canWriteQuotes,
   defaultOpen,
+  focused = false,
+  initialTab = null,
+  onQuote,
   onOverride,
   onAddQuote,
   onEdit,
@@ -436,6 +454,11 @@ function ProjectBlock({
   canWrite: boolean;
   canWriteQuotes: boolean;
   defaultOpen: boolean;
+  /** Désignée par l'adresse : elle vient à l'écran au montage. */
+  focused?: boolean;
+  /** L'onglet demandé par l'adresse : chronologie, devis ou apres. */
+  initialTab?: string | null;
+  onQuote?: (quote: Quote) => void;
   onOverride: (patch: Partial<Jalons & StepMarks>) => Promise<boolean>;
   onAddQuote: () => void;
   onEdit: () => void;
@@ -443,10 +466,19 @@ function ProjectBlock({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(defaultOpen);
-  const [tab, setTab] = useState("chronologie");
+  const [tab, setTab] = useState(() =>
+    initialTab && ["chronologie", "devis", "apres"].includes(initialTab) ? initialTab : "chronologie",
+  );
+  const bloc = useRef<HTMLDivElement>(null);
+  // Une affaire désignée par un lien vient à l'écran : sur une fiche à six
+  // affaires, elle serait sinon dépliée hors de vue.
+  useEffect(() => {
+    if (focused) bloc.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+  }, [focused]);
   const [relance, setRelance] = useState(false);
   const [outcome, setOutcome] = useState<"refuse" | "postpone" | null>(null);
   const [logging, setLogging] = useState<InteractionKind | null>(null);
+  const [planifier, setPlanifier] = useState(false);
   /** La saisie des matériaux, ouverte depuis « à faire maintenant ». */
   const [materiaux, setMateriaux] = useState(false);
   /** Le montant de l'acompte, demandé depuis « à faire maintenant ». */
@@ -546,11 +578,17 @@ function ProjectBlock({
   const setDeposit = useAction(
     (status: PaymentStatus, amount?: string | null, paidAt?: string) => {
       if (!porteur) throw new Error("Aucun devis à mettre à jour sur cette affaire.");
-      return api.setQuoteDeposit(porteur.id, {
-        status,
-        amount: amount === undefined ? porteur.deposit_amount : amount,
-        paid_at: paidAt,
-      });
+      return api
+        .setQuoteDeposit(porteur.id, {
+          status,
+          amount: amount === undefined ? porteur.deposit_amount : amount,
+          paid_at: paidAt,
+        })
+        .then((quote) => {
+          // Le cran change tout de suite ; le rechargement complète le reste.
+          onQuote?.(quote);
+          return quote;
+        });
     },
     { inline: true },
   );
@@ -583,11 +621,17 @@ function ProjectBlock({
   const setBalance = useAction(
     (status: "en_attente" | "recu", amount?: string | null, paidAt?: string) => {
       if (!porteur) throw new Error("Aucun devis à mettre à jour sur cette affaire.");
-      return api.setQuoteBalance(porteur.id, {
-        status,
-        amount: amount === undefined ? porteur.balance_amount : amount,
-        paid_at: paidAt,
-      });
+      return api
+        .setQuoteBalance(porteur.id, {
+          status,
+          amount: amount === undefined ? porteur.balance_amount : amount,
+          paid_at: paidAt,
+        })
+        .then((quote) => {
+          // Le cran change tout de suite ; le rechargement complète le reste.
+          onQuote?.(quote);
+          return quote;
+        });
     },
   );
 
@@ -672,7 +716,10 @@ function ProjectBlock({
         setLogging("appel");
         break;
       case "plan_rdv":
-        setLogging("rdv");
+        // Un rendez-vous se planifie dans l'agenda : c'est là qu'on le voit,
+        // qu'il se déplace et qu'il entre en conflit. L'historique, lui, garde
+        // ce qui a eu lieu.
+        setPlanifier(true);
         break;
       case "open_calendar":
         router.push("/calendar");
@@ -774,7 +821,7 @@ function ProjectBlock({
   const periode = periodeChantier(project.started_at, project.finished_at);
 
   return (
-    <Card className="gap-0 overflow-hidden py-0">
+    <Card ref={bloc} className="gap-0 overflow-hidden scroll-mt-4 py-0">
       <Collapsible open={open} onOpenChange={setOpen}>
         <CollapsibleTrigger className="hover:bg-muted/30 flex w-full items-center gap-3 px-4 py-3 text-left transition-colors">
           <ChevronRightIcon
@@ -1270,7 +1317,9 @@ function ProjectBlock({
           onOpenChange={(next) => !next && setOutcome(null)}
           onSaved={onChanged}
           onScheduleResume={async (date, _outcome, note) => {
-            await onOverride({ resume_at: date });
+            if (!(await onOverride({ resume_at: date }))) {
+              return "La date de reprise n'a pas été enregistrée.";
+            }
             /*
             Une affaire reportée n'est réveillée par rien.
 
@@ -1279,7 +1328,8 @@ function ProjectBlock({
             revenir vers quelqu'un à une date, et le réécrire ici en aurait fait
             un second — qui aurait divergé du premier.
             */
-            await createTask({
+            try {
+              await createTask({
               title: `Reprendre « ${project.label} »`,
               body: note ? `Reportée : ${note}` : "Affaire reportée, à revoir.",
               status: "a_faire",
@@ -1289,13 +1339,36 @@ function ProjectBlock({
               due_at: new Date(`${date}T09:00:00`).toISOString(),
               assignee_id: null,
               targets: [{ project_id: project.id }],
-            }).catch(() => {
-              // Le report lui-même est déjà enregistré : échouer ici ne doit
-              // pas défaire ce que l'utilisateur vient de valider.
-            });
+              });
+            } catch (cause) {
+              // Le report est enregistré ; c'est le rappel qui manque, et il
+              // doit se voir : sans lui, l'affaire reportée s'oublie.
+              return `L'affaire est reportée, mais la tâche de reprise n'a pas été créée : ${errorMessage(cause)}`;
+            }
+            notifySuccess(`Tâche de reprise créée pour le ${formatDate(date)}.`);
+            return null;
           }}
         />
       )}
+      <PlanEvent
+        open={planifier}
+        onClose={() => setPlanifier(false)}
+        onSaved={() => {
+          setPlanifier(false);
+          notifySuccess("Rendez-vous ajouté à l'agenda.");
+          onChanged();
+        }}
+        preset={{
+          kind: "rdv",
+          customerId: customer.id,
+          customerName: customer.display_name,
+          projectId: project.id,
+          // Le rendez-vous est d'abord celui du responsable de l'affaire.
+          assigneeId: project.manager_id,
+          title: `RDV — ${customer.display_name}`,
+          location: site,
+        }}
+      />
       {logging && (
         <InteractionDialog
           project={project}
