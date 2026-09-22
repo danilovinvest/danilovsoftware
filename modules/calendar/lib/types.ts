@@ -71,6 +71,12 @@ export type EventJalons = {
   /** Cet événement est le démarrage du chantier. La date est celle de l'événement. */
   is_worksite_start: boolean;
   is_worksite_end: boolean;
+  /**
+   * Les deux cases disent l'état complet des bornes — vrai depuis le
+   * formulaire, qui les affiche : décocher retire alors la marque. Faux depuis
+   * un glissement, qui n'en dit rien et la garde.
+   */
+  marks_explicit: boolean;
   /** Dates ISO (AAAA-MM-JJ), vides quand il n'y a rien à inscrire. */
   pv_sent_at: string;
   pv_signed_at: string;
@@ -85,6 +91,7 @@ export type EventJalons = {
 export const EMPTY_JALONS: EventJalons = {
   is_worksite_start: false,
   is_worksite_end: false,
+  marks_explicit: false,
   pv_sent_at: "",
   pv_signed_at: "",
   visit_report_sent_at: "",

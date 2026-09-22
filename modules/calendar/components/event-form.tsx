@@ -248,7 +248,8 @@ function FormBody({
         project_id: draft.projectId,
         kind: draft.kind,
         color: draft.color,
-        jalons: draft.jalons,
+        // Le formulaire affiche les deux cases : il en dit l'état complet.
+        jalons: { ...draft.jalons, marks_explicit: true },
         ...bounds(draft),
       };
       if (event) await api.updateEvent(event.id, input);
