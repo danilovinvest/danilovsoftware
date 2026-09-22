@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useDirtyGuard } from "@/shared/lib/dirty-guard";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -101,6 +102,10 @@ export function TaskDialog({
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string>>({});
   const [pending, setPending] = useState(false);
+  // Ce que la boîte contenait à l'ouverture : l'écart dit qu'une saisie est en cours.
+  const saisie = JSON.stringify([title, customerId, projectId, body, status, priority, taskSize, assigneeId, dueAt]);
+  const [ouverture] = useState(saisie);
+  const close = useDirtyGuard(saisie !== ouverture, onOpenChange);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -149,7 +154,7 @@ export function TaskDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={close}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{task ? "Modifier la tâche" : "Nouvelle tâche"}</DialogTitle>
@@ -268,7 +273,7 @@ export function TaskDialog({
         </form>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => close(false)}>
             Annuler
           </Button>
           <Button form="task-form" type="submit" disabled={pending}>

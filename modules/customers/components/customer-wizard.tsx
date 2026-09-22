@@ -17,6 +17,7 @@ import {
   toOptions,
 } from "../lib/labels";
 import { useAction } from "../hooks/use-customers";
+import { useDirtyGuard } from "@/shared/lib/dirty-guard";
 import { ReferrerPicker } from "./referrer-picker";
 import type {
   CustomerKind,
@@ -88,6 +89,15 @@ export function CustomerWizard() {
   const [stepError, setStepError] = useState<string | null>(null);
   /** Le parrain, quand la source est une recommandation. Écrit après la fiche. */
   const [referrer, setReferrer] = useState<Referrer | null>(null);
+  /*
+    Quitter l'assistant en cours de route prévient. Seul l'onglet est gardé : la
+    navigation interne de Next ne se laisse pas interrompre, et le bouton
+    « Précédent » ne perd rien.
+  */
+  const [vierge] = useState(() => JSON.stringify([emptyCustomer(), emptyProject()]));
+  useDirtyGuard(
+    !submit.pending && JSON.stringify([customer, project]) !== vierge,
+  );
 
   const submit = useAction(async () => {
     const created = await api.createCustomer(customer);
