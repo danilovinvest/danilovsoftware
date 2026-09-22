@@ -14,7 +14,10 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
     <RequireAuth permission="customers:read">
       {/* La fiche lit `?affaire=&onglet=&vue=` : Next exige une frontière. */}
       <Suspense>
-        <CustomerDetailView customerId={id} />
+        {/* Une fiche par identifiant : aller de A à B par un lien interne ne
+            doit rien garder de A — les échanges chargés en plus, un panneau
+            déplié. Même clé que l'application de bureau. */}
+        <CustomerDetailView key={id} customerId={id} />
       </Suspense>
     </RequireAuth>
   );
