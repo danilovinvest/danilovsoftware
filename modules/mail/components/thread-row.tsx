@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef } from "react";
+import type { Ref } from "react";
 import { CheckIcon, CornerUpLeftIcon, MegaphoneIcon, PaperclipIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GradientAvatar } from "@/shared/ui/gradient-avatar";
@@ -22,17 +22,23 @@ import type { ThreadSummary } from "../lib/types";
  * fiche, la boîte quand il y en a plusieurs, les pièces jointes, « répondu »
  * quand le dernier mot est le nôtre.
  */
-export const ThreadRow = forwardRef<
-  HTMLButtonElement,
-  {
-    thread: ThreadSummary;
-    active: boolean;
-    cursor: boolean;
-    showAccount: boolean;
-    now: number;
-    onOpen: () => void;
-  }
->(function ThreadRow({ thread, active, cursor, showAccount, now, onOpen }, ref) {
+export function ThreadRow({
+  thread,
+  active,
+  cursor,
+  showAccount,
+  now,
+  onOpen,
+  ref,
+}: {
+  thread: ThreadSummary;
+  active: boolean;
+  cursor: boolean;
+  showAccount: boolean;
+  now: number;
+  onOpen: () => void;
+  ref?: Ref<HTMLButtonElement>;
+}) {
   const who = correspondentsLabel(thread);
   const seed = thread.correspondents[0] ?? thread.key;
   const reopened = thread.todo && thread.done_at !== null;
@@ -63,7 +69,6 @@ export const ThreadRow = forwardRef<
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
           <span className={cn("min-w-0 flex-1 truncate text-xs", thread.todo ? "font-semibold" : "font-medium")}>
-            {thread.last_outgoing && <span className="text-muted-foreground font-normal">À </span>}
             {who}
             {thread.message_count > 1 && (
               <span className="text-muted-foreground ml-1 font-normal tabular-nums">
@@ -87,7 +92,7 @@ export const ThreadRow = forwardRef<
       </div>
     </button>
   );
-});
+}
 
 function Badges({
   thread,
