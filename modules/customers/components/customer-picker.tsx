@@ -458,22 +458,12 @@ function NouvelleFiche({
     setPending(true);
     onError(null);
     try {
+      // Seuls ces trois champs partent : le serveur garde le reste de la fiche.
       const maj = await updateCustomer(fiche.id, {
         // Un nom vidé n'efface pas la fiche : on garde celui qu'elle porte.
         display_name: name.trim() || fiche.display_name,
-        kind: fiche.kind,
-        status: fiche.status,
-        source: fiche.source,
-        company_name: fiche.company_name,
         email: email.trim(),
         phone: phone.trim(),
-        address_line: fiche.address_line,
-        postal_code: fiche.postal_code,
-        city: fiche.city,
-        country: fiche.country,
-        requested_at: fiche.requested_at,
-        notes: fiche.notes,
-        owner_id: fiche.owner_id,
       });
       onSaved(maj);
       setFait(true);
@@ -498,24 +488,7 @@ function NouvelleFiche({
     try {
       const maj = await updateProject(projet.id, {
         label: INTERVENTION_SCOPE[valeur].label,
-        stage: projet.stage,
         scope: valeur,
-        // Renvoyés tels quels : la route remplace l'affaire entière.
-        manager_id: projet.manager_id,
-        engineer_id: projet.engineer_id,
-        drafter_id: projet.drafter_id,
-        outcome: projet.outcome,
-        outcome_note: projet.outcome_note,
-        site_address: projet.site_address,
-        site_postal_code: projet.site_postal_code,
-        site_city: projet.site_city,
-        notes: projet.notes,
-        started_at: projet.started_at,
-        finished_at: projet.finished_at,
-        closed_at: projet.closed_at,
-        mission: projet.mission,
-        promised_at: projet.promised_at,
-        internal_deadline_at: projet.internal_deadline_at,
       });
       onProjet(maj);
     } catch {
@@ -635,36 +608,8 @@ function nouveauProjet() {
   };
 }
 
-/** Tout à nul, sauf le contact : c'est l'appel en cours. */
+/** Le premier contact, c'est l'appel en cours. */
 function jalonsDuPremierContact() {
-  return {
-    rib_sent_at: null,
-    insurance_sent_at: null,
-    materials_ordered_at: null,
-    materials: [],
-    resume_at: null,
-    plans_sent_at: null,
-    review_requested_at: null,
-    review_received_at: null,
-    pv_sent_at: null,
-    pv_signed_at: null,
-    visit_report_sent_at: null,
-    survey_report_sent_at: null,
-    calc_started_at: null,
-    calc_done_at: null,
-    plans_started_at: null,
-    plans_review_at: null,
-    corrections_at: null,
-    final_ready_at: null,
-    report_written_at: null,
-    report_validated_at: null,
-    report_sent_at: null,
-    survey_done_at: null,
-    contact_at: new Date().toISOString(),
-    rdv_at: null,
-    quote_sent_at: null,
-    negotiation_at: null,
-    negotiation_note: "",
-    signed_at: null,
-  };
+  // Une affaire neuve n'a aucun jalon : seul le premier contact part.
+  return { contact_at: new Date().toISOString() };
 }

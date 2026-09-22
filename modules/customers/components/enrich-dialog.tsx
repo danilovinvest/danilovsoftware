@@ -28,6 +28,7 @@ import { useAction } from "../hooks/use-customers";
 import * as api from "../lib/api";
 import type {
   CustomerDetail,
+  CustomerPayload,
   EnrichResult,
   Finding,
   FoundContact,
@@ -85,24 +86,9 @@ export function EnrichDialog({
     api.applyEnrichment(customer.id, input),
     { inline: true },
   );
-  const appliquer = useAction((patch: Partial<CustomerDetail>) =>
-    api.updateCustomer(customer.id, {
-      display_name: customer.display_name,
-      kind: customer.kind,
-      status: customer.status,
-      source: customer.source,
-      company_name: customer.company_name,
-      email: customer.email,
-      phone: customer.phone,
-      address_line: customer.address_line,
-      postal_code: customer.postal_code,
-      city: customer.city,
-      country: customer.country || "France",
-      requested_at: customer.requested_at,
-      notes: customer.notes,
-      owner_id: customer.owner_id,
-      ...patch,
-    }),
+  const appliquer = useAction((patch: Partial<CustomerPayload>) =>
+    // Seules les valeurs retenues partent : le serveur garde le reste de la fiche.
+    api.updateCustomer(customer.id, patch),
     { inline: true },
   );
 

@@ -87,7 +87,11 @@ export function createCustomer(payload: CustomerPayload) {
   return apiFetch<Customer>("/v1/customers", { method: "POST", body: payload });
 }
 
-export function updateCustomer(id: string, payload: CustomerPayload) {
+/**
+ * Corriger une fiche. **Seuls les champs envoyés changent** : le serveur lit la
+ * requête par-dessus la fiche, un champ omis garde sa valeur, `null` efface.
+ */
+export function updateCustomer(id: string, payload: Partial<CustomerPayload>) {
   return apiFetch<Customer>(`/v1/customers/${id}`, { method: "PATCH", body: payload });
 }
 
@@ -166,57 +170,71 @@ export function createProject(customerId: string, payload: ProjectPayload) {
   });
 }
 
-export function updateProject(id: string, payload: ProjectPayload) {
+/**
+ * Corriger une affaire. **Seuls les champs envoyés changent**, comme pour la
+ * fiche : un écran qui réserve une date n'envoie que `started_at`, et ne peut
+ * plus effacer le type de bien ni écraser ce qu'un autre écran vient d'écrire.
+ */
+export function updateProject(id: string, payload: Partial<ProjectPayload>) {
   return apiFetch<Project>(`/v1/projects/${id}`, { method: "PATCH", body: payload });
 }
+
+/** Les jalons et les marques d'une affaire, tels qu'ils s'écrivent. */
+export type MilestonesPayload = {
+  rib_sent_at: string | null;
+  insurance_sent_at: string | null;
+  materials_ordered_at: string | null;
+  materials: string[];
+  resume_at: string | null;
+  plans_sent_at: string | null;
+  review_requested_at: string | null;
+  review_received_at: string | null;
+  pv_sent_at: string | null;
+  pv_signed_at: string | null;
+  visit_report_sent_at: string | null;
+  survey_report_sent_at: string | null;
+  calc_started_at: string | null;
+  calc_done_at: string | null;
+  plans_started_at: string | null;
+  plans_review_at: string | null;
+  corrections_at: string | null;
+  final_ready_at: string | null;
+  report_written_at: string | null;
+  report_validated_at: string | null;
+  report_sent_at: string | null;
+  survey_done_at: string | null;
+  contact_at: string | null;
+  rdv_at: string | null;
+  quote_sent_at: string | null;
+  negotiation_at: string | null;
+  negotiation_note: string;
+  signed_at: string | null;
+};
+
+/** Les clés écrivables des jalons, pour trier un geste avant de l'envoyer. */
+export const MILESTONE_KEYS = [
+  "rib_sent_at", "insurance_sent_at", "materials_ordered_at", "materials", "resume_at",
+  "plans_sent_at", "review_requested_at", "review_received_at", "pv_sent_at", "pv_signed_at",
+  "visit_report_sent_at", "survey_report_sent_at", "calc_started_at", "calc_done_at",
+  "plans_started_at", "plans_review_at", "corrections_at", "final_ready_at",
+  "report_written_at", "report_validated_at", "report_sent_at", "survey_done_at",
+  "contact_at", "rdv_at", "quote_sent_at", "negotiation_at", "negotiation_note", "signed_at",
+] as const satisfies readonly (keyof MilestonesPayload)[];
 
 /**
  * Les jalons d'une affaire : ceux d'après-signature, et les crans cochés à la
  * main.
  *
- * **Toutes les dates partent ensemble**, et la route remplace la ligne :
- * l'écran envoie l'état complet, parce qu'une écriture partielle obligerait le
- * serveur à distinguer « pas coché » de « pas envoyé » sur chaque champ. Le
- * revers est qu'un appelant qui oublie un champ l'efface — c'est pourquoi la
- * fiche latérale des chantiers renvoie les cinq marques telles quelles, sans
- * jamais les afficher.
+ * **Seules les dates envoyées changent** : une date omise garde sa valeur,
+ * `null` l'efface. Chaque écran envoyait l'état complet qu'il avait lu, si bien
+ * que la fiche latérale d'un chantier, chargée avec sa liste, décochait ce
+ * qu'on venait de cocher sur la fiche client. Il n'envoie plus que la case
+ * touchée.
  *
  * La date de chantier n'est pas ici : elle vit dans `Project.started_at` et
  * s'écrit par `updateProject`.
  */
-export function setMilestones(
-  projectId: string,
-  values: {
-    rib_sent_at: string | null;
-    insurance_sent_at: string | null;
-    materials_ordered_at: string | null;
-    materials: string[];
-    resume_at: string | null;
-    plans_sent_at: string | null;
-    review_requested_at: string | null;
-    review_received_at: string | null;
-    pv_sent_at: string | null;
-    pv_signed_at: string | null;
-    visit_report_sent_at: string | null;
-    survey_report_sent_at: string | null;
-    calc_started_at: string | null;
-    calc_done_at: string | null;
-    plans_started_at: string | null;
-    plans_review_at: string | null;
-    corrections_at: string | null;
-    final_ready_at: string | null;
-    report_written_at: string | null;
-    report_validated_at: string | null;
-    report_sent_at: string | null;
-    survey_done_at: string | null;
-    contact_at: string | null;
-    rdv_at: string | null;
-    quote_sent_at: string | null;
-    negotiation_at: string | null;
-    negotiation_note: string;
-    signed_at: string | null;
-  },
-) {
+export function setMilestones(projectId: string, values: Partial<MilestonesPayload>) {
   return apiFetch<Milestones>(`/v1/projects/${projectId}/milestones`, {
     method: "PUT",
     body: values,

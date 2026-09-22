@@ -141,90 +141,28 @@ export function ProjectOnboardingDrawer({
     setPending(true);
     setEchec(null);
     try {
+      // Seul ce que le tiroir demande part : le serveur garde le reste.
       await api.updateProject(project.id, {
         label: label.trim() || project.label,
-        stage: project.stage,
         scope,
-        // Renvoyés tels quels : ce tiroir ne nomme personne, et un champ omis
-        // est un champ effacé.
-        manager_id: project.manager_id,
-        engineer_id: project.engineer_id,
-        drafter_id: project.drafter_id,
-        outcome: project.outcome,
-        outcome_note: project.outcome_note,
         site_address: address,
         site_postal_code: postal,
         site_city: city,
-        notes: project.notes,
-        started_at: project.started_at,
-        finished_at: project.finished_at,
-        closed_at: project.closed_at,
-        mission: project.mission,
-        promised_at: project.promised_at,
-        internal_deadline_at: project.internal_deadline_at,
       });
 
       // Le téléphone appartient à la personne, pas au chantier.
       if (phone.trim() !== customer.phone) {
-        await api.updateCustomer(customer.id, {
-          display_name: customer.display_name,
-          kind: customer.kind,
-          status: customer.status,
-          source: customer.source,
-          company_name: customer.company_name,
-          email: customer.email,
-          phone: phone.trim(),
-          address_line: customer.address_line,
-          postal_code: customer.postal_code,
-          city: customer.city,
-          country: customer.country,
-          requested_at: customer.requested_at,
-          notes: customer.notes,
-          owner_id: customer.owner_id,
-        });
+        await api.updateCustomer(customer.id, { phone: phone.trim() });
       }
 
       /*
         Le premier contact est daté d'aujourd'hui s'il ne l'était pas.
 
         On est en train de parler au client : le cran « Contact » est franchi,
-        et le laisser gris obligerait à le cocher à la main juste après. La
-        route remplace la ligne entière, donc tout le reste repart tel quel.
+        et le laisser gris obligerait à le cocher à la main juste après.
       */
       if (milestones?.contact_at == null) {
-        await api.setMilestones(project.id, {
-          rib_sent_at: milestones?.rib_sent_at ?? null,
-          insurance_sent_at: milestones?.insurance_sent_at ?? null,
-          materials_ordered_at: milestones?.materials_ordered_at ?? null,
-          materials: milestones?.materials ?? [],
-          resume_at: milestones?.resume_at ?? null,
-          plans_sent_at: milestones?.plans_sent_at ?? null,
-          review_requested_at: milestones?.review_requested_at ?? null,
-          review_received_at: milestones?.review_received_at ?? null,
-          pv_sent_at: milestones?.pv_sent_at ?? null,
-          pv_signed_at: milestones?.pv_signed_at ?? null,
-          visit_report_sent_at: milestones?.visit_report_sent_at ?? null,
-          survey_report_sent_at: milestones?.survey_report_sent_at ?? null,
-          calc_started_at: milestones?.calc_started_at ?? null,
-          calc_done_at: milestones?.calc_done_at ?? null,
-          plans_started_at: milestones?.plans_started_at ?? null,
-          plans_review_at: milestones?.plans_review_at ?? null,
-          corrections_at: milestones?.corrections_at ?? null,
-          final_ready_at: milestones?.final_ready_at ?? null,
-          report_written_at: milestones?.report_written_at ?? null,
-          report_validated_at: milestones?.report_validated_at ?? null,
-          report_sent_at: milestones?.report_sent_at ?? null,
-          survey_done_at: milestones?.survey_done_at ?? null,
-          contact_at: new Date().toISOString(),
-          rdv_at: milestones?.rdv_at ?? null,
-          quote_sent_at: milestones?.quote_sent_at ?? null,
-          negotiation_at: milestones?.negotiation_at ?? null,
-          // Renvoyée telle quelle : la route remplace la ligne entière, et
-          // compléter une affaire ne doit pas effacer ce qu'on a noté de sa
-          // négociation.
-          negotiation_note: milestones?.negotiation_note ?? "",
-          signed_at: milestones?.signed_at ?? null,
-        });
+        await api.setMilestones(project.id, { contact_at: new Date().toISOString() });
       }
 
       onOpenChange(false);
