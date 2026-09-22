@@ -177,7 +177,10 @@ export function AssistantPanel() {
       >
         {secret && (
           <div className="border-success/30 bg-success-soft/40 flex flex-col gap-2 rounded-lg border p-3">
-            <p className="text-xs font-medium">Adresse du connecteur</p>
+            <p className="text-xs font-medium">
+              Adresse du connecteur ·{" "}
+              {created?.access === "ecriture" ? "lecture et écriture" : "lecture seule"}
+            </p>
             <div className="flex gap-2">
               <Input
                 readOnly
@@ -199,7 +202,7 @@ export function AssistantPanel() {
             <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
-                onClick={() => brancher(CHATGPT_CONNECTEURS)}
+                onClick={() => brancher(CHATGPT_CONNECTEURS, true)}
                 className="bg-[#10a37f] text-white hover:bg-[#0e8f6f]"
               >
                 <OpenAIMark className="size-4" />
@@ -209,7 +212,7 @@ export function AssistantPanel() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => brancher(CLAUDE_CONNECTEURS)}
+                onClick={() => brancher(CLAUDE_CONNECTEURS, true)}
               >
                 <ClaudeMark className="size-4 text-[#d97757]" />
                 Ajouter à Claude
@@ -225,19 +228,27 @@ export function AssistantPanel() {
           </div>
         )}
 
-        <div className="flex flex-col gap-3 rounded-lg border p-3">
+        <div className="flex flex-col gap-3 rounded-lg border p-3" data-demo="mcp-create">
+          {/* Le consentement se donne **avant** la création et ne se reprend
+              pas : une adresse déjà installée dans ChatGPT ne doit pas changer
+              de nature en cours de route. Il vient donc en premier, et les
+              boutons qui créent l'adresse attendent qu'il soit donné. */}
+          <McpAccessChoice value={access} onChange={setAccess} />
+
+          <p className="text-xs font-medium">2. Nommer l&apos;adresse et la brancher</p>
           <div className="flex flex-wrap gap-2">
             <Input
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="ChatGPT — poste de Grygoriy"
+              aria-label="Nom du connecteur"
               className="min-w-48 flex-1"
             />
             <Button
               type="button"
               variant="outline"
               onClick={() => create()}
-              disabled={pending}
+              disabled={pending || !access}
               title="Pour un autre assistant : Cursor, Zed, un client MCP quelconque"
             >
               {pending ? <Spinner /> : <PlusIcon />}
@@ -254,7 +265,7 @@ export function AssistantPanel() {
             <Button
               type="button"
               onClick={() => brancher(CHATGPT_CONNECTEURS)}
-              disabled={pending}
+              disabled={pending || !access}
               className="bg-[#10a37f] text-white hover:bg-[#0e8f6f]"
             >
               {pending ? <Spinner /> : <OpenAIMark className="size-4" />}
@@ -265,41 +276,19 @@ export function AssistantPanel() {
               type="button"
               variant="outline"
               onClick={() => brancher(CLAUDE_CONNECTEURS)}
-              disabled={pending}
+              disabled={pending || !access}
             >
               <ClaudeMark className="size-4 text-[#d97757]" />
               Ajouter à Claude
               <ArrowUpRightIcon className="size-3.5 opacity-70" />
             </Button>
           </div>
-
-          {/* Le consentement se donne **avant** la création et ne se reprend
-              pas : une adresse déjà installée dans ChatGPT ne doit pas changer
-              de nature en cours de route. Pour passer de la lecture à
-              l'écriture, on en crée une autre et on révoque la première. */}
-          <label className="flex cursor-pointer items-start gap-2.5">
-            <Switch
-              id="mcp-write"
-              checked={canWrite}
-              onCheckedChange={setCanWrite}
-              className="mt-0.5"
-            />
-            <span className="min-w-0">
-              <Label htmlFor="mcp-write" className="cursor-pointer text-xs font-medium">
-                Autoriser l&apos;écriture
-              </Label>
-              <span
-                className={cn(
-                  "block text-[11px] leading-relaxed",
-                  canWrite ? "text-warning" : "text-muted-foreground",
-                )}
-              >
-                {canWrite
-                  ? "L'assistant pourra créer des fiches, des tâches, des rendez-vous et faire avancer des affaires — dans la limite de vos permissions."
-                  : "L'assistant lira seulement. Il proposera ce qu'il ferait, vous le ferez dans le CRM."}
-              </span>
-            </span>
-          </label>
+          {!access && (
+            <p className="text-muted-foreground text-[11px]">
+              Choisissez d&apos;abord lecture seule ou écriture : les boutons s&apos;activent
+              ensuite.
+            </p>
+          )}
         </div>
 
         {loading ? (
