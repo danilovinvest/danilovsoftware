@@ -27,19 +27,24 @@ export function PlanEvent({
   preset: EventPreset;
   range?: { from: Date; to: Date; allDay: boolean } | null;
 }) {
-  const [calendars, setCalendars] = useState<Calendar[]>([]);
+  const [calendars, setCalendars] = useState<Calendar[] | null>(null);
 
   useEffect(() => {
     if (!open) return;
     const controller = new AbortController();
     listCalendars(controller.signal)
       .then((page) => setCalendars(page.items))
-      // Sans agendas, le formulaire le dit lui-même au moment d'enregistrer.
-      .catch(() => {});
+      // Un échec ouvre quand même le formulaire, qui dit qu'aucun agenda n'est
+      // disponible : un clic sans aucun retour se lirait comme une panne.
+      .catch(() => {
+        if (!controller.signal.aborted) setCalendars([]);
+      });
     return () => controller.abort();
   }, [open]);
 
-  if (!open || calendars.length === 0) return null;
+  // Attendre la liste, pas qu'elle soit remplie : sans agenda, c'est le
+  // formulaire qui le dit.
+  if (!open || calendars === null) return null;
   return (
     <EventForm
       open

@@ -302,7 +302,13 @@ export function ProjectsPanel({
         const etat = etatDe(project);
         return (
           <ProjectBlock
-            key={project.id}
+            /*
+              L'affaire désignée par l'adresse fait partie de la clé : une autre
+              affaire de la même fiche, choisie depuis la recherche, remonte son
+              bloc — ouvert, sur son onglet — au lieu de défiler jusqu'à un
+              en-tête resté fermé.
+            */
+            key={project.id === focus.affaire ? `${project.id}@${focus.onglet ?? ""}` : project.id}
             customer={customer}
             project={project}
             quotes={quotes.filter((quote) => quote.project_id === project.id)}

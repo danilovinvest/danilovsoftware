@@ -384,12 +384,44 @@ function Body({
           </div>
         )}
 
-        <Button asChild variant="outline" size="sm" className="self-start">
-          <Link href={customerHref(w.customer_id)}>
-            Ouvrir la fiche client
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link href={customerHref(w.customer_id)}>
+              Ouvrir la fiche client
+            </Link>
+          </Button>
+          {canWrite && metier === "travaux" && (
+            <Button
+              variant="outline"
+              size="sm"
+              data-demo="worksite-to-agenda"
+              onClick={() => setAgenda(w.started_at ?? todayLocal())}
+            >
+              <CalendarPlusIcon />
+              Poser à l&apos;agenda
+            </Button>
+          )}
+        </div>
       </div>
+
+      <PlanEvent
+        open={agenda !== null}
+        onClose={() => setAgenda(null)}
+        onSaved={() => {
+          setAgenda(null);
+          onChanged();
+        }}
+        range={agenda ? jourEntier(agenda) : null}
+        preset={{
+          kind: "chantier",
+          customerId: w.customer_id,
+          customerName: w.customer_name,
+          projectId: w.id,
+          title: `Démarrage — ${w.label}`,
+          location: [w.site_address, w.city].filter(Boolean).join(", "),
+          worksiteStart: true,
+        }}
+      />
     </>
   );
 }

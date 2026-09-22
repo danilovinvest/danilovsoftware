@@ -40,6 +40,31 @@ const FICHE_ETUDE = "/customers/fiche?id=7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "flux-du-quotidien",
+    title: "Créer, retrouver, planifier sans perdre le fil",
+    date: "2026-09-22",
+    steps: [
+      {
+        path: "/customers/nouveau",
+        target: '[data-demo="wizard-source"]',
+        title: "Une fiche en un écran",
+        body: "L'assistant en trois étapes devient un seul écran : nom, téléphone, e-mail, objet, et d'où vient le client — sans source cochée d'office. Pendant la saisie, les fiches qui ressemblent (nom, numéro ou adresse, archives comprises) s'affichent pour éviter le doublon. Ouvert depuis un courriel, il part de l'adresse et du nom de l'expéditeur.",
+      },
+      {
+        path: "/calendar",
+        target: '[data-demo="agenda-mine"]',
+        title: "Mes rendez-vous, et pour qui",
+        body: "Un rendez-vous dit maintenant pour qui il est posé. « Mes rendez-vous » ne montre que les siens, et l'agenda retient la vue, les filtres et ce choix d'une visite à l'autre. « Planifier le RDV » sur une affaire ouvre ce formulaire, pour le responsable de l'affaire, au lieu de créer une ligne d'historique.",
+      },
+      {
+        path: "/settings/doublons",
+        target: '[data-demo="duplicate-dismiss"]',
+        title: "« Pas un doublon », et une fusion qui se confirme",
+        body: "Deux homonymes s'écartent pour de bon : la paire ne revient plus. Fusionner demande confirmation en disant ce qui part où, et les autres paires de la fiche absorbée ne se tranchent plus.",
+      },
+    ],
+  },
+  {
     id: "rien-ne-se-perd",
     title: "Rien ne se perd sans prévenir",
     date: "2026-09-22",

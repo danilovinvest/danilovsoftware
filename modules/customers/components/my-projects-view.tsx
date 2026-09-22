@@ -105,7 +105,7 @@ function MyProjectRow({ project }: { project: MyProject }) {
 
   return (
     <Link
-      href={customerHref(project.customer_id)}
+      href={`${customerHref(project.customer_id)}&affaire=${project.id}`}
       className="hover:bg-muted/30 flex flex-wrap items-center gap-x-4 gap-y-1.5 px-4 py-3 transition-colors"
     >
       <div className="min-w-0 flex-1">
