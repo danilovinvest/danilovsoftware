@@ -29,7 +29,11 @@ export function useCustomers(filters: CustomerFilters) {
     filtres. Le dirigeant et l'application de bureau n'ont pas d'adresse qui
     fixe une société, et ne pouvaient donc pas trier STRUCTURE de GROUPE.
   */
-  const question: CustomerFilters = { ...filters, issuer: scopeParam(scope) ?? filters.issuer };
+  const question: CustomerFilters = {
+    ...filters,
+    status: effectiveStatus(filters),
+    issuer: scopeParam(scope) ?? filters.issuer,
+  };
   // Les filtres sont sérialisés pour servir de dépendance stable : un objet
   // littéral changerait d'identité à chaque rendu et relancerait la requête.
   const key = `${JSON.stringify(question)}#${reloadToken}`;
@@ -114,6 +118,20 @@ const DEFAULTS: CustomerFilters = {
 };
 
 /** État de filtres du tableau, avec remise à la page 1 dès qu'un filtre change. */
+/**
+ * Le statut qui s'applique vraiment à la question.
+ *
+ * La liste s'ouvre sur « Clients », et la recherche s'y cumulait : pendant un
+ * appel, taper le nom d'un prospect répondait « Aucune fiche », et l'on créait
+ * un doublon. Une recherche porte donc sur **toutes** les fiches tant que le
+ * statut est celui du défaut. Un statut choisi (Prospects, Perdus…) reste
+ * respecté : c'est une question qu'on a posée, pas un réglage d'ouverture.
+ */
+export function effectiveStatus(filters: CustomerFilters): CustomerFilters["status"] {
+  const parDefaut = filters.status?.join() === DEFAULTS.status?.join();
+  return filters.search?.trim() && parDefaut ? undefined : filters.status;
+}
+
 export function useCustomerFilters() {
   const [filters, setFilters] = useState<CustomerFilters>(DEFAULTS);
 

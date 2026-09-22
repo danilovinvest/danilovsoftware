@@ -619,7 +619,18 @@ function initial(
     événement de chantier sur la même affaire les afficherait tout aussi bien, et
     que les corriger se fait sur la fiche, où l'on voit l'état complet.
   */
-  const vierge = { projectId: event?.project_id ?? null, jalons: { ...EMPTY_JALONS } };
+  /*
+    Sauf les deux bornes du chantier : l'événement les retient (il est, ou
+    n'est pas, le démarrage), et les recocher dit ce que son déplacement fera.
+  */
+  const vierge = {
+    projectId: event?.project_id ?? null,
+    jalons: {
+      ...EMPTY_JALONS,
+      is_worksite_start: event?.marks_worksite_start ?? false,
+      is_worksite_end: event?.marks_worksite_end ?? false,
+    },
+  };
 
   if (event) {
     const from = new Date(event.starts_at);

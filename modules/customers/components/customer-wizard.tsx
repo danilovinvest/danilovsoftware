@@ -101,7 +101,13 @@ export function CustomerWizard() {
       await api.createProject(created.id, {
         ...project,
         site_city: project.site_city || customer.city,
-        started_at: project.started_at ?? customer.requested_at,
+        /*
+          `started_at` est la date de chantier réservée, pas celle de la
+          demande. La recopier faisait naître chaque affaire avec un chantier
+          déjà daté : le cran « Date » vert à tort, et les alertes « sans date
+          de chantier » muettes sur tous les écrans.
+        */
+        started_at: project.started_at,
         finished_at: project.finished_at,
       });
     }

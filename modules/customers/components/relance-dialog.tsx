@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { InfoIcon, SendIcon } from "lucide-react";
+import { CheckIcon, CopyIcon, InfoIcon, MailIcon, SendIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -83,9 +83,39 @@ export function RelanceDialog({
   );
   const [touched, setTouched] = useState(false);
 
+  /*
+    Le texte rédigé part avec la relance.
+
+    Seul le motif partait : l'écran affirmait « enregistrée avec son motif et
+    son texte » et jetait le texte. C'est pourtant lui qui permet au troisième
+    message de dire « il bloque sur le prix depuis juin ».
+  */
   const send = useAction(() =>
-    api.logReminder(project.id, `Relance — ${TEMPLATE_BY_MOTIVE.get(motive)!.label.toLowerCase()}`),
+    api.logReminder(
+      project.id,
+      `Relance — ${TEMPLATE_BY_MOTIVE.get(motive)!.label.toLowerCase()}`,
+      `Objet : ${subject.trim()}\n\n${body.trim()}`,
+    ),
   );
+  const [copie, setCopie] = useState(false);
+
+  /*
+    L'envoi direct n'est pas branché : le CRM lit la boîte, il n'y écrit pas.
+    En attendant, le message s'ouvre dans la messagerie du poste, prérempli,
+    ou se copie — plus de texte à retaper dans Gmail.
+  */
+  const mailto = `mailto:${encodeURIComponent(customer.email ?? "")}?subject=${encodeURIComponent(
+    subject,
+  )}&body=${encodeURIComponent(body)}`;
+
+  async function copier() {
+    try {
+      await navigator.clipboard.writeText(`${subject}\n\n${body}`);
+      setCopie(true);
+    } catch {
+      setCopie(false);
+    }
+  }
 
   /**
    * Changer de motif réécrit le message — sauf s'il a été retouché. Écraser
@@ -161,30 +191,45 @@ export function RelanceDialog({
           <div className="text-muted-foreground flex items-start gap-2 rounded-md bg-info-soft px-3 py-2 text-xs">
             <InfoIcon className="text-info mt-0.5 size-3.5 shrink-0" />
             <span>
-              L&apos;envoi n&apos;est pas encore branché : le message ne part pas. La relance,
-              elle, est bien enregistrée dans les échanges avec son motif et son texte —
-              c&apos;est ce qui remet le compteur d&apos;attente à zéro.
+              Le CRM n&apos;envoie pas encore lui-même : ouvrez le message dans votre
+              messagerie, déjà rempli, ou copiez-le. « Enregistrer » garde le motif, l&apos;objet
+              et le texte dans les échanges — c&apos;est ce qui remet le compteur
+              d&apos;attente à zéro.
             </span>
           </div>
 
           {send.error && <ErrorNotice message={send.error} />}
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Annuler
-          </Button>
-          <Button
-            disabled={send.pending || !body.trim()}
-            onClick={async () => {
-              if (!(await send.run())) return;
-              onOpenChange(false);
-              onSaved();
-            }}
-          >
-            <SendIcon />
-            Enregistrer la relance
-          </Button>
+        <DialogFooter className="sm:justify-between">
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" asChild>
+              <a href={mailto} data-demo="relance-mailto">
+                <MailIcon />
+                Ouvrir dans la messagerie
+              </a>
+            </Button>
+            <Button variant="outline" disabled={!body.trim()} onClick={copier}>
+              {copie ? <CheckIcon /> : <CopyIcon />}
+              {copie ? "Copié" : "Copier"}
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Annuler
+            </Button>
+            <Button
+              disabled={send.pending || !body.trim()}
+              onClick={async () => {
+                if (!(await send.run())) return;
+                onOpenChange(false);
+                onSaved();
+              }}
+            >
+              <SendIcon />
+              Enregistrer la relance
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

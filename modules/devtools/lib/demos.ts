@@ -40,6 +40,25 @@ const FICHE_ETUDE = "/customers/fiche?id=7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "correctifs-audit-critiques",
+    title: "Les correctifs critiques de l'audit",
+    date: "2026-09-22",
+    steps: [
+      {
+        path: "/dashboard",
+        target: '[data-demo="dashboard-blocked"]',
+        title: "« Signé, mais bloqué » lit enfin la base",
+        body: "Ces quatre listes étaient tirées d'une empreinte de la référence du devis : le tableau de bord pouvait réclamer un acompte déjà payé. Elles viennent maintenant des chantiers réels, par les mêmes règles que l'écran Chantiers, et chaque ligne ouvre le chantier concerné. Le reste du tableau de bord lit encore l'export du 1er septembre : c'est l'issue suivante.",
+      },
+      {
+        path: "/customers",
+        target: '[aria-label="Filtrer par statut"]',
+        title: "La recherche trouve aussi les prospects",
+        body: "La liste s'ouvre sur « Clients », et la recherche s'y cumulait : au téléphone, le nom d'un prospect ne donnait rien, et l'on créait un doublon. Dès qu'on tape, la recherche porte sur toutes les fiches — l'onglet « Toutes » s'allume pour le dire. Un statut choisi exprès reste respecté.",
+      },
+    ],
+  },
+  {
     id: "retirer-un-membre",
     title: "Retirer un membre",
     date: "2026-09-21",

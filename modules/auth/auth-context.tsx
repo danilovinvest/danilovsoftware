@@ -18,6 +18,14 @@ type AuthState = {
   account: Account | null;
   /** true tant que la session initiale n'a pas été résolue. */
   loading: boolean;
+  /**
+   * Le serveur est injoignable : la session n'est pas perdue, on réessaie.
+   * Avec un compte, l'écran reste en place sous un bandeau ; sans compte (un
+   * chargement hors ligne), la garde dit qu'elle attend le réseau.
+   */
+  offline: boolean;
+  /** Réessaie tout de suite de joindre le serveur. */
+  retry: () => void;
   login: (email: string, password: string) => Promise<void>;
   /**
    * Adopte une session déjà obtenue — aujourd'hui la connexion par passkey,
@@ -39,12 +47,24 @@ const REFRESH_MARGIN_MS = 60_000;
  * « résolue, avec ou sans compte ». Le drapeau de chargement en est déduit,
  * ce qui évite tout setState synchrone dans un effet.
  */
-type SessionState = { status: "loading" } | { status: "ready"; account: Account | null };
+type SessionState =
+  | { status: "loading" }
+  | { status: "ready"; account: Account | null; offline?: boolean }
+  | { status: "offline" };
+
+/** Les réessais s'espacent — 5 s, 10 s, 20 s… — sans dépasser une minute. */
+const RETRY_BASE_MS = 5_000;
+const RETRY_MAX_MS = 60_000;
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<SessionState>({ status: "loading" });
   const account = state.status === "ready" ? state.account : null;
   const loading = state.status === "loading";
+  const offline = state.status === "offline" || (state.status === "ready" && state.offline === true);
+  /** Le nombre de réessais consécutifs, pour espacer le suivant. */
+  const retriesRef = useRef(0);
+  /** L'heure à laquelle le jeton d'accès expire : un réveil de veille la relit. */
+  const expiresAtRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Le minuteur de renouvellement doit rappeler `renew`, qui dépend lui-même de
   // la planification : la référence casse ce cycle.
@@ -61,6 +81,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     (session: SessionResponse) => {
       setAccessToken(session.access_token);
       setState({ status: "ready", account: session.user });
+      retriesRef.current = 0;
+      expiresAtRef.current = Date.now() + session.expires_in * 1000;
 
       // Le jeton d'accès est court : on programme son renouvellement plutôt que
       // d'attendre un 401 au milieu d'une saisie.
@@ -80,10 +102,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const renew = useCallback(async () => {
     // Passe par le client partagé : c'est lui qui déduplique les appels
     // concurrents à /v1/auth/refresh.
-    const session = await refreshSession<SessionResponse>();
-    if (session) applySession(session);
-    else forget();
-  }, [applySession, forget]);
+    try {
+      const session = await refreshSession<SessionResponse>();
+      if (session) applySession(session);
+      else forget();
+    } catch {
+      /*
+        Le réseau ou le serveur, pas la session : on garde le compte et on
+        réessaie. C'était une déconnexion, et la saisie en cours partait avec.
+      */
+      const delay = Math.min(RETRY_BASE_MS * 2 ** retriesRef.current, RETRY_MAX_MS);
+      retriesRef.current += 1;
+      setState((current) =>
+        current.status === "ready"
+          ? { ...current, offline: true }
+          : { status: "offline" },
+      );
+      clearTimer();
+      timerRef.current = setTimeout(() => renewRef.current(), delay);
+    }
+  }, [applySession, forget, clearTimer]);
 
   useEffect(() => {
     renewRef.current = () => void renew();
@@ -102,10 +140,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return clearTimer;
   }, [renew, clearTimer]);
 
+  /*
+    Le réseau revient, ou la fenêtre redevient visible : on n'attend pas le
+    minuteur. Au réveil d'une veille, il est parti en retard et le jeton a pu
+    expirer entre-temps.
+  */
+  useEffect(() => {
+    function auRetour() {
+      if (document.visibilityState === "hidden") return;
+      // Sans session connue, il n'y a rien à renouveler : la page de connexion
+      // ne doit pas interroger le serveur à chaque retour sur l'onglet.
+      const perime =
+        expiresAtRef.current > 0 && Date.now() > expiresAtRef.current - REFRESH_MARGIN_MS;
+      if (retriesRef.current > 0 || perime) renewRef.current();
+    }
+    window.addEventListener("online", auRetour);
+    document.addEventListener("visibilitychange", auRetour);
+    return () => {
+      window.removeEventListener("online", auRetour);
+      document.removeEventListener("visibilitychange", auRetour);
+    };
+  }, []);
+
   const value = useMemo<AuthState>(
     () => ({
       account,
       loading,
+      offline,
+      retry: () => renewRef.current(),
       login: async (email, password) => {
         applySession(await loginNative<SessionResponse>(email, password));
       },
@@ -122,7 +184,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setState({ status: "ready", account: await authApi.me() });
       },
     }),
-    [account, loading, applySession, forget],
+    [account, loading, offline, applySession, forget],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -7,7 +7,7 @@ import { AppShell } from "@/modules/shell";
  */
 export default function CrmLayout({ children }: LayoutProps<"/">) {
   return (
-    <RequireAuth>
+    <RequireAuth offlineBanner>
       <AppShell>{children}</AppShell>
     </RequireAuth>
   );

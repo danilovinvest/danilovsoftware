@@ -30,8 +30,8 @@ export function getAccessToken() {
  * rejoué — la coque sérialise de son côté, et cette promesse partagée évite de
  * lui envoyer dix demandes quand dix requêtes rencontrent le même 401.
  *
- * Une API injoignable rend `null` sans rien oublier : la coque garde le jeton,
- * qui resservira au prochain essai.
+ * Une API injoignable lève une erreur sans rien oublier : la coque garde le
+ * jeton, qui resservira au prochain essai.
  */
 export function refreshSession<T extends MinimalSession>(): Promise<T | null> {
   refreshPromise ??= refreshNative<T & { token_type: string; expires_in: number; user: unknown }>()
@@ -39,7 +39,22 @@ export function refreshSession<T extends MinimalSession>(): Promise<T | null> {
       accessToken = session?.access_token ?? null;
       return session;
     })
-    .catch(() => null)
+    /*
+      Un refus (4xx) : la session est finie, `null`. Tout le reste — réseau,
+      serveur, trousseau — **lève** : ce n'est pas la fin de la session, et le
+      confondre renvoyait à l'écran de connexion au premier wifi coupé ou au
+      réveil d'une veille. La coque, elle, garde le jeton dans ce cas.
+    */
+    .catch((error: unknown) => {
+      const status = error instanceof ApiError ? error.status : 0;
+      if (status >= 400 && status < 500) {
+        accessToken = null;
+        return null;
+      }
+      throw error instanceof ApiError
+        ? error
+        : new ApiError(0, "network_error", "L'API est injoignable.");
+    })
     .finally(() => {
       refreshPromise = null;
     });

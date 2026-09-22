@@ -2,7 +2,8 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { LockIcon } from "lucide-react";
+import { LockIcon, WifiOffIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Spinner } from "@/shared/ui/feedback";
 import { useAuth } from "../auth-context";
 import type { Permission } from "../lib/types";
@@ -13,20 +14,44 @@ import type { Permission } from "../lib/types";
  */
 export function RequireAuth({
   permission,
+  offlineBanner = false,
   children,
 }: {
   permission?: Permission;
+  /**
+   * Afficher le bandeau « connexion perdue ». Une seule garde le fait — celle
+   * de la mise en page du CRM : les gardes des pages s'y imbriquent, et le
+   * bandeau s'afficherait autant de fois.
+   */
+  offlineBanner?: boolean;
   children: React.ReactNode;
 }) {
-  const { account, loading, can } = useAuth();
+  const { account, loading, offline, retry, can } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!loading && !account) {
+    // Hors ligne, la session n'est pas perdue : on ne renvoie pas à la connexion.
+    if (!loading && !account && !offline) {
       router.replace(`/login?next=${encodeURIComponent(pathname)}`);
     }
-  }, [loading, account, router, pathname]);
+  }, [loading, account, offline, router, pathname]);
+
+  if (!account && offline) {
+    return (
+      <div className="flex min-h-64 flex-col items-center justify-center gap-2 px-6 text-center">
+        <WifiOffIcon className="text-muted-foreground size-5" />
+        <p className="text-sm font-medium">Le serveur est injoignable</p>
+        <p className="text-muted-foreground max-w-sm text-xs">
+          Vérifiez la connexion internet. Le CRM réessaie tout seul et s&apos;ouvrira dès que le
+          serveur répondra.
+        </p>
+        <Button size="sm" variant="outline" className="mt-2" onClick={retry}>
+          Réessayer
+        </Button>
+      </div>
+    );
+  }
 
   if (loading || !account) {
     return (
@@ -48,5 +73,21 @@ export function RequireAuth({
     );
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {offline && offlineBanner && (
+        <div
+          role="status"
+          className="bg-warning-soft text-warning flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium"
+        >
+          <WifiOffIcon className="size-3.5" />
+          Connexion perdue — vos données restent affichées, le CRM réessaie tout seul.
+          <button type="button" className="underline" onClick={retry}>
+            Réessayer
+          </button>
+        </div>
+      )}
+      {children}
+    </>
+  );
 }

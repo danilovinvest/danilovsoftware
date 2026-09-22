@@ -1,14 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  ArrowRightIcon,
-  BanknoteIcon,
-  CalendarPlusIcon,
-  FileTextIcon,
-  PackageIcon,
-  TableIcon,
-} from "lucide-react";
+import { ArrowRightIcon, TableIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/modules/auth";
@@ -25,7 +18,7 @@ import { RelancePanel } from "./relance-panel";
 import { TopClientsPanel } from "./top-clients-panel";
 import { UnassignedPanel } from "./unassigned-panel";
 import { VatPanel } from "./vat-panel";
-import { WaitingPanel } from "./waiting-panel";
+import { BlockedPanels } from "./blocked-panels";
 
 /**
  * Le tableau de bord, ordonné par ce qu'on en attend le matin.
@@ -148,36 +141,7 @@ export function DashboardView() {
         <h2 className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
           Signé, mais bloqué
         </h2>
-        <div className="grid items-start gap-4 lg:grid-cols-2 xl:grid-cols-4">
-          <WaitingPanel
-            title="Acompte à facturer"
-            hint="Tout ce qui est signé a été facturé."
-            icon={FileTextIcon}
-            tone="warning"
-            rows={data.deposit_to_invoice}
-          />
-          <WaitingPanel
-            title="Acompte attendu"
-            hint="Aucun acompte en souffrance."
-            icon={BanknoteIcon}
-            tone="danger"
-            rows={data.deposit_awaited}
-          />
-          <WaitingPanel
-            title="Sans date de chantier"
-            hint="Tous les chantiers payés ont leur date."
-            icon={CalendarPlusIcon}
-            tone="danger"
-            rows={data.without_date}
-          />
-          <WaitingPanel
-            title="Matériaux à commander"
-            hint="Rien à commander pour l'instant."
-            icon={PackageIcon}
-            tone="warning"
-            rows={data.materials}
-          />
-        </div>
+        <BlockedPanels />
       </section>
 
       <div className="grid items-start gap-4 lg:grid-cols-2">
