@@ -35,6 +35,7 @@ import type {
   Occurrence,
 } from "../lib/types";
 import { EMPTY_JALONS } from "../lib/types";
+import { askConfirm } from "@/shared/ui/confirm";
 
 /**
  * Créer ou modifier un rendez-vous.
@@ -265,6 +266,12 @@ function FormBody({
 
   async function remove() {
     if (!event) return;
+    const ok = await askConfirm({
+      title: `Supprimer « ${event.title} »`,
+      description: "L'événement disparaît de l'agenda du CRM, définitivement.",
+      confirmLabel: "Supprimer",
+    });
+    if (!ok) return;
     setPending(true);
     setError(null);
     try {

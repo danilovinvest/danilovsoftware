@@ -8,11 +8,13 @@ import {
   RefreshCwIcon,
   ScrollTextIcon,
   TriangleAlertIcon,
-  XIcon,
+  Trash2Icon,
+  UnplugIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { askConfirm } from "@/shared/ui/confirm";
 import {
   CALENDAR_PALETTE,
   GoogleButton,
