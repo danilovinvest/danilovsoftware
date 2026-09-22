@@ -257,3 +257,40 @@ export const NAV_SECTIONS: NavSection[] = [
 export const NAVIGATION: NavItem[] = NAV_SECTIONS.flatMap(
   (section) => section.items,
 );
+
+/** Le périmètre tel que la navigation le lit : une société, ou tout le groupe. */
+type NavScope = "tous" | "ompt-structure" | "ompt-groupe";
+
+/**
+ * Une entrée s'affiche-t-elle pour ce compte, dans ce périmètre ?
+ *
+ * Une seule règle pour la colonne et pour la page d'arrivée : si elles
+ * divergeaient, l'arrivée mènerait à un écran que la colonne ne montre pas.
+ */
+export function isNavItemVisible(
+  item: NavItem,
+  can: (permission: Permission) => boolean,
+  scope: NavScope,
+): boolean {
+  return (
+    can(item.permission) &&
+    // Le périmètre masque ce qui n'a pas de sens pour la société choisie ;
+    // « tout le groupe » ne masque rien.
+    (scope === "tous" || !item.scopes || item.scopes.includes(scope))
+  );
+}
+
+/**
+ * Le premier écran que ce compte peut ouvrir, dans l'ordre de la colonne.
+ *
+ * Tout le CRM mène au tableau de bord — la racine, la connexion, le logo — et
+ * le tableau de bord exige `customers:read`. Un rôle sur mesure qui ne lit que
+ * les tâches arrivait donc sur « Accès refusé » à chaque connexion (issue 95).
+ * Nul quand rien n'est permis : l'écran le dit, il n'invente pas de refuge.
+ */
+export function firstAllowedHref(
+  can: (permission: Permission) => boolean,
+  scope: NavScope,
+): string | null {
+  return NAVIGATION.find((item) => isNavItemVisible(item, can, scope))?.href ?? null;
+}
