@@ -112,6 +112,15 @@ un nonce à `style-src`, et un nonce annule `'unsafe-inline'` — les styles en
 ligne de React et de Radix tomberaient. Les scripts, eux, restent hachés par
 Tauri.
 
+**`localhost` ne vit que dans `devCsp`** (issue 105). La politique livrée
+n'autorisait pas seulement l'API de production : elle ouvrait aussi
+`http://localhost:8080`, et `img-src https:` laissait charger une image de
+n'importe quel site. `img-src` se limite à `'self' blob: data:` — aucune image
+distante dans l'application, l'aperçu des documents passe par un `blob:`. Tauri
+n'applique `devCsp` qu'à `cargo tauri dev`, sans `custom-protocol` : un
+`cargo tauri build --debug` embarque la politique de production, et `build.rs`
+refuse alors une API locale en disant d'utiliser `cargo tauri dev`.
+
 **L'adresse de l'API est écrite dans `connect-src` en plus d'être compilée, et
 la compilation le vérifie.** La CSP l'emporte sur tout : bâtir avec un
 `OMPT_API_URL` absent de `connect-src` donnait une application où le navigateur
