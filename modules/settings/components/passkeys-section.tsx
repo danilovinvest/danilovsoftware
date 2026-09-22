@@ -19,6 +19,7 @@ import { formatDate } from "@/shared/lib/format";
 
 import { usePasskeys } from "../hooks/use-settings";
 import { SettingsSection } from "./settings-page";
+import { askConfirm } from "@/shared/ui/confirm";
 
 /**
  * Les clés d'accès du compte.
@@ -149,6 +150,13 @@ function PasskeyRow({
   }
 
   async function remove() {
+    const ok = await askConfirm({
+      title: `Retirer la clé « ${passkey.name} »`,
+      description:
+        "Cet appareil ne pourra plus ouvrir de session par empreinte. La clé ne se récupère pas : il faudra en enrôler une nouvelle.",
+      confirmLabel: "Retirer la clé",
+    });
+    if (!ok) return;
     setPending(true);
     setFailure(null);
     try {

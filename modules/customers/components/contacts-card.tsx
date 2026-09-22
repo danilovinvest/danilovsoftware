@@ -112,8 +112,7 @@ export function ContactsCard({
                   onClick={async () => {
                     const ok = await askConfirm({
                       title: `Retirer ${contact.full_name}`,
-                      description:
-                        "L'interlocuteur quitte la fiche, avec ses coordonnées. Ses courriels déjà rattachés restent sur la fiche.",
+                      description: "L'interlocuteur et ses coordonnées quittent la fiche, définitivement.",
                       confirmLabel: "Retirer",
                     });
                     if (!ok) return;

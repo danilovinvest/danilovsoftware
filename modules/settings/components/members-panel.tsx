@@ -34,6 +34,7 @@ import { MemberDialog } from "./member-dialog";
 import { MemberDeleteDialog } from "./member-delete-dialog";
 import { PasskeyLinkDialog } from "./passkey-link-dialog";
 import { SettingsPage, SettingsSection } from "./settings-page";
+import { askConfirm } from "@/shared/ui/confirm";
 
 /**
  * Les comptes de l'espace de travail, et les invitations en attente.
@@ -429,7 +430,16 @@ export function MembersPanel() {
                           size="icon"
                           className="size-7"
                           disabled={revoking === invitation.id}
-                          onClick={() => revoke(invitation.id)}
+                          onClick={async () => {
+                            const ok = await askConfirm({
+                              title: `Révoquer l'invitation de ${invitation.email}`,
+                              description:
+                                "Le lien cesse de fonctionner. Il faudra en émettre un nouveau pour inviter cette personne.",
+                              confirmLabel: "Révoquer",
+                            });
+                            if (ok) await revoke(invitation.id);
+                          }}
+                          aria-label={`Révoquer l'invitation de ${invitation.email}`}
                           title="Révoquer ce lien"
                         >
                           <XIcon className="size-3.5" />
