@@ -28,21 +28,33 @@ export function getAccessToken() {
  * à chaque appel et révoque toutes les sessions si un jeton déjà consommé est
  * rejoué — deux refresh en parallèle déconnecteraient donc l'utilisateur.
  */
+/*
+  `null` veut dire « le serveur refuse » : la session est finie. Une coupure
+  réseau ou une panne du serveur **lève** une `ApiError` : elle ne dit rien de
+  la session, et la confondre avec un refus renvoyait à l'écran de connexion au
+  premier wifi coupé ou au réveil d'une veille, en perdant la saisie en cours.
+*/
 export function refreshSession<T extends MinimalSession>(): Promise<T | null> {
   refreshPromise ??= fetch(`${apiBase()}/v1/auth/refresh`, {
     method: "POST",
     credentials: "include",
   })
+    .catch(() => {
+      throw new ApiError(0, "network_error", "L'API est injoignable.");
+    })
     .then(async (response) => {
-      if (!response.ok) {
+      // Toute réponse 4xx est un refus : cookie absent, expiré ou révoqué.
+      if (response.status >= 400 && response.status < 500) {
         accessToken = null;
         return null;
+      }
+      if (!response.ok) {
+        throw new ApiError(response.status, "internal_error", "Le serveur ne répond pas.");
       }
       const session = (await response.json()) as MinimalSession;
       accessToken = session.access_token;
       return session;
     })
-    .catch(() => null)
     .finally(() => {
       refreshPromise = null;
     });

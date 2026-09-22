@@ -3,5 +3,6 @@
  * que d'ici.
  */
 export { WorksitesView } from "./components/worksites-view";
-export { read, statusOf, alerts, isInvoice, STATUS_ORDER } from "./lib/derive";
+export { read, statusOf, alerts, studyAlerts, alertTotal, isInvoice, STATUS_ORDER } from "./lib/derive";
+export { listWorksites } from "./lib/api";
 export * from "./lib/types";

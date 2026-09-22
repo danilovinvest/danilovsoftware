@@ -484,9 +484,9 @@ export function setProjectStage(id: string, payload: StagePayload) {
  * Horodate une relance. La date est posée par le serveur : le bouton n'envoie
  * rien d'autre qu'un commentaire optionnel.
  */
-export function logReminder(projectId: string, summary?: string) {
+export function logReminder(projectId: string, summary?: string, details?: string) {
   return apiFetch<Interaction>(`/v1/projects/${projectId}/relance`, {
     method: "POST",
-    body: summary ? { summary } : undefined,
+    body: summary || details ? { summary, details } : undefined,
   });
 }

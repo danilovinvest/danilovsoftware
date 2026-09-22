@@ -13,7 +13,7 @@ import {
 } from "../lib/labels";
 import { CYCLE_FILTERS } from "../lib/cycle";
 import { REVIEW_FILTERS } from "../lib/review";
-import { useDebounced } from "../hooks/use-customers";
+import { effectiveStatus, useDebounced } from "../hooks/use-customers";
 import type {
   CustomerFilters,
   CustomerSource,
@@ -98,7 +98,9 @@ export function CustomerFiltersBar({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedCity]);
 
-  const activeStatus = filters.status?.length === 1 ? filters.status[0] : "all";
+  // En recherche, l'onglet dit ce qui s'applique vraiment : « Toutes ».
+  const statusApplique = effectiveStatus(filters);
+  const activeStatus = statusApplique?.length === 1 ? statusApplique[0] : "all";
   /*
     Le filtre société n'existe que là où l'adresse n'en fixe aucune : sur
     groupe.… ou structure.…, ou pour un compte lié, le serveur impose la sienne

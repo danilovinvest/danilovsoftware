@@ -217,8 +217,9 @@ export function ImportView() {
           <div className="bg-background sticky bottom-0 flex flex-wrap items-center justify-between gap-3 border-t py-4">
             <p className="text-muted-foreground text-xs">
               {plan.stats.customers_to_create + plan.stats.customers_to_update} fiches
-              seront écrites en une seule transaction. Relancer la synchronisation plus
-              tard met à jour l&apos;existant au lieu de le dupliquer.
+              seront écrites en une seule transaction. Une fiche, une affaire ou un devis
+              déjà dans le CRM est seulement complété : le classeur remplit ce qui est vide
+              et fait avancer une étape, il n&apos;écrase jamais ce qui a été saisi depuis.
             </p>
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setPlan(null)}>
