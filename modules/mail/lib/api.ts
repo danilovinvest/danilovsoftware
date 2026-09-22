@@ -8,6 +8,9 @@ import type {
   MailRun,
   MailKind,
   MailScope,
+  MailThread,
+  MailView,
+  ThreadPage,
   UnknownSender,
   AttachResult,
 } from "./types";
@@ -68,11 +71,60 @@ export function setCopyAll(accountId: string, copyAll: boolean) {
   });
 }
 
-export function listCustomerMail(customerId: string, limit = 100, signal?: AbortSignal) {
+/** Les courriels d'une fiche, par pages : `offset` saute ceux déjà affichés (issue 88). */
+export function listCustomerMail(
+  customerId: string,
+  limit = 100,
+  signal?: AbortSignal,
+  offset = 0,
+) {
   return apiFetch<{ items: MailMessage[]; total: number }>(
-    `/v1/customers/${customerId}/mail?limit=${limit}`,
+    `/v1/customers/${customerId}/mail?limit=${limit}&offset=${offset}`,
     { signal },
   );
+}
+
+/**
+ * Un courriel lu depuis sa fiche, corps compris — rapatrié s'il ne l'a jamais
+ * été. Pas filtré par la société du compte : la fiche reste entière, et c'est
+ * le rattachement à cette fiche qui autorise la lecture.
+ */
+export function getCustomerMessage(customerId: string, messageId: string, signal?: AbortSignal) {
+  return apiFetch<BrowseMessage>(`/v1/customers/${customerId}/mail/${messageId}`, { signal });
+}
+
+export type ThreadQuery = {
+  view: MailView;
+  search?: string;
+  /** Une adresse : les conversations où elle figure, expéditeur ou destinataire. */
+  contact?: string;
+  /** Absent = toutes les boîtes. */
+  account?: string;
+  limit?: number;
+};
+
+/** Les conversations de la boîte, la plus récente d'abord (issue 87). */
+export function listThreads(params: ThreadQuery, signal?: AbortSignal) {
+  const query = new URLSearchParams({ view: params.view, limit: String(params.limit ?? 50) });
+  if (params.search) query.set("search", params.search);
+  if (params.contact) query.set("contact", params.contact);
+  if (params.account) query.set("account", params.account);
+  return apiFetch<ThreadPage>(`/v1/mail/threads?${query}`, { signal });
+}
+
+/** Une conversation entière, ouverte par n'importe lequel de ses messages. */
+export function getThread(messageId: string, signal?: AbortSignal) {
+  return apiFetch<MailThread>(`/v1/mail/threads/${messageId}`, { signal });
+}
+
+/** Marquer traitée. Rend la conversation telle qu'elle est devenue. */
+export function markThreadDone(messageId: string) {
+  return apiFetch<MailThread>(`/v1/mail/threads/${messageId}/done`, { method: "PUT" });
+}
+
+/** Annuler le tri : la conversation redevient ce que ses messages disent. */
+export function clearThreadDone(messageId: string) {
+  return apiFetch<MailThread>(`/v1/mail/threads/${messageId}/done`, { method: "DELETE" });
 }
 
 /**

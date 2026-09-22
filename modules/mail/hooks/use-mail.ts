@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { errorMessage } from "@/shared/api/errors";
 import * as api from "../lib/api";
-import type { MailAccount, MailMessage, MailRun, UnknownSender } from "../lib/types";
+import type { MailAccount, MailRun, UnknownSender } from "../lib/types";
 
 type Resolved<T> = { key: string; data: T | null; error: string | null };
 
@@ -50,7 +50,10 @@ export function useMailbox() {
       )
       .catch((cause) => {
         if (controller.signal.aborted) return;
-        setResolved({ key, data: null, error: errorMessage(cause) });
+        // Un sondage raté garde ce qu'on savait déjà : effacer les boîtes sur
+        // une coupure passagère remplaçait toute la messagerie par une erreur,
+        // toutes les quatre secondes pendant une copie.
+        setResolved((current) => ({ key, data: current.data, error: errorMessage(cause) }));
       });
 
     return () => controller.abort();
@@ -166,44 +169,4 @@ export function useMailPulse(enabled = true) {
   }, [enabled]);
 
   return state.bumps;
-}
-
-/** Les courriels d'une fiche. Chargés à l'ouverture de l'onglet, pas avant :
- * la plupart des visites d'une fiche ne les regardent pas. Rechargés ensuite
- * quand la boîte apporte du nouveau. */
-export function useCustomerMail(customerId: string, enabled: boolean) {
-  const [token, setToken] = useState(0);
-  const pulse = useMailPulse(enabled);
-  const key = enabled ? `customer-mail:${customerId}:${token}:${pulse}` : "";
-  const [resolved, setResolved] = useState<
-    Resolved<{ items: MailMessage[]; total: number }>
-  >({ key: "", data: null, error: null });
-
-  useEffect(() => {
-    if (!enabled) return;
-    const controller = new AbortController();
-    api
-      .listCustomerMail(customerId, 100, controller.signal)
-      .then((data) => setResolved({ key, data, error: null }))
-      .catch((cause) => {
-        if (controller.signal.aborted) return;
-        setResolved({ key, data: null, error: errorMessage(cause) });
-      });
-    return () => controller.abort();
-  }, [key, customerId, enabled]);
-
-  const reload = useCallback(() => setToken((value) => value + 1), []);
-
-  return {
-    messages: resolved.data?.items ?? [],
-    // Ce que la fiche porte en tout, au-delà de ce que la liste montre : une
-    // fiche peut en porter huit mille et n'en afficher que cent.
-    total: resolved.data?.total ?? 0,
-    // Le squelette ne revient qu'en changeant de fiche : un rechargement après
-    // détachement remplacerait la liste par des barres grises, et on perdrait
-    // de vue la ligne qu'on vient de retirer.
-    loading: enabled && !resolved.key.startsWith(`customer-mail:${customerId}:`),
-    error: resolved.error,
-    reload,
-  };
 }

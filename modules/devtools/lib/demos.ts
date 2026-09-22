@@ -40,6 +40,51 @@ const FICHE_ETUDE = "/customers/fiche?id=7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "messagerie-conversations",
+    title: "La messagerie : des conversations, un tri, le clavier",
+    date: "2026-09-22",
+    steps: [
+      {
+        path: "/mail",
+        target: '[data-demo="mail-views"]',
+        title: "« À traiter » s'ouvre d'abord",
+        body: "Les conversations dont le dernier mot est celui d'un correspondant, et que personne n'a marquées traitées — sur trente jours, sans les envois en masse. Un nouveau message rouvre de lui-même une conversation traitée. « Tous », « Rapprochés », « Sans fiche » et « Envoyés » restent à un clic, avec leur compte.",
+      },
+      {
+        path: "/mail",
+        target: '[data-demo="mail-thread-list"]',
+        title: "Une ligne par conversation",
+        body: "La réponse et la question vivaient à deux endroits de la liste. Une ligne dit maintenant qui écrit, combien de messages, le dernier extrait, la fiche, la boîte, les pièces jointes, et « Répondu » quand le dernier mot est le nôtre. Le point cyan marque ce qui est à traiter.",
+      },
+      {
+        path: "/mail",
+        click: '[data-demo="mail-thread-list"] li:first-child button',
+        target: '[data-demo="mail-thread-reader"]',
+        title: "Toute la conversation, dans l'ordre",
+        body: "Les anciens messages tiennent sur une ligne, le dernier est déplié. Chaque message dit qui l'a écrit, à qui (À et Cc), et quand ; le corps jamais copié arrive au dépliage, la citation recopiée est repliée. Une adresse cliquée montre tout ce qu'on s'est écrit avec elle.",
+      },
+      {
+        path: "/mail",
+        target: '[data-demo="mail-triage"]',
+        title: "Traiter, puis la suivante",
+        body: "« Marquer traité » — ou la touche e — range la conversation et ouvre la suivante. Le toast propose « Annuler ». j et k passent d'une conversation à l'autre, / cherche, ? montre tous les raccourcis.",
+      },
+      {
+        path: "/mail",
+        target: '[data-demo="mail-gmail"], [data-demo="mail-task"]',
+        title: "Répondre dans Gmail, ou en faire une tâche",
+        body: "Le CRM lit la boîte et n'envoie rien : « Répondre dans Gmail » ouvre le fil sur la bonne boîte. « Créer une tâche » prépare la tâche avec l'objet, l'expéditeur, la fiche et le lien vers la conversation.",
+      },
+      {
+        path: `${FICHE_ETUDE}&vue=courriels`,
+        click: "button[aria-expanded]",
+        target: '[data-demo="customer-mail-open"]',
+        title: "Sur la fiche : tout le courrier, et le chemin vers la conversation",
+        body: "L'onglet Courriels ne s'arrête plus aux cent premiers : « Charger plus » continue. Un courriel déplié montre son texte entier — demandé au serveur s'il n'avait jamais été copié — et « Ouvrir dans la messagerie » mène à sa conversation. Retirer un courriel de la fiche se défait depuis le toast.",
+      },
+    ],
+  },
+  {
     id: "taches-a-soi-mes-dossiers-urgents",
     title: "Une tâche créée est à soi, « Mes dossiers » par urgence",
     date: "2026-09-22",

@@ -53,6 +53,12 @@ export type MailMessage = {
    * en tire « Réponse » ou « Nouveau ».
    */
   is_reply: boolean;
+  /**
+   * Le corps a déjà été demandé au serveur, même revenu vide. Servi par la
+   * liste d'une fiche seulement : sans lui, un accusé de réception rouvrait
+   * IMAP à chaque dépliage.
+   */
+  body_fetched?: boolean;
 };
 
 export type MailAttachment = {
@@ -91,7 +97,12 @@ export type MailPage = {
   total_pages: number;
 };
 
-/** Ce sur quoi la liste porte. */
+/**
+ * Ce sur quoi la liste des messages porte. Gardé pour la route historique ;
+ * l'écran Messagerie lit désormais des conversations (`MailView`). « avec_corps »
+ * se libellait « Déjà lus » et voulait dire « corps copié » : l'écran ne le
+ * propose plus.
+ */
 export type MailScope = "tous" | "rapproches" | "sans_fiche" | "avec_corps";
 
 /** Premiers messages ou réponses : une seconde question, croisée avec la portée. */
@@ -132,4 +143,75 @@ export type AttachResult = {
   email_set: boolean;
   /** Ce que ces adresses ont rattaché en plus, passé et fils compris. */
   rematched: number;
+};
+
+/**
+ * Les vues de la messagerie (issue 87). « À traiter » est celle qu'on ouvre :
+ * les conversations dont le dernier mot est celui d'un correspondant, et que
+ * personne n'a marquées traitées depuis.
+ */
+export type MailView = "a_traiter" | "tous" | "rapproches" | "sans_fiche" | "envoyes";
+
+/** Une conversation, telle qu'une ligne de la liste la montre. */
+export type ThreadSummary = {
+  /** Le dernier message : c'est par lui qu'on ouvre la conversation. */
+  id: string;
+  /** La clé du fil dans sa boîte. Deux boîtes, deux conversations. */
+  key: string;
+  account_id: string;
+  account: string;
+  /** L'objet du premier message : le dernier commence presque toujours par « Re: ». */
+  subject: string;
+  snippet: string;
+  last_at: string;
+  message_count: number;
+  /** L'entreprise a écrit dans la conversation. */
+  replied: boolean;
+  /** Le dernier mot est le nôtre : la balle est chez eux. */
+  last_outgoing: boolean;
+  last_is_reply: boolean;
+  /** Tous ses messages sont des envois en masse. */
+  bulk: boolean;
+  /** Les correspondants, dans l'ordre où ils ont écrit ; à défaut, les destinataires. */
+  correspondents: string[];
+  customer_id: string;
+  customer_name: string;
+  attachment_count: number;
+  todo: boolean;
+  /** Le dernier « traité », même rouvert depuis. */
+  done_at: string | null;
+};
+
+export type ThreadCounts = Record<MailView, number>;
+
+export type ThreadPage = {
+  items: ThreadSummary[];
+  total: number;
+  counts: ThreadCounts;
+  limit: number;
+  offset: number;
+};
+
+/** Un message d'une conversation, avec tous ses correspondants. */
+export type ThreadMessage = BrowseMessage & {
+  participants: string[];
+  /** Faux : le corps n'a jamais été demandé au serveur, le déplier s'en charge. */
+  body_fetched: boolean;
+  bulk: boolean;
+};
+
+export type MailThread = {
+  key: string;
+  account_id: string;
+  account: string;
+  subject: string;
+  customer_id: string;
+  customer_name: string;
+  todo: boolean;
+  done_at: string | null;
+  done_by: string;
+  /** Vide quand la boîte n'est pas chez Google. */
+  gmail_url: string;
+  /** Du plus ancien au plus récent. */
+  messages: ThreadMessage[];
 };

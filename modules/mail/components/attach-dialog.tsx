@@ -34,11 +34,18 @@ import type { AttachResult, BrowseMessage } from "../lib/types";
  */
 export function AttachDialog({
   message,
+  ids,
   open,
   onOpenChange,
   onDone,
 }: {
   message: BrowseMessage;
+  /**
+   * Les courriels à rattacher, quand c'est une conversation entière : ses
+   * messages suivent ensemble, sans attendre que le fil les rattrape. Absent,
+   * le seul `message`.
+   */
+  ids?: string[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDone: (result: AttachResult) => void;
@@ -58,7 +65,7 @@ export function AttachDialog({
     setPending(true);
     setError(null);
     try {
-      const result = await api.attachCustomerMail(customerId, [message.id], remember);
+      const result = await api.attachCustomerMail(customerId, ids ?? [message.id], remember);
       onDone(result);
       onOpenChange(false);
     } catch (cause) {

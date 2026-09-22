@@ -1,42 +1,44 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronRightIcon, PaperclipIcon, Unlink2Icon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Unlink2Icon } from "lucide-react";
 import { usePermission } from "@/modules/auth";
 import { ClaudeButton, customerMailContext } from "@/modules/assistant";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { errorMessage } from "@/shared/api/errors";
-import { formatDateTime } from "@/shared/lib/format";
-import { EmptyState, ErrorNotice, Skeleton } from "@/shared/ui/feedback";
-import * as api from "../lib/api";
-import { useCustomerMail } from "../hooks/use-mail";
-import { Attachments } from "./attachments";
-import { MailKindBadge } from "./mail-kind-badge";
+import { plural } from "@/shared/lib/format";
+import { EmptyState, ErrorNotice } from "@/shared/ui/feedback";
+import { ListSkeleton } from "@/shared/ui/loading";
 import { askConfirm } from "@/shared/ui/confirm";
+import { notifyError, notifySuccess } from "@/shared/ui/toaster";
+import * as api from "../lib/api";
+import { useCustomerMailPages } from "../hooks/use-customer-mail";
+import { CustomerMailRow } from "./customer-mail-row";
 
 /**
  * Les courriels d'une fiche.
  *
  * Ils ne sont là que parce qu'une adresse de la fiche figure parmi les
- * correspondants : c'est ce qui a autorisé la copie du corps. Les messages dont
- * personne n'est reconnu ne sont pas ici, et leur contenu n'est pas en base.
+ * correspondants — ou parce qu'on les y a rattachés. Les messages dont
+ * personne n'est reconnu vivent dans l'écran Messagerie.
  *
  * **Le rapprochement se trompe en série, pas à l'unité.** Une fiche portant une
  * adresse trop large — au pire celle de la boîte elle-même — ramasse des
  * milliers de messages d'un coup. D'où la sélection multiple et le « tout
  * retirer » : corriger cela ligne par ligne serait une journée de clics.
+ *
+ * **Retirer se défait** (issue 88). Le geste était sans retour, à un clic d'une
+ * icône : le toast propose « Annuler », qui rattache à nouveau les courriels
+ * retirés. « Tout retirer », lui, demande confirmation — il porte sur des
+ * milliers de messages que l'écran n'a pas tous en main pour les rendre.
  */
 export function CustomerMail({ customerId }: { customerId: string }) {
-  const [open, setOpen] = useState(false);
-  const { messages, total, loading, error, reload } = useCustomerMail(customerId, true);
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const mail = useCustomerMailPages(customerId);
   const canWrite = usePermission("customers:write");
-
+  const [expanded, setExpanded] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
-  const [detachError, setDetachError] = useState<string | null>(null);
 
   function pick(id: string, on: boolean) {
     setSelected((current) => {
@@ -47,238 +49,124 @@ export function CustomerMail({ customerId }: { customerId: string }) {
     });
   }
 
-  async function run(action: () => Promise<unknown>) {
+  async function detach(ids: string[] | "all") {
     setBusy(true);
-    setDetachError(null);
     try {
-      await action();
+      const result =
+        ids === "all"
+          ? await api.detachCustomerMailMany(customerId, { all: true })
+          : await api.detachCustomerMailMany(customerId, { ids });
       setSelected(new Set());
-      reload();
+      const undo = ids === "all" ? undefined : { label: "Annuler", onClick: () => void reattach(ids) };
+      notifySuccess(`${plural(result.detached, "courriel retiré", "courriels retirés")} de la fiche`, undo);
     } catch (cause) {
-      setDetachError(errorMessage(cause));
+      notifyError(errorMessage(cause), () => void detach(ids));
     } finally {
       setBusy(false);
+      mail.reload();
     }
   }
 
-  if (loading) return <Skeleton className="h-24 w-full" />;
-  if (error) return <ErrorNotice message={error} />;
+  // Le geste inverse : les mêmes courriels reviennent, sans retenir d'adresse —
+  // ce n'était pas le geste défait.
+  async function reattach(ids: string[]) {
+    try {
+      await api.attachCustomerMail(customerId, ids, false);
+      notifySuccess("Courriels rattachés à nouveau");
+    } catch (cause) {
+      notifyError(errorMessage(cause), () => void reattach(ids));
+    } finally {
+      mail.reload();
+    }
+  }
 
-  if (messages.length === 0) {
+  if (mail.loading) return <ListSkeleton rows={5} hue="indigo" />;
+  if (mail.error && mail.messages.length === 0) {
+    return <ErrorNotice message={errorMessage(mail.error)} onRetry={mail.reload} />;
+  }
+  if (mail.messages.length === 0) {
     return (
       <EmptyState
         title="Aucun courriel"
-        description="Aucun message de la boîte raccordée ne cite une adresse de cette fiche."
+        description="Aucun message de la boîte ne cite une adresse de cette fiche. Depuis la Messagerie, « Rattacher à une fiche » en apprend une."
       />
     );
   }
 
-  const shown = open ? messages : messages.slice(0, 8);
-  const allShownPicked = shown.length > 0 && shown.every((m) => selected.has(m.id));
-  // La liste est plafonnée, le compteur ne l'est pas : dire « tout retirer »
-  // sans annoncer le vrai nombre laisserait croire qu'on ne touche qu'à l'écran.
-  const hidden = total - messages.length;
+  const shown = mail.messages;
+  const allPicked = shown.length > 0 && shown.every((m) => selected.has(m.id));
 
   return (
     <div className="flex flex-col">
-      {total > 0 && (
-        <div className="mb-2 flex justify-end">
-          <ClaudeButton size="xs" context={customerMailContext({ total })} />
-        </div>
-      )}
-      {detachError && (
-        <div className="mb-2">
-          <ErrorNotice message={detachError} />
-        </div>
-      )}
-
-      {canWrite && (
-        <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-2">
+      <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-2">
+        {canWrite && (
           <label className="text-muted-foreground flex cursor-pointer items-center gap-2 text-xs">
             <Checkbox
-              checked={allShownPicked}
+              checked={allPicked}
               disabled={busy}
-              onCheckedChange={(value) =>
-                setSelected(value === true ? new Set(shown.map((m) => m.id)) : new Set())
-              }
+              onCheckedChange={(value) => setSelected(value === true ? new Set(shown.map((m) => m.id)) : new Set())}
               aria-label="Tout sélectionner"
             />
             Tout sélectionner
             <span className="text-muted-foreground/60 tabular-nums">({shown.length})</span>
           </label>
-
-          {selected.size > 0 && (
-            <Button
-              size="xs"
-              variant="outline"
-              disabled={busy}
-              className="text-danger hover:text-danger"
-              onClick={() =>
-                run(() =>
-                  api.detachCustomerMailMany(customerId, { ids: [...selected] }),
-                )
-              }
-            >
-              <Unlink2Icon />
-              Retirer {selected.size} courriel{selected.size > 1 ? "s" : ""}
-            </Button>
-          )}
-
-          {/*
-            « Tout retirer » porte sur la fiche entière, pas sur ce qui est à
+        )}
+        {canWrite && selected.size > 0 && (
+          <Button size="xs" variant="outline" disabled={busy} className="text-danger hover:text-danger" onClick={() => void detach([...selected])}>
+            <Unlink2Icon />
+            Retirer {plural(selected.size, "courriel")}
+          </Button>
+        )}
+        <span className="text-muted-foreground ml-auto text-xs tabular-nums">
+          {shown.length < mail.total ? `${shown.length} sur ${mail.total}` : plural(mail.total, "courriel")}
+        </span>
+        <ClaudeButton size="xs" context={customerMailContext({ total: mail.total })} />
+        {/* « Tout retirer » porte sur la fiche entière, pas sur ce qui est à
             l'écran : c'est le seul geste qui répare une fiche ayant ramassé des
-            milliers de messages, et il serait inutile s'il s'arrêtait aux cent
-            premiers.
-          */}
+            milliers de messages. */}
+        {canWrite && (
           <Button
             size="xs"
             variant="ghost"
             disabled={busy}
-            className="text-muted-foreground hover:text-danger ml-auto"
+            className="text-muted-foreground hover:text-danger"
             onClick={async () => {
               const ok = await askConfirm({
-                title: `Retirer les ${total} courriels de cette fiche`,
+                title: `Retirer les ${mail.total} courriels de cette fiche`,
                 description:
-                  "Ils restent dans la boîte et dans l'écran Messagerie. Ils ne seront simplement plus rattachés à ce client.",
+                  "Ils restent dans la boîte et dans l'écran Messagerie. Ils ne seront simplement plus rattachés à ce client, et ce geste ne s'annule pas.",
                 confirmLabel: "Tout retirer",
               });
-              if (!ok) return;
-              run(() => api.detachCustomerMailMany(customerId, { all: true }));
+              if (ok) void detach("all");
             }}
           >
-            Tout retirer ({total})
+            Tout retirer ({mail.total})
           </Button>
-        </div>
-      )}
-
-      <div className="divide-y rounded-lg border">
-        {shown.map((message) => {
-          const isOpen = expanded === message.id;
-          const picked = selected.has(message.id);
-          return (
-            <div key={message.id}>
-              <div
-                className={cn(
-                  "flex items-start transition-colors",
-                  picked ? "bg-accent/60" : "hover:bg-accent/50",
-                )}
-              >
-                {canWrite && (
-                  <span className="mt-2.5 ml-3 shrink-0">
-                    <Checkbox
-                      checked={picked}
-                      disabled={busy}
-                      onCheckedChange={(value) => pick(message.id, value === true)}
-                      aria-label={`Sélectionner « ${message.subject || "(sans objet)"} »`}
-                    />
-                  </span>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => setExpanded(isOpen ? null : message.id)}
-                  className="flex min-w-0 flex-1 items-start gap-3 px-3 py-2 text-left"
-                >
-                  <ChevronRightIcon
-                    className={cn(
-                      "text-muted-foreground mt-0.5 size-3.5 shrink-0 transition-transform",
-                      isOpen && "rotate-90",
-                    )}
-                  />
-                  <span
-                    className={cn(
-                      "mt-1 size-1.5 shrink-0 rounded-full",
-                      message.outgoing ? "bg-info" : "bg-success",
-                    )}
-                    title={message.outgoing ? "envoyé" : "reçu"}
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="flex min-w-0 items-center gap-1.5">
-                      <MailKindBadge message={message} />
-                      <span className="truncate text-[13px] font-medium">
-                        {message.subject || "(sans objet)"}
-                      </span>
-                    </span>
-                    <span className="text-muted-foreground/70 block truncate text-[11px]">
-                      {message.outgoing ? "à " : "de "}
-                      {message.from_name || message.from_email}
-                      {/* Un rattachement par le fil se dit : c'est celui qu'on
-                          ne voit pas venir, et celui qu'on veut pouvoir vérifier. */}
-                      {message.matched_by === "fil" && " · rattaché par le fil"}
-                      {" · "}
-                      {message.snippet}
-                    </span>
-                  </span>
-                  {message.attachment_count > 0 && (
-                    <span className="text-muted-foreground/70 flex shrink-0 items-center gap-1 text-[11px]">
-                      <PaperclipIcon className="size-3" />
-                      {message.attachment_count}
-                    </span>
-                  )}
-                  <span className="text-muted-foreground/60 shrink-0 text-[11px] tabular-nums">
-                    {formatDateTime(message.sent_at)}
-                  </span>
-                </button>
-
-                {/*
-                  Retirer un courriel de la fiche, pas de la boîte. Le bouton
-                  reste visible, comme la corbeille des échanges : un bouton qui
-                  n'apparaît qu'au survol n'existe pas sur une tablette, et
-                  c'est là que la fiche se relit.
-                */}
-                {canWrite && (
-                  <button
-                    type="button"
-                    title="Retirer ce courriel de la fiche"
-                    aria-label="Retirer ce courriel de la fiche"
-                    disabled={busy}
-                    onClick={() =>
-                      run(() => api.detachCustomerMail(customerId, message.id))
-                    }
-                    className="text-muted-foreground/40 hover:text-danger hover:bg-danger-soft mt-1.5 mr-2 shrink-0 rounded p-1.5 transition-colors disabled:opacity-40"
-                  >
-                    <Unlink2Icon className="size-3.5" />
-                  </button>
-                )}
-              </div>
-
-              {isOpen && (
-                <div className="bg-muted/20 border-t px-3 py-3 pl-10">
-                  {message.body ? (
-                    <p className="text-muted-foreground text-xs leading-relaxed whitespace-pre-wrap">
-                      {message.body.slice(0, 4000)}
-                      {message.body.length > 4000 && "\n\n[…]"}
-                    </p>
-                  ) : (
-                    <p className="text-muted-foreground/70 text-[11px]">
-                      Le corps de ce message n&apos;a pas été copié.
-                    </p>
-                  )}
-                  {message.attachment_count > 0 && <Attachments messageId={message.id} />}
-                </div>
-              )}
-            </div>
-          );
-        })}
+        )}
       </div>
 
-      {messages.length > shown.length && (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="text-muted-foreground hover:text-foreground mt-2 self-start text-xs"
-        >
-          Voir les {messages.length - shown.length} autres
-        </button>
-      )}
+      <div className="divide-y rounded-lg border">
+        {shown.map((message) => (
+          <CustomerMailRow
+            key={message.id}
+            customerId={customerId}
+            message={message}
+            open={expanded === message.id}
+            onToggle={() => setExpanded(expanded === message.id ? null : message.id)}
+            picked={selected.has(message.id)}
+            onPick={(on) => pick(message.id, on)}
+            canWrite={canWrite}
+            busy={busy}
+            onDetach={() => void detach([message.id])}
+          />
+        ))}
+      </div>
 
-      {hidden > 0 && open && (
-        <p className="text-muted-foreground/60 mt-2 text-[11px]">
-          {hidden} autres ne sont pas affichés — « Tout retirer » les emporte
-          aussi.
-        </p>
+      {mail.hasMore && (
+        <Button size="sm" variant="outline" className="mt-2 self-center" disabled={mail.loadingMore} onClick={mail.loadMore}>
+          {mail.loadingMore ? "Chargement…" : `Charger plus (${mail.total - shown.length} restants)`}
+        </Button>
       )}
-
     </div>
   );
 }
