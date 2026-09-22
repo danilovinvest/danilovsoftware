@@ -96,6 +96,7 @@ export function RelanceDialog({
       `Relance — ${TEMPLATE_BY_MOTIVE.get(motive)!.label.toLowerCase()}`,
       `Objet : ${subject.trim()}\n\n${body.trim()}`,
     ),
+    { inline: true },
   );
   const [copie, setCopie] = useState(false);
 

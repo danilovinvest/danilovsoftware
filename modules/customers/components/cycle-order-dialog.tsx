@@ -123,6 +123,7 @@ function Editor({ initial, onDone }: { initial: Parcours; onDone: () => void }) 
     sameOrder(next, byDefault)
       ? api.resetCycleOrder(parcours).then(() => ({ steps: null }))
       : api.setCycleOrder(parcours, next).then((row) => ({ steps: row.steps })),
+    { inline: true },
   );
 
   const sensors = useSensors(

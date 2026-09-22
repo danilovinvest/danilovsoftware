@@ -150,7 +150,19 @@ export function AgendaPanel() {
                 deletable={calendars.length > 1}
                 pending={pending}
                 onSave={(values) => guard(() => updateCalendar(calendar.id, values))()}
-                onDelete={guard(() => deleteCalendar(calendar.id))}
+                onDelete={async () => {
+                  // La croix se lisait « fermer » : elle effaçait l'agenda et
+                  // tous ses événements, sans retour possible.
+                  const ok = await askConfirm({
+                    title: `Supprimer l'agenda « ${calendar.name} »`,
+                    description:
+                      calendar.event_count > 0
+                        ? `Ses ${calendar.event_count} événement${calendar.event_count > 1 ? "s" : ""} partent avec lui, définitivement.`
+                        : "Il ne porte aucun événement.",
+                    confirmLabel: "Supprimer l'agenda",
+                  });
+                  if (ok) await guard(() => deleteCalendar(calendar.id))();
+                }}
               />
             ))}
           </div>
@@ -281,10 +293,19 @@ export function AgendaPanel() {
                   variant="ghost"
                   size="icon"
                   className="size-7"
-                  onClick={guard(() => disconnectAccount(account.id))}
+                  onClick={async () => {
+                    const ok = await askConfirm({
+                      title: `Débrancher ${account.email || "ce compte Google"}`,
+                      description:
+                        "Le CRM cesse de copier ses agendas. Les événements déjà importés restent.",
+                      confirmLabel: "Débrancher",
+                    });
+                    if (ok) await guard(() => disconnectAccount(account.id))();
+                  }}
                   title="Retirer ce compte du CRM"
+                  aria-label="Retirer ce compte du CRM"
                 >
-                  <XIcon className="size-3.5" />
+                  <UnplugIcon className="size-3.5" />
                 </Button>
               </div>
             ))}
@@ -468,8 +489,9 @@ function CalendarRow({
             ? "Supprimer cet agenda et ses événements"
             : "Le dernier agenda ne se supprime pas"
         }
+        aria-label={`Supprimer l'agenda ${calendar.name}`}
       >
-        <XIcon className="size-3.5" />
+        <Trash2Icon className="size-3.5" />
       </Button>
     </div>
   );

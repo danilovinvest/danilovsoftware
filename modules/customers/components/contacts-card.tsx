@@ -52,6 +52,7 @@ export function ContactsCard({
 
   const create = useAction((payload: ContactPayload) =>
     api.createContact(customerId, payload),
+    { inline: true },
   );
   const remove = useAction((id: string) => api.deleteContact(id));
 

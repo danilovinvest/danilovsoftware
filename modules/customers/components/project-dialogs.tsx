@@ -126,6 +126,7 @@ export function ProjectDialog({
   );
   const create = useAction(() =>
     project ? api.updateProject(project.id, values) : api.createProject(customerId, values),
+    { inline: true },
   );
   const colleagues = useColleagues();
 
@@ -382,7 +383,7 @@ export function QuoteDialog({
     }
     const payload = { ...values, deposit_amount: deposit, balance_amount: balance };
     return quote ? api.updateQuote(quote.id, payload) : api.createQuote(project?.id ?? "", payload);
-  });
+  }, { inline: true });
 
   return (
     <Dialog open={quote !== null || project !== null} onOpenChange={onOpenChange}>

@@ -55,8 +55,8 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
   // Lire les échanges d'un client est plus intrusif que lire sa fiche : la
   // permission est distincte, et l'onglet disparaît avec elle.
   const canReadMail = usePermission("mail:read");
-  const remove = useAction(() => api.deleteCustomer(customerId));
-  const purge = useAction(() => api.purgeCustomer(customerId));
+  const remove = useAction(() => api.deleteCustomer(customerId), { inline: true });
+  const purge = useAction(() => api.purgeCustomer(customerId), { inline: true });
 
   if (loading && !customer) {
     return (
@@ -74,8 +74,8 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
     );
   }
 
-  if (error || !customer) {
-    return <ErrorNotice message={error ?? "Fiche introuvable."} />;
+  if (!customer) {
+    return <ErrorNotice message={error ?? "Fiche introuvable."} onRetry={reload} />;
   }
 
   if (editing) {
@@ -102,6 +102,14 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
           Retour aux fiches
         </Link>
       </Button>
+
+      {/* La fiche reste à l'écran : c'est son rechargement qui a échoué. */}
+      {error && (
+        <ErrorNotice
+          message={`Fiche non actualisée : ${error}`}
+          onRetry={reload}
+        />
+      )}
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">

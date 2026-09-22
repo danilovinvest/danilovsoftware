@@ -51,7 +51,7 @@ export function ProjectNextAssignment({
   const { account } = useAuth();
   const colleagues = useColleagues();
   const [assigning, setAssigning] = useState(false);
-  const attribuer = useAction(() => api.setProjectManager(project.id, account?.id ?? null));
+  const attribuer = useAction(() => api.setProjectManager(project.id, account?.id ?? null), { inline: true });
   const task = project.next_task;
 
   // La personne qui doit agir à cette étape, quand elle est nommée ; sinon le

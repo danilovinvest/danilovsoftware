@@ -246,6 +246,7 @@ export function ProjectsPanel({
       // fiche ne se rafraîchissait jamais.
       return true;
     },
+    { inline: true },
   );
 
   /**
@@ -555,8 +556,9 @@ function ProjectBlock({
       const proof = await api.createStepProof(project.id, { step, ...input });
       return { proofs: [proof], folder_path: "", folder_url: "", folder_created: false, skipped: [], warning: "" };
     },
+    { inline: true },
   );
-  const retirerPreuve = useAction((id: string) => api.deleteStepProof(id));
+  const retirerPreuve = useAction((id: string) => api.deleteStepProof(id), { inline: true });
   /*
     Le métier, la mission et le délai, lus une fois pour l'en-tête et les jalons.
 
@@ -590,6 +592,7 @@ function ProjectBlock({
         paid_at: paidAt,
       });
     },
+    { inline: true },
   );
 
   /** Encaisse l'acompte avec son montant, ou corrige le montant. */

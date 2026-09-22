@@ -111,7 +111,7 @@ export function CustomerWizard() {
       });
     }
     return created;
-  });
+  }, { inline: true });
 
   function next() {
     if (step === 0 && customer.display_name.trim() === "") {

@@ -43,8 +43,8 @@ export function QuotePayments({
   onChanged: () => void;
 }) {
   const [saisie, setSaisie] = useState(false);
-  const ajouter = useAction(api.addQuotePayment);
-  const retirer = useAction(api.removeQuotePayment);
+  const ajouter = useAction(api.addQuotePayment, { inline: true });
+  const retirer = useAction(api.removeQuotePayment, { inline: true });
   const enCours = ajouter.pending || retirer.pending;
 
   if (payments.length === 0 && !canWrite) return null;

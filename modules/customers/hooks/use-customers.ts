@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Paginated } from "@/shared/api/client";
 import { scopeParam, useScope } from "@/modules/group";
 import { errorMessage } from "@/shared/api/errors";
+import { notifyError, notifySuccess } from "@/shared/ui/toaster";
 import * as api from "../lib/api";
 import type { CustomerFilters, CustomerListItem, CustomerStats } from "../lib/types";
 
@@ -55,7 +56,13 @@ export function useCustomers(filters: CustomerFilters) {
       .then((data) => setResolved({ key, data, error: null }))
       .catch((cause) => {
         if (controller.signal.aborted) return;
-        setResolved({ key, data: null, error: errorMessage(cause) });
+        // La liste d'avant reste affichée sous l'erreur : une coupure ne doit
+        // pas vider l'écran qu'on était en train de lire.
+        setResolved((previous) => ({
+          key,
+          data: previous.data,
+          error: errorMessage(cause),
+        }));
       });
 
     return () => controller.abort();
@@ -165,17 +172,37 @@ export function useCustomerFilters() {
   return { filters, update, reset, active };
 }
 
+type ActionOptions<TResult> = {
+  /**
+   * L'écran appelant affiche lui-même l'erreur (un `ErrorNotice` dans une
+   * boîte de dialogue) : pas de toast, qui la dirait une seconde fois.
+   */
+  inline?: boolean;
+  /** Le toast de réussite, seulement quand rien d'autre à l'écran ne change. */
+  success?: string | ((result: TResult) => string);
+};
+
 /**
  * Enveloppe une mutation : gère l'état « en cours », l'erreur et les erreurs de
  * validation par champ renvoyées par l'API.
+ *
+ * **Une erreur se voit toujours.** Plusieurs écrans lisaient `error` sans
+ * jamais l'afficher : on cliquait, rien ne changeait, et on recommençait. Elle
+ * part donc en toast, avec « Réessayer », sauf si l'appelant l'affiche déjà.
  */
 export function useAction<TArgs extends unknown[], TResult>(
   action: (...args: TArgs) => Promise<TResult>,
+  options: ActionOptions<TResult> = {},
 ) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string>>({});
   const mounted = useRef(true);
+  // Lues au moment du geste : un littéral d'options change à chaque rendu.
+  const opts = useRef(options);
+  useEffect(() => {
+    opts.current = options;
+  });
 
   useEffect(() => {
     mounted.current = true;
@@ -190,13 +217,21 @@ export function useAction<TArgs extends unknown[], TResult>(
       setError(null);
       setFields({});
       try {
-        return await action(...args);
+        const result = await action(...args);
+        const { success } = opts.current;
+        if (success) notifySuccess(typeof success === "string" ? success : success(result));
+        return result;
       } catch (cause) {
+        const message = errorMessage(cause);
+        const hasFields = Boolean(cause && typeof cause === "object" && "fields" in cause);
         if (mounted.current) {
-          setError(errorMessage(cause));
-          if (cause && typeof cause === "object" && "fields" in cause) {
-            setFields((cause as { fields: Record<string, string> }).fields);
-          }
+          setError(message);
+          if (hasFields) setFields((cause as { fields: Record<string, string> }).fields);
+        }
+        // Une erreur de champ se lit sous le champ : la rejouer telle quelle
+        // n'y changerait rien.
+        if (!opts.current.inline || !mounted.current) {
+          notifyError(message, hasFields ? undefined : () => void run(...args));
         }
         return null;
       } finally {

@@ -58,6 +58,7 @@ export function InteractionDialog({
       summary: summary.trim(),
       details: details.trim(),
     }),
+    { inline: true },
   );
 
   return (

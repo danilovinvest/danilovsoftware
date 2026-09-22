@@ -80,9 +80,10 @@ export function EnrichDialog({
   const [mails, setMails] = useState<Set<string>>(new Set());
   const [gens, setGens] = useState<Set<number>>(new Set());
 
-  const chercher = useAction(() => api.enrichFromMail(customer.id));
+  const chercher = useAction(() => api.enrichFromMail(customer.id), { inline: true });
   const rattacher = useAction((input: { message_ids: string[]; contacts: FoundContact[] }) =>
     api.applyEnrichment(customer.id, input),
+    { inline: true },
   );
   const appliquer = useAction((patch: Partial<CustomerDetail>) =>
     api.updateCustomer(customer.id, {
@@ -102,6 +103,7 @@ export function EnrichDialog({
       owner_id: customer.owner_id,
       ...patch,
     }),
+    { inline: true },
   );
 
   // La recherche part à l'ouverture : c'est le geste attendu, et demander un

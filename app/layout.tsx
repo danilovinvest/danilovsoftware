@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist_Mono, Inter, Space_Grotesk } from "next/font/google";
 import { AuthProvider } from "@/modules/auth";
 import { PreferencesProvider, THEME_BOOTSTRAP_SCRIPT } from "@/modules/settings";
+import { ConfirmHost } from "@/shared/ui/confirm";
+import { Toaster } from "@/shared/ui/toaster";
 import "./globals.css";
 
 /** Inter est la famille du design system repris de Twenty (FONT_COMMON). */
@@ -54,6 +56,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
         <PreferencesProvider>
           <AuthProvider>{children}</AuthProvider>
+          <Toaster />
+          <ConfirmHost />
         </PreferencesProvider>
       </body>
     </html>
