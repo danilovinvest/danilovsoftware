@@ -236,9 +236,30 @@ export function CustomerPicker({
   async function creer() {
     setCreation(true);
     setEchec(null);
+    let cree: Customer;
     try {
-      const cree = await createCustomer(nouvelleFiche(cherche));
+      cree = await createCustomer(nouvelleFiche(cherche));
+    } catch {
+      setEchec("La fiche n'a pas pu être créée.");
+      setCreation(false);
+      return;
+    }
+    /*
+      La fiche existe : elle est choisie quoi qu'il arrive ensuite.
+
+      Quatre écritures se suivaient d'un bloc, et un échec sur l'une des trois
+      dernières laissait le champ en recherche avec « Créer » toujours offert :
+      un second clic créait une seconde fiche. La suite — l'affaire, le premier
+      contact, la ligne de chronologie — se rattrape depuis la fiche ; un doublon
+      ne se rattrape que par une fusion.
+    */
+    setCreee(cree);
+    onChange(cree.id, cree.display_name);
+    setOpen(false);
+    setQuery("");
+    try {
       const ne = await createProject(cree.id, nouveauProjet());
+      setProjet(ne);
       // Le premier contact, c'est cet appel. Le laisser gris obligerait à le
       // cocher à la main juste après avoir raccroché.
       await setMilestones(ne.id, jalonsDuPremierContact());
@@ -257,13 +278,8 @@ export function CustomerPicker({
         summary: "Premier appel",
         details: "",
       });
-      setCreee(cree);
-      setProjet(ne);
-      onChange(cree.id, cree.display_name);
-      setOpen(false);
-      setQuery("");
     } catch {
-      setEchec("La fiche n'a pas pu être créée.");
+      setEchec("La fiche est créée, mais son affaire ou son premier appel n'a pas été enregistré : à compléter depuis la fiche.");
     } finally {
       setCreation(false);
     }
