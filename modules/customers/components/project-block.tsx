@@ -46,6 +46,7 @@ import { ProjectBlockDialogs } from "./project-block-dialogs";
 import { ProjectCyclePanel } from "./project-cycle-panel";
 import { ProjectHeader } from "./project-header";
 import { ProjectNextAction } from "./project-next-action";
+import { ProjectNotes } from "./project-notes";
 import { PROJECT_TABS, ProjectTabs } from "./project-tabs";
 
 export type ProjectBlockProps = {
@@ -392,6 +393,8 @@ export const ProjectBlock = memo(function ProjectBlock({
                 onChanged={onChanged}
               />
             </div>
+
+            <ProjectNotes project={project} canWrite={canWrite} onChanged={onChanged} />
 
             {project.source_status && (
               <p className="text-muted-foreground text-xs">

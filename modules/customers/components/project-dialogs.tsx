@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ErrorNotice } from "@/shared/ui/feedback";
-import { SelectField, TextField } from "@/shared/ui/form";
+import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
 import { useColleagues } from "@/shared/hooks/use-colleagues";
 import * as api from "../lib/api";
 import { PROJECT_MISSION, PROJECT_STAGE, toOptions } from "../lib/labels";
@@ -260,6 +260,17 @@ export function ProjectDialog({
             label="Ville"
             value={values.site_city}
             onChange={(event) => setValues({ ...values, site_city: event.target.value })}
+          />
+          {/*
+            Le contexte de l'affaire — accès, contraintes, voisinage (issue 83).
+            Il s'écrivait dans les notes de la fiche, mêlé aux autres affaires.
+          */}
+          <TextAreaField
+            label="Notes de l'affaire"
+            wrapperClassName="sm:col-span-2"
+            placeholder="Accès, digicode, contraintes du chantier…"
+            value={values.notes}
+            onChange={(event) => setValues({ ...values, notes: event.target.value })}
           />
         </form>
 

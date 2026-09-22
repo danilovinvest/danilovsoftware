@@ -29,6 +29,7 @@ import { useAction } from "../hooks/use-customers";
 import * as api from "../lib/api";
 import { CustomerForm } from "./customer-form";
 import { CustomerHeadline } from "./customer-headline";
+import { CustomerGlance } from "./customer-glance";
 import { ReviewChecks } from "./review-checks";
 import { ClientToggle } from "./client-toggle";
 import { EnrichDialog } from "./enrich-dialog";
@@ -178,6 +179,8 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
               <ClientToggle customer={customer} onChanged={reload} />
             </div>
           )}
+
+          <CustomerGlance customer={customer} onChanged={reload} className="mt-3" />
 
           <CustomerHeadline customer={customer} className="mt-3" />
 

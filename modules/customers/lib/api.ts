@@ -171,7 +171,7 @@ export function createContact(customerId: string, payload: ContactPayload) {
   });
 }
 
-export function updateContact(id: string, payload: ContactPayload) {
+export function updateContact(id: string, payload: Partial<ContactPayload>) {
   return apiFetch<Contact>(`/v1/contacts/${id}`, { method: "PATCH", body: payload });
 }
 

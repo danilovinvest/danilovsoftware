@@ -49,18 +49,7 @@ export function DetailsPanel({
         onChanged={onChanged}
       />
 
-      {customer.notes && (
-        <Card className="gap-0 py-0 lg:col-span-2">
-          <CardHeader className="border-b py-4">
-            <CardTitle className="text-sm">Notes</CardTitle>
-          </CardHeader>
-          <CardContent className="py-4">
-            <p className="text-muted-foreground text-sm whitespace-pre-line">
-              {customer.notes}
-            </p>
-          </CardContent>
-        </Card>
-      )}
+      {/* Les notes de la fiche sont montées dans l'en-tête (issue 60). */}
     </div>
   );
 }

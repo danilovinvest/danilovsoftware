@@ -40,6 +40,31 @@ const FICHE_ETUDE = "/customers/fiche?id=7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "interlocuteurs-et-notes",
+    title: "Interlocuteurs et notes dans l'en-tête, notes d'affaire",
+    date: "2026-09-22",
+    steps: [
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="customer-glance"]',
+        title: "Qui appeler, sans changer d'onglet",
+        body: "Les interlocuteurs et les notes de la fiche vivaient dans le sixième onglet : au téléphone, le numéro de l'architecte était à deux clics. Ils sont sous le nom du client, le numéro s'appelle et l'adresse s'écrit d'un geste. Un clic sur un nom le corrige, le crayon corrige les notes sur place.",
+      },
+      {
+        path: `${FICHE_ETUDE}&vue=details`,
+        target: '[data-demo="contacts-card"]',
+        title: "Un interlocuteur se corrige",
+        body: "Corriger un numéro obligeait à supprimer puis recréer l'interlocuteur. Le crayon ouvre sa fiche, avec ses notes, et n'envoie que ce qui a changé.",
+      },
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="project-notes"]',
+        title: "Chaque affaire a ses notes",
+        body: "Le contexte d'une affaire — accès, digicode, contraintes — s'écrivait dans les notes de la fiche, mêlé aux autres affaires. Il se lit maintenant dans l'affaire dépliée, se corrige sur place, et « Modifier l'affaire » le propose aussi.",
+      },
+    ],
+  },
+  {
     id: "client-prospect-acompte-archive",
     title: "Client ou prospect à la main, acompte daté, affaire archivée",
     date: "2026-09-22",
