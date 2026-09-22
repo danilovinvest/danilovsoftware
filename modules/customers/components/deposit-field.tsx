@@ -257,7 +257,7 @@ export function DepositDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Acompte encaissé</DialogTitle>
+          <DialogTitle>{REGLEMENT[editor.kind ?? "acompte"].bouton}</DialogTitle>
           <DialogDescription>
             Le montant réellement reçu. Il se corrige ensuite si le client le
             change.

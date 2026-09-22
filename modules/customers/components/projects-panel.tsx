@@ -91,6 +91,7 @@ import type {
   StepProofInput,
   Interaction,
   InteractionKind,
+  PaymentStatus,
   Project,
   Quote,
 } from "../lib/types";
@@ -490,6 +491,7 @@ function ProjectBlock({
   const [materiaux, setMateriaux] = useState(false);
   /** Le montant de l'acompte, demandé depuis « à faire maintenant ». */
   const [acompte, setAcompte] = useState(false);
+  const [soldeOuvert, setSoldeOuvert] = useState(false);
   /** Le tiroir qui complète l'affaire, ouvert depuis l'alerte du dessus. */
   const [completer, setCompleter] = useState(false);
 
@@ -580,7 +582,7 @@ function ProjectBlock({
   */
   const porteur = quotes.find((q) => q.status === "accepte" || q.status === "realise") ?? lead;
   const setDeposit = useAction(
-    (status: "en_attente" | "recu", amount?: string | null, paidAt?: string) => {
+    (status: PaymentStatus, amount?: string | null, paidAt?: string) => {
       if (!porteur) throw new Error("Aucun devis à mettre à jour sur cette affaire.");
       return api.setQuoteDeposit(porteur.id, {
         status,
@@ -763,9 +765,10 @@ function ProjectBlock({
         onOverride({ plans_sent_at: new Date().toISOString() });
         break;
       case "balance_paid":
-        // Le solde appartient au devis, comme l'acompte : c'est lui qui porte
-        // le règlement.
-        if (await setBalance.run("recu")) onChanged();
+        // Le solde appartient au devis, comme l'acompte, et s'encaisse comme
+        // lui : en disant combien. Le cocher d'un clic déclarait un solde reçu
+        // sans rien à rapprocher du relevé.
+        setSoldeOuvert(true);
         break;
       case "ask_review":
         onOverride({ review_requested_at: new Date().toISOString() });
@@ -1197,7 +1200,9 @@ function ProjectBlock({
                       la date. Les quatre autres jalons passent par leur table.
                     */
                     if (key === "deposit_invoiced_at") {
-                      if (await setDeposit.run(value ? "en_attente" : "en_attente")) onChanged();
+                      // Décocher « facturé » dit qu'il n'y a pas d'acompte :
+                      // repartir « en attente » laissait la case cochée.
+                      if (await setDeposit.run(value ? "en_attente" : "non_applicable")) onChanged();
                       return;
                     }
                     if (key === "deposit_paid_at") {
@@ -1270,6 +1275,18 @@ function ProjectBlock({
         total={depositTotalOf(porteur)}
         pending={setDeposit.pending}
         onSave={encaisser}
+      />
+
+      <DepositDialog
+        kind="solde"
+        open={soldeOuvert}
+        onOpenChange={setSoldeOuvert}
+        amount={porteur?.balance_amount ?? null}
+        paidAt={porteur?.balance_paid_at ?? null}
+        paid={porteur?.balance_status === "recu"}
+        total={depositTotalOf(porteur)}
+        pending={setBalance.pending}
+        onSave={solder}
       />
 
       {relance && (
