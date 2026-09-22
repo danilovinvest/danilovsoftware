@@ -50,8 +50,13 @@ export function useThreads(filters: ThreadFilters, limit: number, pulse: number)
  * quitter est instantané. Elle se relit aussi quand la boîte apporte du
  * nouveau — une réponse arrivée pendant qu'on lit doit apparaître.
  */
+/** La clé de cache d'une conversation ouverte par ce message. */
+export function threadCacheKey(messageId: string): string {
+  return `mail:thread:${messageId}`;
+}
+
 export function useThread(messageId: string | null, pulse: number) {
-  const result = useCached(messageId ? `mail:thread:${messageId}` : null, () =>
+  const result = useCached(messageId ? threadCacheKey(messageId) : null, () =>
     api.getThread(messageId as string),
   );
   const { mutate } = result;

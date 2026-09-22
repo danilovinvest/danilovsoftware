@@ -39,6 +39,11 @@ export function useMailKeyboard(handlers: MailKeyHandlers) {
     function onKey(event: KeyboardEvent) {
       if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
       if (isTyping(event.target) || dialogOpen()) return;
+      // Entrée sur un bouton ou un lien lui appartient : c'est ainsi qu'on
+      // l'active au clavier, et l'intercepter ouvrirait autre chose.
+      if (event.key === "Enter" && event.target instanceof Element && event.target.closest("button, a")) {
+        return;
+      }
       const handler = current.current[event.key];
       if (!handler) return;
       event.preventDefault();
