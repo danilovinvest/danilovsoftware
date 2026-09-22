@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { PlusIcon } from "lucide-react";
 import { usePermission } from "@/modules/auth";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,29 @@ function groupByProject<T extends { project_id: string | null }>(items: T[]): Ma
     if (group) group.push(item);
     else groups.set(item.project_id, [item]);
   }
+  return groups;
+}
+
+/**
+ * Regroupe par affaire en gardant les tableaux d'une affaire inchangée.
+ *
+ * Encaisser un acompte remplace un devis, donc la liste entière : regrouper à
+ * neuf donnerait un tableau neuf à chaque affaire, et `ProjectBlock`, mémorisé
+ * pour ne rendre que l'affaire touchée, les rendrait toutes.
+ */
+function useStableGroups<T extends { project_id: string | null }>(items: T[]): Map<string, T[]> {
+  // État dérivé de la prop, recalculé pendant le rendu quand elle change : le
+  // motif que React recommande pour comparer à la valeur précédente.
+  const [memo, setMemo] = useState(() => ({ items, groups: groupByProject(items) }));
+  if (memo.items === items) return memo.groups;
+  const groups = groupByProject(items);
+  for (const [id, group] of groups) {
+    const before = memo.groups.get(id);
+    if (before && before.length === group.length && before.every((item, i) => item === group[i])) {
+      groups.set(id, before);
+    }
+  }
+  setMemo({ items, groups });
   return groups;
 }
 
@@ -94,8 +117,8 @@ export function ProjectsPanel({
   // recalculerait à chaque rendu, sur une horloge qui a bougé.
   const [now] = useState(() => Date.now());
 
-  const quotesByProject = useMemo(() => groupByProject(quotes), [quotes]);
-  const interactionsByProject = useMemo(() => groupByProject(interactions), [interactions]);
+  const quotesByProject = useStableGroups(quotes);
+  const interactionsByProject = useStableGroups(interactions);
 
   /*
     Les jalons s'affichent tout de suite, puis s'enregistrent.

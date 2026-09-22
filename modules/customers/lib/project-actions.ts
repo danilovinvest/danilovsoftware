@@ -36,7 +36,7 @@ export type BlockDialog =
  * La production du bureau d'études y est : chaque geste date son jalon, et le
  * livrable qu'il produit — la note de calcul, le dossier, le rapport.
  */
-export const STAMP_ACTIONS: Partial<Record<ActionKey, keyof Jalons>> = {
+export const STAMP_ACTIONS = {
   send_rib: "rib_sent_at",
   send_insurance: "insurance_sent_at",
   send_plans: "plans_sent_at",
@@ -48,7 +48,7 @@ export const STAMP_ACTIONS: Partial<Record<ActionKey, keyof Jalons>> = {
   send_report: "report_sent_at",
   survey_done: "survey_done_at",
   send_survey_report: "survey_report_sent_at",
-};
+} as const satisfies Partial<Record<ActionKey, keyof Jalons>>;
 
 /**
  * Les gestes qui demandent une saisie, et la boîte qui la recueille.
@@ -61,7 +61,7 @@ export const STAMP_ACTIONS: Partial<Record<ActionKey, keyof Jalons>> = {
  * - Commander demande de dire **quoi** : basculer vers l'onglet
  *   « Après-signature », tout en bas de l'affaire, ne faisait rien de visible.
  */
-export const DIALOG_ACTIONS: Partial<Record<ActionKey, BlockDialog>> = {
+export const DIALOG_ACTIONS = {
   interaction: { kind: "log", interaction: "appel" },
   plan_rdv: { kind: "plan" },
   relance: { kind: "relance" },
@@ -70,4 +70,21 @@ export const DIALOG_ACTIONS: Partial<Record<ActionKey, BlockDialog>> = {
   deposit_paid: { kind: "settlement", reglement: "acompte" },
   balance_paid: { kind: "settlement", reglement: "solde" },
   order_materials: { kind: "materials" },
-};
+} as const satisfies Partial<Record<ActionKey, BlockDialog>>;
+
+/*
+  Les gardes qui disent au typage qu'une clé est prise par une table : le reste
+  tombe dans le `switch` du composant, dont la branche `never` refuse de
+  compiler si une action n'est prise nulle part — sans quoi elle ferait un
+  bouton muet.
+*/
+export type StampAction = keyof typeof STAMP_ACTIONS;
+export type DialogAction = keyof typeof DIALOG_ACTIONS;
+
+export function isStampAction(key: ActionKey): key is StampAction {
+  return key in STAMP_ACTIONS;
+}
+
+export function isDialogAction(key: ActionKey): key is DialogAction {
+  return key in DIALOG_ACTIONS;
+}

@@ -22,7 +22,13 @@ import {
   type CycleStep,
 } from "../lib/cycle";
 import { readJalons, readMarks, type Jalons, type StepMarks } from "../lib/jalons";
-import { DIALOG_ACTIONS, STAMP_ACTIONS, type BlockDialog } from "../lib/project-actions";
+import {
+  DIALOG_ACTIONS,
+  STAMP_ACTIONS,
+  isDialogAction,
+  isStampAction,
+  type BlockDialog,
+} from "../lib/project-actions";
 import { useAction } from "../hooks/use-customers";
 import { useCycleOrders } from "../hooks/use-cycle-orders";
 import { useProjectSettlement } from "../hooks/use-project-settlement";
@@ -218,9 +224,9 @@ export const ProjectBlock = memo(function ProjectBlock({
         // Porté par le devis : aucun aperçu local possible, le panneau attend
         // l'aller-retour au lieu de se fermer sur un point resté gris.
         if (write.field === "deposit") {
-          return (at ? settlement.encaisser(null) : settlement.retirerAcompte()).then(() => {});
+          return (at ? settlement.encaisser(null, at) : settlement.retirerAcompte()).then(() => {});
         }
-        return (at ? settlement.solder(null) : settlement.retirerSolde()).then(() => {});
+        return (at ? settlement.solder(null, at) : settlement.retirerSolde()).then(() => {});
     }
   }
 
@@ -238,14 +244,12 @@ export const ProjectBlock = memo(function ProjectBlock({
   }
 
   async function act(key: ActionKey) {
-    const stamp = STAMP_ACTIONS[key];
-    if (stamp) {
-      void onOverride({ [stamp]: new Date().toISOString() });
+    if (isStampAction(key)) {
+      void onOverride({ [STAMP_ACTIONS[key]]: new Date().toISOString() });
       return;
     }
-    const opens = DIALOG_ACTIONS[key];
-    if (opens) {
-      setDialog(opens);
+    if (isDialogAction(key)) {
+      setDialog(DIALOG_ACTIONS[key]);
       return;
     }
     switch (key) {
@@ -272,6 +276,12 @@ export const ProjectBlock = memo(function ProjectBlock({
         // Le chantier **est** cette affaire : on emmène son identifiant.
         router.push(`/chantiers?affaire=${project.id}`);
         return;
+      default: {
+        // Une action ajoutée à `ActionKey` sans table ni branche ferait un
+        // bouton muet : le typage refuse de compiler plutôt.
+        const unhandled: never = key;
+        return unhandled;
+      }
     }
   }
 
