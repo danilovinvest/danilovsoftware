@@ -145,7 +145,13 @@ export function CustomersView() {
           />
         ) : (
           <>
-            <CustomerTable items={data?.items ?? []} loading={loading} issuer={filters.issuer} />
+            <CustomerTable
+              items={data?.items ?? []}
+              loading={loading}
+              issuer={filters.issuer}
+              sort={filters.sort ?? "recent"}
+              onSort={(sort) => update({ sort })}
+            />
             <Pagination
               page={data?.page ?? 1}
               totalPages={data?.total_pages ?? 1}

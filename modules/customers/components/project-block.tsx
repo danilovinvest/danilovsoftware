@@ -2,16 +2,13 @@
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ListOrderedIcon } from "lucide-react";
 import { usePermission } from "@/modules/auth";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ErrorNotice } from "@/shared/ui/feedback";
 import * as api from "../lib/api";
 import { deadlineOf, deliveredAt, missionOf } from "../lib/mission";
-import { autoProofsOf, describeBatch } from "../lib/proofs";
+import { autoProofsOf } from "../lib/proofs";
 import {
   hasSurvey,
   leadQuote,
@@ -29,27 +26,20 @@ import { DIALOG_ACTIONS, STAMP_ACTIONS, type BlockDialog } from "../lib/project-
 import { useAction } from "../hooks/use-customers";
 import { useCycleOrders } from "../hooks/use-cycle-orders";
 import { useProjectSettlement } from "../hooks/use-project-settlement";
+import { useStepProofActions } from "../hooks/use-step-proof-actions";
 import type {
   CustomerDetail,
   Interaction,
-  ProofBatch,
   Project,
   Quote,
-  StepProofInput,
 } from "../lib/types";
-import { depositTotalOf, type SettlementEditorProps } from "./deposit-field";
-import { JoinedQuoteDocs } from "./joined-quote-docs";
 import { ProjectNextAssignment } from "./next-assignment";
 import { ProjectOnboardingButton, projetIncomplet } from "./project-onboarding";
 import { ProjectBlockDialogs } from "./project-block-dialogs";
-import { ProjectCycle } from "./project-cycle";
+import { ProjectCyclePanel } from "./project-cycle-panel";
 import { ProjectHeader } from "./project-header";
-import { ProjectJalons } from "./project-jalons";
 import { ProjectNextAction } from "./project-next-action";
-import { ProjectTimeline } from "./project-timeline";
-import { ProjectToolbar } from "./project-toolbar";
-import { QuoteList } from "./quote-list";
-import { SubcontractingPanel } from "./subcontracting-panel";
+import { PROJECT_TABS, ProjectTabs } from "./project-tabs";
 
 export type ProjectBlockProps = {
   customer: CustomerDetail;
@@ -74,8 +64,6 @@ export type ProjectBlockProps = {
   onEdit: (project: Project) => void;
   onChanged: () => void;
 };
-
-const TABS = ["chronologie", "devis", "apres"];
 
 /**
  * Une affaire : un accordéon.
@@ -111,7 +99,7 @@ export const ProjectBlock = memo(function ProjectBlock({
   const router = useRouter();
   const [open, setOpen] = useState(defaultOpen);
   const [tab, setTab] = useState(() =>
-    initialTab && TABS.includes(initialTab) ? initialTab : "chronologie",
+    initialTab && PROJECT_TABS.includes(initialTab) ? initialTab : "chronologie",
   );
   /** La boîte ouverte, une à la fois. */
   const [dialog, setDialog] = useState<BlockDialog | null>(null);
@@ -178,27 +166,11 @@ export const ProjectBlock = memo(function ProjectBlock({
         orders,
       )
     : null;
-  const titreFrise = (m: "etudes" | "travaux") =>
-    m === "etudes" ? "OMPT STRUCTURE · étude" : "OMPT GROUPE · travaux";
   const lead = leadQuote(quotes);
   /** Les preuves jointes aux crans de cette affaire. */
   const preuves = (customer.step_proofs ?? []).filter((proof) => proof.project_id === project.id);
 
-  /*
-    Trois chemins pour une preuve, une seule réponse : un fichier part dans
-    OneDrive, un courriel y copie ses pièces jointes, une note ou un lien reste
-    en base. L'écran lit la même forme dans les trois cas.
-  */
-  const ajouterPreuve = useAction(
-    async (step: CycleStep, input: StepProofInput, file: File | null): Promise<ProofBatch> => {
-      if (file) return api.uploadStepProof(project.id, step, input, file);
-      if (input.mail_message_id) return api.createMailStepProof(project.id, { step, ...input });
-      const proof = await api.createStepProof(project.id, { step, ...input });
-      return { proofs: [proof], folder_path: "", folder_url: "", folder_created: false, skipped: [], warning: "" };
-    },
-    { inline: true },
-  );
-  const retirerPreuve = useAction((id: string) => api.deleteStepProof(id), { inline: true });
+  const proofActions = useStepProofActions(project.id, onChanged);
 
   /*
     La mission et le délai. Une affaire livrée ne dit plus son délai : un
@@ -216,38 +188,11 @@ export const ProjectBlock = memo(function ProjectBlock({
     api.setProjectStage(project.id, { stage: project.stage, outcome: null, outcome_note: "" }),
   );
 
-  const settlement = useProjectSettlement(quotes, onQuote, onChanged);
-  const { porteur } = settlement;
-
-  /**
-   * L'éditeur des règlements, réglé sur la pièce porteuse : le même pour la
-   * frise, « à faire maintenant », l'après-signature et la ligne du devis.
-   */
-  function settlementProps(kind: "acompte" | "solde"): SettlementEditorProps {
-    const acompte = kind === "acompte";
-    return {
-      kind,
-      amount: acompte ? jalons.deposit_amount : (porteur?.balance_amount ?? null),
-      // La date réelle, jamais le repli sur l'émission du devis : la préremplir
-      // la ferait passer pour un fait.
-      paidAt: acompte ? (porteur?.deposit_paid_at ?? null) : (porteur?.balance_paid_at ?? null),
-      paid: acompte ? jalons.deposit_paid_at !== null : porteur?.balance_status === "recu",
-      total: depositTotalOf(porteur),
-      transfers: porteur
-        ? {
-            quoteId: porteur.id,
-            payments: customer.payments.filter(
-              (payment) => payment.quote_id === porteur.id && payment.kind === kind,
-            ),
-            canWrite: canWriteQuotes,
-            onChanged,
-          }
-        : undefined,
-      pending: settlement.pending,
-      onSave: acompte ? settlement.encaisser : settlement.solder,
-      onRemove: acompte ? settlement.retirerAcompte : settlement.retirerSolde,
-    };
-  }
+  const settlement = useProjectSettlement(quotes, onQuote, onChanged, {
+    payments: customer.payments,
+    canWrite: canWriteQuotes,
+  });
+  const settlementProps = settlement.editorProps;
 
   /*
     Cocher un cran de la frise.
@@ -352,89 +297,40 @@ export const ProjectBlock = memo(function ProjectBlock({
 
         <CollapsibleContent>
           <div className="flex flex-col gap-4 border-t px-4 py-4">
-            {/*
-              La frise se coche ici, et seulement ici : c'est le seul écran où
-              l'affaire est ouverte, donc le seul où l'on sait de quelle affaire
-              on parle.
-            */}
-            <div data-demo="project-cycle">
-              {(melangee || canOrder) && (
-                <div className="mb-1.5 flex items-center gap-2">
-                  {melangee && (
-                    <span className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-                      {titreFrise(metier)}
-                    </span>
-                  )}
-                  {canOrder && (
-                    <Button
-                      size="xs"
-                      variant="ghost"
-                      className="text-muted-foreground ml-auto h-6"
-                      data-demo="frise-reordonner"
-                      onClick={() => setDialog({ kind: "order" })}
-                    >
-                      <ListOrderedIcon />
-                      Réordonner la frise
-                    </Button>
-                  )}
-                </div>
-              )}
-              <ProjectCycle
-                points={points}
-                edit={
-                  canWrite
-                    ? {
-                        markedAt: (step) => stepMarkedAt(step, jalons, marks),
-                        onMark: marquerCran,
-                        hasQuote: lead !== null,
-                        onAddQuote,
-                        materials: jalons.materials,
-                        onMaterials: commanderMateriaux,
-                        deposit: settlementProps("acompte"),
-                        onDeposit: settlement.encaisser,
-                        onDepositRemove: settlement.retirerAcompte,
-                        balance: settlementProps("solde"),
-                        onBalance: settlement.solder,
-                        onBalanceRemove: settlement.retirerSolde,
-                        negotiationNote: marks.negotiation_note,
-                        onNote: (note) => onOverride({ negotiation_note: note }),
-                        proofs: (step) => preuves.filter((proof) => proof.step === step),
-                        autoProofs: (step) => autoProofsOf(step, quotes, interactions),
-                        customerId: customer.id,
-                        drivePath: project.drive_path,
-                        onAddProof: async (step, input, file) => {
-                          const batch = await ajouterPreuve.run(step, input, file);
-                          if (batch === null) return { ok: false, message: "" };
-                          onChanged();
-                          return { ok: true, message: describeBatch(batch) };
-                        },
-                        onRemoveProof: async (id) => {
-                          // 204 sans corps rend `undefined` : seul `null` dit l'échec.
-                          const ok = (await retirerPreuve.run(id)) !== null;
-                          if (ok) onChanged();
-                          return ok;
-                        },
-                        pending: busy,
-                      }
-                    : undefined
-                }
-              />
-            </div>
-
-            {pointsSecond && (
-              <div className="flex flex-col gap-1.5" data-demo="project-cycle-second">
-                <span className="text-muted-foreground block text-[11px] font-medium tracking-wide uppercase">
-                  {titreFrise(metier === "etudes" ? "travaux" : "etudes")}
-                </span>
-                <ProjectCycle points={pointsSecond} />
-                <p className="text-muted-foreground text-[11px]">
-                  Cette affaire porte des devis des deux sociétés, donc deux
-                  parcours. Cette frise se lit seulement : cocher un cran
-                  écrirait sur le devis porteur, qui appartient à l&apos;autre
-                  société.
-                </p>
-              </div>
-            )}
+            <ProjectCyclePanel
+              points={points}
+              pointsSecond={pointsSecond}
+              metier={metier}
+              canOrder={canOrder}
+              onOrder={() => setDialog({ kind: "order" })}
+              edit={
+                canWrite
+                  ? {
+                      markedAt: (step) => stepMarkedAt(step, jalons, marks),
+                      onMark: marquerCran,
+                      hasQuote: lead !== null,
+                      onAddQuote,
+                      materials: jalons.materials,
+                      onMaterials: commanderMateriaux,
+                      deposit: settlementProps("acompte"),
+                      onDeposit: settlement.encaisser,
+                      onDepositRemove: settlement.retirerAcompte,
+                      balance: settlementProps("solde"),
+                      onBalance: settlement.solder,
+                      onBalanceRemove: settlement.retirerSolde,
+                      negotiationNote: marks.negotiation_note,
+                      onNote: (note) => onOverride({ negotiation_note: note }),
+                      proofs: (step) => preuves.filter((proof) => proof.step === step),
+                      autoProofs: (step) => autoProofsOf(step, quotes, interactions),
+                      customerId: customer.id,
+                      drivePath: project.drive_path,
+                      onAddProof: proofActions.add,
+                      onRemoveProof: proofActions.remove,
+                      pending: busy,
+                    }
+                  : undefined
+              }
+            />
 
             {/*
               L'affaire ne dit pas de quoi il s'agit : on ne chiffre pas ce qu'on
@@ -446,9 +342,7 @@ export const ProjectBlock = memo(function ProjectBlock({
 
             {/* Le règlement écrit sur le devis : un refus doit se lire quelque part. */}
             {settlement.error && <ErrorNotice message={settlement.error} />}
-            {(ajouterPreuve.error || retirerPreuve.error) && (
-              <ErrorNotice message={ajouterPreuve.error ?? retirerPreuve.error ?? ""} />
-            )}
+            {proofActions.error && <ErrorNotice message={proofActions.error} />}
 
             <div data-demo="next-action">
               {canWrite && (
@@ -474,102 +368,32 @@ export const ProjectBlock = memo(function ProjectBlock({
               </p>
             )}
 
-            <Tabs value={tab} onValueChange={setTab}>
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <TabsList>
-                  <TabsTrigger value="chronologie">
-                    Chronologie
-                    {interactions.length > 0 && (
-                      <span className="text-muted-foreground ml-1.5 text-xs">
-                        {interactions.length}
-                      </span>
-                    )}
-                  </TabsTrigger>
-                  <TabsTrigger value="devis" data-demo="tab-devis">
-                    Devis
-                    {quotes.length > 0 && (
-                      <span className="text-muted-foreground ml-1.5 text-xs">{quotes.length}</span>
-                    )}
-                  </TabsTrigger>
-                  <TabsTrigger value="apres" data-demo="tab-apres">Après-signature</TabsTrigger>
-                </TabsList>
-
-                <ProjectToolbar
-                  project={project}
-                  metier={metier}
-                  site={site}
-                  quotesCount={quotes.length}
-                  documentsCount={quotes.filter((quote) => quote.drive_url).length}
-                  interactionsCount={interactions.length}
-                  canWrite={canWrite}
-                  canWriteQuotes={canWriteQuotes}
-                  onAddQuote={onAddQuote}
-                  onEdit={() => onEdit(project)}
-                  onIssuer={() => setDialog({ kind: "issuer" })}
-                  onDelete={() => setDialog({ kind: "delete" })}
-                />
-              </div>
-
-              <TabsContent value="chronologie" className="pt-4">
-                <ProjectTimeline interactions={interactions} />
-              </TabsContent>
-
-              <TabsContent value="devis" className="pt-4">
-                <div className="flex flex-col gap-3">
-                  <QuoteList
-                    quotes={quotes}
-                    payments={customer.payments}
-                    carrierId={porteur?.id ?? null}
-                    onSettle={settle}
-                    onChanged={onChanged}
-                  />
-                  <JoinedQuoteDocs proofs={preuves} />
-                  {/* La sous-traitance se lit en face des devis : c'est là que la
-                      marge a un sens. */}
-                  <SubcontractingPanel
-                    key={project.subcontractors.map((s) => `${s.subcontractor_id}:${s.amount}`).join("|")}
-                    project={project}
-                    quotes={quotes}
-                    canWrite={canWrite}
-                    onChanged={onChanged}
-                  />
-                </div>
-              </TabsContent>
-
-              <TabsContent value="apres" className="pt-4">
-                <ProjectJalons
-                  metier={metier}
-                  mission={mission}
-                  jalons={jalons}
-                  onMaterials={commanderMateriaux}
-                  depositTotal={depositTotalOf(porteur)}
-                  onDeposit={settlement.encaisser}
-                  onDepositRemove={settlement.retirerAcompte}
-                  depositPaidAt={porteur?.deposit_paid_at ?? null}
-                  depositTransfers={settlementProps("acompte").transfers}
-                  // Même verrou que la frise : ces cases écrivent par la même
-                  // route, qui remplace la ligne entière.
-                  disabled={!canWrite || busy}
-                  onToggle={async (key, value) => {
-                    // « Facturé » appartient au devis : décoché, il dit qu'il
-                    // n'y a pas d'acompte. Les autres jalons passent par leur table.
-                    if (key === "deposit_invoiced_at") {
-                      await settlement.facturerAcompte(value !== null);
-                      return;
-                    }
-                    // L'encaissement passe par l'éditeur des règlements ; ce
-                    // chemin ne reste que pour un jalon qui n'en aurait pas.
-                    if (key === "deposit_paid_at") {
-                      await (value
-                        ? settlement.encaisser(jalons.deposit_amount, value.slice(0, 10))
-                        : settlement.retirerAcompte());
-                      return;
-                    }
-                    void onOverride({ [key]: value });
-                  }}
-                />
-              </TabsContent>
-            </Tabs>
+            <ProjectTabs
+              tab={tab}
+              onTabChange={setTab}
+              customer={customer}
+              project={project}
+              metier={metier}
+              mission={mission}
+              site={site}
+              quotes={quotes}
+              interactions={interactions}
+              proofs={preuves}
+              jalons={jalons}
+              settlement={settlement}
+              depositTransfers={settlementProps("acompte").transfers}
+              canWrite={canWrite}
+              canWriteQuotes={canWriteQuotes}
+              busy={busy}
+              onMaterials={commanderMateriaux}
+              onOverride={onOverride}
+              onAddQuote={onAddQuote}
+              onEdit={() => onEdit(project)}
+              onIssuer={() => setDialog({ kind: "issuer" })}
+              onDelete={() => setDialog({ kind: "delete" })}
+              onSettle={settle}
+              onChanged={onChanged}
+            />
           </div>
         </CollapsibleContent>
       </Collapsible>

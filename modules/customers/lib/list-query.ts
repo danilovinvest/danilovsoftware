@@ -13,7 +13,7 @@ import type { CustomerFilters, CustomerSource, CustomerStatus } from "./types";
  */
 
 const STATUSES: CustomerStatus[] = ["prospect", "client", "perdu", "archive"];
-const SORTS = ["recent", "name", "updated", "requested"] as const;
+const SORTS = ["recent", "name", "updated", "requested", "amount"] as const;
 
 /** Tous les statuts cochés à la main : distinct du défaut, qui n'en coche qu'un. */
 const TOUS = "tous";

@@ -1,9 +1,10 @@
 "use client";
 
 import * as api from "../lib/api";
+import { depositTotalOf, type SettlementEditorProps } from "../components/deposit-field";
 import { paymentCarrier } from "../lib/settlement";
 import { useAction } from "./use-customers";
-import type { PaymentStatus, Quote } from "../lib/types";
+import type { PaymentStatus, Quote, QuotePayment } from "../lib/types";
 
 /**
  * Les règlements d'une affaire : ce qu'on écrit, et sur quelle pièce.
@@ -23,6 +24,8 @@ export function useProjectSettlement(
   quotes: Quote[],
   onQuote: ((quote: Quote) => void) | undefined,
   onChanged: () => void,
+  /** Les virements de la fiche, et le droit d'en saisir. */
+  transfers: { payments: QuotePayment[]; canWrite: boolean },
 ) {
   const porteur = paymentCarrier(quotes);
 
@@ -55,21 +58,59 @@ export function useProjectSettlement(
     return ok;
   }
 
+  const encaisser = (amount: string | null, paidAt?: string) =>
+    run(setDeposit, "recu", amount, paidAt);
+  const retirerAcompte = () => run(setDeposit, "en_attente");
+  const solder = (amount: string | null, paidAt?: string) => run(setBalance, "recu", amount, paidAt);
+  const retirerSolde = () => run(setBalance, "en_attente");
+  const pending = setDeposit.pending || setBalance.pending;
+
+  /**
+   * L'éditeur des règlements, réglé sur la pièce porteuse : le même pour la
+   * frise, « à faire maintenant », l'après-signature et la ligne du devis.
+   */
+  function editorProps(kind: "acompte" | "solde"): SettlementEditorProps {
+    const acompte = kind === "acompte";
+    return {
+      kind,
+      amount: (acompte ? porteur?.deposit_amount : porteur?.balance_amount) ?? null,
+      // La date réelle, jamais le repli sur l'émission du devis : la préremplir
+      // la ferait passer pour un fait.
+      paidAt: (acompte ? porteur?.deposit_paid_at : porteur?.balance_paid_at) ?? null,
+      paid: (acompte ? porteur?.deposit_status : porteur?.balance_status) === "recu",
+      total: depositTotalOf(porteur),
+      transfers: porteur
+        ? {
+            quoteId: porteur.id,
+            payments: transfers.payments.filter(
+              (payment) => payment.quote_id === porteur.id && payment.kind === kind,
+            ),
+            canWrite: transfers.canWrite,
+            onChanged,
+          }
+        : undefined,
+      pending,
+      onSave: acompte ? encaisser : solder,
+      onRemove: acompte ? retirerAcompte : retirerSolde,
+    };
+  }
+
   return {
     /** La pièce qui porte le règlement, nulle sans devis. */
     porteur,
     setDeposit,
     setBalance,
     /** Encaisse l'acompte avec son montant et son jour, ou les corrige. */
-    encaisser: (amount: string | null, paidAt?: string) => run(setDeposit, "recu", amount, paidAt),
+    encaisser,
     /** Retire l'encaissement. Le montant reste sur le devis, le statut repart en attente. */
-    retirerAcompte: () => run(setDeposit, "en_attente"),
+    retirerAcompte,
     /** L'acompte est facturé, ou — décoché — il n'y en a pas. */
     facturerAcompte: (invoiced: boolean) =>
       run(setDeposit, invoiced ? "en_attente" : "non_applicable"),
-    solder: (amount: string | null, paidAt?: string) => run(setBalance, "recu", amount, paidAt),
-    retirerSolde: () => run(setBalance, "en_attente"),
-    pending: setDeposit.pending || setBalance.pending,
+    solder,
+    retirerSolde,
+    editorProps,
+    pending,
     error: setDeposit.error ?? setBalance.error,
   };
 }

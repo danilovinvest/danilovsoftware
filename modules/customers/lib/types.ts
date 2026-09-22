@@ -567,7 +567,7 @@ export type CustomerFilters = {
   source?: CustomerSource[];
   city?: string;
   owner_id?: string;
-  sort?: "recent" | "name" | "updated" | "requested";
+  sort?: "recent" | "name" | "updated" | "requested" | "amount";
   page?: number;
   per_page?: number;
 };
