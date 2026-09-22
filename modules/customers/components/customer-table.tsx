@@ -89,11 +89,12 @@ export function CustomerTable({
     setReviews((current) => ({ ...current, [customerId]: next }));
   }
 
-  // Une lecture par fiche, partagée par le tableau et les cartes.
+  // Une lecture par fiche, partagée par le tableau et les cartes. Une affaire
+  // archivée ne dit plus « où en est-on » : elle reste sur la fiche, repliée.
   const rows: ListRow[] = items.map((customer) => {
-    const reads = customer.projects.map((project) =>
-      readListProject(project, now, metier, orders),
-    );
+    const reads = customer.projects
+      .filter((project) => !project.archived_at)
+      .map((project) => readListProject(project, now, metier, orders));
     return { customer, reads, lead: leadProject(reads) };
   });
 
@@ -195,7 +196,7 @@ export function CustomerTable({
                 ))
               : rows.map(({ customer, reads, lead }) => {
                   const open = expanded.has(customer.id);
-                  const hasProjects = customer.projects.length > 0;
+                  const hasProjects = reads.length > 0;
 
                   return (
                     <Fragment key={customer.id}>

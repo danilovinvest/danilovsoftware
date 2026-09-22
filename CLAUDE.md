@@ -224,6 +224,15 @@ La coque cherche au démarrage puis toutes les quatre heures, et **n'impose
 jamais la relance** (`shared/desktop/update-notice.tsx`) : elle ferait perdre
 une saisie en cours. Une compilation de développement ne cherche rien.
 
+**Fermer l'avis vaut « plus tard », jamais « jamais »** (issue 69). La croix
+masquait la version pour toute la session, et une application qu'on ne quitte
+pas n'en reparlait plus. Elle la masque désormais quatre heures : la première
+vérification qui la retrouve passé ce délai la remontre. Le retour sur la
+fenêtre vérifie aussi, au plus une fois par quart d'heure. Et un échec de
+vérification ne se tait plus : une ligne discrète le dit, avec « Réessayer »,
+et s'efface au succès suivant — une application coupée du relais se croyait à
+jour.
+
 **Sans certificat, les systèmes préviennent à la première installation** : sur
 macOS le paquet est signé *ad hoc* (`signingIdentity: "-"`), il faut l'ouvrir
 une fois par clic droit → Ouvrir ; Windows affiche SmartScreen (« Informations

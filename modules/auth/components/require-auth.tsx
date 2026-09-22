@@ -9,6 +9,7 @@ import { useAuth } from "../auth-context";
 import type { Permission } from "../lib/types";
 import { useOnline } from "@/shared/hooks/use-online";
 import { loginHref } from "../lib/safe-next";
+import { loginHrefWithReason } from "../lib/sign-out-reason";
 
 /**
  * Garde de rendu côté client. Elle protège l'affichage, pas les données :
@@ -28,7 +29,7 @@ export function RequireAuth({
   offlineBanner?: boolean;
   children: React.ReactNode;
 }) {
-  const { account, loading, offline, retry, can } = useAuth();
+  const { account, loading, offline, retry, can, signOutReason } = useAuth();
   const online = useOnline();
   const router = useRouter();
   const pathname = usePathname();
@@ -41,9 +42,16 @@ export function RequireAuth({
       // lus ici, dans l'effet, plutôt que par `useSearchParams` : cette garde
       // enveloppe tout le CRM, et le crochet imposerait une frontière Suspense
       // au-dessus de chaque page.
-      router.replace(loginHref(pathname, window.location.search));
+      // Une session fermée exprès (mot de passe changé, « Tout fermer ») dit
+      // pourquoi plutôt que de ramener ici : revenir aux réglages après s'être
+      // déconnecté de partout n'a pas de sens.
+      router.replace(
+        signOutReason
+          ? loginHrefWithReason(signOutReason)
+          : loginHref(pathname, window.location.search),
+      );
     }
-  }, [loading, account, offline, router, pathname]);
+  }, [loading, account, offline, signOutReason, router, pathname]);
 
   if (!account && offline) {
     return (

@@ -110,6 +110,11 @@ export const QuoteList = memo(function QuoteList({
               {quote.deposit_status !== "non_applicable" && (
                 <span className="text-muted-foreground text-xs">
                   acompte {PAYMENT_STATUS[quote.deposit_status].label.toLowerCase()}
+                  {/* Le jour réel, quand on le connaît : c'est lui qu'on
+                      rapproche du relevé (issue 114). */}
+                  {quote.deposit_status === "recu" &&
+                    quote.deposit_paid_at &&
+                    ` le ${formatDate(quote.deposit_paid_at)}`}
                   {quote.deposit_amount && ` · ${formatAmount(quote.deposit_amount)}`}
                 </span>
               )}

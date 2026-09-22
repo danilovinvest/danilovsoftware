@@ -40,6 +40,80 @@ const FICHE_ETUDE = "/customers/fiche?id=7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "client-prospect-acompte-archive",
+    title: "Client ou prospect à la main, acompte daté, affaire archivée",
+    date: "2026-09-22",
+    steps: [
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="client-toggle"]',
+        title: "Client ou prospect, dans les deux sens",
+        body: "Une fiche que ses pièces disaient cliente ne pouvait pas redevenir prospect : la promotion automatique la reclassait au tour suivant. Le bouton pose désormais un choix, qui l'emporte sur les pièces dans la liste, les compteurs et la fiche. L'écran dit qui l'a fait et quand, et « laisser les pièces décider » le retire.",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="tab-apres"]',
+        target: '[data-demo="jalon-deposit_paid_at"]',
+        title: "L'acompte dit le jour où il est arrivé",
+        body: "« Encaisser » et « Modifier » demandent le jour du relevé, et il se corrige ensuite. La ligne affiche ce jour-là — ou « jour inconnu » pour un encaissement repris —, plus jamais la date d'émission du devis. Le formulaire du devis le demande aussi quand on passe l'acompte à « reçu », et la fiche d'un chantier ouvre l'éditeur sur le vrai jour.",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="project-delete"]',
+        target: '[data-demo="project-archive"]',
+        title: "Archiver une affaire",
+        body: "Une affaire morte encombrait Chantiers, Études, Marketing et les dossiers à attribuer, et seule la supprimer l'en sortait — devis et factures compris. Archiver la range sans rien retirer : elle quitte ces listes et reste sur la fiche, repliée sous « Affaires archivées », d'où « Désarchiver » la rend telle qu'elle était.",
+      },
+    ],
+  },
+  {
+    id: "documents-et-pieces-jointes",
+    title: "Les sous-dossiers se déplient, les pièces jointes s'ouvrent",
+    date: "2026-09-22",
+    steps: [
+      {
+        path: `${FICHE_ETUDE}&vue=documents`,
+        target: '[data-demo="documents-subfolder"]',
+        title: "Un sous-dossier se déplie sur place",
+        body: "« Photos · 312 éléments » n'était qu'un lien vers OneDrive : un plan rangé dans « Plans » restait invisible depuis la fiche. Un clic sur le dossier le déplie, un niveau à la fois, et son contenu s'affiche décalé sous lui pour qu'on sache où l'on est. Chaque fichier s'ouvre dans la même fenêtre d'aperçu que ceux du dessus, et « Ouvrir » mène toujours au dossier dans OneDrive.",
+      },
+      {
+        path: "/mail",
+        click: '[data-demo="mail-row-with-attachments"]',
+        target: '[data-demo="mail-attachments"]',
+        title: "Une pièce jointe s'ouvre au lieu de répondre « 401 »",
+        body: "Le clic ouvrait une page d'erreur : le lien partait sans la session. Un PDF ou une image s'affiche maintenant dans la fenêtre d'aperçu. L'application ne sait pas encore enregistrer un fichier : pour un Word ou un Excel, elle le dit au clic, et le CRM dans le navigateur le télécharge. Une pièce de plus de 8 Mo est grisée : seul son nom a été conservé, elle reste dans la messagerie.",
+      },
+    ],
+  },
+  {
+    id: "fermer-ses-sessions",
+    title: "Fermer ses sessions, et le savoir",
+    date: "2026-09-22",
+    steps: [
+      {
+        path: "/settings",
+        target: '[data-demo="profil-tout-fermer"]',
+        title: "« Tout fermer » demande confirmation",
+        body: "Le bouton déconnectait tous les appareils d'un clic, sans rien dire. Il demande maintenant de confirmer, puis ramène à la connexion avec un message : « Toutes vos sessions ont été fermées ». Changer de mot de passe fait de même, avec sa propre phrase. Dans les deux cas le compte est retiré de la mémoire de la page, là où il y restait jusqu'ici.",
+      },
+    ],
+  },
+  {
+    id: "historique-echanges-complet",
+    title: "L'historique des échanges en entier",
+    date: "2026-09-22",
+    steps: [
+      {
+        path: FICHE_ETUDE,
+        click: '[role="tab"][id$="-trigger-echanges"]',
+        target: '[data-demo="historique-echanges"]',
+        title: "Le vrai nombre d'échanges, et la suite à la demande",
+        body: "La fiche ne montrait que les cinquante derniers échanges, et l'onglet en affichait le nombre comme s'il n'y en avait pas d'autres. Le compteur dit désormais le total réel, et « Charger plus » lit les plus anciens, cinquante à la fois.",
+      },
+    ],
+  },
+  {
     id: "plus-vite-plus-clair",
     title: "Plus vite, plus clair, chacun chez soi",
     date: "2026-09-22",

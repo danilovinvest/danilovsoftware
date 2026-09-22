@@ -37,6 +37,7 @@ const EMPTY_QUOTE: QuotePayload = {
   amount_note: "",
   deposit_status: "non_applicable",
   deposit_amount: null,
+  deposit_paid_at: null,
   balance_status: "non_applicable",
   balance_amount: null,
   comment: "",
@@ -63,6 +64,8 @@ function toForm(quote: Quote): QuotePayload {
     amount_note: quote.amount_note,
     deposit_status: quote.deposit_status,
     deposit_amount: amountToInput(quote.deposit_amount) || null,
+    // Le jour seul : le champ est une date, le serveur garde un instant.
+    deposit_paid_at: quote.deposit_paid_at?.slice(0, 10) ?? null,
     balance_status: quote.balance_status,
     balance_amount: amountToInput(quote.balance_amount) || null,
     comment: quote.comment,
@@ -132,6 +135,18 @@ export function QuoteDialog({
     rate: parseRateInput(rate) === undefined ? "Un taux entre 0 et 100, par exemple 20 ou 5,5." : undefined,
     deposit: parseAmountInput(values.deposit_amount) === undefined ? ILLISIBLE : undefined,
     balance: parseAmountInput(values.balance_amount) === undefined ? ILLISIBLE : undefined,
+    /*
+      Le jour de l'acompte est demandé dès qu'on le passe à « reçu » (issue
+      114) : le serveur posait sinon la date du clic, et c'est celle du relevé
+      qui compte. Un acompte déjà reçu sans date connue — les devis repris —
+      ne bloque pas une correction d'autre chose.
+    */
+    depositDay:
+      values.deposit_status === "recu" &&
+      initial.deposit_status !== "recu" &&
+      !values.deposit_paid_at
+        ? "Le jour où l'acompte est arrivé, tel que le relevé le montre."
+        : undefined,
   };
   const illisible = Object.values(errors).some(Boolean);
 
@@ -143,9 +158,11 @@ export function QuoteDialog({
       amount_ttc: parseAmountInput(values.amount_ttc) ?? null,
       vat_rate: parseRateInput(values.vat_rate) ?? null,
       deposit_amount: parseAmountInput(values.deposit_amount) ?? null,
+      // Hors « reçu », le jour n'a pas de sens : le serveur l'efface.
+      deposit_paid_at: values.deposit_status === "recu" ? values.deposit_paid_at : null,
       balance_amount: parseAmountInput(values.balance_amount) ?? null,
     };
-    if (illisible) throw new Error("Un montant ou le taux de TVA est illisible.");
+    if (illisible) throw new Error("Un montant, le taux de TVA ou le jour de l'acompte manque ou est illisible.");
     return quote ? api.updateQuote(quote.id, payload) : api.createQuote(project?.id ?? "", payload);
   }, { inline: true });
 
@@ -319,6 +336,24 @@ export function QuoteDialog({
               error={errors.deposit}
               onChange={(event) =>
                 setValues({ ...values, deposit_amount: event.target.value || null })
+              }
+            />
+          )}
+          {/* Reçu, il est arrivé un jour : lequel (issue 114). */}
+          {values.deposit_status === "recu" && (
+            <TextField
+              label="Acompte reçu le"
+              type="date"
+              data-demo="quote-deposit-paid-at"
+              hint={
+                values.deposit_paid_at || errors.depositDay
+                  ? undefined
+                  : "Date inconnue — le jour du relevé, si vous l'avez"
+              }
+              value={values.deposit_paid_at ?? ""}
+              error={errors.depositDay}
+              onChange={(event) =>
+                setValues({ ...values, deposit_paid_at: event.target.value || null })
               }
             />
           )}

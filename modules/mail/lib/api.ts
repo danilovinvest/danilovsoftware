@@ -1,5 +1,4 @@
-import { apiFetch } from "@/shared/api/client";
-import { apiBase } from "@/shared/lib/env";
+import { apiFetch, apiFetchBlob } from "@/shared/api/client";
 import type {
   BrowseMessage,
   MailAccount,
@@ -127,13 +126,14 @@ export function listAttachments(messageId: string, signal?: AbortSignal) {
 }
 
 /**
- * L'adresse d'une pièce jointe.
+ * Le contenu d'une pièce jointe.
  *
- * Elle pointe vers l'API et non vers le front, et n'est pas un `fetch` : c'est
- * le navigateur qui télécharge, avec le nom de fichier que le serveur donne.
+ * Par `fetch`, et non par un lien : la route exige le jeton d'accès, qu'un
+ * `<a href>` ne porte pas — le clic rendait 401 (issue 61). Une pièce trop
+ * lourde pour avoir été copiée répond 404, avec une phrase qui le dit.
  */
-export function attachmentUrl(id: string): string {
-  return `${apiBase()}/v1/mail/attachments/${id}`;
+export function fetchAttachment(id: string, signal?: AbortSignal) {
+  return apiFetchBlob(`/v1/mail/attachments/${id}`, { signal });
 }
 
 export type ConnectInput = {

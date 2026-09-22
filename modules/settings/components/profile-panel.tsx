@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   changePassword,
   logoutAll,
@@ -14,6 +13,7 @@ import { ErrorNotice } from "@/shared/ui/feedback";
 import { GradientAvatar } from "@/shared/ui/gradient-avatar";
 import { TextField } from "@/shared/ui/form";
 import { errorMessage } from "@/shared/api/errors";
+import { askConfirm } from "@/shared/ui/confirm";
 import { initials } from "@/shared/lib/format";
 import { DeviceList } from "./device-list";
 import { PasskeysSection } from "./passkeys-section";
@@ -152,7 +152,7 @@ function EmailSection({ email }: { email: string }) {
  * passe plutôt qu'un bouton mort.
  */
 function PasswordSection() {
-  const router = useRouter();
+  const { endSession } = useAuth();
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [pending, setPending] = useState(false);
@@ -167,8 +167,9 @@ function PasswordSection() {
     try {
       await changePassword(current, next);
       // L'API révoque toutes les sessions au changement de mot de passe : il
-      // faut se reconnecter, autant y aller directement.
-      router.replace("/login");
+      // faut se reconnecter. La session est oubliée ici aussi — la garde
+      // renvoie alors à la connexion, qui dit pourquoi.
+      await endSession("mot-de-passe");
     } catch (cause) {
       setError(errorMessage(cause));
       if (cause && typeof cause === "object" && "fields" in cause) {
@@ -219,15 +220,41 @@ function PasswordSection() {
 }
 
 function DangerZone() {
-  const router = useRouter();
+  const { endSession } = useAuth();
   const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function closeAll() {
+    const ok = await askConfirm({
+      title: "Fermer toutes vos sessions",
+      description:
+        "Tous vos appareils seront déconnectés, celui-ci compris. Il faudra vous reconnecter partout.",
+      confirmLabel: "Tout fermer",
+    });
+    if (!ok) return;
+    setPending(true);
+    setError(null);
+    try {
+      await logoutAll();
+      await endSession("sessions-fermees");
+    } catch (cause) {
+      // Rien n'est fermé : on le dit plutôt que de renvoyer à la connexion
+      // en laissant croire que les autres appareils l'ont été.
+      setError(errorMessage(cause));
+      setPending(false);
+    }
+  }
 
   return (
     <SettingsSection
       title="Zone de danger"
       description="Ferme les sessions de tous vos appareils, celui-ci compris."
     >
-      <div className="border-danger/30 flex items-center justify-between gap-4 rounded-lg border px-3 py-2.5">
+      {error && <ErrorNotice message={error} />}
+      <div
+        data-demo="profil-tout-fermer"
+        className="border-danger/30 flex items-center justify-between gap-4 rounded-lg border px-3 py-2.5"
+      >
         <div>
           <p className="text-sm">Se déconnecter partout</p>
           <p className="text-muted-foreground text-xs">
@@ -238,14 +265,7 @@ function DangerZone() {
           variant="destructive"
           size="sm"
           disabled={pending}
-          onClick={async () => {
-            setPending(true);
-            try {
-              await logoutAll();
-            } finally {
-              router.replace("/login");
-            }
-          }}
+          onClick={() => void closeAll()}
         >
           {pending ? "Fermeture…" : "Tout fermer"}
         </Button>

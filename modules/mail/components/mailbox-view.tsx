@@ -310,6 +310,8 @@ function MessageRow({
       <button
         type="button"
         onClick={onSelect}
+        // La démo des pièces jointes ouvre le premier message qui en porte.
+        data-demo={message.attachment_count > 0 ? "mail-row-with-attachments" : undefined}
         className={cn(
           "flex w-full items-start gap-2.5 px-3 py-2.5 text-left transition-colors",
           active ? "bg-muted" : "hover:bg-muted/50",

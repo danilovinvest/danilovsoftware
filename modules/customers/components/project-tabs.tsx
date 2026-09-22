@@ -48,6 +48,7 @@ export function ProjectTabs({
   onAddQuote,
   onEdit,
   onIssuer,
+  onArchive,
   onDelete,
   onSettle,
   onChanged,
@@ -75,6 +76,7 @@ export function ProjectTabs({
   onAddQuote: () => void;
   onEdit: () => void;
   onIssuer: () => void;
+  onArchive: () => void;
   onDelete: () => void;
   onSettle: (kind: "acompte" | "solde") => void;
   onChanged: () => void;
@@ -114,6 +116,7 @@ export function ProjectTabs({
           onAddQuote={onAddQuote}
           onEdit={onEdit}
           onIssuer={onIssuer}
+          onArchive={onArchive}
           onDelete={onDelete}
         />
       </div>

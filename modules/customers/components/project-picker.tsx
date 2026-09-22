@@ -57,7 +57,12 @@ export function ProjectPicker({
 
   if (!customerId) return null;
 
-  const charge = affaires?.pour === customerId ? affaires.items : null;
+  // Une affaire archivée ne se propose plus (issue 115), sauf si c'est celle
+  // déjà choisie : la retirer de la liste effacerait le rattachement en silence.
+  const charge =
+    affaires?.pour === customerId
+      ? affaires.items.filter((project) => !project.archived_at || project.id === value)
+      : null;
 
   if (charge === null) {
     return (

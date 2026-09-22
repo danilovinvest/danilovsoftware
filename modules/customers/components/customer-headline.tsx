@@ -30,7 +30,9 @@ export function CustomerHeadline({
   const [now] = useState(() => Date.now());
   const orders = useCycleOrders();
 
-  const reads = customer.projects.map((project) => {
+  // Une affaire archivée ne demande rien : elle ne parle pas ici (issue 115).
+  const vivantes = customer.projects.filter((project) => !project.archived_at);
+  const reads = vivantes.map((project) => {
     const quotes = customer.quotes.filter((quote) => quote.project_id === project.id);
     const interactions = customer.interactions.filter((entry) => entry.project_id === project.id);
     const jalons = readJalons(project.id, quotes, customer.milestones, project);
@@ -60,11 +62,11 @@ export function CustomerHeadline({
         <span className="font-medium">{action.title}</span>
       </span>
 
-      {customer.projects.length > 1 && (
+      {vivantes.length > 1 && (
         <span className="text-muted-foreground/70 truncate text-xs">
-          sur « {read.project.label} », {customer.projects.length - 1} autre
-          {customer.projects.length > 2 ? "s" : ""} affaire
-          {customer.projects.length > 2 ? "s" : ""}
+          sur « {read.project.label} », {vivantes.length - 1} autre
+          {vivantes.length > 2 ? "s" : ""} affaire
+          {vivantes.length > 2 ? "s" : ""}
         </span>
       )}
 

@@ -123,11 +123,22 @@ function Body({
     // cases cochées ici sont celles que l'écriture décochera.
     deposit_invoiced_at:
       quoteDeposit(w) !== "non_applicable" ? (w.started_at ?? w.created_at) : null,
-    deposit_paid_at: quoteDeposit(w) === "recu" ? (w.started_at ?? w.created_at) : null,
+    /*
+      Le jour réel de l'encaissement, que le serveur sert désormais (issue 114).
+      Cet écran le remplaçait par la date de chantier, et son éditeur s'ouvrait
+      sans jour sur un acompte pourtant daté. Un acompte reçu sans jour connu
+      garde un repli pour que la case reste cochée — mais l'éditeur, lui, ne
+      reçoit que le vrai.
+    */
+    deposit_paid_at:
+      quoteDeposit(w) === "recu"
+        ? (signedQuote(w)?.deposit_paid_at ?? w.started_at ?? w.created_at)
+        : null,
     deposit_amount: signedQuote(w)?.deposit_amount ?? null,
-    // Aucune colonne ne date le solde : le devis n'en porte que le statut.
     balance_paid_at:
-      signedQuote(w)?.balance_status === "recu" ? (w.started_at ?? w.created_at) : null,
+      signedQuote(w)?.balance_status === "recu"
+        ? (signedQuote(w)?.balance_paid_at ?? w.started_at ?? w.created_at)
+        : null,
     rib_sent_at: w.rib_sent_at,
     insurance_sent_at: w.insurance_sent_at,
     worksite_date: w.started_at,
@@ -357,6 +368,7 @@ function Body({
             onToggle={poser}
             onMaterials={commanderMateriaux}
             depositTotal={depositTotalOf(signedQuote(w))}
+            depositPaidAt={signedQuote(w)?.deposit_paid_at ?? null}
             onDeposit={encaisser}
             onDepositRemove={retirerAcompte}
           />

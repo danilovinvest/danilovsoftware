@@ -98,6 +98,8 @@ export type ProjectSummary = {
   promised_at: string | null;
   internal_deadline_at: string | null;
   issuer: string | null;
+  /** Nulle tant que l'affaire vit. Archivée, elle ne dit plus « où en est-on ». */
+  archived_at: string | null;
 };
 
 /**
@@ -122,6 +124,11 @@ export type CustomerListItem = {
    * qualité de client.
    */
   is_client: boolean;
+  /**
+   * Le choix humain, nul quand les pièces décident. `is_client` en tient déjà
+   * compte : ce champ dit seulement « choisi à la main ».
+   */
+  client_override: boolean | null;
   /**
    * La société de la fiche : union de ses devis et de ses affaires attribuées.
    *
@@ -159,8 +166,17 @@ export type Customer = {
    * Déduit des pièces, jamais saisi : un devis signé, une facture ou un
    * paiement reçu. Vrai même sur une fiche archivée — archiver ne retire pas la
    * qualité de client.
+   *
+   * Un choix humain l'emporte sur les pièces, dans les deux sens.
    */
   is_client: boolean;
+  /**
+   * Client (vrai) ou prospect (faux) décidé à la main, nul quand les pièces
+   * décident. La promotion automatique ne le défait pas.
+   */
+  client_override: boolean | null;
+  client_override_at: string | null;
+  client_override_by_name: string;
   reference: string;
   display_name: string;
   kind: CustomerKind;
@@ -264,6 +280,12 @@ export type Project = {
   subcontractors: ProjectSubcontractor[];
   /** La somme des montants connus, nulle quand aucun n'est renseigné. */
   subcontracting_total: string | null;
+  /**
+   * Quand l'affaire a été archivée, nulle tant qu'elle vit. Archivée, elle
+   * sort des chantiers, des études, du marketing et des dossiers à attribuer ;
+   * elle reste sur la fiche, repliée.
+   */
+  archived_at: string | null;
   /**
    * Le délai annoncé au client, et la deadline qu'on se donne en interne.
    * L'interne précède l'annoncée ; l'écart entre les deux est la marge.
@@ -525,7 +547,10 @@ export type CustomerDetail = Customer & {
   contacts: Contact[];
   projects: Project[];
   quotes: Quote[];
+  /** Les échanges les plus récents seulement — une page de l'historique. */
   interactions: Interaction[];
+  /** Le nombre d'échanges de la fiche, toutes pages confondues. */
+  interactions_total: number;
   milestones: Milestones[];
   /** Les virements des devis de la fiche, chacun disant son `quote_id`. */
   payments: QuotePayment[];
@@ -672,6 +697,8 @@ export type ProjectPayload = Omit<
   | "subcontracting_total"
   // Posé par la copie OneDrive, jamais par un formulaire.
   | "drive_path"
+  // Sa propre route : archiver n'est pas corriger l'affaire.
+  | "archived_at"
   // Servis avec l'affaire, jamais envoyés : le serveur les déduit des
   // identifiants, et les renvoyer inviterait à les croire modifiables.
   | "manager_name"
@@ -768,7 +795,16 @@ export type QuotePayload = Omit<
   // Ce que le document dit : posé par la passe de comparaison, jamais saisi.
   | "amount_pdf_ht"
   | "amount_pdf_evidence"
-> & { issuer?: string | null };
+> & {
+  issuer?: string | null;
+  /**
+   * Le jour où l'acompte est arrivé (AAAA-MM-JJ), seule date que le formulaire
+   * envoie. Le serveur posait « aujourd'hui » au passage à « reçu », et le
+   * formulaire ne savait pas dire que c'était la semaine passée (issue 114).
+   * Absente, la date connue reste.
+   */
+  deposit_paid_at?: string | null;
+};
 
 export type InteractionPayload = {
   project_id: string | null;
