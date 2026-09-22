@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { BellIcon, CheckCheckIcon } from "lucide-react";
+import { AlertTriangleIcon, BellIcon, CheckCheckIcon } from "lucide-react";
 import { usePermission } from "@/modules/auth";
 import { listTasks, type Task, type TaskStatus } from "@/modules/tasks";
 import {
@@ -38,6 +38,7 @@ type Reclame = { retard: Task[]; aujourdhui: Task[] };
 export function NotificationsMenu({ buttonClassName }: { buttonClassName: string }) {
   const canRead = usePermission("tasks:read");
   const [reclame, setReclame] = useState<Reclame | null>(null);
+  const [echec, setEchec] = useState(false);
 
   useEffect(() => {
     if (!canRead) return;
@@ -48,15 +49,21 @@ export function NotificationsMenu({ buttonClassName }: { buttonClassName: string
         listTasks({ assignee_id: "mine", due: "overdue", status: OUVERTES, per_page: 20 }, controller.signal),
         listTasks({ assignee_id: "mine", due: "today", status: OUVERTES, per_page: 20 }, controller.signal),
       ])
-        .then(([retard, jour]) =>
+        .then(([retard, jour]) => {
           setReclame({
             retard: retard.items,
             aujourdhui: jour.items.filter((task) => !task.is_overdue),
-          }),
-        )
-        // Une cloche muette vaut mieux qu'une erreur dans l'en-tête de tous les
-        // écrans : la page des tâches, elle, dira ce qui ne va pas.
-        .catch(() => {});
+          });
+          setEchec(false);
+        })
+        /*
+          L'échec se dit dans le menu, pas dans l'en-tête de tous les écrans.
+          Avalé, il affichait « Rien en retard » quand l'API était tombée :
+          une fausse bonne nouvelle.
+        */
+        .catch(() => {
+          if (!controller.signal.aborted) setEchec(true);
+        });
     }
 
     charger();
@@ -104,7 +111,15 @@ export function NotificationsMenu({ buttonClassName }: { buttonClassName: string
           </Link>
         </div>
 
-        {total === 0 ? (
+        {echec && (
+          <p className="text-danger bg-danger-soft/40 flex items-center gap-1.5 px-3.5 py-2 text-xs">
+            <AlertTriangleIcon className="size-3.5 shrink-0" />
+            {reclame === null
+              ? "Impossible de vérifier vos tâches pour l'instant."
+              : "Liste non actualisée : le serveur ne répond pas."}
+          </p>
+        )}
+        {echec && reclame === null ? null : total === 0 ? (
           <div className="text-muted-foreground flex flex-col items-center gap-2 px-4 py-8 text-center text-sm">
             <CheckCheckIcon className="text-success size-5" />
             {reclame === null
