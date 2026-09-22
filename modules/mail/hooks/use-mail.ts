@@ -50,7 +50,10 @@ export function useMailbox() {
       )
       .catch((cause) => {
         if (controller.signal.aborted) return;
-        setResolved({ key, data: null, error: errorMessage(cause) });
+        // Un sondage raté garde ce qu'on savait déjà : effacer les boîtes sur
+        // une coupure passagère remplaçait toute la messagerie par une erreur,
+        // toutes les quatre secondes pendant une copie.
+        setResolved((current) => ({ key, data: current.data, error: errorMessage(cause) }));
       });
 
     return () => controller.abort();

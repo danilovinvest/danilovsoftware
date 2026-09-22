@@ -35,7 +35,10 @@ function optimistic(page: ThreadPage | undefined, target: TriageTarget, view: Ma
   const item = page.items.find((entry) => same(entry, target));
   if (!item) return page;
   const done = !target.done;
-  const todoDelta = done && item.todo ? -1 : 0;
+  // Rouvrir remet « à traiter » ce dont le dernier mot est celui d'un
+  // correspondant : la même règle que le serveur, en attendant sa réponse.
+  const reopenedTodo = !item.last_outgoing && !item.bulk;
+  const todoDelta = done ? (item.todo ? -1 : 0) : reopenedTodo && !item.todo ? 1 : 0;
   const counts = { ...page.counts, a_traiter: Math.max(page.counts.a_traiter + todoDelta, 0) };
   if (done && view === "a_traiter") {
     return {
@@ -50,7 +53,7 @@ function optimistic(page: ThreadPage | undefined, target: TriageTarget, view: Ma
     ...page,
     counts,
     items: page.items.map((entry) =>
-      same(entry, target) ? { ...entry, todo: done ? false : entry.todo, done_at: done ? now : null } : entry,
+      same(entry, target) ? { ...entry, todo: done ? false : reopenedTodo, done_at: done ? now : null } : entry,
     ),
   };
 }

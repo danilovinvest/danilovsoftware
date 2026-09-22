@@ -125,7 +125,12 @@ function Messages({
 
   // Le message désigné par l'adresse, au milieu d'un fil, doit se voir sans
   // chercher : l'écran s'y place. Le dernier, lui, se lit en descendant.
+  // Une fois par ancre : un message arrivé pendant la lecture ne doit pas
+  // ramener l'écran de force là où l'on était à l'ouverture.
+  const scrolledFor = useRef<string | null>(null);
   useEffect(() => {
+    if (scrolledFor.current === anchorId) return;
+    scrolledFor.current = anchorId;
     if (anchorId !== lastId) anchorRef.current?.scrollIntoView({ block: "start" });
   }, [anchorId, lastId]);
 
