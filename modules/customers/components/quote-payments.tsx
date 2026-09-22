@@ -8,7 +8,7 @@ import { formatAmount, formatDate } from "@/shared/lib/format";
 import { cn } from "@/lib/utils";
 import * as api from "../lib/api";
 import { useAction } from "../hooks/use-customers";
-import { parseAmountInput } from "./deposit-field";
+import { parseAmountInput } from "../lib/amount";
 import type { QuotePayment } from "../lib/types";
 
 /**
@@ -26,18 +26,22 @@ import type { QuotePayment } from "../lib/types";
  * est affiché — le voir se faire sous les yeux vaut mieux qu'un chiffre venu
  * d'ailleurs.
  *
- * Le bloc reste replié tant qu'aucun virement n'existe : trois cent trente
- * devis n'en ont aucun, et un formulaire vide sous chacun ferait de la liste
- * des devis un écran de saisie.
+ * Ce bloc n'est plus une saisie à part : il vit **dans l'éditeur des
+ * règlements** (`deposit-field.tsx`), à côté du montant et du jour, là où l'on
+ * encaisse. Ailleurs — sous une pièce qui ne porte pas le règlement — il ne fait
+ * que lire. Le bouton de saisie reste replié tant qu'aucun virement n'existe.
  */
 export function QuotePayments({
   quoteId,
+  kind = "acompte",
   payments,
   canWrite,
   onChanged,
 }: {
   quoteId: string;
-  /** Les virements de ce devis, déjà filtrés et dans l'ordre du relevé. */
+  /** Le règlement que ces virements composent. */
+  kind?: "acompte" | "solde";
+  /** Les virements de ce devis et de ce règlement, dans l'ordre du relevé. */
   payments: QuotePayment[];
   canWrite: boolean;
   onChanged: () => void;
@@ -52,7 +56,7 @@ export function QuotePayments({
   const total = payments.reduce((sum, p) => sum + Number(p.amount), 0);
 
   return (
-    <div className="w-full pt-1 pl-1">
+    <div className="w-full">
       {payments.length > 0 && (
         <ul className="mb-1 flex flex-col gap-0.5">
           {payments.map((payment) => (
@@ -99,11 +103,12 @@ export function QuotePayments({
       {canWrite &&
         (saisie ? (
           <PaymentForm
+            kind={kind}
             pending={enCours}
             error={ajouter.error ?? retirer.error}
             onCancel={() => setSaisie(false)}
             onSave={async (input) => {
-              if (!(await ajouter.run(quoteId, input))) return;
+              if (!(await ajouter.run(quoteId, { ...input, kind }))) return;
               setSaisie(false);
               onChanged();
             }}
@@ -130,21 +135,24 @@ export function QuotePayments({
  *
  * Trois champs et pas quatre : la note existe en base et n'a pas d'écran, parce
  * qu'on n'a rien à dire d'un virement qui ne tienne pas dans sa référence. Le
- * jour est proposé — un virement se saisit le jour où on le voit tomber — et
- * reste modifiable pour rattraper un relevé de la semaine passée.
+ * jour est **demandé**, jamais posé d'office : c'est celui du relevé, et le jour
+ * de la saisie n'en dit rien — on rattrape souvent le relevé de la semaine
+ * passée.
  */
 function PaymentForm({
+  kind,
   pending,
   error,
   onSave,
   onCancel,
 }: {
+  kind: "acompte" | "solde";
   pending: boolean;
   error: string | null;
   onSave: (input: { paid_at: string; amount: string; reference: string }) => void;
   onCancel: () => void;
 }) {
-  const [paidAt, setPaidAt] = useState(() => new Date().toISOString().slice(0, 10));
+  const [paidAt, setPaidAt] = useState("");
   const [amount, setAmount] = useState("");
   const [reference, setReference] = useState("");
   const parsed = parseAmountInput(amount);
@@ -198,7 +206,9 @@ function PaymentForm({
       </div>
       <p className={cn("text-[11px]", error ? "text-danger" : "text-muted-foreground")}>
         {error ??
-          "Le montant de l'acompte devient la somme de ses virements."}
+          (paidAt
+            ? `Le montant ${kind === "acompte" ? "de l'acompte" : "du solde"} devient la somme de ses virements.`
+            : "Le jour du virement, tel qu'il figure sur le relevé.")}
       </p>
     </form>
   );

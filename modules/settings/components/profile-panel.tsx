@@ -2,14 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { PencilIcon, ShieldIcon, Trash2Icon, UploadIcon } from "lucide-react";
 import {
   changePassword,
   logoutAll,
   updateProfile,
   useAuth,
 } from "@/modules/auth";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ErrorNotice } from "@/shared/ui/feedback";
@@ -30,7 +28,6 @@ export function ProfilePanel() {
       <PictureSection email={account.email} name={displayName(account)} />
       <NameSection />
       <EmailSection email={account.email} />
-      <TwoFactorSection />
       <PasswordSection />
       <PasskeysSection />
       <DeviceList />
@@ -47,32 +44,22 @@ function displayName(account: { first_name: string; last_name: string; email: st
 
 /**
  * L'avatar est calculé, pas téléversé : les couleurs découlent de l'adresse
- * e-mail par l'algorithme de vercel/avatar, reproduit dans le navigateur. Les
- * deux boutons de Twenty restent visibles pour dire ce qui manque — un
- * stockage d'images — plutôt que de laisser croire que l'option n'existe pas.
+ * e-mail par l'algorithme de vercel/avatar, reproduit dans le navigateur.
+ *
+ * Les boutons « Téléverser » et « Retirer » de Twenty étaient affichés grisés
+ * pour dire ce qui manquait — un stockage d'images. Un bouton qui ne fait rien
+ * promet une fonction qui n'existe pas : ils sont partis, et reviendront avec
+ * le stockage.
  */
 function PictureSection({ email, name }: { email: string; name: string }) {
   return (
     <SettingsSection title="Photo">
       <div className="flex items-center gap-4">
         <GradientAvatar seed={email} text={initials(name)} size={64} rounded={8} />
-        <div className="flex flex-col gap-2">
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled>
-              <UploadIcon />
-              Téléverser
-            </Button>
-            <Button variant="outline" size="sm" disabled>
-              <Trash2Icon />
-              Retirer
-            </Button>
-          </div>
-          <p className="text-muted-foreground text-xs">
-            Avatar généré à partir de votre adresse — il ne quitte pas votre
-            navigateur. Le téléversement demandera un stockage d&apos;images côté
-            API.
-          </p>
-        </div>
+        <p className="text-muted-foreground text-xs">
+          Votre avatar est généré à partir de votre adresse : il vous distingue des autres
+          dans le CRM.
+        </p>
       </div>
     </SettingsSection>
   );
@@ -138,42 +125,23 @@ function NameSection() {
   );
 }
 
+/*
+  L'adresse se lit, elle ne se modifie pas ici : c'est l'identifiant de
+  connexion, et la changer relève de `users:write`, pas du libre-service. Le
+  crayon grisé qui l'accompagnait promettait une modification que rien ne
+  permettait — l'écran dit à la place à qui la demander.
+
+  L'authentification à deux facteurs, affichée « désactivée » sous cette
+  section, a disparu pour la même raison : l'API n'a ni secret TOTP ni codes de
+  secours. Les clés d'accès, plus bas, sont la protection qui existe.
+*/
 function EmailSection({ email }: { email: string }) {
   return (
     <SettingsSection
       title="E-mail"
-      description="L'adresse associée à votre compte."
+      description="L'adresse associée à votre compte. Pour la changer, adressez-vous à un administrateur."
     >
-      <div className="flex items-center gap-2">
-        <Input value={email} readOnly className="text-muted-foreground" />
-        {/* Changer d'adresse touche à l'identifiant de connexion : cela relève
-            de users:write, pas du libre-service. */}
-        <Button variant="outline" size="icon" disabled aria-label="Modifier l'e-mail">
-          <PencilIcon />
-        </Button>
-      </div>
-    </SettingsSection>
-  );
-}
-
-function TwoFactorSection() {
-  return (
-    <SettingsSection
-      title="Authentification à deux facteurs"
-      description="Renforce la sécurité en demandant un code en plus du mot de passe."
-    >
-      <div className="flex items-center gap-3 rounded-lg border px-3 py-2.5 opacity-60">
-        <ShieldIcon className="text-muted-foreground size-4 shrink-0" />
-        <div className="min-w-0 flex-1">
-          <p className="text-sm">Application d&apos;authentification</p>
-          <p className="text-muted-foreground text-xs">
-            À construire : l&apos;API n&apos;a ni secret TOTP ni codes de secours.
-          </p>
-        </div>
-        <Badge className="bg-neutral-soft text-neutral rounded-md">
-          Désactivée
-        </Badge>
-      </div>
+      <Input value={email} readOnly className="text-muted-foreground" />
     </SettingsSection>
   );
 }

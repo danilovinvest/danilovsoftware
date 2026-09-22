@@ -12,26 +12,14 @@ import {
 } from "@/components/ui/dialog";
 import { ErrorNotice } from "@/shared/ui/feedback";
 import { SelectField, TextField } from "@/shared/ui/form";
-import { parseAmountInput } from "./deposit-field";
 import { useColleagues } from "@/shared/hooks/use-colleagues";
 import * as api from "../lib/api";
-import {
-  PAYMENT_STATUS,
-  PROJECT_MISSION,
-  PROJECT_STAGE,
-  QUOTE_ISSUER,
-  QUOTE_KIND,
-  QUOTE_STATUS,
-  toOptions,
-} from "../lib/labels";
+import { PROJECT_MISSION, PROJECT_STAGE, toOptions } from "../lib/labels";
 import { useAction } from "../hooks/use-customers";
-import type {
-  Project,
-  ProjectPayload,
-  ProjectStage,
-  Quote,
-  QuotePayload,
-} from "../lib/types";
+import type { Project, ProjectPayload, ProjectStage } from "../lib/types";
+
+// Le devis a son propre fichier ; il reste importable d'ici.
+export { QuoteDialog } from "./quote-dialog";
 
 const EMPTY_PROJECT: ProjectPayload = {
   label: "",
@@ -54,27 +42,10 @@ const EMPTY_PROJECT: ProjectPayload = {
   internal_deadline_at: null,
 };
 
-const EMPTY_QUOTE: QuotePayload = {
-  reference: "",
-  kind: "etude",
-  label: "",
-  status: "a_faire",
-  issued_at: null,
-  amount_ht: null,
-  amount_ttc: null,
-  vat_rate: null,
-  amount_note: "",
-  deposit_status: "non_applicable",
-  deposit_amount: null,
-  balance_status: "non_applicable",
-  balance_amount: null,
-  comment: "",
-};
-
 /**
- * Les deux boîtes de dialogue partent d'un état neuf à chaque ouverture. Le
- * remontage est provoqué par une `key` posée à l'appel plutôt que par un effet
- * de réinitialisation, qui déclencherait un rendu en cascade.
+ * La boîte part d'un état neuf à chaque ouverture. Le remontage est provoqué
+ * par une `key` posée à l'appel plutôt que par un effet de réinitialisation,
+ * qui déclencherait un rendu en cascade.
  */
 /** Une affaire existante, telle que le formulaire l'attend. */
 function projectToPayload(project: Project): ProjectPayload {
@@ -137,7 +108,7 @@ export function ProjectDialog({
     <Dialog open={open} onOpenChange={close}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{project ? "Modifier le projet" : "Nouveau projet"}</DialogTitle>
+          <DialogTitle>{project ? "Modifier l'affaire" : "Nouvelle affaire"}</DialogTitle>
         </DialogHeader>
 
         <form
@@ -306,13 +277,6 @@ export function ProjectDialog({
 }
 
 /**
- * Un devis existant, tel que le formulaire l'attend.
- *
- * `PATCH /v1/quotes/{id}` **remplace le devis entier** : un champ omis est un
- * champ effacé, sans erreur. Tous voyagent donc, y compris ceux que le
- * formulaire ne montre pas — le taux de TVA, que rien n'affiche.
- */
-/**
  * L'annuaire, en options de liste.
  *
  * La première est vide et s'appelle « Personne » : retirer quelqu'un d'un
@@ -324,236 +288,4 @@ function personnes(colleagues: { id: string; name: string }[]) {
     { value: "", label: "Personne" },
     ...colleagues.map((c) => ({ value: c.id, label: c.name })),
   ];
-}
-
-function toPayload(quote: Quote): QuotePayload {
-  return {
-    reference: quote.reference,
-    kind: quote.kind,
-    label: quote.label,
-    status: quote.status,
-    issued_at: quote.issued_at,
-    amount_ht: quote.amount_ht,
-    amount_ttc: quote.amount_ttc,
-    vat_rate: quote.vat_rate,
-    amount_note: quote.amount_note,
-    deposit_status: quote.deposit_status,
-    deposit_amount: quote.deposit_amount,
-    balance_status: quote.balance_status,
-    balance_amount: quote.balance_amount,
-    comment: quote.comment,
-    issuer: quote.issuer,
-  };
-}
-
-/**
- * Le devis, créé ou corrigé.
- *
- * Un même formulaire pour les deux, parce qu'un devis se décrit une fois : en
- * tenir un second pour la correction l'aurait fait diverger au premier champ
- * ajouté, et c'est précisément ce qui manquait — trois sources ont peuplé le
- * CRM sans se connaître, et un devis repris d'un export de devis peut porter
- * une référence, un montant ou une société à corriger. Jusqu'ici on ne pouvait
- * que le supprimer.
- *
- * La copie OneDrive ne réécrit jamais un devis qu'elle connaît déjà : elle n'y
- * rattache que son document. Une correction faite ici tient donc.
- */
-export function QuoteDialog({
-  project,
-  quote = null,
-  onOpenChange,
-  onSaved,
-}: {
-  project: Project | null;
-  /** Présent, on corrige ce devis au lieu d'en créer un. */
-  quote?: Quote | null;
-  onOpenChange: (open: boolean) => void;
-  onSaved: () => void;
-}) {
-  const [initial] = useState<QuotePayload>(() => (quote ? toPayload(quote) : EMPTY_QUOTE));
-  const [values, setValues] = useState<QuotePayload>(initial);
-  const close = useDirtyGuard(JSON.stringify(values) !== JSON.stringify(initial), onOpenChange);
-  const create = useAction(() => {
-    // Tapé à la française — « 2 400,50 » — et envoyé comme l'API l'attend.
-    const deposit = parseAmountInput(values.deposit_amount);
-    if (deposit === undefined) {
-      throw new Error("Le montant de l'acompte est illisible : 2 400 ou 2 400,50.");
-    }
-    const balance = parseAmountInput(values.balance_amount);
-    if (balance === undefined) {
-      throw new Error("Le montant du solde est illisible : 2 400 ou 2 400,50.");
-    }
-    const payload = { ...values, deposit_amount: deposit, balance_amount: balance };
-    return quote ? api.updateQuote(quote.id, payload) : api.createQuote(project?.id ?? "", payload);
-  }, { inline: true });
-
-  return (
-    <Dialog open={quote !== null || project !== null} onOpenChange={close}>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>
-            {quote
-              ? `Modifier ${quote.reference || "le devis"}`
-              : project
-                ? `Nouveau devis — ${project.label}`
-                : "Nouveau devis"}
-          </DialogTitle>
-        </DialogHeader>
-
-        <form
-          id="quote-form"
-          className="grid gap-4 sm:grid-cols-2"
-          onSubmit={async (event) => {
-            event.preventDefault();
-            if (!(await create.run())) return;
-            onOpenChange(false);
-            onSaved();
-          }}
-        >
-          {create.error && (
-            <div className="sm:col-span-2">
-              <ErrorNotice message={create.error} />
-            </div>
-          )}
-          <TextField
-            label="Référence"
-            placeholder="DE2026-0092"
-            value={values.reference}
-            error={create.fields.reference}
-            onChange={(event) => setValues({ ...values, reference: event.target.value })}
-          />
-          <SelectField
-            label="Type"
-            options={toOptions(QUOTE_KIND)}
-            value={values.kind}
-            onValueChange={(value) =>
-              setValues({ ...values, kind: value as QuotePayload["kind"] })
-            }
-          />
-          <TextField
-            label="Intitulé"
-            wrapperClassName="sm:col-span-2"
-            placeholder="sondages + étude + travaux"
-            value={values.label}
-            onChange={(event) => setValues({ ...values, label: event.target.value })}
-          />
-          <TextField
-            label="Montant HT"
-            inputMode="decimal"
-            placeholder="8050.00"
-            value={values.amount_ht ?? ""}
-            error={create.fields.amount_ht}
-            onChange={(event) =>
-              setValues({ ...values, amount_ht: event.target.value || null })
-            }
-          />
-          <TextField
-            label="Montant TTC"
-            inputMode="decimal"
-            placeholder="8975.00"
-            value={values.amount_ttc ?? ""}
-            onChange={(event) =>
-              setValues({ ...values, amount_ttc: event.target.value || null })
-            }
-          />
-          <TextField
-            label="Date du devis"
-            type="date"
-            value={values.issued_at ?? ""}
-            onChange={(event) =>
-              setValues({ ...values, issued_at: event.target.value || null })
-            }
-          />
-          <SelectField
-            label="Statut"
-            options={toOptions(QUOTE_STATUS)}
-            value={values.status}
-            onValueChange={(value) =>
-              setValues({ ...values, status: value as QuotePayload["status"] })
-            }
-          />
-          {/*
-            L'émetteur ne se propose que pour **corriger** : à la création, le
-            serveur le déduit de la nature de la prestation, et le laisser
-            choisir d'emblée ferait saisir une évidence neuf fois sur dix.
-            C'est le devis qui porte le SIREN et la TVA, donc c'est là que
-            l'erreur se répare.
-          */}
-          {quote && (
-            <SelectField
-              label="Société qui émet"
-              options={toOptions(QUOTE_ISSUER)}
-              value={values.issuer ?? ""}
-              onValueChange={(value) => setValues({ ...values, issuer: value || null })}
-            />
-          )}
-          <SelectField
-            label="Acompte"
-            options={toOptions(PAYMENT_STATUS)}
-            value={values.deposit_status}
-            onValueChange={(value) =>
-              setValues({
-                ...values,
-                deposit_status: value as QuotePayload["deposit_status"],
-              })
-            }
-          />
-          {/* Pas d'acompte, pas de montant : le serveur l'efface de lui-même. */}
-          {values.deposit_status !== "non_applicable" && (
-            <TextField
-              label="Montant de l'acompte"
-              hint="Ce que le client a réglé, s'il l'a changé"
-              inputMode="decimal"
-              placeholder="2 400"
-              value={values.deposit_amount ?? ""}
-              onChange={(event) =>
-                setValues({ ...values, deposit_amount: event.target.value || null })
-              }
-            />
-          )}
-          <SelectField
-            label="Solde"
-            options={toOptions(PAYMENT_STATUS)}
-            value={values.balance_status}
-            onValueChange={(value) =>
-              setValues({
-                ...values,
-                balance_status: value as QuotePayload["balance_status"],
-              })
-            }
-          />
-          {/* Pas de solde, pas de montant : le serveur l'efface de lui-même. */}
-          {values.balance_status !== "non_applicable" && (
-            <TextField
-              label="Montant du solde"
-              data-demo="quote-balance-amount"
-              hint="Ce que le client a réglé, avenant ou remise compris"
-              inputMode="decimal"
-              placeholder="5 600"
-              value={values.balance_amount ?? ""}
-              onChange={(event) =>
-                setValues({ ...values, balance_amount: event.target.value || null })
-              }
-            />
-          )}
-          <TextField
-            label="Montant non chiffré"
-            hint="Pour les fourchettes : « 5000-6000 € »"
-            value={values.amount_note}
-            onChange={(event) => setValues({ ...values, amount_note: event.target.value })}
-          />
-        </form>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => close(false)}>
-            Annuler
-          </Button>
-          <Button form="quote-form" type="submit" disabled={create.pending}>
-            {quote ? "Enregistrer" : "Créer"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
 }

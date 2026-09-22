@@ -435,9 +435,12 @@ function FormBody({
             />
           </div>
         ) : (
-          <div className="grid grid-cols-[1fr_7rem_9rem] gap-3">
+          // Sur un téléphone, la date prend sa ligne : trois colonnes dans
+          // 360 pixels ne laissaient pas de quoi lire « 22 sept. 2026 ».
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-[1fr_7rem_9rem]">
             <DateField
               label="Date"
+              wrapperClassName="col-span-2 sm:col-span-1"
               value={draft.date}
               agenda={agenda}
               onChange={(value) => set("date", value)}
