@@ -68,13 +68,81 @@ export function ThreadReader({
   }
   if (!thread) return <ReaderSkeleton onBack={onBack} />;
 
+  return (
+    <OpenedThread
+      thread={thread}
+      anchorId={anchorId}
+      showAccount={showAccount}
+      now={now}
+      contact={contact}
+      gmailRef={gmailRef}
+      pending={pending}
+      onBack={onBack}
+      onToggleDone={onToggleDone}
+      onTask={onTask}
+      onAttach={onAttach}
+      onContact={onContact}
+    />
+  );
+}
+
+/**
+ * La conversation ouverte.
+ *
+ * Sur téléphone, le lecteur remplace la liste : le focus passe au titre, sans
+ * quoi un lecteur d'écran restait sur une ligne qui n'est plus à l'écran. Sur
+ * un écran large, la liste reste visible et garde le focus — j et k y
+ * naviguent — et seule l'annonce dit ce qui s'est ouvert.
+ */
+function OpenedThread({
+  thread,
+  anchorId,
+  showAccount,
+  now,
+  contact,
+  gmailRef,
+  pending,
+  onBack,
+  onToggleDone,
+  onTask,
+  onAttach,
+  onContact,
+}: {
+  thread: MailThread;
+  anchorId: string;
+  showAccount: boolean;
+  now: number;
+  contact: string;
+  gmailRef: Ref<HTMLAnchorElement>;
+  pending: boolean;
+  onBack: () => void;
+  onToggleDone: () => void;
+  onTask: () => void;
+  onAttach: () => void;
+  onContact: (email: string) => void;
+}) {
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (window.matchMedia("(min-width: 768px)").matches) return;
+    titleRef.current?.focus({ preventScroll: true });
+  }, [thread.key]);
+
   const latestIncoming = [...thread.messages].reverse().find((m) => !m.outgoing) ?? null;
 
   return (
     <article className="flex min-w-0 flex-col" data-demo="mail-thread-reader">
       <header className="bg-card flex flex-col gap-2.5 border-b p-4 md:sticky md:top-0 md:z-10">
         <BackButton onBack={onBack} />
-        <h2 className="text-base leading-snug font-semibold break-words">{thread.subject || "(sans objet)"}</h2>
+        <h2
+          ref={titleRef}
+          tabIndex={-1}
+          className="text-base leading-snug font-semibold break-words outline-none"
+        >
+          {thread.subject || "(sans objet)"}
+        </h2>
+        <p className="sr-only" aria-live="polite">
+          Conversation ouverte : {thread.subject || "sans objet"}
+        </p>
         <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
           <TriageState thread={thread} />
           <span>{plural(thread.messages.length, "message")}</span>

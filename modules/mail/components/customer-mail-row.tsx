@@ -121,7 +121,10 @@ export function CustomerMailRow({
 
 function ExpandedMail({ customerId, message }: { customerId: string; message: MailMessage }) {
   // Le corps déjà dans la liste suffit ; sinon on le demande, une fois.
-  const fetched = useCustomerMessageBody(customerId, message.body ? null : message.id);
+  const fetched = useCustomerMessageBody(
+    customerId,
+    message.body || message.body_fetched ? null : message.id,
+  );
   const [showQuote, setShowQuote] = useState(false);
   const body = message.body || fetched.data?.body || "";
   const attachments = fetched.data?.attachment_count ?? message.attachment_count;

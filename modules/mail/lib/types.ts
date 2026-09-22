@@ -53,6 +53,12 @@ export type MailMessage = {
    * en tire « Réponse » ou « Nouveau ».
    */
   is_reply: boolean;
+  /**
+   * Le corps a déjà été demandé au serveur, même revenu vide. Servi par la
+   * liste d'une fiche seulement : sans lui, un accusé de réception rouvrait
+   * IMAP à chaque dépliage.
+   */
+  body_fetched?: boolean;
 };
 
 export type MailAttachment = {
