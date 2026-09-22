@@ -39,8 +39,7 @@ export function useMailKeyboard(handlers: MailKeyHandlers) {
     function onKey(event: KeyboardEvent) {
       if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
       if (isTyping(event.target) || dialogOpen()) return;
-      const key = event.key === "Enter" ? "Enter" : event.key.toLowerCase() === event.key ? event.key : event.key;
-      const handler = current.current[key];
+      const handler = current.current[event.key];
       if (!handler) return;
       event.preventDefault();
       handler();
