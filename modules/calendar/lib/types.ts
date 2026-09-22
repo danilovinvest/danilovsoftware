@@ -114,6 +114,12 @@ export type CalendarEvent = {
   starts_at: string;
   ends_at: string;
   all_day: boolean;
+  /**
+   * L'événement marque le début ou la fin du chantier de son affaire. La
+   * marque reste posée : chaque déplacement réécrit la date de l'affaire.
+   */
+  marks_worksite_start: boolean;
+  marks_worksite_end: boolean;
   imported: boolean;
   organizer: string;
   attendees: Attendee[];
