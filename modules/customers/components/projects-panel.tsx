@@ -83,6 +83,7 @@ import { ProjectTimeline } from "./project-timeline";
 import { ProjectDialog, QuoteDialog } from "./project-dialogs";
 import { QuotePayments } from "./quote-payments";
 import { JoinedQuoteDocs } from "./joined-quote-docs";
+import { paymentCarrier } from "../lib/settlement";
 import { RelanceDialog } from "./relance-dialog";
 import type {
   CustomerDetail,
@@ -540,7 +541,8 @@ function ProjectBlock({
     montant. Un montant omis reste celui que porte déjà le devis — marquer
     « facturé » ne doit pas effacer ce qu'on a saisi.
   */
-  const porteur = quotes.find((q) => q.status === "accepte" || q.status === "realise") ?? lead;
+  // La pièce qui porte le règlement : celle que la frise lit, donc celle qu'on écrit.
+  const porteur = paymentCarrier(quotes);
   const setDeposit = useAction(
     (status: PaymentStatus, amount?: string | null, paidAt?: string) => {
       if (!porteur) throw new Error("Aucun devis à mettre à jour sur cette affaire.");

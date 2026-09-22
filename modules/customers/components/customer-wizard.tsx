@@ -94,7 +94,9 @@ export function CustomerWizard() {
     navigation interne de Next ne se laisse pas interrompre, et le bouton
     « Précédent » ne perd rien.
   */
-  const [vierge] = useState(() => JSON.stringify([emptyCustomer(), emptyProject()]));
+  // Comparée à l'état réellement posé à l'ouverture, pas à un second appel des
+  // valeurs par défaut, qui peuvent dépendre de l'heure.
+  const [vierge] = useState(() => JSON.stringify([customer, project]));
   useDirtyGuard(JSON.stringify([customer, project]) !== vierge);
 
   /*

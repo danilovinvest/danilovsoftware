@@ -8,7 +8,7 @@ import type {
   WorksiteQuote,
   WorksiteStatus,
 } from "./types";
-import { deadlineOf, deliveredAt, missionOf } from "@/modules/customers";
+import { deadlineOf, deliveredAt, missionOf, settlementOf } from "@/modules/customers";
 
 /**
  * Ce qui se déduit d'un chantier, et rien de plus.
@@ -116,8 +116,11 @@ export function read(worksite: Worksite, now: number): ReadWorksite {
   const factures = worksite.quotes.filter(isInvoice);
   const devis = worksite.quotes.filter((quote) => !isInvoice(quote));
 
-  const acompte = worksite.quotes.some((q) => q.deposit_status === "recu");
-  const soldee = worksite.quotes.some((q) => q.balance_status === "recu");
+  // Une seule lecture du règlement pour tout le CRM : voir `settlementOf`.
+  const reglement = settlementOf(worksite.quotes);
+  const soldee = reglement.balance === "recu";
+  // Une affaire soldée a été payée : lui réclamer un acompte n'aurait pas de sens.
+  const acompte = reglement.deposit === "recu" || soldee;
 
   return {
     worksite,
@@ -134,7 +137,7 @@ export function read(worksite: Worksite, now: number): ReadWorksite {
       now,
     ),
     invoiced: factures.length > 0,
-    depositReceived: worksite.quotes.some((q) => q.deposit_status === "recu"),
+    depositReceived: acompte,
     amountHT: total(devis, "amount_ht"),
     amountTTC: total(devis, "amount_ttc"),
     devis,

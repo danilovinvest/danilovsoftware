@@ -492,6 +492,7 @@ function CalendarRow({
             : "Le dernier agenda ne se supprime pas"
         }
         aria-label={`Supprimer l'agenda ${calendar.name}`}
+        data-demo="calendar-delete"
       >
         <Trash2Icon className="size-3.5" />
       </Button>

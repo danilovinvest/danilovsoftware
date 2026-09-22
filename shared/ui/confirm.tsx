@@ -78,9 +78,10 @@ export function ConfirmHost() {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{pending?.title}</DialogTitle>
-          {pending?.description && (
-            <DialogDescription>{pending.description}</DialogDescription>
-          )}
+          {/* Toujours présente : sans elle, un lecteur d'écran n'a que le titre. */}
+          <DialogDescription className={pending?.description ? undefined : "sr-only"}>
+            {pending?.description ?? "Ce geste ne se défait pas."}
+          </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={() => settle(false)}>

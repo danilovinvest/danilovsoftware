@@ -20,6 +20,7 @@ import { ClaudeButton, worksiteContext } from "@/modules/assistant";
 import {
   MILESTONE_KEYS,
   ProjectJalons,
+  paymentCarrier,
   depositTotalOf,
   missionOf,
   projectReference,
@@ -37,12 +38,9 @@ import { isSilent } from "../lib/derive";
 import type { Metier, ReadWorksite, WorksiteQuote } from "../lib/types";
 
 /** Le devis signé de l'affaire, celui qui porte le règlement. */
+/** La pièce qui porte le règlement : la même que la fiche client lit et écrit. */
 function signedQuote(w: ReadWorksite["worksite"]): WorksiteQuote | null {
-  return (
-    w.quotes.find((q) => q.status === "accepte" || q.status === "realise") ??
-    w.quotes[0] ??
-    null
-  );
+  return paymentCarrier(w.quotes);
 }
 
 /** Le statut d'acompte du devis signé, « non_applicable » à défaut de devis. */
@@ -109,10 +107,11 @@ function Body({
   const [echec, setEchec] = useState<string | null>(null);
 
   const jalons: Jalons = {
-    deposit_invoiced_at: read.depositReceived || quoteDeposit(w) !== "non_applicable"
-      ? (w.started_at ?? w.created_at)
-      : null,
-    deposit_paid_at: read.depositReceived ? (w.started_at ?? w.created_at) : null,
+    // Lus sur la pièce qui porte le règlement, comme la fiche client : les
+    // cases cochées ici sont celles que l'écriture décochera.
+    deposit_invoiced_at:
+      quoteDeposit(w) !== "non_applicable" ? (w.started_at ?? w.created_at) : null,
+    deposit_paid_at: quoteDeposit(w) === "recu" ? (w.started_at ?? w.created_at) : null,
     deposit_amount: signedQuote(w)?.deposit_amount ?? null,
     // Aucune colonne ne date le solde : le devis n'en porte que le statut.
     balance_paid_at:

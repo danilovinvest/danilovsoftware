@@ -37,10 +37,14 @@ export function useCustomers(filters: CustomerFilters) {
   };
   // Les filtres sont sérialisés pour servir de dépendance stable : un objet
   // littéral changerait d'identité à chaque rendu et relancerait la requête.
-  const key = `${JSON.stringify(question)}#${reloadToken}`;
+  const asked = JSON.stringify(question);
+  const key = `${asked}#${reloadToken}`;
 
-  const [resolved, setResolved] = useState<Resolved<Paginated<CustomerListItem>>>({
+  const [resolved, setResolved] = useState<
+    Resolved<Paginated<CustomerListItem>> & { asked: string }
+  >({
     key: "",
+    asked: "",
     data: null,
     error: null,
   });
@@ -53,14 +57,19 @@ export function useCustomers(filters: CustomerFilters) {
 
     api
       .listCustomers(question, controller.signal)
-      .then((data) => setResolved({ key, data, error: null }))
+      .then((data) => setResolved({ key, asked, data, error: null }))
       .catch((cause) => {
         if (controller.signal.aborted) return;
-        // La liste d'avant reste affichée sous l'erreur : une coupure ne doit
-        // pas vider l'écran qu'on était en train de lire.
+        /*
+          La liste d'avant reste affichée sous l'erreur, mais seulement si
+          c'est la même question : une coupure ne doit pas vider l'écran qu'on
+          lisait, et un autre filtre ne doit pas montrer les lignes du
+          précédent sous son nom.
+        */
         setResolved((previous) => ({
           key,
-          data: previous.data,
+          asked,
+          data: previous.asked === asked ? previous.data : null,
           error: errorMessage(cause),
         }));
       });
