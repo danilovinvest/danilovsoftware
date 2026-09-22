@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/sidebar";
 import { NAV_ACTIVE_CLASS, NAV_ITEM_CLASS } from "@/shared/ui/nav";
 import { cn } from "@/lib/utils";
-import { NAV_SECTIONS } from "../lib/navigation";
+import { NAV_SECTIONS, isNavItemVisible } from "../lib/navigation";
 import { useScope } from "@/modules/group";
 import { SidebarSearch } from "./sidebar-search";
 
@@ -91,13 +91,7 @@ function WorkspaceNav() {
 
   const sections = NAV_SECTIONS.map((section) => ({
     ...section,
-    items: section.items.filter(
-      (item) =>
-        can(item.permission) &&
-        // Le périmètre masque ce qui n'a pas de sens pour la société choisie ;
-        // « tout le groupe » ne masque rien.
-        (scope === "tous" || !item.scopes || item.scopes.includes(scope)),
-    ),
+    items: section.items.filter((item) => isNavItemVisible(item, can, scope)),
   }))
     // Une section dont rien n'est autorisé disparaît en entier : un titre seul
     // ferait deviner ce qu'on ne peut pas ouvrir.

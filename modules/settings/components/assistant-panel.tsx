@@ -11,8 +11,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { ClaudeMark, OpenAIMark } from "@/shared/ui/brand-marks";
 import { cn } from "@/lib/utils";
 import { errorMessage } from "@/shared/api/errors";
@@ -23,6 +21,7 @@ import { useMcpTokens } from "../hooks/use-settings";
 import { SettingsPage, SettingsRows, SettingsRow, SettingsSection } from "./settings-page";
 import { askConfirm } from "@/shared/ui/confirm";
 import { openExternal } from "@/shared/desktop/links";
+import { McpAccessChoice, type McpAccess } from "./mcp-access-choice";
 
 /**
  * Connecter un assistant au CRM.
@@ -50,19 +49,22 @@ export function AssistantPanel() {
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [pending, setPending] = useState(false);
-  const [secret, setSecret] = useState<string | null>(null);
+  /** L'adresse créée, avec le droit qu'elle porte : elle ne sert qu'à ce droit-là. */
+  const [created, setCreated] = useState<{ url: string; access: McpAccess } | null>(null);
+  const secret = created?.url ?? null;
   const [copied, setCopied] = useState(false);
-  /** Le consentement à l'écriture, décidé avant de créer l'adresse. */
-  const [canWrite, setCanWrite] = useState(false);
+  /** Le consentement à l'écriture, choisi avant de créer l'adresse — nul tant qu'on n'a rien choisi. */
+  const [access, setAccess] = useState<McpAccess | null>(null);
 
   async function create(): Promise<string | null> {
+    if (!access) return null;
     setPending(true);
     setError(null);
     setCopied(false);
     try {
-      const created = await createMcpToken(name.trim() || "Assistant", canWrite);
-      const url = mcpConnectorUrl(created.secret);
-      setSecret(url);
+      const token = await createMcpToken(name.trim() || "Assistant", access === "ecriture");
+      const url = mcpConnectorUrl(token.secret);
+      setCreated({ url, access });
       setName("");
       reload();
       return url;
@@ -81,10 +83,11 @@ export function AssistantPanel() {
    * Aucun site ne peut installer un connecteur à la place de l'utilisateur —
    * ce serait une faille, pas un confort. Ce qui reste à faire à la main est
    * donc un collage, et tout le reste est fait ici. Une adresse déjà créée
-   * n'est pas recréée : on rebranche celle qu'on a sous les yeux.
+   * n'est pas recréée : on rebranche celle qu'on a sous les yeux — sauf si
+   * le droit choisi a changé depuis, auquel cas elle ne correspond plus.
    */
-  async function brancher(url: string) {
-    const adresse = secret ?? (await create());
+  async function brancher(url: string, reuse = created?.access === access) {
+    const adresse = (reuse ? secret : null) ?? (await create());
     if (!adresse) return;
     await copy(adresse);
     // Dans le navigateur du système : la webview n'ouvre pas de nouvel onglet.
@@ -176,7 +179,10 @@ export function AssistantPanel() {
       >
         {secret && (
           <div className="border-success/30 bg-success-soft/40 flex flex-col gap-2 rounded-lg border p-3">
-            <p className="text-xs font-medium">Adresse du connecteur</p>
+            <p className="text-xs font-medium">
+              Adresse du connecteur ·{" "}
+              {created?.access === "ecriture" ? "lecture et écriture" : "lecture seule"}
+            </p>
             <div className="flex gap-2">
               <Input
                 readOnly
@@ -198,7 +204,7 @@ export function AssistantPanel() {
             <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
-                onClick={() => brancher(CHATGPT_CONNECTEURS)}
+                onClick={() => brancher(CHATGPT_CONNECTEURS, true)}
                 className="bg-[#10a37f] text-white hover:bg-[#0e8f6f]"
               >
                 <OpenAIMark className="size-4" />
@@ -208,7 +214,7 @@ export function AssistantPanel() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => brancher(CLAUDE_CONNECTEURS)}
+                onClick={() => brancher(CLAUDE_CONNECTEURS, true)}
               >
                 <ClaudeMark className="size-4 text-[#d97757]" />
                 Ajouter à Claude
@@ -224,19 +230,27 @@ export function AssistantPanel() {
           </div>
         )}
 
-        <div className="flex flex-col gap-3 rounded-lg border p-3">
+        <div className="flex flex-col gap-3 rounded-lg border p-3" data-demo="mcp-create">
+          {/* Le consentement se donne **avant** la création et ne se reprend
+              pas : une adresse déjà installée dans ChatGPT ne doit pas changer
+              de nature en cours de route. Il vient donc en premier, et les
+              boutons qui créent l'adresse attendent qu'il soit donné. */}
+          <McpAccessChoice value={access} onChange={setAccess} />
+
+          <p className="text-xs font-medium">2. Nommer l&apos;adresse et la brancher</p>
           <div className="flex flex-wrap gap-2">
             <Input
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="ChatGPT — poste de Grygoriy"
+              aria-label="Nom du connecteur"
               className="min-w-48 flex-1"
             />
             <Button
               type="button"
               variant="outline"
               onClick={() => create()}
-              disabled={pending}
+              disabled={pending || !access}
               title="Pour un autre assistant : Cursor, Zed, un client MCP quelconque"
             >
               {pending ? <Spinner /> : <PlusIcon />}
@@ -253,7 +267,7 @@ export function AssistantPanel() {
             <Button
               type="button"
               onClick={() => brancher(CHATGPT_CONNECTEURS)}
-              disabled={pending}
+              disabled={pending || !access}
               className="bg-[#10a37f] text-white hover:bg-[#0e8f6f]"
             >
               {pending ? <Spinner /> : <OpenAIMark className="size-4" />}
@@ -264,41 +278,19 @@ export function AssistantPanel() {
               type="button"
               variant="outline"
               onClick={() => brancher(CLAUDE_CONNECTEURS)}
-              disabled={pending}
+              disabled={pending || !access}
             >
               <ClaudeMark className="size-4 text-[#d97757]" />
               Ajouter à Claude
               <ArrowUpRightIcon className="size-3.5 opacity-70" />
             </Button>
           </div>
-
-          {/* Le consentement se donne **avant** la création et ne se reprend
-              pas : une adresse déjà installée dans ChatGPT ne doit pas changer
-              de nature en cours de route. Pour passer de la lecture à
-              l'écriture, on en crée une autre et on révoque la première. */}
-          <label className="flex cursor-pointer items-start gap-2.5">
-            <Switch
-              id="mcp-write"
-              checked={canWrite}
-              onCheckedChange={setCanWrite}
-              className="mt-0.5"
-            />
-            <span className="min-w-0">
-              <Label htmlFor="mcp-write" className="cursor-pointer text-xs font-medium">
-                Autoriser l&apos;écriture
-              </Label>
-              <span
-                className={cn(
-                  "block text-[11px] leading-relaxed",
-                  canWrite ? "text-warning" : "text-muted-foreground",
-                )}
-              >
-                {canWrite
-                  ? "L'assistant pourra créer des fiches, des tâches, des rendez-vous et faire avancer des affaires — dans la limite de vos permissions."
-                  : "L'assistant lira seulement. Il proposera ce qu'il ferait, vous le ferez dans le CRM."}
-              </span>
-            </span>
-          </label>
+          {!access && (
+            <p className="text-muted-foreground text-[11px]">
+              Choisissez d&apos;abord lecture seule ou écriture : les boutons s&apos;activent
+              ensuite.
+            </p>
+          )}
         </div>
 
         {loading ? (

@@ -40,6 +40,64 @@ const FICHE_ETUDE = "/customers/fiche?id=7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "taches-a-soi-mes-dossiers-urgents",
+    title: "Une tâche créée est à soi, « Mes dossiers » par urgence",
+    date: "2026-09-22",
+    steps: [
+      {
+        path: "/tasks",
+        click: '[data-demo="task-new"]',
+        target: "#task-assignee-field",
+        title: "Une nouvelle tâche est à vous",
+        body: "« Assignée à » partait sur « Personne » : une tâche saisie pour soi, sans penser à le dire, n'apparaissait ni dans « Mes tâches » ni dans la cloche. Elle vous revient désormais par défaut, et « Personne » reste un choix de la liste. Le filtre du haut attend aussi la fin de la frappe avant d'interroger le serveur.",
+      },
+      {
+        path: "/tasks",
+        click: '[data-demo="task-card-open"]',
+        target: '[data-demo="task-dialog-delete"]',
+        title: "Supprimer depuis la tâche ouverte",
+        body: "La suppression n'existait qu'en vue Liste, sur une corbeille sans libellé : depuis le tableau, on ne pouvait pas supprimer du tout. Elle est dans la boîte de la tâche, et se confirme.",
+      },
+      {
+        path: "/mes-dossiers",
+        target: '[data-demo="my-projects-filters"]',
+        title: "Les dossiers en retard d'abord",
+        body: "La liste était triée par dernière modification : un dossier en retard touché il y a un mois se retrouvait tout en bas. Elle montre maintenant ce qui est en retard — une prochaine action échue ou un délai dépassé —, puis les dossiers sans prochaine action, puis le reste par échéance. Les filtres comptent chaque groupe et chaque rôle.",
+      },
+      {
+        path: "/mes-dossiers",
+        target: '[data-demo="my-projects-list"]',
+        title: "Chaque ligne dit pourquoi elle est là",
+        body: "La pastille « En retard », la prochaine action et le délai de l'affaire — deadline interne ou date promise — expliquent la place de la ligne. Un clic ouvre l'affaire elle-même, dépliée dans la fiche.",
+      },
+    ],
+  },
+  {
+    id: "recherche-arrivee-assistant",
+    title: "⌘K plus complète, arrivée selon le rôle, assistant choisi d'abord",
+    date: "2026-09-22",
+    steps: [
+      {
+        path: "/customers",
+        target: '[data-sidebar="sidebar"] [aria-label="Rechercher"]',
+        title: "La recherche trouve par l'interlocuteur et dans le courriel",
+        body: "Chercher l'architecte ou le syndic retrouve désormais la fiche qu'il suit, et la palette dit « via » qui elle remonte. Les courriels se cherchent aussi dans leur texte, plus seulement dans le sujet. Chaque résultat ouvre l'élément lui-même : l'affaire dépliée, le devis sur son onglet, la tâche ouverte, le courriel.",
+      },
+      {
+        path: "/settings/assistant",
+        target: '[data-demo="mcp-create"]',
+        title: "Lecture ou écriture, avant de créer l'adresse",
+        body: "Le choix venait sous les boutons, éteint par défaut : l'adresse naissait en lecture seule sans qu'on l'ait vu, et il fallait la révoquer pour recommencer. Il vient désormais en premier, rien n'est coché d'office, et les boutons attendent qu'on ait choisi.",
+      },
+      {
+        path: "/dashboard",
+        target: '[data-sidebar="sidebar"]',
+        title: "Chacun arrive sur un écran qu'il peut ouvrir",
+        body: "Un rôle sur mesure sans accès aux fiches arrivait sur « Accès refusé » à chaque connexion. L'accueil le renvoie maintenant vers le premier écran de la colonne que son rôle ouvre, et un refus propose toujours un chemin de retour. L'écran OneDrive, lui, est gardé comme son entrée de menu.",
+      },
+    ],
+  },
+  {
     id: "interlocuteurs-et-notes",
     title: "Interlocuteurs et notes dans l'en-tête, notes d'affaire",
     date: "2026-09-22",

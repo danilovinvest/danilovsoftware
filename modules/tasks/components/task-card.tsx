@@ -198,6 +198,7 @@ export function TaskCard({
           )}
           <button
             type="button"
+            data-demo="task-card-open"
             onClick={() => onOpen(task)}
             className="hover:text-primary block min-w-0 flex-1 text-left text-sm leading-snug font-medium"
           >
