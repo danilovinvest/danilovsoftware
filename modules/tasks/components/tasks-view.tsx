@@ -18,6 +18,8 @@ import { TaskDialog } from "./task-dialog";
 import { TaskRow } from "./task-row";
 import { CustomerPicker } from "@/modules/customers";
 import type { DueFilter, Task, TaskFilters, TaskStatus } from "../lib/types";
+import { notifyError } from "@/shared/ui/toaster";
+import { errorMessage } from "@/shared/api/errors";
 
 type View = "board" | "list";
 
@@ -71,12 +73,27 @@ export function TasksView() {
         ),
       });
     }
-    await api.moveTask(task.id, status, position);
+    try {
+      await api.moveTask(task.id, status, position);
+    } catch (cause) {
+      // La carte revient où elle était, et le dit : laissée dans la mauvaise
+      // colonne, elle se lisait comme un déplacement réussi.
+      setPatched(null);
+      notifyError(`La tâche n'a pas été déplacée : ${errorMessage(cause)}`, () =>
+        void move(task, status, position),
+      );
+      return;
+    }
     refresh();
   }
 
   async function assign(task: Task, assigneeId: string | null) {
-    await api.setTaskAssignee(task.id, assigneeId);
+    try {
+      await api.setTaskAssignee(task.id, assigneeId);
+    } catch (cause) {
+      notifyError(`La tâche n'a pas été attribuée : ${errorMessage(cause)}`);
+      return;
+    }
     refresh();
   }
 

@@ -25,6 +25,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState, ErrorNotice } from "@/shared/ui/feedback";
 import { TONE_SOFT } from "@/shared/ui/panel";
 import { formatAmount, formatDate } from "@/shared/lib/format";
+import { errorMessage } from "@/shared/api/errors";
+import { notifySuccess } from "@/shared/ui/toaster";
 import { cn } from "@/lib/utils";
 import * as api from "../lib/api";
 import { deadlineOf, deliveredAt, missionOf, projectReference } from "../lib/mission";
@@ -1270,7 +1272,9 @@ function ProjectBlock({
           onOpenChange={(next) => !next && setOutcome(null)}
           onSaved={onChanged}
           onScheduleResume={async (date, _outcome, note) => {
-            await onOverride({ resume_at: date });
+            if (!(await onOverride({ resume_at: date }))) {
+              return "La date de reprise n'a pas été enregistrée.";
+            }
             /*
             Une affaire reportée n'est réveillée par rien.
 
@@ -1279,7 +1283,8 @@ function ProjectBlock({
             revenir vers quelqu'un à une date, et le réécrire ici en aurait fait
             un second — qui aurait divergé du premier.
             */
-            await createTask({
+            try {
+              await createTask({
               title: `Reprendre « ${project.label} »`,
               body: note ? `Reportée : ${note}` : "Affaire reportée, à revoir.",
               status: "a_faire",
@@ -1289,10 +1294,14 @@ function ProjectBlock({
               due_at: new Date(`${date}T09:00:00`).toISOString(),
               assignee_id: null,
               targets: [{ project_id: project.id }],
-            }).catch(() => {
-              // Le report lui-même est déjà enregistré : échouer ici ne doit
-              // pas défaire ce que l'utilisateur vient de valider.
-            });
+              });
+            } catch (cause) {
+              // Le report est enregistré ; c'est le rappel qui manque, et il
+              // doit se voir : sans lui, l'affaire reportée s'oublie.
+              return `L'affaire est reportée, mais la tâche de reprise n'a pas été créée : ${errorMessage(cause)}`;
+            }
+            notifySuccess(`Tâche de reprise créée pour le ${formatDate(date)}.`);
+            return null;
           }}
         />
       )}
