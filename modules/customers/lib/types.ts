@@ -674,6 +674,8 @@ export type MyProject = Project & {
   is_manager: boolean;
   is_engineer: boolean;
   is_drafter: boolean;
+  /** La mission est rendue : son délai ne parle plus (`deadlineOf`). */
+  is_delivered: boolean;
 };
 
 export type ProjectPayload = Omit<
