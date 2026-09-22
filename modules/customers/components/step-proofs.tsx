@@ -20,6 +20,7 @@ import { formatDate, formatDateTime } from "@/shared/lib/format";
 import { cn } from "@/lib/utils";
 import type { AutoProof } from "../lib/proofs";
 import type { StepProof, StepProofInput } from "../lib/types";
+import { askConfirm } from "@/shared/ui/confirm";
 
 /**
  * Les preuves d'un cran : ce qui le prouve déjà, et ce qu'on y joint.
@@ -169,8 +170,14 @@ function ProofRow({
         <button
           type="button"
           disabled={pending}
-          onClick={() => {
-            if (confirm("Retirer cette preuve ?")) void onRemove(proof.id);
+          onClick={async () => {
+            const ok = await askConfirm({
+              title: "Retirer cette preuve",
+              description:
+                "Elle quitte le cran de la frise. Un fichier déposé dans OneDrive y reste : le CRM n'y supprime rien.",
+              confirmLabel: "Retirer",
+            });
+            if (ok) void onRemove(proof.id);
           }}
           className="text-muted-foreground hover:text-destructive rounded p-0.5 opacity-60 group-hover:opacity-100"
           aria-label="Retirer la preuve"

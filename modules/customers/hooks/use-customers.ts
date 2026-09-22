@@ -211,8 +211,9 @@ export function useAction<TArgs extends unknown[], TResult>(
     };
   }, []);
 
-  const run = useCallback(
-    async (...args: TArgs): Promise<TResult | null> => {
+  const run = useMemo(() => {
+    // Nommée pour que « Réessayer » rejoue exactement le même geste.
+    const attempt = async (...args: TArgs): Promise<TResult | null> => {
       setPending(true);
       setError(null);
       setFields({});
@@ -231,15 +232,15 @@ export function useAction<TArgs extends unknown[], TResult>(
         // Une erreur de champ se lit sous le champ : la rejouer telle quelle
         // n'y changerait rien.
         if (!opts.current.inline || !mounted.current) {
-          notifyError(message, hasFields ? undefined : () => void run(...args));
+          notifyError(message, hasFields ? undefined : () => void attempt(...args));
         }
         return null;
       } finally {
         if (mounted.current) setPending(false);
       }
-    },
-    [action],
-  );
+    };
+    return attempt;
+  }, [action]);
 
   return { run, pending, error, fields };
 }

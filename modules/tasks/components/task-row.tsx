@@ -12,6 +12,9 @@ import { DUE_TEXT } from "../lib/labels";
 import { TaskStatusBadge } from "./task-badge";
 import { AutoTaskBadge } from "./auto-task-badge";
 import type { Task, TaskStatus } from "../lib/types";
+import { askConfirm } from "@/shared/ui/confirm";
+import { notifyError } from "@/shared/ui/toaster";
+import { errorMessage } from "@/shared/api/errors";
 
 /**
  * Une tâche en une ligne. Le geste principal — la cocher — est la case à
@@ -114,9 +117,17 @@ export function TaskRow({
           variant="ghost"
           aria-label={`Supprimer « ${task.title} »`}
           onClick={async () => {
-            if (!confirm(`Supprimer la tâche « ${task.title} » ?`)) return;
-            await api.deleteTask(task.id);
-            onChanged();
+            const ok = await askConfirm({
+              title: `Supprimer la tâche « ${task.title} »`,
+              confirmLabel: "Supprimer",
+            });
+            if (!ok) return;
+            try {
+              await api.deleteTask(task.id);
+              onChanged();
+            } catch (cause) {
+              notifyError(errorMessage(cause));
+            }
           }}
         >
           <Trash2Icon />

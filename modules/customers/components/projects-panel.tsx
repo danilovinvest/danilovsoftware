@@ -95,6 +95,7 @@ import type {
   Project,
   Quote,
 } from "../lib/types";
+import { askConfirm } from "@/shared/ui/confirm";
 
 /**
  * Onglet « Affaires ».
@@ -1582,7 +1583,14 @@ function QuoteList({
                   disabled={remove.pending}
                   onClick={async () => {
                     const nom = quote.reference || quote.label || "ce devis";
-                    if (!confirm(`Supprimer le devis « ${nom} » ?`)) return;
+                    const ok = await askConfirm({
+                      title: `Supprimer le devis « ${nom} »`,
+                      description: quote.drive_url
+                        ? "Son PDF est encore dans OneDrive : la copie suivante le recréera. Supprimer d'abord le fichier, ou corriger le devis."
+                        : "Il n'a pas de document : sa suppression est définitive.",
+                      confirmLabel: "Supprimer le devis",
+                    });
+                    if (!ok) return;
                     if ((await remove.run(quote.id)) !== null) onChanged();
                   }}
                 >
