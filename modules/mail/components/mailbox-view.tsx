@@ -103,8 +103,12 @@ function MailWorkspace({ mailbox }: { mailbox: ReturnType<typeof useMailbox> }) 
     nav.go(search ? { search, account: "" } : { search }),
   );
 
+  // Le curseur est un vrai focus, pas seulement un liseré : un lecteur d'écran
+  // annonce la ligne, et Tab repart de là où j et k ont mené.
   const reveal = useCallback((key: string) => {
-    rows.current.get(key)?.scrollIntoView({ block: "nearest" });
+    const row = rows.current.get(key);
+    row?.focus({ preventScroll: true });
+    row?.scrollIntoView({ block: "nearest" });
   }, []);
 
   // Passer à la conversation voisine : ouverte si une conversation l'est déjà,
