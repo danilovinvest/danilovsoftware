@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useDirtyGuard } from "@/shared/lib/dirty-guard";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -121,9 +122,11 @@ export function ProjectDialog({
   onOpenChange: (open: boolean) => void;
   onSaved: () => void;
 }) {
-  const [values, setValues] = useState<ProjectPayload>(() =>
+  const [initial] = useState<ProjectPayload>(() =>
     project ? projectToPayload(project) : EMPTY_PROJECT,
   );
+  const [values, setValues] = useState<ProjectPayload>(initial);
+  const close = useDirtyGuard(JSON.stringify(values) !== JSON.stringify(initial), onOpenChange);
   const create = useAction(() =>
     project ? api.updateProject(project.id, values) : api.createProject(customerId, values),
     { inline: true },
@@ -131,7 +134,7 @@ export function ProjectDialog({
   const colleagues = useColleagues();
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={close}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{project ? "Modifier le projet" : "Nouveau projet"}</DialogTitle>
@@ -290,7 +293,7 @@ export function ProjectDialog({
         </form>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => close(false)}>
             Annuler
           </Button>
           <Button form="project-form" type="submit" disabled={create.pending}>
@@ -368,9 +371,9 @@ export function QuoteDialog({
   onOpenChange: (open: boolean) => void;
   onSaved: () => void;
 }) {
-  const [values, setValues] = useState<QuotePayload>(() =>
-    quote ? toPayload(quote) : EMPTY_QUOTE,
-  );
+  const [initial] = useState<QuotePayload>(() => (quote ? toPayload(quote) : EMPTY_QUOTE));
+  const [values, setValues] = useState<QuotePayload>(initial);
+  const close = useDirtyGuard(JSON.stringify(values) !== JSON.stringify(initial), onOpenChange);
   const create = useAction(() => {
     // Tapé à la française — « 2 400,50 » — et envoyé comme l'API l'attend.
     const deposit = parseAmountInput(values.deposit_amount);
@@ -386,7 +389,7 @@ export function QuoteDialog({
   }, { inline: true });
 
   return (
-    <Dialog open={quote !== null || project !== null} onOpenChange={onOpenChange}>
+    <Dialog open={quote !== null || project !== null} onOpenChange={close}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>
@@ -543,7 +546,7 @@ export function QuoteDialog({
         </form>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => close(false)}>
             Annuler
           </Button>
           <Button form="quote-form" type="submit" disabled={create.pending}>
