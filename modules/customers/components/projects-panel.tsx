@@ -762,7 +762,7 @@ function ProjectBlock({
       case "send_plans":
         onOverride({ plans_sent_at: new Date().toISOString() });
         break;
-      case "invoice_balance":
+      case "balance_paid":
         // Le solde appartient au devis, comme l'acompte : c'est lui qui porte
         // le règlement.
         if (await setBalance.run("recu")) onChanged();
