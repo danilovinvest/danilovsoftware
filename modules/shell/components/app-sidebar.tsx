@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { ChevronRightIcon } from "lucide-react";
 import { useAuth } from "@/modules/auth";
-import { SettingsNav } from "@/modules/settings";
 import {
   Collapsible,
   CollapsibleContent,
@@ -32,9 +31,9 @@ import { useScope } from "@/modules/group";
 import { SidebarSearch } from "./sidebar-search";
 
 /**
- * Le tiroir latéral a deux états, comme chez Twenty : la navigation de
- * l'espace de travail, ou celle des réglages. On n'ajoute pas les réglages à
- * côté du reste — on y entre, et toute la colonne bascule.
+ * Le tiroir latéral porte la navigation de l'espace de travail, réglages
+ * compris : ceux-ci ont leur propre colonne dans leur cadre (`SettingsFrame`),
+ * si bien qu'y entrer ne fait plus basculer le tiroir.
  *
  * L'espace de travail est lui-même sectionné : dix entrées à la file ne se
  * lisent pas, et le tableau de bord y avait le même poids que la page
@@ -79,7 +78,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       className={isMobile ? undefined : "hidden bg-transparent md:flex"}
       {...props}
     >
-      {pathname.startsWith("/settings") ? <SettingsNav /> : <WorkspaceNav />}
+      <WorkspaceNav />
     </Sidebar>
   );
 }

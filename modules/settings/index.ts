@@ -2,7 +2,7 @@
  * Surface publique du module « réglages ». Les autres modules et les routes de
  * l'app n'importent que d'ici, jamais d'un fichier interne.
  */
-export { SettingsNav } from "./components/settings-nav";
+export { SettingsFrame } from "./components/settings-frame";
 export { ReturnRouteTracker } from "./components/return-route-tracker";
 export {
   PreferencesProvider,
