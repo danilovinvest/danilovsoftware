@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { errorMessage } from "@/shared/api/errors";
 import * as api from "../lib/api";
 import { useAgendaPrefs, writeAgendaPrefs } from "../lib/agenda-prefs";
@@ -11,7 +11,8 @@ import {
   startOfWeek,
   toOccurrence,
 } from "../lib/events";
-import { EVENT_KIND, formatDayShort, formatMonthYear } from "../lib/labels";
+import { EVENT_KIND, VIEWS, formatDayShort, formatMonthYear } from "../lib/labels";
+import { useIsNarrow, useNow } from "./use-now";
 import type {
   Calendar,
   CalendarEvent,
@@ -23,6 +24,16 @@ import type {
 type Resolved<T> = { key: string; data: T | null; error: string | null };
 
 /**
+ * Délai en deçà duquel revenir sur l'onglet ne relit pas l'agenda : basculer
+ * d'une fenêtre à l'autre pour copier une adresse ne justifie pas une requête.
+ */
+const REFRESH_GRACE_MS = 30_000;
+
+function isView(value: unknown): value is CalendarView {
+  return VIEWS.some((entry) => entry.value === value);
+}
+
+/**
  * État du calendrier.
  *
  * Les événements sont demandés **par mois calendaire élargi**, pas par fenêtre
@@ -31,16 +42,32 @@ type Resolved<T> = { key: string; data: T | null; error: string | null };
  * autour du curseur couvre déjà toutes les vues et ne change que douze fois par
  * an. La clé de chargement est donc le mois, et non `range`.
  *
- * `today` est figé au montage. Sans cela, le liseré « aujourd'hui » se
- * recalculerait à chaque rendu sur une horloge qui a bougé.
+ * `now` avance à la minute et `today` change à minuit : un onglet ouvert la
+ * veille montrait sinon le mauvais jour. `today` ne change d'identité qu'avec
+ * la date, pour que le liseré et la période chargée ne se recalculent pas à
+ * chaque minute.
+ *
+ * Le curseur **suit aujourd'hui** tant qu'on n'a pas navigué (`pinned` nul) :
+ * passé minuit, la vue avance d'elle-même. Dès qu'on a choisi une autre
+ * période, il ne bouge plus — sauter vers aujourd'hui sous les yeux de
+ * quelqu'un qui prépare la semaine prochaine lui ferait perdre le fil.
  */
 export function useCalendar(me: string | null = null) {
-  const [today] = useState(() => startOfDay(new Date()));
-  const [cursor, setCursor] = useState(today);
+  const now = useNow();
+  const todayStamp = startOfDay(now).getTime();
+  const today = useMemo(() => new Date(todayStamp), [todayStamp]);
+  const [pinned, setPinned] = useState<Date | null>(null);
+  const cursor = pinned ?? today;
   // Vue, agendas et catégories masqués, « mes rendez-vous » : retenus sur ce
   // poste d'une visite à l'autre (voir `lib/agenda-prefs.ts`).
   const prefs = useAgendaPrefs();
-  const view = prefs.view;
+  /*
+   * La vue enregistrée l'emporte ; sans choix, le défaut suit la largeur.
+   * Sur un téléphone, la grille du mois tasse sept colonnes dans 390 pixels
+   * et n'y laisse lire aucun titre : la file « agenda » s'y lit.
+   */
+  const narrow = useIsNarrow();
+  const view: CalendarView = isView(prefs.view) ? prefs.view : narrow ? "agenda" : "mois";
   const setView = useCallback((next: CalendarView) => writeAgendaPrefs({ view: next }), []);
   const hidden = useMemo(() => new Set(prefs.hiddenCalendars), [prefs.hiddenCalendars]);
   const mine = prefs.mine && me !== null;
@@ -66,9 +93,15 @@ export function useCalendar(me: string | null = null) {
   const [resolved, setResolved] = useState<
     Resolved<{ events: CalendarEvent[]; calendars: Calendar[] }>
   >({ key: "", data: null, error: null });
+  // Quand la dernière lecture est partie, et si celle en cours est une relecture
+  // de fond — au retour sur l'onglet — dont l'échec ne doit rien effacer.
+  const startedAt = useRef(0);
+  const silentToken = useRef(-1);
 
   useEffect(() => {
     const controller = new AbortController();
+    startedAt.current = Date.now();
+    const background = silentToken.current === token;
 
     Promise.all([
       api.listEvents(span.from, span.to, controller.signal),
@@ -83,11 +116,39 @@ export function useCalendar(me: string | null = null) {
       )
       .catch((cause) => {
         if (controller.signal.aborted) return;
-        setResolved({ key, data: null, error: errorMessage(cause) });
+        // Un téléphone qui sort de veille n'a pas toujours déjà du réseau :
+        // la relecture de fond qui échoue garde l'agenda affiché plutôt que de
+        // le remplacer par « Agenda indisponible ».
+        setResolved((current) =>
+          background && current.data
+            ? { ...current, key }
+            : { key, data: null, error: errorMessage(cause) },
+        );
       });
 
     return () => controller.abort();
-  }, [key, span.from, span.to]);
+  }, [key, token, span.from, span.to]);
+
+  /*
+   * Revenir sur l'onglet relit les événements.
+   *
+   * Les rendez-vous posés par les collègues n'arrivaient qu'au rechargement de
+   * la page. La période affichée ne bouge pas — seul le jeton change — et une
+   * lecture partie il y a moins de trente secondes suffit : pas de double
+   * chargement quand on bascule d'une fenêtre à l'autre.
+   */
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      if (Date.now() - startedAt.current < REFRESH_GRACE_MS) return;
+      setToken((value) => {
+        silentToken.current = value + 1;
+        return value + 1;
+      });
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, []);
 
   const loadedCalendars = useMemo(() => resolved.data?.calendars ?? [], [resolved.data]);
 
@@ -206,14 +267,15 @@ export function useCalendar(me: string | null = null) {
 
   const step = useCallback(
     (direction: number) => {
-      setCursor((current) => {
+      setPinned((pin) => {
+        const current = pin ?? today;
         if (view === "mois") {
           return new Date(current.getFullYear(), current.getMonth() + direction, 1);
         }
         return addDays(current, direction * (view === "semaine" ? 7 : 30));
       });
     },
-    [view],
+    [view, today],
   );
 
   const label = useMemo(() => {
@@ -226,6 +288,8 @@ export function useCalendar(me: string | null = null) {
   }, [view, cursor]);
 
   return {
+    /** L'instant courant, à la minute : la ligne de l'heure de la semaine. */
+    now,
     today,
     cursor,
     view,
@@ -252,9 +316,10 @@ export function useCalendar(me: string | null = null) {
     ready: loadedCalendars.length > 0,
     goPrev: () => step(-1),
     goNext: () => step(1),
-    goToday: () => setCursor(today),
+    // Revenir à aujourd'hui, c'est aussi recommencer à le suivre.
+    goToday: () => setPinned(null),
     openDay: (day: Date) => {
-      setCursor(day);
+      setPinned(day);
       setView("semaine");
     },
   };

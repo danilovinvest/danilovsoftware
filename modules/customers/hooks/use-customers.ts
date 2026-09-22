@@ -1,24 +1,27 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSWRConfig } from "swr";
 import type { Paginated } from "@/shared/api/client";
+import { LIVE, useCached } from "@/shared/api/cache";
 import { scopeParam, useScope } from "@/modules/group";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { errorMessage } from "@/shared/api/errors";
 import { notifyError, notifySuccess } from "@/shared/ui/toaster";
 import * as api from "../lib/api";
 import { filtersFromQuery, filtersToQuery, rememberListQuery } from "../lib/list-query";
-import type { CustomerFilters, CustomerListItem, CustomerStats } from "../lib/types";
-
-type Resolved<T> = { key: string; data: T | null; error: string | null };
+import type { CustomerFilters, CustomerListItem } from "../lib/types";
 
 /**
- * Charge la liste des fiches. Chaque changement de filtre annule la requête
- * précédente : une frappe rapide dans la recherche ne laisse pas une réponse
- * périmée écraser la plus récente.
+ * Charge la liste des fiches.
+ *
+ * **Chaque question a son entrée dans le cache partagé** : revenir sur la
+ * liste, ou sur un filtre déjà posé, montre tout de suite les lignes connues
+ * puis les revérifie. Une frappe rapide dans la recherche ne laisse pas une
+ * réponse périmée écraser la plus récente : chaque réponse se range sous sa
+ * propre question, et l'écran ne lit que celle qu'il pose.
  */
 export function useCustomers(filters: CustomerFilters) {
-  const [reloadToken, setReloadToken] = useState(0);
   /*
     Le périmètre est lu ici et non passé par l'appelant.
 
@@ -37,73 +40,47 @@ export function useCustomers(filters: CustomerFilters) {
     status: effectiveStatus(filters),
     issuer: scopeParam(scope) ?? filters.issuer,
   };
-  // Les filtres sont sérialisés pour servir de dépendance stable : un objet
-  // littéral changerait d'identité à chaque rendu et relancerait la requête.
-  const asked = JSON.stringify(question);
-  const key = `${asked}#${reloadToken}`;
+  // Les filtres sérialisés font la clé : un objet littéral changerait
+  // d'identité à chaque rendu.
+  const key = `customers:list:${JSON.stringify(question)}`;
 
-  const [resolved, setResolved] = useState<
-    Resolved<Paginated<CustomerListItem>> & { asked: string }
-  >({
-    key: "",
-    asked: "",
-    data: null,
-    error: null,
-  });
+  /*
+    `keepPreviousData` laisse les lignes de la question précédente à l'écran
+    pendant qu'on attend la nouvelle — c'était déjà le comportement de la
+    liste, qui ne se vide pas à chaque lettre tapée.
+  */
+  const { data, error, mutate } = useCached(
+    key,
+    () => api.listCustomers(question),
+    { ...LIVE, keepPreviousData: true },
+  );
+  /*
+    Ce que le cache sait de **cette** question, sans le report de la
+    précédente. Une erreur ne garde que ses propres lignes : une coupure ne
+    doit pas vider l'écran qu'on lisait, et un autre filtre ne doit pas montrer
+    les lignes du précédent sous son nom.
+  */
+  const { cache } = useSWRConfig();
+  const own = cache.get(key)?.data as Paginated<CustomerListItem> | undefined;
 
-  // « En cours » est dérivé, pas stocké : aucun setState synchrone dans l'effet.
-  const loading = resolved.key !== key;
+  const reload = useCallback(() => void mutate(), [mutate]);
 
-  useEffect(() => {
-    const controller = new AbortController();
-
-    api
-      .listCustomers(question, controller.signal)
-      .then((data) => setResolved({ key, asked, data, error: null }))
-      .catch((cause) => {
-        if (controller.signal.aborted) return;
-        /*
-          La liste d'avant reste affichée sous l'erreur, mais seulement si
-          c'est la même question : une coupure ne doit pas vider l'écran qu'on
-          lisait, et un autre filtre ne doit pas montrer les lignes du
-          précédent sous son nom.
-        */
-        setResolved((previous) => ({
-          key,
-          asked,
-          data: previous.asked === asked ? previous.data : null,
-          error: errorMessage(cause),
-        }));
-      });
-
-    return () => controller.abort();
-    // `question` est capturée via `key` : la comparer par identité relancerait
-    // la requête à chaque rendu.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
-
-  const reload = useCallback(() => setReloadToken((value) => value + 1), []);
-
-  return { data: resolved.data, loading, error: resolved.error, reload };
+  return {
+    data: (error ? own : data) ?? null,
+    // « En cours » : cette question n'a pas encore de réponse.
+    loading: own === undefined && !error,
+    error: error ? errorMessage(error) : null,
+    reload,
+  };
 }
 
 export function useCustomerStats(chosen?: string) {
-  const [stats, setStats] = useState<CustomerStats | null>(null);
   // Les comptes suivent le périmètre : en mode STRUCTURE, « à relancer » doit
   // compter les études et non les chantiers.
   const scope = useScope();
   const issuer = scopeParam(scope) ?? chosen ?? "";
-
-  useEffect(() => {
-    const controller = new AbortController();
-    api
-      .getStats(issuer, controller.signal)
-      .then(setStats)
-      .catch(() => setStats(null));
-    return () => controller.abort();
-  }, [issuer]);
-
-  return stats;
+  const { data } = useCached(`customers:stats:${issuer}`, () => api.getStats(issuer), LIVE);
+  return data ?? null;
 }
 
 /** Retarde la propagation d'une valeur : utilisé par le champ de recherche. */

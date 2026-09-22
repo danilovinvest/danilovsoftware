@@ -8,6 +8,7 @@ import { Spinner } from "@/shared/ui/feedback";
 import { useAuth } from "../auth-context";
 import type { Permission } from "../lib/types";
 import { useOnline } from "@/shared/hooks/use-online";
+import { loginHref } from "../lib/safe-next";
 
 /**
  * Garde de rendu côté client. Elle protège l'affichage, pas les données :
@@ -35,7 +36,12 @@ export function RequireAuth({
   useEffect(() => {
     // Hors ligne, la session n'est pas perdue : on ne renvoie pas à la connexion.
     if (!loading && !account && !offline) {
-      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+      // Les paramètres voyagent avec le chemin : un lien vers une affaire
+      // (`?affaire=…&onglet=…`) doit rouvrir l'affaire, pas la liste. Ils sont
+      // lus ici, dans l'effet, plutôt que par `useSearchParams` : cette garde
+      // enveloppe tout le CRM, et le crochet imposerait une frontière Suspense
+      // au-dessus de chaque page.
+      router.replace(loginHref(pathname, window.location.search));
     }
   }, [loading, account, offline, router, pathname]);
 

@@ -12,8 +12,33 @@ let refreshPromise: Promise<MinimalSession | null> | null = null;
 /** Ce que le client a besoin de connaître d'une session ; l'appelant en sait plus. */
 type MinimalSession = { access_token: string };
 
+/*
+  Ceux qu'il faut prévenir quand la session se ferme.
+
+  Le cache des écrans (`shared/api/cache.ts`) s'y inscrit pour se vider : les
+  fiches d'un compte ne doivent pas s'afficher, même une fraction de seconde,
+  sous le compte suivant. Le client n'en sait pas plus — il n'importe aucune
+  bibliothèque de cache, et l'application de bureau, qui partage ce fichier,
+  n'a rien à y changer.
+*/
+const sessionEndListeners = new Set<() => void>();
+
+/** S'inscrit à la fin de session ; rend de quoi se désinscrire. */
+export function onSessionEnd(listener: () => void): () => void {
+  sessionEndListeners.add(listener);
+  return () => {
+    sessionEndListeners.delete(listener);
+  };
+}
+
+function endSession() {
+  accessToken = null;
+  for (const listener of sessionEndListeners) listener();
+}
+
 export function setAccessToken(token: string | null) {
-  accessToken = token;
+  if (token === null) endSession();
+  else accessToken = token;
 }
 
 export function getAccessToken() {
@@ -45,7 +70,7 @@ export function refreshSession<T extends MinimalSession>(): Promise<T | null> {
     .then(async (response) => {
       // Toute réponse 4xx est un refus : cookie absent, expiré ou révoqué.
       if (response.status >= 400 && response.status < 500) {
-        accessToken = null;
+        endSession();
         return null;
       }
       if (!response.ok) {
