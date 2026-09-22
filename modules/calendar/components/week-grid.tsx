@@ -38,6 +38,10 @@ import type { Occurrence } from "../lib/types";
 const HOUR_HEIGHT = 44;
 const MIN_BLOCK = 18;
 const DAY = 86_400_000;
+/** Appui long qui arme un geste au doigt. En deçà, c'est un tapotement. */
+const LONG_PRESS_MS = 450;
+/** Au-delà de ce déplacement avant l'appui long, le doigt fait défiler. */
+const PRESS_SLOP_PX = 8;
 
 type Placed = { occurrence: Occurrence; column: number; columns: number };
 
@@ -160,6 +164,69 @@ export function WeekGrid({
   const editable = onCreate !== undefined || onMove !== undefined;
 
   /*
+   * Au doigt, le geste s'arme par un appui long, jamais au contact.
+   *
+   * Le tracé commençait au premier contact : sur un téléphone, poser le doigt
+   * pour faire défiler la journée créait un rendez-vous ou déplaçait celui
+   * qu'on touchait, et la grille ne défilait jamais. La grille déclare
+   * `touch-action: pan-y` — le glisser simple appartient au navigateur — et
+   * c'est l'appui long qui passe la main au geste. À la souris, rien ne change.
+   */
+  const pressRef = useRef<{ timer: number; x: number; y: number } | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  /** Le dernier contact : souris ou doigt, et s'il a armé un geste. */
+  const contactRef = useRef<{ mouse: boolean; armed: boolean }>({ mouse: true, armed: false });
+
+  function cancelPress() {
+    if (!pressRef.current) return;
+    window.clearTimeout(pressRef.current.timer);
+    pressRef.current = null;
+  }
+
+  function press(mode: Drag["mode"], event: React.PointerEvent, occurrence?: Occurrence) {
+    contactRef.current = { mouse: event.pointerType === "mouse", armed: false };
+    if (event.pointerType === "mouse") {
+      // Empêche la sélection de texte pendant un glissement à la souris.
+      event.preventDefault();
+      begin(mode, event.clientX, event.clientY, occurrence);
+      return;
+    }
+    cancelPress();
+    const { clientX: x, clientY: y } = event;
+    const timer = window.setTimeout(() => {
+      pressRef.current = null;
+      contactRef.current = { mouse: false, armed: true };
+      begin(mode, x, y, occurrence);
+      // Le téléphone dit que le geste est pris, quand il sait vibrer.
+      if ("vibrate" in navigator) navigator.vibrate(10);
+    }, LONG_PRESS_MS);
+    pressRef.current = { timer, x, y };
+  }
+
+  /*
+   * Une fois le geste armé, le doigt ne doit plus faire défiler.
+   *
+   * `touch-action` se décide au contact : le navigateur a déjà promis le
+   * défilement vertical, et il le prendrait au premier mouvement en annulant
+   * le pointeur. Un `touchmove` annulé le lui reprend. L'écouteur est posé au
+   * montage et non pendant le geste : Safari ne consulte que les écouteurs
+   * déjà présents au contact, et il est non passif pour avoir le droit
+   * d'annuler.
+   */
+  useEffect(() => {
+    const node = scrollRef.current;
+    if (!node) return;
+    const hold = (event: TouchEvent) => {
+      if (dragRef.current && event.cancelable) event.preventDefault();
+    };
+    node.addEventListener("touchmove", hold, { passive: false });
+    return () => {
+      node.removeEventListener("touchmove", hold);
+      cancelPress();
+    };
+  }, []);
+
+  /*
    * Le suivi se fait sur la fenêtre, pas sur la grille.
    *
    * Un curseur sorti de la carte pendant le geste cesserait d'émettre des
@@ -224,11 +291,10 @@ export function WeekGrid({
     };
   }, [drag !== null, days, onCreate, onMove, onSelect]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function begin(mode: Drag["mode"], event: React.PointerEvent, occurrence?: Occurrence) {
+  function begin(mode: Drag["mode"], x: number, y: number, occurrence?: Occurrence) {
     const rect = columnRef.current?.getBoundingClientRect();
     if (!rect) return;
-    event.preventDefault();
-    const slot = pointToSlot(rect, event.clientX, event.clientY);
+    const slot = pointToSlot(rect, x, y);
 
     if (occurrence) {
       const from = minutesOfDate(occurrence.start);
@@ -320,7 +386,26 @@ export function WeekGrid({
         </div>
       )}
 
-      <div className="relative min-h-0 flex-1 overflow-y-auto">
+      <div
+        ref={scrollRef}
+        data-demo="agenda-week-touch"
+        className="relative min-h-0 flex-1 touch-pan-y overflow-y-auto [-webkit-touch-callout:none]"
+        onPointerMove={(event) => {
+          const pending = pressRef.current;
+          if (
+            pending &&
+            Math.hypot(event.clientX - pending.x, event.clientY - pending.y) > PRESS_SLOP_PX
+          ) {
+            cancelPress();
+          }
+        }}
+        onPointerUp={cancelPress}
+        onPointerCancel={cancelPress}
+        // L'appui long ouvre sinon le menu contextuel du système par-dessus.
+        onContextMenu={(event) => {
+          if (editable) event.preventDefault();
+        }}
+      >
         {/* Deux planchers, et le plus haut gagne : la hauteur disponible pour
             remplir la carte, la hauteur en pixels pour rester lisible quand la
             fenêtre est basse — auquel cas la grille défile. */}
@@ -356,7 +441,7 @@ export function WeekGrid({
                 onPointerDown={(event) => {
                   // Seul le vide déclenche un tracé ; un bloc a son propre
                   // gestionnaire, qui ne doit pas être doublé par celui-ci.
-                  if (onCreate && event.target === event.currentTarget) begin("create", event);
+                  if (onCreate && event.target === event.currentTarget) press("create", event);
                 }}
                 className={cn(
                   "relative flex flex-col border-r last:border-r-0",
@@ -367,7 +452,7 @@ export function WeekGrid({
                 {hours.map((hour) => (
                   <div
                     key={hour}
-                    onPointerDown={(event) => onCreate && begin("create", event)}
+                    onPointerDown={(event) => onCreate && press("create", event)}
                     className={cn(
                       "flex-1 border-b last:border-b-0",
                       onCreate && "hover:bg-accent/20 transition-colors",
@@ -417,12 +502,16 @@ export function WeekGrid({
                       tabIndex={0}
                       onPointerDown={(event) => {
                         event.stopPropagation();
-                        if (onMove) begin("move", event, occurrence);
+                        if (onMove) press("move", event, occurrence);
                       }}
                       onClick={() => {
                         // Sans droit d'écriture il n'y a pas de glissement :
-                        // le clic reste le seul moyen d'ouvrir la fiche.
-                        if (!onMove) onSelect(occurrence);
+                        // le clic reste le seul moyen d'ouvrir la fiche. Au
+                        // doigt non plus : un tapotement n'arme aucun geste,
+                        // c'est donc le clic qui ouvre. À la souris, c'est le
+                        // relâchement qui a déjà décidé.
+                        const contact = contactRef.current;
+                        if (!onMove || (!contact.mouse && !contact.armed)) onSelect(occurrence);
                       }}
                       onKeyDown={(event) => {
                         if (event.key === "Enter" || event.key === " ") onSelect(occurrence);
@@ -468,7 +557,7 @@ export function WeekGrid({
                         <span
                           onPointerDown={(event) => {
                             event.stopPropagation();
-                            begin("resize", event, occurrence);
+                            press("resize", event, occurrence);
                           }}
                           className="hover:bg-foreground/20 absolute inset-x-0 bottom-0 h-1.5 cursor-ns-resize rounded-b-[3px]"
                         />

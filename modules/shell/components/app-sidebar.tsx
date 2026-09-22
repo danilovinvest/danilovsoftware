@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 import { ChevronRightIcon } from "lucide-react";
 import { useAuth } from "@/modules/auth";
 import { SettingsNav } from "@/modules/settings";
@@ -41,7 +42,20 @@ import { SidebarSearch } from "./sidebar-search";
  */
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
-  const { isMobile, open } = useSidebar();
+  const { isMobile, open, setOpenMobile } = useSidebar();
+
+  /*
+    Sur un téléphone, le tiroir se referme à chaque changement de page.
+
+    Il restait ouvert par-dessus l'écran qu'on venait de choisir : chaque clic
+    dans la navigation demandait un second geste pour voir où l'on était
+    arrivé. Refermer au changement de route plutôt qu'au clic couvre tous les
+    chemins — une entrée, un résultat de recherche, le lien des réglages. Sur
+    un écran large, `openMobile` ne sert à rien et reste faux.
+  */
+  useEffect(() => {
+    setOpenMobile(false);
+  }, [pathname, setOpenMobile]);
 
   /*
     Sur un écran large, la colonne est posée dans le flux, pas en `fixed`.

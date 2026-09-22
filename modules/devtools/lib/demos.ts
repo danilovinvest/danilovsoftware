@@ -40,6 +40,50 @@ const FICHE_ETUDE = "/customers/fiche?id=7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "plus-vite-plus-clair",
+    title: "Plus vite, plus clair, chacun chez soi",
+    date: "2026-09-22",
+    steps: [
+      {
+        path: "/customers",
+        target: '[data-demo="fiche-tri-colonne"]',
+        title: "La liste trouve un devis et se trie par colonne",
+        body: "Taper « DE2026-0092 », « STR-2026-0148 » ou un numéro de téléphone, espaces ou +33 compris, retrouve la fiche. Un clic sur « Fiche » ou « Signé TTC » trie. Au téléphone, la liste passe en cartes et le numéro s'appelle d'un toucher. Revenir sur une fiche ou une liste déjà vue l'affiche tout de suite, sans squelette.",
+      },
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="project-delete"]',
+        title: "Une barre d'affaire plus courte",
+        body: "Sept boutons côte à côte devenaient des clics ratés. Restent Devis et Modifier ; le reste passe dans « … », où « Supprimer l'affaire » est séparé et en rouge.",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="cran-solde"]',
+        target: '[data-demo="reglement-editeur"]',
+        title: "Une seule saisie des règlements",
+        body: "Frise, « à faire maintenant », après-signature et fiche chantier ouvrent la même saisie : montant, jour d'encaissement — demandé, jamais le jour du clic d'office — et virements. Dans le devis, le taux de TVA calcule le TTC à partir du HT, ou l'inverse, et les montants s'écrivent à la française.",
+      },
+      {
+        path: "/tasks",
+        target: '[data-demo="task-card-done"]',
+        title: "Terminer une tâche d'un clic",
+        body: "Une case sur chaque carte termine ou rouvre la tâche, sans la glisser. Au-delà de deux cents tâches, la liste le dit et charge la suite, et les compteurs suivent les mêmes filtres que les colonnes.",
+      },
+      {
+        path: "/calendar",
+        target: '[data-demo="agenda-week-touch"]',
+        title: "Un agenda qui vit, et qui se touche",
+        body: "L'heure et « aujourd'hui » avancent seuls, et revenir sur l'onglet relit les rendez-vous posés par les autres. Au téléphone, l'agenda s'ouvre en liste, la semaine défile au doigt et un appui long crée ou déplace. Un événement peut se terminer le lendemain.",
+      },
+      {
+        path: "/settings/general",
+        target: '[data-demo="settings-back"]',
+        title: "Des réglages qui parlent métier",
+        body: "« Retour » ramène là où l'on était. Jetons, slugs de permission et noms de variables du serveur ne s'affichent plus qu'à l'administrateur système, et le profil ne propose plus ce qui n'existe pas. Un compte d'une société ne retrouve plus, dans ⌘K, la messagerie ou Marketing, ce qui appartient à l'autre.",
+      },
+    ],
+  },
+  {
     id: "flux-du-quotidien",
     title: "Créer, retrouver, planifier sans perdre le fil",
     date: "2026-09-22",

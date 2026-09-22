@@ -55,6 +55,7 @@ export function TaskBoard({
   onCreate,
   onMove,
   onAssign,
+  onToggleDone,
 }: {
   tasks: Task[];
   colleagues: Colleague[];
@@ -63,6 +64,7 @@ export function TaskBoard({
   onCreate: (status: TaskStatus) => void;
   onMove: (task: Task, status: TaskStatus, position: number) => void;
   onAssign: (task: Task, assigneeId: string | null) => void;
+  onToggleDone: (task: Task) => void;
 }) {
   const [dragging, setDragging] = useState<Task | null>(null);
   // Réarrangement local le temps du geste ; annulé dès qu'il se termine.
@@ -155,7 +157,9 @@ export function TaskBoard({
         setPreview(null);
       }}
     >
-      <div className="grid items-start gap-4 lg:grid-cols-3">
+      {/* Quatre statuts, quatre colonnes : à trois, « Terminée » tombait seule
+          sur une seconde rangée, sous le reste du tableau. */}
+      <div className="grid items-start gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {STATUS_ORDER.map((status) => (
           <Column
             key={status}
@@ -167,6 +171,7 @@ export function TaskBoard({
             onOpen={onOpen}
             onCreate={onCreate}
             onAssign={onAssign}
+            onToggleDone={onToggleDone}
           />
         ))}
       </div>
@@ -180,6 +185,7 @@ export function TaskBoard({
               canWrite={canWrite}
               onOpen={() => {}}
               onAssign={() => {}}
+              onToggleDone={() => {}}
               overlay
             />
           </ul>
@@ -198,6 +204,7 @@ function Column({
   onOpen,
   onCreate,
   onAssign,
+  onToggleDone,
 }: {
   status: TaskStatus;
   tasks: Task[];
@@ -207,6 +214,7 @@ function Column({
   onOpen: (task: Task) => void;
   onCreate: (status: TaskStatus) => void;
   onAssign: (task: Task, assigneeId: string | null) => void;
+  onToggleDone: (task: Task) => void;
 }) {
   // La colonne est elle-même une zone de dépôt, sans quoi on ne pourrait rien
   // déposer dans une colonne vide.
@@ -279,6 +287,7 @@ function Column({
               canWrite={canWrite}
               onOpen={onOpen}
               onAssign={onAssign}
+              onToggleDone={onToggleDone}
             />
           ))}
           {tasks.length === 0 && (

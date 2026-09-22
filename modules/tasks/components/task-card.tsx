@@ -37,6 +37,11 @@ import { customerHref } from "@/shared/lib/routes";
  * qui ne fait rien changer, et il n'y aurait plus de place pour celles qui en
  * font. Même règle pour la taille, nulle tant que personne ne l'a estimée.
  *
+ * La case devant l'intitulé termine ou rouvre la tâche sans passer par le
+ * glisser ni par le formulaire. Elle n'apparaît qu'au survol pour ne pas
+ * charger le tableau — mais toujours au toucher, où rien ne survole, au focus
+ * clavier, et sur une carte déjà terminée, dont elle porte la coche.
+ *
  * La poignée de gauche est la seule zone qui déclenche le glisser : sans elle,
  * cliquer sur le titre ou sur l'assigné amorcerait un déplacement au lieu
  * d'ouvrir la tâche ou le menu. La bordure gauche colore l'urgence — rouge en
@@ -48,6 +53,7 @@ export function TaskCard({
   canWrite,
   onOpen,
   onAssign,
+  onToggleDone,
   overlay = false,
 }: {
   task: Task;
@@ -55,6 +61,8 @@ export function TaskCard({
   canWrite: boolean;
   onOpen: (task: Task) => void;
   onAssign: (task: Task, assigneeId: string | null) => void;
+  /** Termine la tâche, ou la rouvre si elle l'est déjà. */
+  onToggleDone: (task: Task) => void;
   overlay?: boolean;
 }) {
   const sortable = useSortable({ id: task.id, disabled: !canWrite || overlay });
@@ -160,15 +168,44 @@ export function TaskCard({
           />
         </div>
 
-        <button
-          type="button"
-          onClick={() => onOpen(task)}
-          className="hover:text-primary mt-1 block w-full text-left text-sm leading-snug font-medium"
-        >
-          <span className={cn(done && "text-muted-foreground line-through")}>
-            {task.title}
-          </span>
-        </button>
+        <div className="mt-1 flex items-start gap-1.5">
+          {canWrite && !overlay && (
+            <button
+              type="button"
+              data-demo="task-card-done"
+              aria-label={done ? `Rouvrir « ${task.title} »` : `Terminer « ${task.title} »`}
+              aria-pressed={done}
+              // Ni glisser ni ouverture : la case a son propre geste.
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.stopPropagation();
+                onToggleDone(task);
+              }}
+              className={cn(
+                "mt-0.5 grid size-4 shrink-0 place-items-center rounded border transition",
+                "focus-visible:border-ring focus-visible:ring-ring/50 outline-none focus-visible:ring-3",
+                done
+                  ? "bg-success border-success text-background"
+                  : cn(
+                      "border-input hover:border-success hover:text-success text-transparent",
+                      "opacity-0 group-focus-within:opacity-100 group-hover:opacity-100",
+                      "focus-visible:opacity-100 pointer-coarse:opacity-100",
+                    ),
+              )}
+            >
+              <CheckIcon className="size-3" />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => onOpen(task)}
+            className="hover:text-primary block min-w-0 flex-1 text-left text-sm leading-snug font-medium"
+          >
+            <span className={cn(done && "text-muted-foreground line-through")}>
+              {task.title}
+            </span>
+          </button>
+        </div>
 
         {task.body && (
           <p className="text-muted-foreground mt-1 line-clamp-2 text-xs leading-relaxed">

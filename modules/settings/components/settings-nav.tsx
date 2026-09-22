@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ArrowLeftIcon } from "lucide-react";
 import { useAuth } from "@/modules/auth";
 import {
@@ -19,6 +19,7 @@ import {
   SETTINGS_NAVIGATION,
   isSettingsItemActive,
 } from "../lib/navigation";
+import { lastReturnRoute } from "../lib/return-route";
 
 /**
  * Contenu du tiroir latéral quand on est dans les réglages.
@@ -30,6 +31,7 @@ import {
  */
 export function SettingsNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const { can } = useAuth();
 
   const sections = SETTINGS_NAVIGATION.map((section) => ({
@@ -43,7 +45,17 @@ export function SettingsNav() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild className={NAV_ITEM_CLASS} tooltip="Retour">
-              <Link href="/customers">
+              {/* L'adresse du lien est le repli ; la vraie destination, la
+                  dernière page quittée pour entrer ici, est lue au clic. */}
+              <Link
+                href="/dashboard"
+                data-demo="settings-back"
+                onClick={(event) => {
+                  if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+                  event.preventDefault();
+                  router.push(lastReturnRoute());
+                }}
+              >
                 <ArrowLeftIcon />
                 <span>Retour</span>
               </Link>

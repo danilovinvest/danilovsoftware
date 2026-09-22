@@ -16,9 +16,11 @@ import { formatAgo, formatDateTime } from "@/shared/lib/format";
 import { ErrorNotice, Skeleton, Spinner } from "@/shared/ui/feedback";
 import { Switch } from "@/components/ui/switch";
 import { SettingsPage, SettingsRow, SettingsRows, SettingsSection } from "@/modules/settings";
+import { usePermission } from "@/modules/auth";
 import { QuoteAmountsPanel } from "./quote-amounts-panel";
 import { useDrive, useDriveRuns } from "../hooks/use-drive";
 import * as api from "../lib/api";
+import { consentErrorMessage } from "../lib/consent";
 
 /**
  * Réglages → Fichiers : le raccordement OneDrive.
@@ -41,17 +43,20 @@ export function FilesPanel() {
   const [pending, setPending] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
+  const isAdmin = usePermission("system:admin");
   // Le retour de Microsoft passe par l'URL : la route de rappel ramène
-  // l'application ici (`omptcrm://app/settings/fichiers`) avec son résultat,
-  // succès comme échec. L'écran ne se recharge pas — il est resté ouvert
+  // l'application ici (`omptcrm://app/settings/fichiers`) avec un code, succès
+  // comme échec. Seul un code connu est traduit, jamais le texte de l'adresse
+  // (`lib/consent.ts`). L'écran ne se recharge pas — il est resté ouvert
   // pendant le consentement — donc il relit ses comptes lui-même.
-  const returned = params.get("erreur");
+  const returnedCode = params.get("erreur");
+  const returned = consentErrorMessage(returnedCode, isAdmin);
   const connected = params.get("connecte");
   useEffect(() => {
-    if (!connected && !returned) return;
+    if (!connected && !returnedCode) return;
     reload();
     reloadRuns();
-  }, [connected, returned, reload, reloadRuns]);
+  }, [connected, returnedCode, reload, reloadRuns]);
 
   async function guard(action: () => Promise<unknown>) {
     setPending(true);
@@ -119,12 +124,23 @@ export function FilesPanel() {
           <Skeleton className="h-20 w-full" />
         ) : !configured ? (
           <div className="border-warning/30 bg-warning-soft/50 text-warning rounded-xl border px-3 py-2.5 text-xs">
-            <p className="font-medium">L&apos;application Entra n&apos;est pas déclarée.</p>
-            <p className="mt-1">
-              Renseignez <code className="font-mono">CRM_MS_CLIENT_ID</code> et{" "}
-              <code className="font-mono">CRM_MS_CLIENT_SECRET</code> sur le serveur, puis
-              redémarrez l&apos;API. La marche à suivre est dans la page Développeur.
-            </p>
+            {/* Les noms des variables ne parlent qu'à qui administre le
+                serveur : aux autres, l'écran dit seulement qui prévenir. */}
+            {isAdmin ? (
+              <>
+                <p className="font-medium">L&apos;application Entra n&apos;est pas déclarée.</p>
+                <p className="mt-1">
+                  Renseignez <code className="font-mono">CRM_MS_CLIENT_ID</code> et{" "}
+                  <code className="font-mono">CRM_MS_CLIENT_SECRET</code> sur le serveur, puis
+                  redémarrez l&apos;API. La marche à suivre est dans la page OneDrive.
+                </p>
+              </>
+            ) : (
+              <p className="font-medium">
+                OneDrive n&apos;est pas encore branché sur ce CRM : prévenez
+                l&apos;administrateur.
+              </p>
+            )}
           </div>
         ) : accounts.length === 0 ? (
           <div className="flex flex-col items-start gap-3 rounded-xl border p-4">

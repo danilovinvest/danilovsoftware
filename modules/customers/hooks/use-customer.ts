@@ -1,74 +1,54 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { LIVE, useCached } from "@/shared/api/cache";
 import { errorMessage } from "@/shared/api/errors";
 import * as api from "../lib/api";
 import type { CustomerDetail } from "../lib/types";
 
-type Resolved = {
-  key: string;
-  id: string;
-  data: CustomerDetail | null;
-  error: string | null;
-};
-
-/** Charge la fiche complète (contacts, projets, devis, échanges) en un appel. */
+/**
+ * Charge la fiche complète (contacts, projets, devis, échanges) en un appel.
+ *
+ * **Elle vit dans le cache partagé** : revenir sur une fiche déjà ouverte la
+ * montre tout de suite, sans squelette, puis la revérifie en arrière-plan. Une
+ * autre fiche, elle, repart de zéro — chaque identifiant a sa propre entrée.
+ */
 export function useCustomer(id: string) {
-  const [reloadToken, setReloadToken] = useState(0);
-  const key = `${id}#${reloadToken}`;
+  const {
+    data,
+    error,
+    isValidating,
+    mutate: swrMutate,
+  } = useCached(`customers:detail:${id}`, () => api.getCustomer(id), LIVE);
 
-  const [resolved, setResolved] = useState<Resolved>({
-    key: "",
-    id: "",
-    data: null,
-    error: null,
-  });
-
-  // Dérivé plutôt que stocké : évite un setState synchrone dans l'effet.
-  const loading = resolved.key !== key;
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    api
-      .getCustomer(id, controller.signal)
-      .then((data) => setResolved({ key, id, data, error: null }))
-      .catch((cause) => {
-        if (controller.signal.aborted) return;
-        /*
-          Un rechargement raté garde la fiche qu'on regardait.
-
-          Il remplaçait tout par l'erreur : une coupure réseau juste après un
-          clic faisait disparaître la fiche au moment où l'on travaillait
-          dessus. L'écran affiche désormais l'erreur en bandeau, au-dessus de ce
-          qu'il montrait déjà. Une autre fiche, elle, repart de zéro.
-        */
-        setResolved((previous) => ({
-          key,
-          id,
-          data: previous.id === id ? previous.data : null,
-          error: errorMessage(cause),
-        }));
-      });
-
-    return () => controller.abort();
-  }, [id, key]);
-
-  const reload = useCallback(() => setReloadToken((value) => value + 1), []);
+  /*
+    Un rechargement raté garde la fiche qu'on regardait : le cache conserve
+    la dernière réponse à côté de l'erreur, et l'écran affiche celle-ci en
+    bandeau au-dessus de ce qu'il montrait déjà.
+  */
+  const reload = useCallback(() => void swrMutate(), [swrMutate]);
 
   /*
     Range tout de suite ce qu'une écriture vient de rendre.
 
     Chaque clic relisait toute la fiche avant que l'écran ne bouge. Une
     écriture qui rend l'objet à jour (un devis encaissé) le pose en place
-    immédiatement ; le rechargement qui suit complète ce qu'elle a pu
-    entraîner ailleurs — une tâche automatique, un statut client.
+    immédiatement — dans le cache, donc aussi pour la prochaine visite ; le
+    rechargement qui suit complète ce qu'elle a pu entraîner ailleurs — une
+    tâche automatique, un statut client.
   */
-  const mutate = useCallback((update: (current: CustomerDetail) => CustomerDetail) => {
-    setResolved((previous) =>
-      previous.data ? { ...previous, data: update(previous.data) } : previous,
-    );
-  }, []);
+  const mutate = useCallback(
+    (update: (current: CustomerDetail) => CustomerDetail) => {
+      void swrMutate((current) => (current ? update(current) : current), { revalidate: false });
+    },
+    [swrMutate],
+  );
 
-  return { customer: resolved.data, loading, error: resolved.error, reload, mutate };
+  return {
+    customer: data ?? null,
+    loading: isValidating,
+    error: error ? errorMessage(error) : null,
+    reload,
+    mutate,
+  };
 }

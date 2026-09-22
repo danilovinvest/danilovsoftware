@@ -19,11 +19,15 @@ import {
 } from "@/components/ui/card";
 import { ErrorNotice, Spinner } from "@/shared/ui/feedback";
 import { errorMessage } from "@/shared/api/errors";
+import { useSetPageTitle } from "@/modules/shell";
 import * as api from "../lib/api";
 import type { ImportReport, ImportStatus, Plan } from "../lib/types";
 import { PlanPreview } from "./plan-preview";
 
 export function ImportView() {
+  // Le fil d'Ariane ne sait nommer que le module (« Fiches ») : sans ce titre,
+  // la page d'import s'y confondait avec la liste.
+  useSetPageTitle("Synchronisation Excel");
   const [status, setStatus] = useState<ImportStatus | null>(null);
   const [plan, setPlan] = useState<Plan | null>(null);
   const [report, setReport] = useState<ImportReport | null>(null);

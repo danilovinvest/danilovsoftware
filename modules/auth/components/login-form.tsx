@@ -10,6 +10,7 @@ import { ErrorNotice } from "@/shared/ui/feedback";
 import { useAuth } from "../auth-context";
 import { DevAccountPicker } from "./dev-account-picker";
 import { PasskeyLoginButton } from "./passkey-login-button";
+import { safeNext } from "../lib/safe-next";
 
 export function LoginForm() {
   const router = useRouter();
@@ -36,8 +37,9 @@ export function LoginForm() {
   }
 
   // Après connexion on arrive sur la synthèse, pas sur la liste : elle dit
-  // quoi faire aujourd'hui, là où la liste demande de chercher.
-  const goToApp = () => router.replace(params.get("next") ?? "/dashboard");
+  // quoi faire aujourd'hui, là où la liste demande de chercher. `next` n'est
+  // suivi que s'il désigne une page de ce site (`safeNext`).
+  const goToApp = () => router.replace(safeNext(params.get("next")));
 
   return (
     <form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">

@@ -17,6 +17,7 @@ import type { Automation, Graph } from "../lib/types";
 import { AutomationCanvas, failuresOf } from "./automation-canvas";
 import { RunJournal } from "./run-journal";
 import { askConfirm } from "@/shared/ui/confirm";
+import { useSetPageTitle } from "@/modules/shell";
 
 /**
  * L'éditeur d'une automatisation : la toile, son en-tête et son journal.
@@ -28,6 +29,9 @@ import { askConfirm } from "@/shared/ui/confirm";
  */
 export function AutomationEditor({ id }: { id: string }) {
   const { automation, calendars, loading, error, reload } = useAutomation(id);
+  // Le dernier cran du fil d'Ariane nomme l'automatisation ouverte : l'URL ne
+  // porte que son identifiant.
+  useSetPageTitle(automation?.name ?? null);
 
   if (loading && !automation) {
     return <Skeleton className="h-[32rem] w-full rounded-xl" />;

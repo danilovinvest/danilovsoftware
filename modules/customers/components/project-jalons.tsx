@@ -8,7 +8,12 @@ import { DateField } from "@/shared/ui/date-time-field";
 import { formatDate } from "@/shared/lib/format";
 import { cn } from "@/lib/utils";
 import { jalonOrder, type Jalons } from "../lib/jalons";
-import { DepositEditor, DepositTag, type DepositTotal } from "./deposit-field";
+import {
+  DepositTag,
+  SettlementButton,
+  type DepositTotal,
+  type SettlementTransfers,
+} from "./deposit-field";
 import { MaterialsEditor, MaterialsTags } from "./materials-field";
 import type { Metier } from "../lib/cycle";
 import type { ProjectMission } from "../lib/types";
@@ -37,6 +42,8 @@ export function ProjectJalons({
   depositTotal = null,
   onDeposit,
   onDepositRemove,
+  depositPaidAt = null,
+  depositTransfers,
   disabled,
   className,
 }: {
@@ -57,12 +64,19 @@ export function ProjectJalons({
   /** Le montant du devis, auquel l'acompte se compare. */
   depositTotal?: DepositTotal | null;
   /**
-   * Encaisse l'acompte avec son montant, ou corrige le montant. Absent, la
-   * ligne reste une simple case.
+   * Encaisse l'acompte avec son montant et son jour, ou les corrige.
+   *
+   * Obligatoire : l'acompte encaissé s'ouvrait en simple case « Marquer fait »
+   * quand un écran oubliait de le passer, et posait alors la date du jour. Il
+   * n'a plus qu'une saisie, l'éditeur des règlements.
    */
-  onDeposit?: (amount: string | null) => boolean | Promise<boolean>;
+  onDeposit: (amount: string | null, paidAt?: string) => boolean | Promise<boolean>;
   /** Retire l'encaissement, et rend la réussite de l'écriture. */
-  onDepositRemove?: () => boolean | Promise<boolean>;
+  onDepositRemove: () => boolean | Promise<boolean>;
+  /** Le vrai jour d'encaissement, jamais le repli sur l'émission du devis. */
+  depositPaidAt?: string | null;
+  /** Les virements de l'acompte, quand l'écran les connaît. */
+  depositTransfers?: SettlementTransfers;
   disabled?: boolean;
   className?: string;
 }) {
@@ -145,11 +159,14 @@ export function ProjectJalons({
                     disabled={disabled}
                     onSave={onMaterials}
                   />
-                ) : jalon.picks === "deposit" && onDeposit && onDepositRemove ? (
-                  <DepositButton
+                ) : jalon.picks === "deposit" ? (
+                  <SettlementButton
+                    kind="acompte"
                     paid={done}
                     amount={jalons.deposit_amount}
+                    paidAt={depositPaidAt}
                     total={depositTotal}
+                    transfers={depositTransfers}
                     disabled={disabled}
                     onSave={onDeposit}
                     onRemove={onDepositRemove}
@@ -222,47 +239,6 @@ function MaterialsButton({
           note="Écrit la commande et sa date dans les jalons de l'affaire."
           onSave={(list) => onSave(list)}
           onRemove={() => onSave(null)}
-          onClose={() => setOpen(false)}
-        />
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-/** L'acompte, encaissé avec son montant et corrigé ensuite, depuis sa ligne. */
-function DepositButton({
-  paid,
-  amount,
-  total,
-  disabled,
-  onSave,
-  onRemove,
-}: {
-  paid: boolean;
-  amount: string | null;
-  total: DepositTotal | null;
-  disabled?: boolean;
-  onSave: (amount: string | null) => boolean | Promise<boolean>;
-  onRemove: () => boolean | Promise<boolean>;
-}) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button size="xs" variant={paid ? "ghost" : "outline"} disabled={disabled}>
-          {paid ? "Modifier" : "Encaissé"}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-72" align="end">
-        <DepositEditor
-          key={`${open}·${amount ?? "vide"}`}
-          amount={amount}
-          paid={paid}
-          total={total}
-          pending={disabled}
-          onSave={onSave}
-          onRemove={onRemove}
           onClose={() => setOpen(false)}
         />
       </PopoverContent>

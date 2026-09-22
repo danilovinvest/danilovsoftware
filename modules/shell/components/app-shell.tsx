@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Suspense } from "react";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -11,7 +12,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { SettingsIcon } from "lucide-react";
-import { settingsLabel } from "@/modules/settings";
+import { ReturnRouteTracker, settingsLabel } from "@/modules/settings";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { NAVIGATION } from "../lib/navigation";
@@ -30,6 +31,10 @@ const SIDEBAR_WIDTH = "248px";
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <PageTitleProvider>
+      {/* Note la page quittée pour les réglages, qui y ramènent. */}
+      <Suspense fallback={null}>
+        <ReturnRouteTracker />
+      </Suspense>
       {/* Les libellés de la barre latérale passent par des tooltips Radix, qui
           exigent un provider au-dessus d'eux. */}
       <TooltipProvider delayDuration={200}>

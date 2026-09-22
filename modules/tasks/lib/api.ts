@@ -4,7 +4,6 @@ import type {
   Task,
   TaskFilters,
   TaskPayload,
-  TaskStats,
   TaskStatus,
 } from "./types";
 
@@ -20,13 +19,6 @@ export function listTasks(filters: TaskFilters, signal?: AbortSignal) {
       page: filters.page,
       per_page: filters.per_page,
     },
-    signal,
-  });
-}
-
-export function getStats(assigneeId?: string, signal?: AbortSignal) {
-  return apiFetch<TaskStats>("/v1/tasks/stats", {
-    query: { assignee_id: assigneeId },
     signal,
   });
 }

@@ -158,6 +158,7 @@ export const SORT_OPTIONS = [
   { value: "name", label: "Nom (A→Z)" },
   { value: "updated", label: "Dernière modification" },
   { value: "requested", label: "Date de demande" },
+  { value: "amount", label: "Signé TTC" },
 ];
 
 /** Transforme un dictionnaire de libellés en options de <select>. */

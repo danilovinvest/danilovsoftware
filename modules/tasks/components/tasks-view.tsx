@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { KanbanSquareIcon, ListIcon, PlusIcon, SearchIcon, XIcon } from "lucide-react";
 import { usePermission } from "@/modules/auth";
@@ -12,7 +12,7 @@ import { EmptyState, ErrorNotice, Skeleton } from "@/shared/ui/feedback";
 import { cn } from "@/lib/utils";
 import * as api from "../lib/api";
 import { DUE_FILTERS, STATUS_ORDER, TASK_STATUS } from "../lib/labels";
-import { useTasks, useTaskStats } from "../hooks/use-tasks";
+import { countLoaded, useServerCounts, useTasks } from "../hooks/use-tasks";
 import { useColleagues } from "@/shared/hooks/use-colleagues";
 import { TaskBoard } from "./task-board";
 import { TaskDialog } from "./task-dialog";
@@ -23,6 +23,9 @@ import { notifyError } from "@/shared/ui/toaster";
 import { errorMessage } from "@/shared/api/errors";
 
 type View = "board" | "list";
+
+/** Le plafond d'une page côté API (`httpx.maxPerPage`). */
+const PAGE_SIZE = 200;
 
 export function TasksView() {
   const canWrite = usePermission("tasks:write");
@@ -39,7 +42,7 @@ export function TasksView() {
   const [filters, setFilters] = useState<TaskFilters>(() => ({
     sort: "position",
     page: 1,
-    per_page: 200,
+    per_page: PAGE_SIZE,
     // `?assignee=mine` : le lien « mes tâches » se partage et se retrouve.
     assignee_id: searchParams.get("assignee") === "mine" ? "mine" : undefined,
   }));
@@ -76,9 +79,16 @@ export function TasksView() {
   }
   const [creatingIn, setCreatingIn] = useState<TaskStatus | null>(null);
 
-  const { data, loading, error, reload } = useTasks(filters);
-  const [statsToken, setStatsToken] = useState(0);
-  const stats = useTaskStats(filters.assignee_id, statsToken);
+  /*
+    Le nombre de pages chargées, attaché aux filtres qui l'ont demandé : changer
+    de filtre repart d'une page sans qu'aucun effet ait à le remettre à zéro.
+  */
+  const filtersKey = JSON.stringify(filters);
+  const [more, setMore] = useState({ filtersKey: "", pages: 1 });
+  const pages = more.filtersKey === filtersKey ? more.pages : 1;
+
+  const { data, loading, error, reload } = useTasks(filters, pages);
+  const [countsToken, setCountsToken] = useState(0);
 
   /**
    * Correctif local appliqué le temps de l'aller-retour réseau. Sans lui, une
@@ -95,7 +105,37 @@ export function TasksView() {
 
   function refresh() {
     reload();
-    setStatsToken((value) => value + 1);
+    setCountsToken((value) => value + 1);
+  }
+
+  /*
+    La liste est-elle entière ? Tant qu'elle l'est, les compteurs se lisent sur
+    les cartes chargées — ce sont alors exactement les colonnes, correctif local
+    compris. Au-delà d'une page, ils viennent du serveur, avec les mêmes filtres.
+  */
+  const total = data?.total ?? 0;
+  const complete = data !== null && items.length >= total;
+  const serverCounts = useServerCounts(filters, data !== null && !complete, countsToken);
+  const counts = complete ? countLoaded(items) : data ? serverCounts : null;
+
+  async function toggleDone(task: Task) {
+    const status: TaskStatus = task.status === "terminee" ? "a_faire" : "terminee";
+    if (data) {
+      setPatched({
+        source: data,
+        items: items.map((item) => (item.id === task.id ? { ...item, status } : item)),
+      });
+    }
+    try {
+      await api.setTaskStatus(task.id, status);
+    } catch (cause) {
+      setPatched(null);
+      notifyError(`La tâche n'a pas été mise à jour : ${errorMessage(cause)}`, () =>
+        void toggleDone(task),
+      );
+      return;
+    }
+    refresh();
   }
 
   async function move(task: Task, status: TaskStatus, position: number) {
@@ -130,12 +170,6 @@ export function TasksView() {
     }
     refresh();
   }
-
-  const counts = useMemo(() => {
-    const result: Record<string, number> = {};
-    for (const entry of stats?.by_status ?? []) result[entry.status] = entry.total;
-    return result;
-  }, [stats]);
 
   const mine = filters.assignee_id === "mine";
   const filtered = Boolean(
@@ -188,27 +222,27 @@ export function TasksView() {
         </div>
       </header>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5" data-demo="task-counts">
         {STATUS_ORDER.map((status) => (
           <Card key={status}>
             <CardContent>
               <p className="text-muted-foreground text-xs">{TASK_STATUS[status].label}</p>
               <p className="mt-1 text-2xl font-semibold tabular-nums">
-                {counts[status] ?? 0}
+                <Count value={counts?.byStatus[status] ?? null} />
               </p>
             </CardContent>
           </Card>
         ))}
-        <Card className={cn((stats?.overdue ?? 0) > 0 && "border-danger/40")}>
+        <Card className={cn((counts?.overdue ?? 0) > 0 && "border-danger/40")}>
           <CardContent>
             <p className="text-muted-foreground text-xs">En retard</p>
             <p
               className={cn(
                 "mt-1 text-2xl font-semibold tabular-nums",
-                (stats?.overdue ?? 0) > 0 && "text-danger",
+                (counts?.overdue ?? 0) > 0 && "text-danger",
               )}
             >
-              {stats?.overdue ?? 0}
+              <Count value={counts?.overdue ?? null} />
             </p>
           </CardContent>
         </Card>
@@ -299,7 +333,7 @@ export function TasksView() {
                 assignee_id: current.assignee_id,
                 sort: current.sort,
                 page: 1,
-                per_page: 200,
+                per_page: PAGE_SIZE,
               }));
             }}
           >
@@ -309,10 +343,37 @@ export function TasksView() {
         )}
       </div>
 
+      {/*
+        Au-delà d'une page, la liste le dit. Elle s'arrêtait en silence à deux
+        cents cartes, et la deux cent unième tâche n'existait pour personne.
+      */}
+      {data && !error && !complete && (
+        <div
+          data-demo="task-truncated"
+          className="bg-warning-soft text-warning flex flex-wrap items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm"
+        >
+          <span>
+            <strong className="tabular-nums">{items.length}</strong> sur{" "}
+            <strong className="tabular-nums">{total}</strong> tâches affichées
+            {view === "board" ? " : les colonnes ne montrent que celles-ci." : "."}
+          </span>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={loading}
+            onClick={() => setMore({ filtersKey, pages: pages + 1 })}
+          >
+            {loading
+              ? "Chargement…"
+              : `Afficher les ${Math.min(PAGE_SIZE, total - items.length)} suivantes`}
+          </Button>
+        </div>
+      )}
+
       {error ? (
-        <ErrorNotice message={error} />
+        <ErrorNotice message={error} onRetry={refresh} />
       ) : loading && !data ? (
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {STATUS_ORDER.map((status) => (
             <Skeleton key={status} className="h-64 w-full" />
           ))}
@@ -326,6 +387,7 @@ export function TasksView() {
           onCreate={setCreatingIn}
           onMove={move}
           onAssign={assign}
+          onToggleDone={toggleDone}
         />
       ) : items.length === 0 ? (
         <Card>
@@ -372,4 +434,16 @@ export function TasksView() {
       )}
     </div>
   );
+}
+
+/** Un compteur, ou « — » quand on ne le connaît pas : jamais un 0 inventé. */
+function Count({ value }: { value: number | null }) {
+  if (value === null) {
+    return (
+      <span className="text-muted-foreground" title="Compteur indisponible">
+        —
+      </span>
+    );
+  }
+  return <>{value}</>;
 }

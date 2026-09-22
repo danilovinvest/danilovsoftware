@@ -180,6 +180,12 @@ type Draft = {
   endDate: string;
   startTime: string;
   endTime: string;
+  /**
+   * Jours entre la date de début et celle de fin, pour un événement horaire.
+   * Un pour un événement de nuit — un coulage qui finit à 2 h, une mise en
+   * sécurité posée à 22 h — qui ne tenait pas : la fin était bornée à 23:45.
+   */
+  endDays: number;
 };
 
 function FormBody({
@@ -209,6 +215,8 @@ function FormBody({
   const [pending, setPending] = useState(false);
 
   const colleagues = useColleagues();
+  // Le serveur refuse une fin qui ne suit pas le début : on le dit avant.
+  const inverse = !draft.allDay && finMinutes(draft) <= minutes(draft.startTime);
   const set = <K extends keyof Draft>(field: K, value: Draft[K]) =>
     setDraft((current) => ({ ...current, [field]: value }));
 
@@ -427,9 +435,12 @@ function FormBody({
             />
           </div>
         ) : (
-          <div className="grid grid-cols-[1fr_7rem_9rem] gap-3">
+          // Sur un téléphone, la date prend sa ligne : trois colonnes dans
+          // 360 pixels ne laissaient pas de quoi lire « 22 sept. 2026 ».
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-[1fr_7rem_9rem]">
             <DateField
               label="Date"
+              wrapperClassName="col-span-2 sm:col-span-1"
               value={draft.date}
               agenda={agenda}
               onChange={(value) => set("date", value)}
@@ -440,20 +451,53 @@ function FormBody({
               onChange={(value) => {
                 // Déplacer le début décale la fin d'autant : on garde la durée
                 // qu'on venait de choisir plutôt que de la voir se retourner.
-                const shift = minutes(value) - minutes(draft.startTime);
-                setDraft((current) => ({
-                  ...current,
-                  startTime: value,
-                  endTime: clock(Math.min(minutes(current.endTime) + shift, 23 * 60 + 45)),
-                }));
+                // Passé minuit, la fin glisse au lendemain au lieu de buter
+                // sur 23:45.
+                setDraft((current) => {
+                  const shift = minutes(value) - minutes(current.startTime);
+                  const end = Math.min(
+                    finMinutes(current) + shift,
+                    2 * DAY_MINUTES - STEP_FORM_MINUTES,
+                  );
+                  return {
+                    ...current,
+                    startTime: value,
+                    endTime: clock(end % DAY_MINUTES),
+                    endDays: Math.floor(end / DAY_MINUTES),
+                  };
+                })
               }}
             />
             <TimeField
               label="Fin"
-              after={draft.startTime}
+              // Le lendemain, toute heure est après le début : la liste couvre
+              // alors la journée entière.
+              after={draft.endDays === 0 ? draft.startTime : undefined}
               value={draft.endTime}
               onChange={(value) => set("endTime", value)}
             />
+          </div>
+        )}
+
+        {!draft.allDay && (
+          <div className="-mt-1 flex flex-wrap items-center gap-x-3 gap-y-1" data-demo="event-end-next-day">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="end-next-day"
+                checked={draft.endDays > 0}
+                onCheckedChange={(next) =>
+                  setDraft((current) => ({ ...current, endDays: next ? 1 : 0 }))
+                }
+              />
+              <Label htmlFor="end-next-day" className="text-sm font-normal">
+                Se termine le lendemain
+              </Label>
+            </div>
+            {inverse && (
+              <p className="text-danger text-xs">
+                La fin doit suivre le début.
+              </p>
+            )}
           </div>
         )}
 
@@ -568,7 +612,7 @@ function FormBody({
           <Button variant="outline" onClick={onClose} disabled={pending}>
             Annuler
           </Button>
-          <Button onClick={save} disabled={pending || !draft.title.trim()}>
+          <Button onClick={save} disabled={pending || !draft.title.trim() || inverse}>
             {pending && <Spinner />}
             {event ? "Enregistrer" : "Créer"}
           </Button>
@@ -593,6 +637,23 @@ function minutes(value: string): number {
 function clock(total: number): string {
   const safe = Math.max(0, total);
   return `${pad(Math.floor(safe / 60) % 24)}:${pad(safe % 60)}`;
+}
+
+const DAY_MINUTES = 24 * 60;
+/** Le pas des créneaux de saisie, celui de `TimeField`. */
+const STEP_FORM_MINUTES = 15;
+
+/** La fin en minutes depuis minuit **du jour de début** : 26 h pour 2 h le lendemain. */
+function finMinutes(draft: Draft): number {
+  return draft.endDays * DAY_MINUTES + minutes(draft.endTime);
+}
+
+/** Jours calendaires entre deux instants, en heure locale. */
+function daysBetween(from: Date, to: Date): number {
+  const a = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  const b = new Date(to.getFullYear(), to.getMonth(), to.getDate());
+  // Arrondi : un passage à l'heure d'été fait une journée de 23 heures.
+  return Math.max(0, Math.round((b.getTime() - a.getTime()) / 86_400_000));
 }
 
 function pad(value: number) {
@@ -694,6 +755,7 @@ function initial(
         endDate: dateValue(last),
         startTime: "09:00",
         endTime: "10:00",
+        endDays: 0,
       };
     }
     return {
@@ -711,6 +773,7 @@ function initial(
       endDate: dateValue(from),
       startTime: timeValue(from),
       endTime: timeValue(to),
+      endDays: daysBetween(from, to),
     };
   }
 
@@ -760,6 +823,7 @@ function initial(
       endDate: dateValue(last),
       startTime: "09:00",
       endTime: "10:00",
+      endDays: 0,
     };
   }
 
@@ -780,6 +844,8 @@ function initial(
     endDate: dateValue(from),
     startTime: timeValue(from),
     endTime: timeValue(to),
+    // Un créneau tracé jusqu'à minuit finit le lendemain à 00:00.
+    endDays: daysBetween(from, to),
   };
 }
 
@@ -802,8 +868,10 @@ function bounds(draft: Draft): { start: string; end: string } {
     last.setDate(last.getDate() + 1);
     return { start: draft.date, end: dateValue(last) };
   }
+  const end = new Date(`${draft.date}T${draft.endTime}:00`);
+  end.setDate(end.getDate() + draft.endDays);
   return {
     start: new Date(`${draft.date}T${draft.startTime}:00`).toISOString(),
-    end: new Date(`${draft.date}T${draft.endTime}:00`).toISOString(),
+    end: end.toISOString(),
   };
 }

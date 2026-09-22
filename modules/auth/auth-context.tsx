@@ -69,6 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Le minuteur de renouvellement doit rappeler `renew`, qui dépend lui-même de
   // la planification : la référence casse ce cycle.
   const renewRef = useRef<() => void>(() => {});
+  const accountIdRef = useRef<string | null>(null);
 
   const clearTimer = useCallback(() => {
     if (timerRef.current) {
@@ -79,6 +80,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const applySession = useCallback(
     (session: SessionResponse) => {
+      // Un autre compte prend la place sans passer par la déconnexion (une
+      // invitation acceptée en étant connecté) : ce que le cache tient
+      // appartient au précédent, et ne doit pas s'afficher sous le suivant.
+      if (accountIdRef.current && accountIdRef.current !== session.user.id) {
+        setAccessToken(null);
+      }
+      accountIdRef.current = session.user.id;
       setAccessToken(session.access_token);
       setState({ status: "ready", account: session.user });
       retriesRef.current = 0;
@@ -94,6 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const forget = useCallback(() => {
+    accountIdRef.current = null;
     setAccessToken(null);
     setState({ status: "ready", account: null });
     clearTimer();

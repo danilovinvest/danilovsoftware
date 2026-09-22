@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { customerHref } from "@/shared/lib/routes";
 import { Fragment, useState } from "react";
-import { AlertTriangleIcon, ChevronRightIcon } from "lucide-react";
+import { ChevronRightIcon } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -12,58 +13,26 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Bar } from "@/shared/ui/loading";
-import { notifyError } from "@/shared/ui/toaster";
-import { errorMessage } from "@/shared/api/errors";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { usePermission } from "@/modules/auth";
 import { cn } from "@/lib/utils";
-import { customerHref } from "@/shared/lib/routes";
-import { TONE_SOFT, TONE_TEXT } from "@/shared/ui/panel";
-import { formatAmount, formatDate, formatPhone } from "@/shared/lib/format";
-import * as api from "../lib/api";
+import { formatAmount } from "@/shared/lib/format";
 import { CUSTOMER_SOURCE, PROJECT_OUTCOME } from "../lib/labels";
-import {
-  leadProject,
-  nextAction,
-  readCycle,
-  type CycleOrders,
-  type Metier,
-  type NextAction,
-} from "../lib/cycle";
+import { leadProject, type Metier } from "../lib/cycle";
 import { useScope } from "@/modules/group";
-import { EMPTY_MARKS, readJalons } from "../lib/jalons";
 import { useCycleOrders } from "../hooks/use-cycle-orders";
 import { EnumBadge } from "./enum-badge";
 import { ProjectCycle } from "./project-cycle";
-import type { CustomerListItem, ProjectSummary, Review } from "../lib/types";
-
-
-/**
- * La société d'une fiche, dite par un badge plein.
- *
- * Demandé par le dirigeant : « je veux pouvoir voir dans la fiche mais sans
- * cliquer dessus si c'est une affaire de groupe ou structure ». La première
- * réponse teintait la **ligne entière** ; il l'a refusée — « trop light, trop
- * pastel, et trop bizarre » — et il a raison sur le fond : un fond de ligne
- * doit rester assez pâle pour ne pas effacer le texte qu'il porte, donc il ne
- * peut pas être franc. Un badge, lui, n'a rien à laisser lisible derrière lui.
- *
- * Cran 9 de la teinte en fond et `--background` en encre, jamais du blanc :
- * l'échelle bascule en thème sombre et un blanc en dur y disparaîtrait. C'est
- * `TONE_BUTTON` sans son survol, la même construction que les boutons teintés.
- *
- * **Deux cas n'ont pas de badge, et c'est un choix.** Une fiche mixte porte les
- * deux sociétés (34 sur 418) : lui en donner un serait faux une fois sur deux,
- * et la fiche reste entière des deux côtés — c'est la doctrine du périmètre.
- * Une fiche sans devis ni affaire attribuée (116) n'est rangée nulle part.
- * Une troisième pastille pour « on ne sait pas » ferait trois choses à
- * apprendre pour deux sociétés, et remplirait la colonne de bruit.
- */
-const ISSUER_BADGE: Record<string, { label: string; className: string }> = {
-  "ompt-groupe": { label: "GROUPE", className: "bg-info text-background" },
-  "ompt-structure": { label: "STRUCTURE", className: "bg-success text-background" },
-};
+import { CustomerCards, type ListRow } from "./customer-cards";
+import {
+  ActionCell,
+  IssuerBadge,
+  PhoneLink,
+  ReviewBox,
+  SortButton,
+  readListProject,
+} from "./customer-list-parts";
+import type { CustomerFilters, CustomerListItem, Review } from "../lib/types";
 
 /**
  * La liste des fiches, relue autour du cycle.
@@ -82,11 +51,17 @@ export function CustomerTable({
   items,
   loading,
   issuer,
+  sort = "name",
+  onSort,
 }: {
   items: CustomerListItem[];
   loading: boolean;
   /** La société choisie dans les filtres, quand l'adresse n'en fixe aucune. */
   issuer?: string;
+  /** Le tri en cours, pour marquer l'en-tête qui le porte. */
+  sort?: NonNullable<CustomerFilters["sort"]>;
+  /** Absent, les en-têtes restent de simples intitulés. */
+  onSort?: (sort: NonNullable<CustomerFilters["sort"]>) => void;
 }) {
   // Les affaires arrivent déjà avec la ligne du client : déplier ne déclenche
   // aucune requête.
@@ -110,6 +85,18 @@ export function CustomerTable({
   */
   const [reviews, setReviews] = useState<Record<string, Review>>({});
 
+  function reviewChanged(customerId: string, next: Review) {
+    setReviews((current) => ({ ...current, [customerId]: next }));
+  }
+
+  // Une lecture par fiche, partagée par le tableau et les cartes.
+  const rows: ListRow[] = items.map((customer) => {
+    const reads = customer.projects.map((project) =>
+      readListProject(project, now, metier, orders),
+    );
+    return { customer, reads, lead: leadProject(reads) };
+  });
+
   function toggle(id: string) {
     setExpanded((current) => {
       const next = new Set(current);
@@ -120,324 +107,232 @@ export function CustomerTable({
   }
 
   return (
-    <div className="w-full min-w-0 overflow-x-auto">
-      {/* En-têtes de colonne à la Twenty : une ligne basse, en gris
-          tertiaire, qui ne rivalise pas avec le contenu. */}
-      <Table className="min-w-280 [&_thead_th]:text-muted-foreground [&_thead_th]:h-8 [&_thead_th]:text-xs [&_thead_th]:font-medium">
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-8" />
-            <TableHead>Fiche</TableHead>
-            <TableHead>Coordonnées</TableHead>
-            <TableHead className="w-30">Où en est-on</TableHead>
-            <TableHead>Prochaine action</TableHead>
-            <TableHead>Source</TableHead>
-            <TableHead className="text-right">Signé TTC</TableHead>
-            {/*
-              Deux colonnes plutôt qu'une à deux cases : chacune porte son
-              intitulé, et on descend une colonne de coches sans avoir à se
-              rappeler laquelle des deux boîtes veut dire quoi.
-            */}
-            <TableHead className="w-16 text-center">Vérifiée</TableHead>
-            <TableHead className="w-16 text-center">Complète</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {loading && items.length === 0
-            ? /*
-                Les colonnes gardent leurs largeurs pendant l'attente : une
-                barre unique en `colSpan` laissait le tableau se réorganiser
-                d'un coup à l'arrivée des données, et l'œil perdait la ligne
-                qu'il suivait.
-              */
-              Array.from({ length: 8 }, (_, index) => (
-                <TableRow key={index}>
-                  <TableCell />
-                  <TableCell>
-                    <Bar hue="indigo" className="h-3.5 w-2/3" />
-                    <Bar className="mt-1.5 h-2 w-1/3" />
-                  </TableCell>
-                  <TableCell>
-                    <Bar className="h-2.5 w-4/5" />
-                  </TableCell>
-                  <TableCell>
-                    <Bar className="h-2.5 w-24" />
-                  </TableCell>
-                  <TableCell>
-                    <Bar className="h-2.5 w-3/4" />
-                  </TableCell>
-                  <TableCell>
-                    <Bar className="h-4 w-16 rounded-md" />
-                  </TableCell>
-                  <TableCell>
-                    <Bar className="ml-auto h-2.5 w-16" />
-                  </TableCell>
-                  <TableCell />
-                  <TableCell />
-                </TableRow>
-              ))
-            : items.map((customer) => {
-                const open = expanded.has(customer.id);
-                const hasProjects = customer.projects.length > 0;
-                const reads = customer.projects.map((project) =>
-                  read(project, now, metier, orders),
-                );
-                const lead = leadProject(reads);
+    <>
+      <CustomerCards
+        rows={rows}
+        loading={loading}
+        reviews={reviews}
+        canWrite={canWrite}
+        onReviewChanged={reviewChanged}
+      />
+      {/*
+        Le tableau à partir de 768 pixels seulement : en dessous, les cartes
+        prennent le relais (issue 85). Il garde son défilement propre entre 768
+        et 1 120 pixels, où ses neuf colonnes ne tiennent pas encore.
+      */}
+      <div className="hidden w-full min-w-0 overflow-x-auto md:block">
+        {/* En-têtes de colonne à la Twenty : une ligne basse, en gris
+            tertiaire, qui ne rivalise pas avec le contenu. */}
+        <Table className="min-w-280 [&_thead_th]:text-muted-foreground [&_thead_th]:h-8 [&_thead_th]:text-xs [&_thead_th]:font-medium">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-8" />
+              <TableHead>
+                <SortButton
+                  label="Fiche"
+                  value="name"
+                  fallback="recent"
+                  current={sort}
+                  onSort={onSort}
+                />
+              </TableHead>
+              <TableHead>Coordonnées</TableHead>
+              <TableHead className="w-30">Où en est-on</TableHead>
+              <TableHead>Prochaine action</TableHead>
+              <TableHead>Source</TableHead>
+              <TableHead className="text-right">
+                <SortButton
+                  label="Signé TTC"
+                  value="amount"
+                  fallback="name"
+                  current={sort}
+                  onSort={onSort}
+                  align="right"
+                />
+              </TableHead>
+              {/*
+                Deux colonnes plutôt qu'une à deux cases : chacune porte son
+                intitulé, et on descend une colonne de coches sans avoir à se
+                rappeler laquelle des deux boîtes veut dire quoi.
+              */}
+              <TableHead className="w-16 text-center">Vérifiée</TableHead>
+              <TableHead className="w-16 text-center">Complète</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading && items.length === 0
+              ? /*
+                  Les colonnes gardent leurs largeurs pendant l'attente : une
+                  barre unique en `colSpan` laissait le tableau se réorganiser
+                  d'un coup à l'arrivée des données, et l'œil perdait la ligne
+                  qu'il suivait.
+                */
+                Array.from({ length: 8 }, (_, index) => (
+                  <TableRow key={index}>
+                    <TableCell />
+                    <TableCell>
+                      <Bar hue="indigo" className="h-3.5 w-2/3" />
+                      <Bar className="mt-1.5 h-2 w-1/3" />
+                    </TableCell>
+                    <TableCell>
+                      <Bar className="h-2.5 w-4/5" />
+                    </TableCell>
+                    <TableCell>
+                      <Bar className="h-2.5 w-24" />
+                    </TableCell>
+                    <TableCell>
+                      <Bar className="h-2.5 w-3/4" />
+                    </TableCell>
+                    <TableCell>
+                      <Bar className="h-4 w-16 rounded-md" />
+                    </TableCell>
+                    <TableCell>
+                      <Bar className="ml-auto h-2.5 w-16" />
+                    </TableCell>
+                    <TableCell />
+                    <TableCell />
+                  </TableRow>
+                ))
+              : rows.map(({ customer, reads, lead }) => {
+                  const open = expanded.has(customer.id);
+                  const hasProjects = customer.projects.length > 0;
 
-                const societe = ISSUER_BADGE[customer.issuer];
+                  return (
+                    <Fragment key={customer.id}>
+                      <TableRow className={cn(open && "bg-muted/40")}>
+                        <TableCell className="pr-0">
+                          {hasProjects && (
+                            <Button
+                              size="icon-xs"
+                              variant="ghost"
+                              aria-expanded={open}
+                              aria-label={`${open ? "Replier" : "Déplier"} les affaires de ${customer.display_name}`}
+                              onClick={() => toggle(customer.id)}
+                            >
+                              <ChevronRightIcon
+                                className={cn("transition-transform", open && "rotate-90")}
+                              />
+                            </Button>
+                          )}
+                        </TableCell>
 
-                return (
-                  <Fragment key={customer.id}>
-                    <TableRow className={cn(open && "bg-muted/40")}>
-                      <TableCell className="pr-0">
-                        {hasProjects && (
-                          <Button
-                            size="icon-xs"
-                            variant="ghost"
-                            aria-expanded={open}
-                            aria-label={`${open ? "Replier" : "Déplier"} les affaires de ${customer.display_name}`}
-                            onClick={() => toggle(customer.id)}
+                        <TableCell>
+                          <Link
+                            href={customerHref(customer.id)}
+                            className="font-medium hover:underline"
                           >
-                            <ChevronRightIcon
-                              className={cn("transition-transform", open && "rotate-90")}
-                            />
-                          </Button>
-                        )}
-                      </TableCell>
+                            {customer.display_name}
+                          </Link>
+                          <IssuerBadge issuer={customer.issuer} />
+                          <p className="text-muted-foreground truncate font-mono text-xs">
+                            {customer.reference}
+                            {customer.city && ` · ${customer.city}`}
+                          </p>
+                        </TableCell>
 
-                      <TableCell>
-                        <Link
-                          href={customerHref(customer.id)}
-                          className="font-medium hover:underline"
-                        >
-                          {customer.display_name}
-                        </Link>
-                        {societe && (
-                          <span
-                            data-demo="fiche-societe"
-                            title={`Affaire OMPT ${societe.label}`}
-                            className={cn(
-                              "ml-2 rounded-md px-1.5 py-0.5 text-[0.6rem] font-semibold tracking-wide",
-                              societe.className,
-                            )}
-                          >
-                            {societe.label}
-                          </span>
-                        )}
-                        <p className="text-muted-foreground truncate font-mono text-xs">
-                          {customer.reference}
-                          {customer.city && ` · ${customer.city}`}
-                        </p>
-                      </TableCell>
-
-                      <TableCell className="text-muted-foreground text-xs">
-                        {customer.email && <div className="truncate">{customer.email}</div>}
-                        {customer.phone && <div>{formatPhone(customer.phone)}</div>}
-                        {!customer.email && !customer.phone && "—"}
-                      </TableCell>
-
-                      <TableCell>
-                        {lead ? (
-                          <ProjectCycle
-                            points={reads.find((r) => r.project.id === lead.project.id)!.points}
-                            size="mini"
-                          />
-                        ) : (
-                          <span className="text-muted-foreground/50 text-xs">aucun projet</span>
-                        )}
-                      </TableCell>
-
-                      <TableCell>
-                        {lead ? <ActionCell action={lead.action} /> : "—"}
-                      </TableCell>
-
-                      <TableCell>
-                        <EnumBadge value={customer.source} entries={CUSTOMER_SOURCE} />
-                      </TableCell>
-
-                      <TableCell className="text-right tabular-nums">
-                        {customer.won_amount_ttc === "0"
-                          ? "—"
-                          : formatAmount(customer.won_amount_ttc)}
-                      </TableCell>
-
-                      <ReviewCell
-                        customerId={customer.id}
-                        name={customer.display_name}
-                        review={reviews[customer.id] ?? customer.review}
-                        field="verified"
-                        editable={canWrite}
-                        onChanged={(next) =>
-                          setReviews((current) => ({ ...current, [customer.id]: next }))
-                        }
-                      />
-                      <ReviewCell
-                        customerId={customer.id}
-                        name={customer.display_name}
-                        review={reviews[customer.id] ?? customer.review}
-                        field="completed"
-                        editable={canWrite}
-                        onChanged={(next) =>
-                          setReviews((current) => ({ ...current, [customer.id]: next }))
-                        }
-                      />
-                    </TableRow>
-
-                    {open &&
-                      reads.map(({ project, action, points }) => (
-                        <TableRow
-                          key={project.id}
-                          className="bg-muted/40 hover:bg-muted/60 border-0"
-                        >
-                          <TableCell />
-                          <TableCell className="py-2">
-                            <div className="border-border ml-1 border-l pl-3">
-                              <Link
-                                href={customerHref(customer.id)}
-                                className="text-sm hover:underline"
-                              >
-                                {project.label}
-                              </Link>
-                              <p className="text-muted-foreground text-xs">
-                                {project.site_city || "chantier non renseigné"} ·{" "}
-                                {project.quote_count} devis
-                              </p>
+                        <TableCell className="text-muted-foreground text-xs">
+                          {customer.email && <div className="truncate">{customer.email}</div>}
+                          {customer.phone && (
+                            <div>
+                              <PhoneLink phone={customer.phone} />
                             </div>
+                          )}
+                          {!customer.email && !customer.phone && "—"}
+                        </TableCell>
+
+                        <TableCell>
+                          {lead ? (
+                            <ProjectCycle
+                              points={reads.find((r) => r.project.id === lead.project.id)!.points}
+                              size="mini"
+                            />
+                          ) : (
+                            <span className="text-muted-foreground/50 text-xs">aucun projet</span>
+                          )}
+                        </TableCell>
+
+                        <TableCell>
+                          {lead ? <ActionCell action={lead.action} /> : "—"}
+                        </TableCell>
+
+                        <TableCell>
+                          <EnumBadge value={customer.source} entries={CUSTOMER_SOURCE} />
+                        </TableCell>
+
+                        <TableCell className="text-right tabular-nums">
+                          {customer.won_amount_ttc === "0"
+                            ? "—"
+                            : formatAmount(customer.won_amount_ttc)}
+                        </TableCell>
+
+                        {(["verified", "completed"] as const).map((field) => (
+                          <TableCell key={field} className="text-center">
+                            <ReviewBox
+                              customerId={customer.id}
+                              name={customer.display_name}
+                              review={reviews[customer.id] ?? customer.review}
+                              field={field}
+                              editable={canWrite}
+                              onChanged={(next) => reviewChanged(customer.id, next)}
+                            />
                           </TableCell>
-                          <TableCell className="py-2">
-                            {project.outcome && (
-                              <EnumBadge value={project.outcome} entries={PROJECT_OUTCOME} />
-                            )}
-                            {project.outcome_note && (
-                              <p className="text-muted-foreground mt-1 text-xs">
-                                {project.outcome_note}
-                              </p>
-                            )}
-                          </TableCell>
-                          <TableCell className="py-2">
-                            <ProjectCycle points={points} size="mini" />
-                          </TableCell>
-                          <TableCell className="py-2">
-                            <ActionCell action={action} />
-                          </TableCell>
-                          <TableCell className="py-2" />
-                          <TableCell className="py-2 text-right tabular-nums">
-                            {project.total_amount_ttc === "0"
-                              ? "—"
-                              : formatAmount(project.total_amount_ttc)}
-                          </TableCell>
-                          {/* La relecture porte sur la fiche, pas sur l'affaire. */}
-                          <TableCell className="py-2" />
-                          <TableCell className="py-2" />
-                        </TableRow>
-                      ))}
-                  </Fragment>
-                );
-              })}
-        </TableBody>
-      </Table>
-    </div>
+                        ))}
+                      </TableRow>
+
+                      {open &&
+                        reads.map(({ project, action, points }) => (
+                          <TableRow
+                            key={project.id}
+                            className="bg-muted/40 hover:bg-muted/60 border-0"
+                          >
+                            <TableCell />
+                            <TableCell className="py-2">
+                              <div className="border-border ml-1 border-l pl-3">
+                                <Link
+                                  href={customerHref(customer.id)}
+                                  className="text-sm hover:underline"
+                                >
+                                  {project.label}
+                                </Link>
+                                <p className="text-muted-foreground text-xs">
+                                  {project.site_city || "chantier non renseigné"} ·{" "}
+                                  {project.quote_count} devis
+                                </p>
+                              </div>
+                            </TableCell>
+                            <TableCell className="py-2">
+                              {project.outcome && (
+                                <EnumBadge value={project.outcome} entries={PROJECT_OUTCOME} />
+                              )}
+                              {project.outcome_note && (
+                                <p className="text-muted-foreground mt-1 text-xs">
+                                  {project.outcome_note}
+                                </p>
+                              )}
+                            </TableCell>
+                            <TableCell className="py-2">
+                              <ProjectCycle points={points} size="mini" />
+                            </TableCell>
+                            <TableCell className="py-2">
+                              <ActionCell action={action} />
+                            </TableCell>
+                            <TableCell className="py-2" />
+                            <TableCell className="py-2 text-right tabular-nums">
+                              {project.total_amount_ttc === "0"
+                                ? "—"
+                                : formatAmount(project.total_amount_ttc)}
+                            </TableCell>
+                            {/* La relecture porte sur la fiche, pas sur l'affaire. */}
+                            <TableCell className="py-2" />
+                            <TableCell className="py-2" />
+                          </TableRow>
+                        ))}
+                    </Fragment>
+                  );
+                })}
+          </TableBody>
+        </Table>
+      </div>
+    </>
   );
-}
-
-/*
-Une case de relecture.
-
-Deux crans indépendants, et le CRM ne les enchaîne pas : déclarer une fiche
-complète sans l'avoir cochée « vérifiée » est le droit de celui qui relit, pas
-une incohérence à corriger dans son dos.
-
-La coche part au serveur seule — jamais les deux à la fois — pour qu'un collègue
-qui relit la même fiche au même moment ne se fasse pas décocher.
-*/
-function ReviewCell({
-  customerId,
-  name,
-  review,
-  field,
-  editable,
-  onChanged,
-}: {
-  customerId: string;
-  name: string;
-  review: Review;
-  field: "verified" | "completed";
-  editable: boolean;
-  onChanged: (next: Review) => void;
-}) {
-  const [pending, setPending] = useState(false);
-  const at = field === "verified" ? review.verified_at : review.completed_at;
-  const by = field === "verified" ? review.verified_by_name : review.completed_by_name;
-  const quoi = field === "verified" ? "Première vérification faite" : "Fiche complète";
-
-  async function toggle(next: boolean) {
-    setPending(true);
-    try {
-      onChanged(await api.setCustomerReview(customerId, { [field]: next }));
-    } catch (cause) {
-      // Sans ce message, la case revenait à son état sans rien dire.
-      notifyError(errorMessage(cause), () => void toggle(next));
-    } finally {
-      setPending(false);
-    }
-  }
-
-  return (
-    <TableCell className="text-center">
-      <span className="inline-flex">
-        <Checkbox
-          checked={at !== null}
-          disabled={!editable || pending}
-          onCheckedChange={(value) => toggle(value === true)}
-          aria-label={`${quoi} : ${name}`}
-          // La date et l'auteur au survol : « complète depuis quand, par qui »
-          // est la première question posée le jour où elle ne l'est plus.
-          title={
-            at
-              ? `${quoi} le ${formatDate(at)}${by ? ` par ${by}` : ""}`
-              : quoi
-          }
-          className={cn(pending && "opacity-50")}
-        />
-      </span>
-    </TableCell>
-  );
-}
-
-/** La phrase du moment : teintée seulement quand elle réclame quelque chose. */
-function ActionCell({ action }: { action: NextAction }) {
-  return (
-    <div className="flex min-w-0 items-center gap-1.5">
-      {action.alert && (
-        <AlertTriangleIcon className={cn("size-3.5 shrink-0", TONE_TEXT[action.tone])} />
-      )}
-      <span
-        className={cn(
-          "truncate rounded-md text-xs",
-          action.alert ? cn(TONE_SOFT[action.tone], "px-1.5 py-0.5 font-medium") : "text-muted-foreground",
-        )}
-        title={action.detail}
-      >
-        {action.title}
-      </span>
-    </div>
-  );
-}
-
-/**
- * Lire une affaire depuis la ligne de liste.
- *
- * Sans devis ni échange, les jalons partent vides et le cycle se rabat sur
- * l'étape enregistrée. C'est le compromis assumé : la liste situe, la fiche
- * détaille.
- */
-function read(project: ProjectSummary, now: number, metier: Metier, orders: CycleOrders) {
-  const jalons = readJalons(project.id, [], undefined, project);
-  const points = readCycle(project, [], [], jalons, now, metier, EMPTY_MARKS, orders);
-  return {
-    project,
-    points,
-    quotes: [],
-    action: nextAction(points, project, [], jalons, now),
-  };
 }

@@ -37,6 +37,9 @@ import { SettingsPage, SettingsSection } from "./settings-page";
  */
 export function RolesPanel() {
   const canWrite = usePermission("roles:write");
+  // L'identifiant du rôle voyage dans le jeton : utile au diagnostic, muet
+  // pour tous les autres.
+  const showSlugs = usePermission("system:admin");
   const { roles, loading, error, reload } = useRoles();
   const catalog = usePermissionCatalog(canWrite);
   // Les comptes servent au panneau des membres d'un rôle. On les charge ici
@@ -105,9 +108,11 @@ export function RolesPanel() {
                                 Système
                               </Badge>
                             )}
-                            <span className="text-muted-foreground/70 font-mono text-[11px]">
-                              {role.slug}
-                            </span>
+                            {showSlugs && (
+                              <span className="text-muted-foreground/70 font-mono text-[11px]">
+                                {role.slug}
+                              </span>
+                            )}
                           </div>
                           {role.description && (
                             <p className="text-muted-foreground mt-0.5 text-xs">

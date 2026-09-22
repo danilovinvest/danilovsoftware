@@ -39,6 +39,8 @@ import { cn } from "@/lib/utils";
 import { formatAgo, formatDate, plural } from "@/shared/lib/format";
 import { ErrorNotice, Skeleton, Spinner } from "@/shared/ui/feedback";
 import { useGoogleCalendar } from "../hooks/use-settings";
+import { googleConsentMessage } from "../lib/google-consent";
+import { usePermission } from "@/modules/auth";
 import { SettingsPage, SettingsRow, SettingsRows, SettingsSection } from "./settings-page";
 import { openExternal } from "@/shared/desktop/links";
 
@@ -63,7 +65,8 @@ export function AgendaPanel() {
   const [importLogOpen, setImportLogOpen] = useState(false);
   const [report, setReport] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
-  const outcome = useAuthorizationOutcome();
+  const isAdmin = usePermission("system:admin");
+  const outcome = useAuthorizationOutcome(isAdmin);
   const journal = useSyncRuns(60);
 
   // Au retour de Google, l'écran est resté ouvert pendant le consentement :
@@ -143,8 +146,10 @@ export function AgendaPanel() {
 
       {outcome.connected && (
         <p className="text-success bg-success-soft/40 rounded-lg px-3 py-2 text-xs">
-          {outcome.connected} est raccordé. La copie de ses agendas est en
-          cours ; l&apos;import viendra les verser dans le CRM.
+          {/* L'adresse du compte n'est pas reprise de l'URL, qui se forge :
+              la liste des comptes raccordés, juste dessous, la montre. */}
+          Le compte Google est raccordé. La copie de ses agendas est en cours ;
+          l&apos;import viendra les verser dans le CRM.
         </p>
       )}
 
@@ -214,8 +219,16 @@ export function AgendaPanel() {
         {!configured && !loading && (
           <p className="text-warning bg-warning-soft/50 rounded-lg px-3 py-2 text-xs">
             Aucune application Google n&apos;est déclarée sur le serveur.
-            Renseignez <span className="font-mono">CRM_GOOGLE_CLIENT_ID</span> et
-            <span className="font-mono"> CRM_GOOGLE_CLIENT_SECRET</span>.
+            {/* Les noms des variables ne parlent qu'à qui administre le serveur. */}
+            {isAdmin ? (
+              <>
+                {" "}
+                Renseignez <span className="font-mono">CRM_GOOGLE_CLIENT_ID</span> et
+                <span className="font-mono"> CRM_GOOGLE_CLIENT_SECRET</span>.
+              </>
+            ) : (
+              " Prévenez l'administrateur du CRM."
+            )}
           </p>
         )}
 
@@ -391,17 +404,18 @@ export function AgendaPanel() {
   );
 }
 
-function useAuthorizationOutcome() {
+function useAuthorizationOutcome(isAdmin: boolean) {
   const params = useSearchParams();
   const connected = params.get("connecte");
-  const error = params.get("erreur");
+  const code = params.get("erreur");
 
   useEffect(() => {
-    if (!connected && !error) return;
+    if (!connected && !code) return;
     window.history.replaceState(null, "", window.location.pathname);
-  }, [connected, error]);
+  }, [connected, code]);
 
-  return { connected, error };
+  // Seul un code connu est traduit, jamais le texte de l'adresse.
+  return { connected: connected !== null, error: googleConsentMessage(code, isAdmin) };
 }
 
 /**

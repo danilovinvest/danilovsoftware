@@ -48,7 +48,6 @@ export function CalendarView() {
   const calendar = useCalendar(account?.id ?? null);
   const canWrite = usePermission("calendar:write");
   const [selected, setSelected] = useState<Occurrence | null>(null);
-  const [now] = useState(() => new Date());
   // `editing` porte l'événement à modifier, `creating` les bornes tracées.
   // Deux états distincts plutôt qu'un seul nullable : « créer du 14 au 18 » et
   // « modifier ce rendez-vous » ne se confondent pas.
@@ -374,7 +373,7 @@ Rendez-vous, visites de chantier et absences de l&apos;équipe.
               <WeekGrid
                 cursor={calendar.cursor}
                 today={calendar.today}
-                now={now}
+                now={calendar.now}
                 occurrences={calendar.occurrences}
                 onSelect={setSelected}
                 onCreate={

@@ -1,54 +1,30 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { COSTLY, LIVE, useCached } from "@/shared/api/cache";
 import { ApiError } from "@/shared/api/errors";
 import * as api from "../lib/api";
-import type { DriveAccount, DriveListing, DriveRun } from "../lib/types";
+import type { DriveAccount, DriveRun } from "../lib/types";
 
 /**
  * Le compte OneDrive raccordé.
  *
- * Même motif que partout ailleurs dans le CRM : la clé de la requête voyage
- * avec son résultat, et `loading` s'en déduit. Un `setLoading(true)` dans
- * l'effet ferait un rendu de plus et se ferait refuser par le compilateur React.
+ * Dans le cache partagé : l'écran des réglages et celui de l'arborescence
+ * posent la même question, une seule requête y répond.
  */
 export function useDrive() {
-  const [token, setToken] = useState(0);
-  const key = `drive:${token}`;
-  const [resolved, setResolved] = useState<{
-    key: string;
-    accounts: DriveAccount[];
-    configured: boolean;
-    error: string | null;
-  }>({ key: "", accounts: [], configured: false, error: null });
-
-  useEffect(() => {
-    const controller = new AbortController();
-    api
-      .listAccounts(controller.signal)
-      .then((data) =>
-        setResolved({ key, accounts: data.items, configured: data.configured, error: null }),
-      )
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return;
-        setResolved({
-          key,
-          accounts: [],
-          configured: false,
-          error: error instanceof Error ? error.message : "Raccordement illisible.",
-        });
-      });
-    return () => controller.abort();
-  }, [key]);
-
-  // Stable, pour qu'un écran puisse relire au retour de Microsoft sans boucler.
-  const reload = useCallback(() => setToken((value) => value + 1), []);
+  const { data, error, isValidating, mutate } = useCached(
+    "files:accounts",
+    () => api.listAccounts(),
+    LIVE,
+  );
+  const reload = useCallback(() => void mutate(), [mutate]);
 
   return {
-    accounts: resolved.accounts,
-    configured: resolved.configured,
-    loading: resolved.key !== key,
-    error: resolved.error,
+    accounts: data?.items ?? NO_ACCOUNTS,
+    configured: data?.configured ?? false,
+    loading: isValidating && data === undefined,
+    error: error ? errorMessage(error, "Raccordement illisible.") : null,
     reload,
   };
 }
@@ -56,45 +32,33 @@ export function useDrive() {
 /**
  * Le contenu d'un dossier.
  *
- * L'appel part à chaque changement de chemin, sans cache : une arborescence
- * recopiée serait fausse dès le premier dossier créé depuis l'Explorateur, et
- * le CRM n'a aucune raison de tenir un second exemplaire de ce que OneDrive
- * tient déjà.
+ * Chaque parcours interroge Microsoft Graph, et c'est cher : l'onglet
+ * Documents d'une affaire repartait à zéro à chaque changement d'onglet. La
+ * réponse est gardée **pour ne pas repeindre**, jamais pour se dispenser de
+ * relire — une arborescence recopiée serait fausse dès le premier dossier créé
+ * depuis l'Explorateur. Revenir dans la minute ne rappelle pas Graph ; au-delà,
+ * la réponse connue s'affiche et un seul appel la revérifie. Ni le focus ni le
+ * réseau ne relancent (voir `COSTLY`).
  */
 export function useListing(path: string) {
-  const [resolved, setResolved] = useState<{
-    key: string;
-    listing: DriveListing | null;
-    error: string | null;
-    notFound: boolean;
-  }>({ key: " ", listing: null, error: null, notFound: false });
-
-  useEffect(() => {
-    const controller = new AbortController();
-    api
-      .browse(path, controller.signal)
-      .then((listing) => setResolved({ key: path, listing, error: null, notFound: false }))
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return;
-        setResolved({
-          key: path,
-          listing: null,
-          error: error instanceof Error ? error.message : "Dossier illisible.",
-          // Un dossier renommé dans l'Explorateur n'est pas une panne : la
-          // fiche le dit comme tel, avec le chemin qu'elle cherchait.
-          notFound: error instanceof ApiError && error.status === 404,
-        });
-      });
-    return () => controller.abort();
-  }, [path]);
+  const { data, error } = useCached(`files:browse:${path}`, () => api.browse(path), COSTLY);
 
   return {
-    listing: resolved.key === path ? resolved.listing : null,
-    loading: resolved.key !== path,
-    error: resolved.key === path ? resolved.error : null,
-    notFound: resolved.key === path && resolved.notFound,
+    listing: data ?? null,
+    loading: data === undefined && !error,
+    error: error ? errorMessage(error, "Dossier illisible.") : null,
+    // Un dossier renommé dans l'Explorateur n'est pas une panne : la fiche le
+    // dit comme tel, avec le chemin qu'elle cherchait.
+    notFound: error instanceof ApiError && error.status === 404,
   };
 }
+
+/** Le message d'une erreur, ou la phrase de l'écran quand elle n'en a pas. */
+function errorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
+const NO_ACCOUNTS: DriveAccount[] = [];
 
 /**
  * Le journal des copies.
@@ -129,6 +93,7 @@ export function useDriveRuns() {
     return () => clearTimeout(timer);
   }, [resolved.syncing, resolved.key]);
 
+  // Stable, pour qu'un écran puisse relire au retour de Microsoft sans boucler.
   const reload = useCallback(() => setToken((value) => value + 1), []);
 
   return {

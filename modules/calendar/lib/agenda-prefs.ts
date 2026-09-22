@@ -15,7 +15,13 @@ import type { CalendarView, EventKind } from "./types";
  * `useState(() => localStorage…)` donnerait deux rendus différents.
  */
 export type AgendaPrefs = {
-  view: CalendarView;
+  /**
+   * La vue choisie. Absente tant que personne n'a choisi : le défaut dépend
+   * alors de la largeur de l'écran (voir `useCalendar`), et l'écrire ici le
+   * figerait — un téléphone hériterait de la grille du mois d'un ordinateur.
+   * Une valeur déjà enregistrée l'emporte toujours.
+   */
+  view?: CalendarView;
   hiddenCalendars: string[];
   hiddenKinds: EventKind[];
   /** Seulement les rendez-vous posés pour moi, ou par moi. */
@@ -23,7 +29,7 @@ export type AgendaPrefs = {
 };
 
 const KEY = "crm:agenda:prefs";
-const DEFAULTS: AgendaPrefs = { view: "mois", hiddenCalendars: [], hiddenKinds: [], mine: false };
+const DEFAULTS: AgendaPrefs = { hiddenCalendars: [], hiddenKinds: [], mine: false };
 
 let cache: { raw: string | null; value: AgendaPrefs } | null = null;
 const listeners = new Set<() => void>();

@@ -7,7 +7,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Textarea } from "@/components/ui/textarea";
 import { DateField } from "@/shared/ui/date-time-field";
 import { cn } from "@/lib/utils";
-import { DepositEditor, type DepositTotal, type ReglementKind } from "./deposit-field";
+import {
+  SettlementEditor,
+  type DepositTotal,
+  type ReglementKind,
+  type SettlementTransfers,
+} from "./deposit-field";
 import { MaterialsEditor } from "./materials-field";
 import { StepProofs } from "./step-proofs";
 import type { AutoProof } from "../lib/proofs";
@@ -83,7 +88,13 @@ export type CycleEdit = {
    * L'acompte du devis qui porte le règlement : ce qu'il vaut, et à quoi il se
    * compare. Encaisser, c'est dire combien.
    */
-  deposit: { amount: string | null; total: DepositTotal | null; paidAt: string | null };
+  deposit: {
+    amount: string | null;
+    total: DepositTotal | null;
+    paidAt?: string | null;
+    /** Ses virements : la frise ouvre le même éditeur de règlements que partout. */
+    transfers?: SettlementTransfers;
+  };
   /** Encaisse avec ce montant, ou le corrige. Rend la réussite. */
   onDeposit: (amount: string | null, paidAt?: string) => boolean | Promise<boolean>;
   /** Retire l'encaissement. Rend la réussite : le panneau reste ouvert sur un échec. */
@@ -94,7 +105,12 @@ export type CycleEdit = {
    * Jumeau de l'acompte, et pour la même raison : « solde encaissé » était une
    * case qui affirmait avoir été payé sans dire combien.
    */
-  balance: { amount: string | null; total: DepositTotal | null; paidAt: string | null };
+  balance: {
+    amount: string | null;
+    total: DepositTotal | null;
+    paidAt?: string | null;
+    transfers?: SettlementTransfers;
+  };
   /** Encaisse le solde avec ce montant, ou le corrige. Rend la réussite. */
   onBalance: (amount: string | null, paidAt?: string) => boolean | Promise<boolean>;
   /** Retire l'encaissement du solde. Rend la réussite. */
@@ -444,13 +460,14 @@ function StepDot({
                 onClose={() => setOpen(false)}
               />
             ) : reglement ? (
-              <DepositEditor
-                key={`${reglement}·${marked ?? "vide"}·${(reglement === "acompte" ? edit.deposit.amount : edit.balance.amount) ?? "vide"}`}
+              <SettlementEditor
+                key={`${reglement}·${marked ?? "vide"}·${(reglement === "acompte" ? edit.deposit : edit.balance).amount ?? "vide"}·${(reglement === "acompte" ? edit.deposit : edit.balance).transfers?.payments.length ?? 0}`}
                 kind={reglement}
                 amount={reglement === "acompte" ? edit.deposit.amount : edit.balance.amount}
                 paidAt={reglement === "acompte" ? edit.deposit.paidAt : edit.balance.paidAt}
                 paid={marked !== null}
                 total={reglement === "acompte" ? edit.deposit.total : edit.balance.total}
+                transfers={reglement === "acompte" ? edit.deposit.transfers : edit.balance.transfers}
                 pending={edit.pending}
                 onSave={reglement === "acompte" ? edit.onDeposit : edit.onBalance}
                 onRemove={reglement === "acompte" ? edit.onDepositRemove : edit.onBalanceRemove}

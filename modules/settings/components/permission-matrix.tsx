@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { CheckIcon, LockIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePermission } from "@/modules/auth";
 import { Skeleton } from "@/shared/ui/feedback";
 import { actionRank, resourceLabel, resourceRank } from "../lib/labels";
 import type { PermissionEntry } from "../lib/types";
@@ -33,6 +34,9 @@ export function PermissionMatrix({
   loading?: boolean;
   onToggle: (slug: string) => void;
 }) {
+  // L'identifiant technique (`customers:read`) ne parle qu'à qui administre
+  // le système ; les autres lisent le libellé métier, et c'est lui qui décide.
+  const showSlugs = usePermission("system:admin");
   const groups = useMemo(() => {
     const byResource = new Map<string, PermissionEntry[]>();
     for (const entry of catalog) {
@@ -103,9 +107,11 @@ export function PermissionMatrix({
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-xs">{entry.description}</span>
-                    <span className="text-muted-foreground/70 block font-mono text-[11px]">
-                      {entry.slug}
-                    </span>
+                    {showSlugs && (
+                      <span className="text-muted-foreground/70 block font-mono text-[11px]">
+                        {entry.slug}
+                      </span>
+                    )}
                   </span>
                   {locked && (
                     <LockIcon className="text-muted-foreground mt-0.5 size-3 shrink-0" />

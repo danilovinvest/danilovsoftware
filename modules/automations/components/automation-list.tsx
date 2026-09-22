@@ -27,6 +27,7 @@ import { automationHref } from "@/shared/lib/routes";
 export function AutomationList() {
   const { automations, telegramReady, loading, error, reload } = useAutomations();
   const canWrite = usePermission("automations:write");
+  const isAdmin = usePermission("system:admin");
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
@@ -130,11 +131,17 @@ export function AutomationList() {
       {!telegramReady && !loading && (
         <p className="text-warning bg-warning-soft/50 flex items-start gap-2 rounded-lg px-3 py-2 text-xs leading-relaxed">
           <TriangleAlertIcon className="mt-px size-3.5 shrink-0" />
+          {/* Le nom de la variable ne parle qu'à qui administre le serveur. */}
           <span>
-            Aucun bot Telegram déclaré sur le serveur
-            (<span className="font-mono">CRM_TELEGRAM_BOT_TOKEN</span>). Les
-            automatisations se dessinent et s&apos;enregistrent, mais aucun
-            message ne partira.
+            Aucun bot Telegram n&apos;est déclaré sur le serveur
+            {isAdmin && (
+              <>
+                {" "}
+                (<span className="font-mono">CRM_TELEGRAM_BOT_TOKEN</span>)
+              </>
+            )}
+            . Les automatisations se dessinent et s&apos;enregistrent, mais aucun message ne
+            partira{isAdmin ? "" : " tant que l'administrateur ne l'a pas branché"}.
           </span>
         </p>
       )}
