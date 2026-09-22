@@ -43,13 +43,6 @@ const EMPTY_QUOTE: QuotePayload = {
 };
 
 /**
- * Les taux qu'on rencontre sur un devis du bâtiment. Un taux déjà porté par le
- * devis et absent de la liste y est ajouté : le formulaire ne doit jamais
- * afficher un taux qu'il enverrait différent.
- */
-const RATES = ["20", "10", "5,5", "0"];
-
-/**
  * Un devis existant, tel que le formulaire l'attend : les montants avec une
  * virgule, comme on les retape.
  *
@@ -183,13 +176,6 @@ export function QuoteDialog({
     setValues(next);
   }
 
-  const rateOptions = [
-    { value: "", label: "Non précisée" },
-    ...[...RATES, ...(rate && !RATES.includes(rate) ? [rate] : [])].map((value) => ({
-      value,
-      label: `${value} %`,
-    })),
-  ];
   const coherent = amountsAgree(ht, ttc, rate);
 
   return (
@@ -255,13 +241,20 @@ export function QuoteDialog({
               hint={!manual.ht && ht ? "Calculé du TTC" : undefined}
               onChange={(event) => changeHT(event.target.value)}
             />
-            <SelectField
+            {/*
+              Le taux se tape, il ne se choisit pas dans une liste : c'est à
+              l'entreprise de le dire, et un devis peut porter un taux qu'aucune
+              liste n'aurait prévu. Vide, rien ne se calcule — on n'invente pas
+              une TVA.
+            */}
+            <TextField
               id="quote-vat-rate"
-              label="TVA"
-              options={rateOptions}
+              label="TVA (%)"
+              inputMode="decimal"
+              placeholder="20"
               value={rate}
               error={errors.rate ?? create.fields.vat_rate}
-              onValueChange={changeRate}
+              onChange={(event) => changeRate(event.target.value)}
             />
             <TextField
               label="Montant TTC"
