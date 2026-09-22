@@ -82,7 +82,7 @@ export function ProjectOnboardingButton({
     >
       <AlertTriangleIcon className="text-warning size-4 shrink-0" />
       <div className="min-w-0 flex-1">
-        <div className="text-warning text-sm font-medium">Type de projet à renseigner</div>
+        <div className="text-warning text-sm font-medium">Type d&apos;affaire à renseigner</div>
         <div className="text-muted-foreground mt-0.5 text-xs">
           C&apos;est lui qui fait le prix. Trente secondes, et l&apos;affaire est
           lisible par tout le monde.
@@ -194,7 +194,7 @@ export function ProjectOnboardingDrawer({
             valeurs entre les deux. Ici tout est visible et c'est un seul geste.
           */}
           <div>
-            <Label className="mb-1.5 block text-sm font-normal">Type de projet</Label>
+            <Label className="mb-1.5 block text-sm font-normal">Type d&apos;affaire</Label>
             <div className="flex flex-wrap gap-1.5">
               {(Object.keys(INTERVENTION_SCOPE) as InterventionScope[]).map((valeur) => (
                 <button

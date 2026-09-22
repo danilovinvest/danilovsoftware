@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
+import { usePermission } from "@/modules/auth";
 import { errorMessage } from "@/shared/api/errors";
 import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
 import { telegramInfo } from "../lib/api";
@@ -337,6 +338,7 @@ function ChatPicker({
   value: string;
   onPick: (id: string) => void;
 }) {
+  const isAdmin = usePermission("system:admin");
   const [token, setToken] = useState(0);
   const [info, setInfo] = useState<TelegramInfo | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
@@ -380,7 +382,14 @@ function ChatPicker({
       {info?.configured === false ? (
         <p className="text-warning bg-warning-soft/50 rounded-lg px-3 py-2 text-[11px] leading-relaxed">
           Aucun bot déclaré sur le serveur
-          (<span className="font-mono">CRM_TELEGRAM_BOT_TOKEN</span>).
+          {/* Le nom de la variable ne parle qu'à qui administre le serveur. */}
+          {isAdmin && (
+            <>
+              {" "}
+              (<span className="font-mono">CRM_TELEGRAM_BOT_TOKEN</span>)
+            </>
+          )}
+          .
         </p>
       ) : (failure ?? info?.error) ? (
         <p className="text-danger bg-danger-soft/40 rounded-lg px-3 py-2 text-[11px] leading-relaxed">

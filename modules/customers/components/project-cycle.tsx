@@ -91,7 +91,7 @@ export type CycleEdit = {
   deposit: {
     amount: string | null;
     total: DepositTotal | null;
-    paidAt: string | null;
+    paidAt?: string | null;
     /** Ses virements : la frise ouvre le même éditeur de règlements que partout. */
     transfers?: SettlementTransfers;
   };
@@ -108,7 +108,7 @@ export type CycleEdit = {
   balance: {
     amount: string | null;
     total: DepositTotal | null;
-    paidAt: string | null;
+    paidAt?: string | null;
     transfers?: SettlementTransfers;
   };
   /** Encaisse le solde avec ce montant, ou le corrige. Rend la réussite. */

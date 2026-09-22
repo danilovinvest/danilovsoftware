@@ -6,7 +6,7 @@ import { formatDate } from "@/shared/lib/format";
 import { notifySuccess } from "@/shared/ui/toaster";
 import type { Jalons, StepMarks } from "../lib/jalons";
 import type { BlockDialog } from "../lib/project-actions";
-import type { CycleStep } from "../lib/cycle";
+import type { Parcours } from "../lib/cycle";
 import type { CustomerDetail, Milestones, Project, Quote } from "../lib/types";
 import { CycleOrderDialog } from "./cycle-order-dialog";
 import { DeleteProjectDialog } from "./delete-project-dialog";
@@ -53,7 +53,7 @@ export function ProjectBlockDialogs({
   site: string;
   saving: boolean;
   /** Le parcours affiché, que « Réordonner la frise » part de. */
-  cycleOrder: CycleStep[];
+  cycleOrder: Parcours;
   /** L'éditeur des règlements, déjà réglé sur la pièce porteuse, par règlement. */
   settlement: (kind: "acompte" | "solde") => SettlementEditorProps;
   onOverride: (patch: Partial<Jalons & StepMarks>) => Promise<boolean>;
