@@ -77,6 +77,7 @@ export function CustomerForm({
 
   const save = useAction(async (payload: CustomerPayload) =>
     customer ? api.updateCustomer(customer.id, payload) : api.createCustomer(payload),
+    { inline: true },
   );
 
   function set<K extends keyof CustomerPayload>(key: K, value: CustomerPayload[K]) {

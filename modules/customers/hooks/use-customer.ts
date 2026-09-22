@@ -5,7 +5,12 @@ import { errorMessage } from "@/shared/api/errors";
 import * as api from "../lib/api";
 import type { CustomerDetail } from "../lib/types";
 
-type Resolved = { key: string; data: CustomerDetail | null; error: string | null };
+type Resolved = {
+  key: string;
+  id: string;
+  data: CustomerDetail | null;
+  error: string | null;
+};
 
 /** Charge la fiche complète (contacts, projets, devis, échanges) en un appel. */
 export function useCustomer(id: string) {
@@ -14,6 +19,7 @@ export function useCustomer(id: string) {
 
   const [resolved, setResolved] = useState<Resolved>({
     key: "",
+    id: "",
     data: null,
     error: null,
   });
@@ -26,10 +32,23 @@ export function useCustomer(id: string) {
 
     api
       .getCustomer(id, controller.signal)
-      .then((data) => setResolved({ key, data, error: null }))
+      .then((data) => setResolved({ key, id, data, error: null }))
       .catch((cause) => {
         if (controller.signal.aborted) return;
-        setResolved({ key, data: null, error: errorMessage(cause) });
+        /*
+          Un rechargement raté garde la fiche qu'on regardait.
+
+          Il remplaçait tout par l'erreur : une coupure réseau juste après un
+          clic faisait disparaître la fiche au moment où l'on travaillait
+          dessus. L'écran affiche désormais l'erreur en bandeau, au-dessus de ce
+          qu'il montrait déjà. Une autre fiche, elle, repart de zéro.
+        */
+        setResolved((previous) => ({
+          key,
+          id,
+          data: previous.id === id ? previous.data : null,
+          error: errorMessage(cause),
+        }));
       });
 
     return () => controller.abort();

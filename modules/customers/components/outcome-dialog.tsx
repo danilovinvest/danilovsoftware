@@ -80,6 +80,7 @@ export function OutcomeDialog({
       outcome,
       outcome_note: note.trim(),
     }),
+    { inline: true },
   );
 
   return (

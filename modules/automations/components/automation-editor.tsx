@@ -16,6 +16,7 @@ import * as api from "../lib/api";
 import type { Automation, Graph } from "../lib/types";
 import { AutomationCanvas, failuresOf } from "./automation-canvas";
 import { RunJournal } from "./run-journal";
+import { askConfirm } from "@/shared/ui/confirm";
 
 /**
  * L'éditeur d'une automatisation : la toile, son en-tête et son journal.
@@ -110,11 +111,15 @@ function EditorBody({
    */
   async function remove() {
     const runs = journal.runs.length;
-    const trace =
-      runs > 0
-        ? `\n\nSon journal part avec elle : ${plural(runs, "exécution")} consignée${runs > 1 ? "s" : ""}.`
-        : "";
-    if (!confirm(`Supprimer l'automatisation « ${name} » ?${trace}`)) return;
+    const ok = await askConfirm({
+      title: `Supprimer l'automatisation « ${name} »`,
+      description:
+        runs > 0
+          ? `Son journal part avec elle : ${plural(runs, "exécution")} consignée${runs > 1 ? "s" : ""}.`
+          : undefined,
+      confirmLabel: "Supprimer",
+    });
+    if (!ok) return;
 
     setRemoving(true);
     setError(null);

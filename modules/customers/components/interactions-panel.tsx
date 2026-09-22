@@ -12,6 +12,7 @@ import { useAction } from "../hooks/use-customers";
 import { CustomerAgenda } from "./customer-agenda";
 import { EnumBadge } from "./enum-badge";
 import type { Interaction } from "../lib/types";
+import { askConfirm } from "@/shared/ui/confirm";
 
 /**
  * Onglet « Échanges ».
@@ -92,6 +93,12 @@ export function InteractionsPanel({
                     aria-label="Supprimer l'échange"
                     disabled={remove.pending}
                     onClick={async () => {
+                      const ok = await askConfirm({
+                        title: "Supprimer cet échange",
+                        description: `« ${item.summary || INTERACTION_KIND[item.kind].label} » disparaît de l'historique de la fiche, définitivement.`,
+                        confirmLabel: "Supprimer",
+                      });
+                      if (!ok) return;
                       await remove.run(item.id);
                       onChanged();
                     }}

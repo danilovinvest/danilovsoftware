@@ -14,6 +14,7 @@ import * as api from "../lib/api";
 import { useCustomerMail } from "../hooks/use-mail";
 import { Attachments } from "./attachments";
 import { MailKindBadge } from "./mail-kind-badge";
+import { askConfirm } from "@/shared/ui/confirm";
 
 /**
  * Les courriels d'une fiche.
@@ -134,15 +135,14 @@ export function CustomerMail({ customerId }: { customerId: string }) {
             variant="ghost"
             disabled={busy}
             className="text-muted-foreground hover:text-danger ml-auto"
-            onClick={() => {
-              if (
-                !confirm(
-                  `Retirer les ${total} courriels de cette fiche ?\n\n` +
-                    "Ils restent dans la boîte et dans l'écran Messagerie ; " +
-                    "ils ne seront simplement plus rattachés à ce client.",
-                )
-              )
-                return;
+            onClick={async () => {
+              const ok = await askConfirm({
+                title: `Retirer les ${total} courriels de cette fiche`,
+                description:
+                  "Ils restent dans la boîte et dans l'écran Messagerie. Ils ne seront simplement plus rattachés à ce client.",
+                confirmLabel: "Tout retirer",
+              });
+              if (!ok) return;
               run(() => api.detachCustomerMailMany(customerId, { all: true }));
             }}
           >

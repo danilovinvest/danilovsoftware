@@ -12,6 +12,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Bar } from "@/shared/ui/loading";
+import { notifyError } from "@/shared/ui/toaster";
+import { errorMessage } from "@/shared/api/errors";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { usePermission } from "@/modules/auth";
@@ -372,6 +374,9 @@ function ReviewCell({
     setPending(true);
     try {
       onChanged(await api.setCustomerReview(customerId, { [field]: next }));
+    } catch (cause) {
+      // Sans ce message, la case revenait à son état sans rien dire.
+      notifyError(errorMessage(cause), () => void toggle(next));
     } finally {
       setPending(false);
     }

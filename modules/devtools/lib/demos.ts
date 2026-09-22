@@ -40,6 +40,25 @@ const FICHE_ETUDE = "/customers/fiche?id=7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "rien-ne-se-perd",
+    title: "Rien ne se perd sans prévenir",
+    date: "2026-09-22",
+    steps: [
+      {
+        path: "/settings/agenda",
+        target: '[data-demo="calendar-delete"]',
+        title: "La croix est devenue une corbeille, et elle demande",
+        body: "La croix se lisait « fermer » et effaçait l'agenda avec tous ses événements. C'est maintenant une corbeille, et la confirmation nomme l'agenda et le nombre d'événements qui partent. Même règle partout où un clic effaçait : échange, interlocuteur, événement, invitation, connecteur d'assistant, clé d'accès. Les boîtes « OK / Annuler » du navigateur ont disparu au profit de celle du CRM.",
+      },
+      {
+        path: "/customers/fiche?id=77c807e5-f0c4-4bad-b0f7-d404d2a00782",
+        target: '[data-demo="next-action"]',
+        title: "Le solde demande combien, et les erreurs se voient",
+        body: "« Paiement reçu » cochait le solde sans montant : il ouvre maintenant la même saisie que l'acompte, montant et jour d'encaissement. Décocher « Acompte facturé » fonctionne. Et une écriture refusée ne passe plus en silence : un message apparaît en bas à droite, avec « Réessayer ». Fermer un devis, une affaire, une tâche ou une relance en cours de saisie demande confirmation.",
+      },
+    ],
+  },
+  {
     id: "correctifs-audit-critiques",
     title: "Les correctifs critiques de l'audit",
     date: "2026-09-22",

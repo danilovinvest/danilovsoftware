@@ -236,9 +236,30 @@ export function CustomerPicker({
   async function creer() {
     setCreation(true);
     setEchec(null);
+    let cree: Customer;
     try {
-      const cree = await createCustomer(nouvelleFiche(cherche));
+      cree = await createCustomer(nouvelleFiche(cherche));
+    } catch {
+      setEchec("La fiche n'a pas pu être créée.");
+      setCreation(false);
+      return;
+    }
+    /*
+      La fiche existe : elle est choisie quoi qu'il arrive ensuite.
+
+      Quatre écritures se suivaient d'un bloc, et un échec sur l'une des trois
+      dernières laissait le champ en recherche avec « Créer » toujours offert :
+      un second clic créait une seconde fiche. La suite — l'affaire, le premier
+      contact, la ligne de chronologie — se rattrape depuis la fiche ; un doublon
+      ne se rattrape que par une fusion.
+    */
+    setCreee(cree);
+    onChange(cree.id, cree.display_name);
+    setOpen(false);
+    setQuery("");
+    try {
       const ne = await createProject(cree.id, nouveauProjet());
+      setProjet(ne);
       // Le premier contact, c'est cet appel. Le laisser gris obligerait à le
       // cocher à la main juste après avoir raccroché.
       await setMilestones(ne.id, jalonsDuPremierContact());
@@ -257,13 +278,8 @@ export function CustomerPicker({
         summary: "Premier appel",
         details: "",
       });
-      setCreee(cree);
-      setProjet(ne);
-      onChange(cree.id, cree.display_name);
-      setOpen(false);
-      setQuery("");
     } catch {
-      setEchec("La fiche n'a pas pu être créée.");
+      setEchec("La fiche est créée, mais son affaire ou son premier appel n'a pas été enregistré : à compléter depuis la fiche.");
     } finally {
       setCreation(false);
     }
@@ -442,22 +458,12 @@ function NouvelleFiche({
     setPending(true);
     onError(null);
     try {
+      // Seuls ces trois champs partent : le serveur garde le reste de la fiche.
       const maj = await updateCustomer(fiche.id, {
         // Un nom vidé n'efface pas la fiche : on garde celui qu'elle porte.
         display_name: name.trim() || fiche.display_name,
-        kind: fiche.kind,
-        status: fiche.status,
-        source: fiche.source,
-        company_name: fiche.company_name,
         email: email.trim(),
         phone: phone.trim(),
-        address_line: fiche.address_line,
-        postal_code: fiche.postal_code,
-        city: fiche.city,
-        country: fiche.country,
-        requested_at: fiche.requested_at,
-        notes: fiche.notes,
-        owner_id: fiche.owner_id,
       });
       onSaved(maj);
       setFait(true);
@@ -482,24 +488,7 @@ function NouvelleFiche({
     try {
       const maj = await updateProject(projet.id, {
         label: INTERVENTION_SCOPE[valeur].label,
-        stage: projet.stage,
         scope: valeur,
-        // Renvoyés tels quels : la route remplace l'affaire entière.
-        manager_id: projet.manager_id,
-        engineer_id: projet.engineer_id,
-        drafter_id: projet.drafter_id,
-        outcome: projet.outcome,
-        outcome_note: projet.outcome_note,
-        site_address: projet.site_address,
-        site_postal_code: projet.site_postal_code,
-        site_city: projet.site_city,
-        notes: projet.notes,
-        started_at: projet.started_at,
-        finished_at: projet.finished_at,
-        closed_at: projet.closed_at,
-        mission: projet.mission,
-        promised_at: projet.promised_at,
-        internal_deadline_at: projet.internal_deadline_at,
       });
       onProjet(maj);
     } catch {
@@ -619,36 +608,8 @@ function nouveauProjet() {
   };
 }
 
-/** Tout à nul, sauf le contact : c'est l'appel en cours. */
+/** Le premier contact, c'est l'appel en cours. */
 function jalonsDuPremierContact() {
-  return {
-    rib_sent_at: null,
-    insurance_sent_at: null,
-    materials_ordered_at: null,
-    materials: [],
-    resume_at: null,
-    plans_sent_at: null,
-    review_requested_at: null,
-    review_received_at: null,
-    pv_sent_at: null,
-    pv_signed_at: null,
-    visit_report_sent_at: null,
-    survey_report_sent_at: null,
-    calc_started_at: null,
-    calc_done_at: null,
-    plans_started_at: null,
-    plans_review_at: null,
-    corrections_at: null,
-    final_ready_at: null,
-    report_written_at: null,
-    report_validated_at: null,
-    report_sent_at: null,
-    survey_done_at: null,
-    contact_at: new Date().toISOString(),
-    rdv_at: null,
-    quote_sent_at: null,
-    negotiation_at: null,
-    negotiation_note: "",
-    signed_at: null,
-  };
+  // Une affaire neuve n'a aucun jalon : seul le premier contact part.
+  return { contact_at: new Date().toISOString() };
 }

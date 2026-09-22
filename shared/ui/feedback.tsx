@@ -34,12 +34,15 @@ export function EmptyState({
 export function ErrorNotice({
   message,
   className,
+  onRetry,
 }: {
   message: string;
   className?: string;
+  /** Rejoue ce qui a échoué. Une erreur sans issue laisse recharger la page entière. */
+  onRetry?: () => void;
 }) {
   return (
-    <p
+    <div
       role="alert"
       className={cn(
         "text-destructive bg-destructive/10 flex items-center gap-2 rounded-lg px-3 py-2 text-xs",
@@ -47,8 +50,17 @@ export function ErrorNotice({
       )}
     >
       <AlertCircleIcon className="size-3.5 shrink-0" />
-      {message}
-    </p>
+      <span className="min-w-0 flex-1">{message}</span>
+      {onRetry && (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="shrink-0 font-medium underline underline-offset-2 hover:no-underline"
+        >
+          Réessayer
+        </button>
+      )}
+    </div>
   );
 }
 

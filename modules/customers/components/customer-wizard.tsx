@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ArrowLeftIcon, ArrowRightIcon, CheckIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,6 +17,7 @@ import {
   toOptions,
 } from "../lib/labels";
 import { useAction } from "../hooks/use-customers";
+import { useDirtyGuard } from "@/shared/lib/dirty-guard";
 import { ReferrerPicker } from "./referrer-picker";
 import type {
   CustomerKind,
@@ -89,16 +90,44 @@ export function CustomerWizard() {
   const [stepError, setStepError] = useState<string | null>(null);
   /** Le parrain, quand la source est une recommandation. Écrit après la fiche. */
   const [referrer, setReferrer] = useState<Referrer | null>(null);
+  /*
+    Quitter l'assistant en cours de route prévient. Seul l'onglet est gardé : la
+    navigation interne de Next ne se laisse pas interrompre, et le bouton
+    « Précédent » ne perd rien.
+  */
+  // Comparée à l'état réellement posé à l'ouverture, pas à un second appel des
+  // valeurs par défaut, qui peuvent dépendre de l'heure.
+  const [vierge] = useState(() => JSON.stringify([customer, project]));
+  useDirtyGuard(JSON.stringify([customer, project]) !== vierge);
+
+  /*
+    Ce qui est déjà créé, pour qu'un réessai reprenne où l'échec s'est produit.
+
+    Trois écritures se suivent — la fiche, son parrain, l'affaire — et un échec
+    sur la deuxième laissait le bouton actif : un nouveau clic recréait la fiche,
+    et le CRM en portait deux. Le réessai ne rejoue plus que ce qui manque.
+  */
+  const fait = useRef<{ customerId: string | null; referrer: boolean; project: boolean }>({
+    customerId: null,
+    referrer: false,
+    project: false,
+  });
+  const [ficheCreee, setFicheCreee] = useState<string | null>(null);
 
   const submit = useAction(async () => {
-    const created = await api.createCustomer(customer);
+    const id = fait.current.customerId ?? (await api.createCustomer(customer)).id;
+    if (fait.current.customerId === null) {
+      fait.current.customerId = id;
+      setFicheCreee(id);
+    }
     // Le parrain a sa propre route : la fiche doit exister avant qu'on la relie.
-    if (customer.source === "recommandation" && referrer) {
-      await api.setCustomerReferrer(created.id, referrer);
+    if (customer.source === "recommandation" && referrer && !fait.current.referrer) {
+      await api.setCustomerReferrer(id, referrer);
+      fait.current.referrer = true;
     }
     // L'affaire est facultative : sans intitulé, on s'arrête à la fiche.
-    if (project.label.trim() !== "") {
-      await api.createProject(created.id, {
+    if (project.label.trim() !== "" && !fait.current.project) {
+      await api.createProject(id, {
         ...project,
         site_city: project.site_city || customer.city,
         /*
@@ -110,9 +139,10 @@ export function CustomerWizard() {
         started_at: project.started_at,
         finished_at: project.finished_at,
       });
+      fait.current.project = true;
     }
-    return created;
-  });
+    return id;
+  }, { inline: true });
 
   function next() {
     if (step === 0 && customer.display_name.trim() === "") {
@@ -124,8 +154,8 @@ export function CustomerWizard() {
   }
 
   async function finish() {
-    const created = await submit.run();
-    if (created) router.push(customerHref(created.id));
+    const id = await submit.run();
+    if (id) router.push(customerHref(id));
   }
 
   return (
@@ -140,7 +170,15 @@ export function CustomerWizard() {
           </div>
 
           {stepError && <ErrorNotice message={stepError} />}
-          {submit.error && <ErrorNotice message={submit.error} />}
+          {submit.error && (
+            <ErrorNotice
+              message={
+                ficheCreee
+                  ? `La fiche est créée, la suite a échoué : ${submit.error} « Créer la fiche » reprend sans la recréer.`
+                  : submit.error
+              }
+            />
+          )}
 
           {step === 0 && (
             <div className="grid gap-4 sm:grid-cols-2">

@@ -26,6 +26,7 @@ import {
   type RelanceMotive,
 } from "../lib/templates";
 import type { Customer, Project, Quote } from "../lib/types";
+import { useDirtyGuard } from "@/shared/lib/dirty-guard";
 
 /**
  * Relancer un client qui ne signe pas.
@@ -82,6 +83,8 @@ export function RelanceDialog({
     render(TEMPLATE_BY_MOTIVE.get("sans_reponse")!.body, values),
   );
   const [touched, setTouched] = useState(false);
+  // Un message retouché ne se perd pas sur Échap ou un clic à côté.
+  const close = useDirtyGuard(touched, onOpenChange);
 
   /*
     Le texte rédigé part avec la relance.
@@ -96,6 +99,7 @@ export function RelanceDialog({
       `Relance — ${TEMPLATE_BY_MOTIVE.get(motive)!.label.toLowerCase()}`,
       `Objet : ${subject.trim()}\n\n${body.trim()}`,
     ),
+    { inline: true },
   );
   const [copie, setCopie] = useState(false);
 
@@ -131,7 +135,7 @@ export function RelanceDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={close}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Relancer {customer.display_name}</DialogTitle>
@@ -215,7 +219,7 @@ export function RelanceDialog({
             </Button>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button variant="outline" onClick={() => close(false)}>
               Annuler
             </Button>
             <Button

@@ -66,7 +66,7 @@ function Steps({
   const [impact, setImpact] = useState<{ data: ProjectDeletion | null; error: string | null } | null>(
     null,
   );
-  const remove = useAction(() => api.deleteProject(project.id));
+  const remove = useAction(() => api.deleteProject(project.id), { inline: true });
 
   useEffect(() => {
     const controller = new AbortController();

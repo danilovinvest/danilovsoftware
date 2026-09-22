@@ -1112,7 +1112,7 @@ export type ActionKey =
   | "order_materials"
   | "open_worksite"
   | "send_plans"
-  | "invoice_balance"
+  | "balance_paid"
   | "ask_review"
   | "record_review"
   | "calc_done"
@@ -1337,7 +1337,7 @@ export function nextAction(
         detail: "Un rapport ou une attestation se règle en une fois, avant la rédaction.",
         tone: waitingTone(days),
         alert: days > FRESH_DAYS,
-        actions: [{ key: "invoice_balance", label: "Paiement reçu", primary: true }],
+        actions: [{ key: "balance_paid", label: "Paiement reçu", primary: true }],
       };
     }
     const redaction = at("redaction");
@@ -1578,7 +1578,7 @@ function soldeEtAvis(
       detail: "La prestation est rendue. Rien d'autre ne bloque l'encaissement.",
       tone: waitingTone(days),
       alert: days > FRESH_DAYS,
-      actions: [{ key: "invoice_balance", label: "Solde encaissé", primary: true }],
+      actions: [{ key: "balance_paid", label: "Solde encaissé", primary: true }],
     };
   }
 

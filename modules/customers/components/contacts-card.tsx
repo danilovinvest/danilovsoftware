@@ -27,6 +27,7 @@ import { formatPhone } from "@/shared/lib/format";
 import * as api from "../lib/api";
 import { useAction } from "../hooks/use-customers";
 import type { Contact, ContactPayload } from "../lib/types";
+import { askConfirm } from "@/shared/ui/confirm";
 
 const EMPTY: ContactPayload = {
   full_name: "",
@@ -52,6 +53,7 @@ export function ContactsCard({
 
   const create = useAction((payload: ContactPayload) =>
     api.createContact(customerId, payload),
+    { inline: true },
   );
   const remove = useAction((id: string) => api.deleteContact(id));
 
@@ -108,6 +110,12 @@ export function ContactsCard({
                   aria-label={`Supprimer ${contact.full_name}`}
                   disabled={remove.pending}
                   onClick={async () => {
+                    const ok = await askConfirm({
+                      title: `Retirer ${contact.full_name}`,
+                      description: "L'interlocuteur et ses coordonnées quittent la fiche, définitivement.",
+                      confirmLabel: "Retirer",
+                    });
+                    if (!ok) return;
                     await remove.run(contact.id);
                     onChanged();
                   }}

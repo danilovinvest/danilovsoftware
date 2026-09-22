@@ -21,6 +21,7 @@ import { formatDate, formatRelative } from "@/shared/lib/format";
 import { createMcpToken, mcpConnectorUrl, revokeMcpToken } from "../lib/api";
 import { useMcpTokens } from "../hooks/use-settings";
 import { SettingsPage, SettingsRows, SettingsRow, SettingsSection } from "./settings-page";
+import { askConfirm } from "@/shared/ui/confirm";
 import { openExternal } from "@/shared/desktop/links";
 
 /**
@@ -343,7 +344,16 @@ export function AssistantPanel() {
                     variant="ghost"
                     size="icon"
                     className="size-7"
-                    onClick={() => revoke(token.id)}
+                    onClick={async () => {
+                      const ok = await askConfirm({
+                        title: `Révoquer « ${token.name || "Assistant"} »`,
+                        description:
+                          "L'adresse cesse de fonctionner tout de suite : l'assistant qui s'en sert n'aura plus accès au CRM.",
+                        confirmLabel: "Révoquer",
+                      });
+                      if (ok) await revoke(token.id);
+                    }}
+                    aria-label={`Révoquer « ${token.name || "Assistant"} »`}
                     title="Révoquer ce connecteur"
                   >
                     <XIcon className="size-3.5" />

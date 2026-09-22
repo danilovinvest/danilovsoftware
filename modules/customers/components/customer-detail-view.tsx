@@ -36,6 +36,7 @@ import { EnumBadge } from "./enum-badge";
 import { InteractionsPanel } from "./interactions-panel";
 import { ProjectsPanel } from "./projects-panel";
 import { SyncFooter } from "./sync-footer";
+import { askConfirm } from "@/shared/ui/confirm";
 
 /**
  * Fiche client en trois onglets plutôt qu'en une page dense : les affaires (le
@@ -55,8 +56,8 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
   // Lire les échanges d'un client est plus intrusif que lire sa fiche : la
   // permission est distincte, et l'onglet disparaît avec elle.
   const canReadMail = usePermission("mail:read");
-  const remove = useAction(() => api.deleteCustomer(customerId));
-  const purge = useAction(() => api.purgeCustomer(customerId));
+  const remove = useAction(() => api.deleteCustomer(customerId), { inline: true });
+  const purge = useAction(() => api.purgeCustomer(customerId), { inline: true });
 
   if (loading && !customer) {
     return (
@@ -74,8 +75,8 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
     );
   }
 
-  if (error || !customer) {
-    return <ErrorNotice message={error ?? "Fiche introuvable."} />;
+  if (!customer) {
+    return <ErrorNotice message={error ?? "Fiche introuvable."} onRetry={reload} />;
   }
 
   if (editing) {
@@ -102,6 +103,14 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
           Retour aux fiches
         </Link>
       </Button>
+
+      {/* La fiche reste à l'écran : c'est son rechargement qui a échoué. */}
+      {error && (
+        <ErrorNotice
+          message={`Fiche non actualisée : ${error}`}
+          onRetry={reload}
+        />
+      )}
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
@@ -210,9 +219,14 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
               variant="destructive"
               disabled={remove.pending}
               onClick={async () => {
-                if (!confirm("Archiver cette fiche ? Elle n'apparaîtra plus dans la liste.")) {
-                  return;
-                }
+                const ok = await askConfirm({
+                  title: `Archiver « ${customer.display_name} »`,
+                  description:
+                    "La fiche sort de la liste par défaut. Elle reste trouvable par la recherche et en cochant « Archivé ».",
+                  confirmLabel: "Archiver",
+                  destructive: false,
+                });
+                if (!ok) return;
                 /*
                   `!== null` et non une vérité : `useAction.run` rend `null` en
                   cas d'échec, et l'API rend **204 sans corps** en cas de succès
@@ -242,16 +256,15 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
               className="text-muted-foreground hover:text-destructive"
               disabled={purge.pending}
               onClick={async () => {
-                if (
-                  !confirm(
-                    `Supprimer définitivement « ${customer.display_name} » ?\n\n` +
-                      "Ses projets, devis, interlocuteurs et échanges partent avec elle. " +
-                      "Les courriels et les rendez-vous sont conservés, simplement détachés.\n\n" +
-                      "Cette suppression ne se rattrape pas.",
-                  )
-                ) {
-                  return;
-                }
+                const ok = await askConfirm({
+                  title: `Supprimer définitivement « ${customer.display_name} »`,
+                  description:
+                    "Ses projets, devis, interlocuteurs et échanges partent avec elle. " +
+                    "Les courriels et les rendez-vous sont conservés, simplement détachés. " +
+                    "Cette suppression ne se rattrape pas.",
+                  confirmLabel: "Supprimer définitivement",
+                });
+                if (!ok) return;
                 if ((await purge.run()) !== null) router.push("/customers");
               }}
             >

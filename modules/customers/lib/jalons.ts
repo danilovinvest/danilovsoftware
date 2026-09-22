@@ -1,4 +1,5 @@
 import type { Milestones, PaymentStatus, Project, ProjectMission, Quote } from "./types";
+import { paymentCarrier } from "./settlement";
 
 /**
  * Les jalons d'après-signature d'une affaire.
@@ -243,16 +244,16 @@ export function readMarks(
 }
 
 function depositOf(quotes: Quote[]): PaymentStatus {
-  const signed = signedQuote(quotes);
-  if (signed) return signed.deposit_status;
-  return quotes[0]?.deposit_status ?? "non_applicable";
+  return signedQuote(quotes)?.deposit_status ?? "non_applicable";
 }
 
+/*
+  La pièce qui porte l'acompte et le solde : la même règle que les chantiers et
+  que l'écriture (`paymentCarrier`). Ses statuts décident seuls de ce qui est
+  franchi, si bien qu'un devis simplement envoyé ne date rien.
+*/
 function signedQuote(quotes: Quote[]): Quote | null {
-  return (
-    quotes.find((quote) => quote.status === "accepte" || quote.status === "realise") ??
-    null
-  );
+  return paymentCarrier(quotes);
 }
 
 export { depositOf };

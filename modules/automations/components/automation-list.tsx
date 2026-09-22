@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { useAutomations } from "../hooks/use-automations";
 import * as api from "../lib/api";
 import { describeCron } from "../lib/cron";
+import { askConfirm } from "@/shared/ui/confirm";
 import { automationHref } from "@/shared/lib/routes";
 
 /**
@@ -39,11 +40,15 @@ export function AutomationList() {
    * gens, et « Supprimer ? » tout court ne le laisserait pas deviner.
    */
   async function remove(id: string, name: string, runs: number) {
-    const trace =
-      runs > 0
-        ? `\n\nSon journal part avec elle : ${plural(runs, "exécution")} consignée${runs > 1 ? "s" : ""}.`
-        : "";
-    if (!confirm(`Supprimer l'automatisation « ${name} » ?${trace}`)) return;
+    const ok = await askConfirm({
+      title: `Supprimer l'automatisation « ${name} »`,
+      description:
+        runs > 0
+          ? `Son journal part avec elle : ${plural(runs, "exécution")} consignée${runs > 1 ? "s" : ""}.`
+          : undefined,
+      confirmLabel: "Supprimer",
+    });
+    if (!ok) return;
 
     setRemoving(id);
     setFailure(null);

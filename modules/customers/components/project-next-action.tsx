@@ -56,7 +56,7 @@ const ICONS: Record<ActionKey, LucideIcon> = {
   order_materials: PackageIcon,
   open_worksite: CheckCircle2Icon,
   send_plans: FileTextIcon,
-  invoice_balance: BanknoteIcon,
+  balance_paid: BanknoteIcon,
   ask_review: StarIcon,
   record_review: StarIcon,
   calc_done: CalculatorIcon,

@@ -83,6 +83,7 @@ import { ProjectTimeline } from "./project-timeline";
 import { ProjectDialog, QuoteDialog } from "./project-dialogs";
 import { QuotePayments } from "./quote-payments";
 import { JoinedQuoteDocs } from "./joined-quote-docs";
+import { paymentCarrier } from "../lib/settlement";
 import { RelanceDialog } from "./relance-dialog";
 import type {
   CustomerDetail,
@@ -91,9 +92,11 @@ import type {
   StepProofInput,
   Interaction,
   InteractionKind,
+  PaymentStatus,
   Project,
   Quote,
 } from "../lib/types";
+import { askConfirm } from "@/shared/ui/confirm";
 
 /**
  * Onglet « Affaires ».
@@ -180,71 +183,29 @@ export function ProjectsPanel({
       // part : c'est la colonne que l'écran Chantiers lit déjà.
       if ("worksite_date" in patch) {
         const date = patch.worksite_date;
-        await api.updateProject(project.id, {
-          label: project.label,
-          stage: project.stage,
-          // Renvoyé tel quel : réserver une date ne doit pas effacer le type
-          // d'intervention, que cet appel n'affiche pas.
-          scope: project.scope,
-          // Renvoyés tels quels : réserver une date ne doit pas dénommer
-          // l'ingénieur qui suit le dossier.
-          manager_id: project.manager_id,
-          engineer_id: project.engineer_id,
-          drafter_id: project.drafter_id,
-          outcome: project.outcome,
-          outcome_note: project.outcome_note,
-          site_address: project.site_address,
-          site_postal_code: project.site_postal_code,
-          site_city: project.site_city,
-          notes: project.notes,
-          started_at: date ? date.slice(0, 10) : null,
-          // Renvoyée telle quelle : réserver un démarrage ne doit pas effacer
-          // une fin de chantier déjà saisie.
-          finished_at: project.finished_at,
-          closed_at: project.closed_at,
-          mission: project.mission,
-          promised_at: project.promised_at,
-          internal_deadline_at: project.internal_deadline_at,
-        });
+        // Seule la date part : le serveur garde le reste de l'affaire.
+        await api.updateProject(project.id, { started_at: date ? date.slice(0, 10) : null });
         return;
       }
 
-      const suivant = { ...etatDe(project), ...patch };
-      await api.setMilestones(project.id, {
-        rib_sent_at: suivant.rib_sent_at,
-        insurance_sent_at: suivant.insurance_sent_at,
-        materials_ordered_at: suivant.materials_ordered_at,
-        materials: suivant.materials,
-        resume_at: suivant.resume_at,
-        plans_sent_at: suivant.plans_sent_at,
-        review_requested_at: suivant.review_requested_at,
-        review_received_at: suivant.review_received_at,
-        pv_sent_at: suivant.pv_sent_at,
-        pv_signed_at: suivant.pv_signed_at,
-        visit_report_sent_at: suivant.visit_report_sent_at,
-        survey_report_sent_at: suivant.survey_report_sent_at,
-        calc_started_at: suivant.calc_started_at,
-        calc_done_at: suivant.calc_done_at,
-        plans_started_at: suivant.plans_started_at,
-        plans_review_at: suivant.plans_review_at,
-        corrections_at: suivant.corrections_at,
-        final_ready_at: suivant.final_ready_at,
-        report_written_at: suivant.report_written_at,
-        report_validated_at: suivant.report_validated_at,
-        report_sent_at: suivant.report_sent_at,
-        survey_done_at: suivant.survey_done_at,
-        contact_at: suivant.contact_at,
-        rdv_at: suivant.rdv_at,
-        quote_sent_at: suivant.quote_sent_at,
-        negotiation_at: suivant.negotiation_at,
-        negotiation_note: suivant.negotiation_note,
-        signed_at: suivant.signed_at,
-      });
+      /*
+        Seules les cases touchées partent.
+
+        L'écran envoyait l'état complet qu'il avait lu, et un autre écran —
+        la fiche latérale d'un chantier, un second onglet — pouvait avoir
+        coché entre-temps : ce qu'il venait d'écrire repartait décoché.
+      */
+      const envoi: Record<string, unknown> = {};
+      for (const cle of api.MILESTONE_KEYS) {
+        if (cle in patch) envoi[cle] = patch[cle as keyof typeof patch];
+      }
+      await api.setMilestones(project.id, envoi as Partial<api.MilestonesPayload>);
       // `useAction` rend ce que l'action renvoie, et l'appelant s'en sert pour
       // décider s'il recharge. Sans ce `true`, l'écriture réussissait et la
       // fiche ne se rafraîchissait jamais.
       return true;
     },
+    { inline: true },
   );
 
   /**
@@ -490,6 +451,7 @@ function ProjectBlock({
   const [materiaux, setMateriaux] = useState(false);
   /** Le montant de l'acompte, demandé depuis « à faire maintenant ». */
   const [acompte, setAcompte] = useState(false);
+  const [soldeOuvert, setSoldeOuvert] = useState(false);
   /** Le tiroir qui complète l'affaire, ouvert depuis l'alerte du dessus. */
   const [completer, setCompleter] = useState(false);
 
@@ -553,8 +515,9 @@ function ProjectBlock({
       const proof = await api.createStepProof(project.id, { step, ...input });
       return { proofs: [proof], folder_path: "", folder_url: "", folder_created: false, skipped: [], warning: "" };
     },
+    { inline: true },
   );
-  const retirerPreuve = useAction((id: string) => api.deleteStepProof(id));
+  const retirerPreuve = useAction((id: string) => api.deleteStepProof(id), { inline: true });
   /*
     Le métier, la mission et le délai, lus une fois pour l'en-tête et les jalons.
 
@@ -578,9 +541,10 @@ function ProjectBlock({
     montant. Un montant omis reste celui que porte déjà le devis — marquer
     « facturé » ne doit pas effacer ce qu'on a saisi.
   */
-  const porteur = quotes.find((q) => q.status === "accepte" || q.status === "realise") ?? lead;
+  // La pièce qui porte le règlement : celle que la frise lit, donc celle qu'on écrit.
+  const porteur = paymentCarrier(quotes);
   const setDeposit = useAction(
-    (status: "en_attente" | "recu", amount?: string | null, paidAt?: string) => {
+    (status: PaymentStatus, amount?: string | null, paidAt?: string) => {
       if (!porteur) throw new Error("Aucun devis à mettre à jour sur cette affaire.");
       return api.setQuoteDeposit(porteur.id, {
         status,
@@ -588,6 +552,7 @@ function ProjectBlock({
         paid_at: paidAt,
       });
     },
+    { inline: true },
   );
 
   /** Encaisse l'acompte avec son montant, ou corrige le montant. */
@@ -762,10 +727,11 @@ function ProjectBlock({
       case "send_plans":
         onOverride({ plans_sent_at: new Date().toISOString() });
         break;
-      case "invoice_balance":
-        // Le solde appartient au devis, comme l'acompte : c'est lui qui porte
-        // le règlement.
-        if (await setBalance.run("recu")) onChanged();
+      case "balance_paid":
+        // Le solde appartient au devis, comme l'acompte, et s'encaisse comme
+        // lui : en disant combien. Le cocher d'un clic déclarait un solde reçu
+        // sans rien à rapprocher du relevé.
+        setSoldeOuvert(true);
         break;
       case "ask_review":
         onOverride({ review_requested_at: new Date().toISOString() });
@@ -1197,7 +1163,9 @@ function ProjectBlock({
                       la date. Les quatre autres jalons passent par leur table.
                     */
                     if (key === "deposit_invoiced_at") {
-                      if (await setDeposit.run(value ? "en_attente" : "en_attente")) onChanged();
+                      // Décocher « facturé » dit qu'il n'y a pas d'acompte :
+                      // repartir « en attente » laissait la case cochée.
+                      if (await setDeposit.run(value ? "en_attente" : "non_applicable")) onChanged();
                       return;
                     }
                     if (key === "deposit_paid_at") {
@@ -1270,6 +1238,18 @@ function ProjectBlock({
         total={depositTotalOf(porteur)}
         pending={setDeposit.pending}
         onSave={encaisser}
+      />
+
+      <DepositDialog
+        kind="solde"
+        open={soldeOuvert}
+        onOpenChange={setSoldeOuvert}
+        amount={porteur?.balance_amount ?? null}
+        paidAt={porteur?.balance_paid_at ?? null}
+        paid={porteur?.balance_status === "recu"}
+        total={depositTotalOf(porteur)}
+        pending={setBalance.pending}
+        onSave={solder}
       />
 
       {relance && (
@@ -1562,7 +1542,14 @@ function QuoteList({
                   disabled={remove.pending}
                   onClick={async () => {
                     const nom = quote.reference || quote.label || "ce devis";
-                    if (!confirm(`Supprimer le devis « ${nom} » ?`)) return;
+                    const ok = await askConfirm({
+                      title: `Supprimer le devis « ${nom} »`,
+                      description: quote.drive_url
+                        ? "Son PDF est encore dans OneDrive : la copie suivante le recréera. Supprimer d'abord le fichier, ou corriger le devis."
+                        : "Il n'a pas de document : sa suppression est définitive.",
+                      confirmLabel: "Supprimer le devis",
+                    });
+                    if (!ok) return;
                     if ((await remove.run(quote.id)) !== null) onChanged();
                   }}
                 >

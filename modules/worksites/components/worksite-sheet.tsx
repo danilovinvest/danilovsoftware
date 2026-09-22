@@ -19,7 +19,9 @@ import { euros, formatAmount, formatDate, formatDateTime } from "@/shared/lib/fo
 import { usePermission } from "@/modules/auth";
 import { ClaudeButton, worksiteContext } from "@/modules/assistant";
 import {
+  MILESTONE_KEYS,
   ProjectJalons,
+  paymentCarrier,
   depositTotalOf,
   missionOf,
   projectReference,
@@ -27,8 +29,8 @@ import {
   setQuoteDeposit,
   updateProject,
   type Jalons,
+  type MilestonesPayload,
   type PaymentStatus,
-  type ProjectPayload,
 } from "@/modules/customers";
 import { errorMessage } from "@/shared/api/errors";
 import { ErrorNotice } from "@/shared/ui/feedback";
@@ -37,12 +39,9 @@ import { isSilent } from "../lib/derive";
 import type { Metier, ReadWorksite, WorksiteQuote } from "../lib/types";
 
 /** Le devis signé de l'affaire, celui qui porte le règlement. */
+/** La pièce qui porte le règlement : la même que la fiche client lit et écrit. */
 function signedQuote(w: ReadWorksite["worksite"]): WorksiteQuote | null {
-  return (
-    w.quotes.find((q) => q.status === "accepte" || q.status === "realise") ??
-    w.quotes[0] ??
-    null
-  );
+  return paymentCarrier(w.quotes);
 }
 
 /** Le statut d'acompte du devis signé, « non_applicable » à défaut de devis. */
@@ -109,10 +108,11 @@ function Body({
   const [echec, setEchec] = useState<string | null>(null);
 
   const jalons: Jalons = {
-    deposit_invoiced_at: read.depositReceived || quoteDeposit(w) !== "non_applicable"
-      ? (w.started_at ?? w.created_at)
-      : null,
-    deposit_paid_at: read.depositReceived ? (w.started_at ?? w.created_at) : null,
+    // Lus sur la pièce qui porte le règlement, comme la fiche client : les
+    // cases cochées ici sont celles que l'écriture décochera.
+    deposit_invoiced_at:
+      quoteDeposit(w) !== "non_applicable" ? (w.started_at ?? w.created_at) : null,
+    deposit_paid_at: quoteDeposit(w) === "recu" ? (w.started_at ?? w.created_at) : null,
     deposit_amount: signedQuote(w)?.deposit_amount ?? null,
     // Aucune colonne ne date le solde : le devis n'en porte que le statut.
     balance_paid_at:
@@ -194,7 +194,6 @@ function Body({
     setOptimiste((current) => ({ ...current, ...patch }));
     setEnCours(true);
     setEchec(null);
-    const suivant = { ...jalons, ...patch };
     try {
       if ("deposit_invoiced_at" in patch || "deposit_paid_at" in patch || "deposit_amount" in patch) {
         /*
@@ -224,61 +223,17 @@ function Body({
         // Réserver une date, c'est renseigner `started_at` de l'affaire : la
         // colonne que cet écran lit déjà pour classer ses colonnes.
         const value = patch.worksite_date ?? null;
-        await updateProject(w.id, {
-          label: w.label, stage: w.stage,
-          // Renvoyé tel quel : cet écran ne le modifie pas, et la route
-          // remplace l'affaire entière.
-          scope: w.scope,
-          manager_id: w.manager_id,
-          engineer_id: w.engineer_id,
-          drafter_id: w.drafter_id,
-          outcome: (w.outcome || null) as ProjectPayload["outcome"],
-          outcome_note: w.outcome_note,
-          site_address: w.site_address, site_postal_code: w.site_postal_code,
-          site_city: w.city, notes: w.notes,
-          started_at: value ? value.slice(0, 10) : null,
-          // Renvoyée telle quelle, pour la même raison que le reste : la route
-          // remplace l'affaire entière.
-          finished_at: w.finished_at,
-          closed_at: w.closed_at,
-          mission: w.mission,
-          promised_at: w.promised_at,
-          internal_deadline_at: w.internal_deadline_at,
-        });
+        // Seule la date part. Cet écran renvoyait l'affaire lue au chargement
+        // de sa liste, et effaçait ce qu'on avait corrigé depuis sur la fiche
+        // client — une note, un ingénieur.
+        await updateProject(w.id, { started_at: value ? value.slice(0, 10) : null });
       } else {
-        await setMilestones(w.id, {
-          rib_sent_at: suivant.rib_sent_at,
-          insurance_sent_at: suivant.insurance_sent_at,
-          materials_ordered_at: suivant.materials_ordered_at,
-          materials: suivant.materials,
-          resume_at: suivant.resume_at,
-          plans_sent_at: suivant.plans_sent_at,
-          review_requested_at: suivant.review_requested_at,
-          review_received_at: suivant.review_received_at,
-          pv_sent_at: suivant.pv_sent_at,
-          pv_signed_at: suivant.pv_signed_at,
-          visit_report_sent_at: suivant.visit_report_sent_at,
-          survey_report_sent_at: suivant.survey_report_sent_at,
-          calc_started_at: suivant.calc_started_at,
-          calc_done_at: suivant.calc_done_at,
-          plans_started_at: suivant.plans_started_at,
-          plans_review_at: suivant.plans_review_at,
-          corrections_at: suivant.corrections_at,
-          final_ready_at: suivant.final_ready_at,
-          report_written_at: suivant.report_written_at,
-          report_validated_at: suivant.report_validated_at,
-          report_sent_at: suivant.report_sent_at,
-          survey_done_at: suivant.survey_done_at,
-          // Rendus tels quels : cet écran ne les modifie pas, et la requête
-          // remplace la ligne entière.
-          contact_at: w.contact_at,
-          rdv_at: w.rdv_at,
-          quote_sent_at: w.quote_sent_at,
-          negotiation_at: w.negotiation_at,
-          // Renvoyée telle quelle, pour la même raison que les marques.
-          negotiation_note: w.negotiation_note ?? "",
-          signed_at: w.signed_at,
-        });
+        // Seules les cases touchées partent, pour la même raison.
+        const envoi: Record<string, unknown> = {};
+        for (const cle of MILESTONE_KEYS) {
+          if (cle in patch) envoi[cle] = patch[cle as keyof typeof patch];
+        }
+        await setMilestones(w.id, envoi as Partial<MilestonesPayload>);
       }
       onChanged();
       return true;

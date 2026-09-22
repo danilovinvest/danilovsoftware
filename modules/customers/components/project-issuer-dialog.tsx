@@ -54,6 +54,7 @@ export function ProjectIssuerDialog({
       issuer: choice === "" ? null : choice,
       reassign_quotes: choice !== "" && reassign,
     }),
+    { inline: true },
   );
   const moving = choice === "" ? [] : quotes.filter((quote) => quote.issuer !== choice);
 

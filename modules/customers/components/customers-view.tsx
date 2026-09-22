@@ -33,7 +33,7 @@ export function CustomersView() {
   */
   const cycle = (filters.cycle ?? "tous") as CycleFilter;
   const review = filters.review ?? "";
-  const { data, loading, error } = useCustomers(filters);
+  const { data, loading, error, reload } = useCustomers(filters);
   const stats = useCustomerStats(filters.issuer);
   const canCreate = usePermission("customers:write");
 
@@ -99,11 +99,15 @@ export function CustomersView() {
 
         </div>
 
-        {error ? (
+        {error && (
           <div className="px-4 pb-4">
-            <ErrorNotice message={error} />
+            <ErrorNotice
+              message={data ? `Liste non actualisée : ${error}` : error}
+              onRetry={reload}
+            />
           </div>
-        ) : !loading && (data?.items.length ?? 0) === 0 ? (
+        )}
+        {error && !data ? null : !loading && (data?.items.length ?? 0) === 0 ? (
           <EmptyState
             title={
               active || cycle !== "tous" || review !== ""
