@@ -72,7 +72,7 @@ export function ThreadReader({
 
   return (
     <article className="flex min-w-0 flex-col" data-demo="mail-thread-reader">
-      <header className="bg-background flex flex-col gap-2.5 border-b p-4 md:sticky md:top-0 md:z-10">
+      <header className="bg-card flex flex-col gap-2.5 border-b p-4 md:sticky md:top-0 md:z-10">
         <BackButton onBack={onBack} />
         <h2 className="text-base leading-snug font-semibold break-words">{thread.subject || "(sans objet)"}</h2>
         <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
