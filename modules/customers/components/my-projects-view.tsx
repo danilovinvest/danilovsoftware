@@ -24,7 +24,7 @@ type Urgency = "retard" | "sans_action" | "suivi";
 
 type Role = "responsable" | "ingenieur" | "dessinateur";
 
-const URGENCY_FILTERS: { value: Urgency | null; label: string }[] = [
+const URGENCY_FILTERS: { value: Exclude<Urgency, "suivi"> | null; label: string }[] = [
   { value: null, label: "Tous" },
   { value: "retard", label: "En retard" },
   { value: "sans_action", label: "Sans prochaine action" },

@@ -11,8 +11,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { ClaudeMark, OpenAIMark } from "@/shared/ui/brand-marks";
 import { cn } from "@/lib/utils";
 import { errorMessage } from "@/shared/api/errors";
@@ -22,6 +20,7 @@ import { createMcpToken, mcpConnectorUrl, revokeMcpToken } from "../lib/api";
 import { useMcpTokens } from "../hooks/use-settings";
 import { SettingsPage, SettingsRows, SettingsRow, SettingsSection } from "./settings-page";
 import { askConfirm } from "@/shared/ui/confirm";
+import { McpAccessChoice, type McpAccess } from "./mcp-access-choice";
 
 /**
  * Connecter un assistant au CRM.
@@ -49,19 +48,22 @@ export function AssistantPanel() {
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [pending, setPending] = useState(false);
-  const [secret, setSecret] = useState<string | null>(null);
+  /** L'adresse créée, avec le droit qu'elle porte : elle ne sert qu'à ce droit-là. */
+  const [created, setCreated] = useState<{ url: string; access: McpAccess } | null>(null);
+  const secret = created?.url ?? null;
   const [copied, setCopied] = useState(false);
-  /** Le consentement à l'écriture, décidé avant de créer l'adresse. */
-  const [canWrite, setCanWrite] = useState(false);
+  /** Le consentement à l'écriture, choisi avant de créer l'adresse — nul tant qu'on n'a rien choisi. */
+  const [access, setAccess] = useState<McpAccess | null>(null);
 
   async function create(): Promise<string | null> {
+    if (!access) return null;
     setPending(true);
     setError(null);
     setCopied(false);
     try {
-      const created = await createMcpToken(name.trim() || "Assistant", canWrite);
-      const url = mcpConnectorUrl(created.secret);
-      setSecret(url);
+      const token = await createMcpToken(name.trim() || "Assistant", access === "ecriture");
+      const url = mcpConnectorUrl(token.secret);
+      setCreated({ url, access });
       setName("");
       reload();
       return url;
@@ -80,10 +82,11 @@ export function AssistantPanel() {
    * Aucun site ne peut installer un connecteur à la place de l'utilisateur —
    * ce serait une faille, pas un confort. Ce qui reste à faire à la main est
    * donc un collage, et tout le reste est fait ici. Une adresse déjà créée
-   * n'est pas recréée : on rebranche celle qu'on a sous les yeux.
+   * n'est pas recréée : on rebranche celle qu'on a sous les yeux — sauf si
+   * le droit choisi a changé depuis, auquel cas elle ne correspond plus.
    */
-  async function brancher(url: string) {
-    const adresse = secret ?? (await create());
+  async function brancher(url: string, reuse = created?.access === access) {
+    const adresse = (reuse ? secret : null) ?? (await create());
     if (!adresse) return;
     await copy(adresse);
     window.open(url, "_blank", "noopener,noreferrer");
