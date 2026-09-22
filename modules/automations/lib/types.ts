@@ -37,6 +37,8 @@ export type Automation = {
   last_run_at: string | null;
   graph: Graph;
   run_count: number;
+  /** L'erreur du dernier passage terminé ; vide s'il a réussi. Servie par la liste seule. */
+  last_run_error?: string;
 };
 
 export type AutomationInput = {

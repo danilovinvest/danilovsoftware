@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -86,6 +86,7 @@ import { ProjectDialog, QuoteDialog } from "./project-dialogs";
 import { QuotePayments } from "./quote-payments";
 import { JoinedQuoteDocs } from "./joined-quote-docs";
 import { paymentCarrier } from "../lib/settlement";
+import { PlanEvent } from "./plan-event";
 import { RelanceDialog } from "./relance-dialog";
 import type {
   CustomerDetail,
@@ -113,12 +114,18 @@ import { askConfirm } from "@/shared/ui/confirm";
  * la base et propose le geste suivant.
  */
 export function ProjectsPanel({
+  focus = { affaire: null, onglet: null },
   customer,
   projects,
   quotes,
   interactions,
   onChanged,
 }: {
+  /**
+   * L'affaire désignée par l'adresse (`?affaire=&onglet=`) : elle s'ouvre, sur
+   * son onglet, et vient à l'écran. Sans elle, la première s'ouvre.
+   */
+  focus?: { affaire: string | null; onglet: string | null };
   customer: CustomerDetail;
   projects: Project[];
   quotes: Quote[];
@@ -315,7 +322,9 @@ export function ProjectsPanel({
             canWriteQuotes={canWriteQuotes}
             // La première affaire s'ouvre : sur la majorité des fiches il n'y en
             // a qu'une, et la refermer d'office ferait un clic pour rien.
-            defaultOpen={index === 0}
+            defaultOpen={focus.affaire ? project.id === focus.affaire : index === 0}
+            focused={project.id === focus.affaire}
+            initialTab={project.id === focus.affaire ? focus.onglet : null}
             onOverride={(patch) => poserJalon(project, patch)}
             onAddQuote={() => setQuoteFor(project)}
             onEdit={() => setEditing(project)}
@@ -420,6 +429,8 @@ function ProjectBlock({
   canWrite,
   canWriteQuotes,
   defaultOpen,
+  focused = false,
+  initialTab = null,
   onOverride,
   onAddQuote,
   onEdit,
@@ -438,6 +449,10 @@ function ProjectBlock({
   canWrite: boolean;
   canWriteQuotes: boolean;
   defaultOpen: boolean;
+  /** Désignée par l'adresse : elle vient à l'écran au montage. */
+  focused?: boolean;
+  /** L'onglet demandé par l'adresse : chronologie, devis ou apres. */
+  initialTab?: string | null;
   onOverride: (patch: Partial<Jalons & StepMarks>) => Promise<boolean>;
   onAddQuote: () => void;
   onEdit: () => void;
@@ -445,10 +460,19 @@ function ProjectBlock({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(defaultOpen);
-  const [tab, setTab] = useState("chronologie");
+  const [tab, setTab] = useState(() =>
+    initialTab && ["chronologie", "devis", "apres"].includes(initialTab) ? initialTab : "chronologie",
+  );
+  const bloc = useRef<HTMLDivElement>(null);
+  // Une affaire désignée par un lien vient à l'écran : sur une fiche à six
+  // affaires, elle serait sinon dépliée hors de vue.
+  useEffect(() => {
+    if (focused) bloc.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+  }, [focused]);
   const [relance, setRelance] = useState(false);
   const [outcome, setOutcome] = useState<"refuse" | "postpone" | null>(null);
   const [logging, setLogging] = useState<InteractionKind | null>(null);
+  const [planifier, setPlanifier] = useState(false);
   /** La saisie des matériaux, ouverte depuis « à faire maintenant ». */
   const [materiaux, setMateriaux] = useState(false);
   /** Le montant de l'acompte, demandé depuis « à faire maintenant ». */
@@ -674,7 +698,10 @@ function ProjectBlock({
         setLogging("appel");
         break;
       case "plan_rdv":
-        setLogging("rdv");
+        // Un rendez-vous se planifie dans l'agenda : c'est là qu'on le voit,
+        // qu'il se déplace et qu'il entre en conflit. L'historique, lui, garde
+        // ce qui a eu lieu.
+        setPlanifier(true);
         break;
       case "open_calendar":
         router.push("/calendar");
@@ -776,7 +803,7 @@ function ProjectBlock({
   const periode = periodeChantier(project.started_at, project.finished_at);
 
   return (
-    <Card className="gap-0 overflow-hidden py-0">
+    <Card ref={bloc} className="gap-0 overflow-hidden scroll-mt-4 py-0">
       <Collapsible open={open} onOpenChange={setOpen}>
         <CollapsibleTrigger className="hover:bg-muted/30 flex w-full items-center gap-3 px-4 py-3 text-left transition-colors">
           <ChevronRightIcon
@@ -1305,6 +1332,23 @@ function ProjectBlock({
           }}
         />
       )}
+      <PlanEvent
+        open={planifier}
+        onClose={() => setPlanifier(false)}
+        onSaved={() => {
+          setPlanifier(false);
+          notifySuccess("Rendez-vous ajouté à l'agenda.");
+          onChanged();
+        }}
+        preset={{
+          kind: "rdv",
+          customerId: customer.id,
+          customerName: customer.display_name,
+          projectId: project.id,
+          title: `RDV — ${customer.display_name}`,
+          location: site,
+        }}
+      />
       {logging && (
         <InteractionDialog
           project={project}

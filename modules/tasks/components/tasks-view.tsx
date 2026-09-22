@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { KanbanSquareIcon, ListIcon, PlusIcon, SearchIcon, XIcon } from "lucide-react";
 import { usePermission } from "@/modules/auth";
 import type { Paginated } from "@/shared/api/client";
@@ -31,15 +32,48 @@ export function TasksView() {
   // Le tableau s'ouvre sur toute l'équipe : en portée « mes tâches »,
   // réassigner une carte la ferait disparaître sous le curseur, ce qui se lit
   // comme une suppression. « Mes tâches » reste à un clic.
-  const [filters, setFilters] = useState<TaskFilters>({
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const tache = searchParams.get("tache");
+  const [filters, setFilters] = useState<TaskFilters>(() => ({
     sort: "position",
     page: 1,
     per_page: 200,
-  });
+    // `?assignee=mine` : le lien « mes tâches » se partage et se retrouve.
+    assignee_id: searchParams.get("assignee") === "mine" ? "mine" : undefined,
+  }));
   const [search, setSearch] = useState("");
   /** Le nom de la fiche filtrée : le filtre ne transporte que son identifiant. */
   const [customerName, setCustomerName] = useState("");
   const [editing, setEditing] = useState<Task | null>(null);
+
+  /*
+    `?tache=` ouvre la tâche désignée. La cloche et la recherche menaient à
+    `/tasks` tout court : un tableau de deux cents cartes où il fallait
+    chercher une seconde fois ce qu'on venait de cliquer.
+  */
+  useEffect(() => {
+    if (!tache) return;
+    const controller = new AbortController();
+    api
+      .getTask(tache, controller.signal)
+      .then(setEditing)
+      .catch(() => {
+        if (!controller.signal.aborted) notifyError("La tâche demandée est introuvable ou n'est plus accessible.");
+      });
+    return () => controller.abort();
+  }, [tache]);
+
+  function fermer() {
+    setEditing(null);
+    if (tache) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("tache");
+      const qs = params.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    }
+  }
   const [creatingIn, setCreatingIn] = useState<TaskStatus | null>(null);
 
   const { data, loading, error, reload } = useTasks(filters);
@@ -332,7 +366,7 @@ export function TasksView() {
           task={editing}
           open
           colleagues={colleagues}
-          onOpenChange={(open) => !open && setEditing(null)}
+          onOpenChange={(open) => !open && fermer()}
           onSaved={refresh}
         />
       )}

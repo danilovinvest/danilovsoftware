@@ -146,7 +146,7 @@ function Section({ titre, taches, ton }: { titre: string; taches: Task[]; ton: s
       </p>
       {taches.map((task) => (
         <DropdownMenuItem key={task.id} asChild className="rounded-lg px-2 py-1.5">
-          <Link href="/tasks" className="flex flex-col items-start gap-0.5">
+          <Link href={`/tasks?tache=${task.id}`} className="flex flex-col items-start gap-0.5">
             <span className="line-clamp-1 text-sm">{task.title}</span>
             <span className={cn("text-[11px]", ton)}>{formatDateTime(task.due_at)}</span>
           </Link>

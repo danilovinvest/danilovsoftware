@@ -91,7 +91,7 @@ export function EventForm({
 }) {
   // Le formulaire est remonté à chaque ouverture : la clé change avec la cible,
   // et l'état initial se calcule une fois, dans l'initialiseur du useState.
-  const key = `${open}:${event?.id ?? template?.id ?? "nouveau"}:${range?.from.toISOString() ?? ""}:${range?.to.toISOString() ?? ""}:${preset?.customerId ?? ""}:${preset?.kind ?? ""}`;
+  const key = `${open}:${event?.id ?? template?.id ?? "nouveau"}:${range?.from.toISOString() ?? ""}:${range?.to.toISOString() ?? ""}:${preset?.customerId ?? ""}:${preset?.kind ?? ""}:${preset?.projectId ?? ""}`;
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       {/*
@@ -603,6 +603,14 @@ export type EventPreset = {
   customerId?: string | null;
   customerName?: string;
   title?: string;
+  /** L'affaire concernée : sans elle, aucun jalon ne s'inscrit. */
+  projectId?: string | null;
+  location?: string;
+  /**
+   * L'événement marque le démarrage du chantier : le poser inscrit la date sur
+   * l'affaire, le déplacer la déplace (voir `marks_worksite_start`).
+   */
+  worksiteStart?: boolean;
 };
 
 function initial(
@@ -713,15 +721,15 @@ function initial(
       calendarId: copy?.calendarId ?? calendars[0]?.id ?? "",
       // Une duplication ne reprend ni l'affaire ni les jalons : recopier un
       // « PV signé » sur un événement neuf inscrirait deux fois le même fait.
-      projectId: null,
-      jalons: { ...EMPTY_JALONS },
+      projectId: preset?.projectId ?? null,
+      jalons: { ...EMPTY_JALONS, is_worksite_start: preset?.worksiteStart ?? false },
       kind: preset?.kind ?? copy?.kind ?? rattachement.kind,
       // Une duplication reprend la couleur : c'est ce qui fait qu'on duplique.
       color: copy?.color ?? 0,
       customerId: preset?.customerId ?? copy?.customerId ?? null,
       customerName: preset?.customerName ?? copy?.customerName ?? "",
       title: preset?.title ?? copy?.title ?? "",
-      location: copy?.location ?? "",
+      location: preset?.location ?? copy?.location ?? "",
       description: copy?.description ?? "",
       allDay: true,
       date: dateValue(from),
@@ -733,14 +741,14 @@ function initial(
 
   return {
     calendarId: copy?.calendarId ?? calendars[0]?.id ?? "",
-    projectId: null,
-    jalons: { ...EMPTY_JALONS },
+    projectId: preset?.projectId ?? null,
+    jalons: { ...EMPTY_JALONS, is_worksite_start: preset?.worksiteStart ?? false },
     kind: preset?.kind ?? copy?.kind ?? rattachement.kind,
     color: copy?.color ?? 0,
     customerId: preset?.customerId ?? copy?.customerId ?? null,
     customerName: preset?.customerName ?? copy?.customerName ?? "",
     title: preset?.title ?? copy?.title ?? "",
-    location: copy?.location ?? "",
+    location: preset?.location ?? copy?.location ?? "",
     description: copy?.description ?? "",
     allDay: false,
     date: dateValue(from),

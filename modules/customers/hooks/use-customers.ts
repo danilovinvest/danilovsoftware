@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Paginated } from "@/shared/api/client";
 import { scopeParam, useScope } from "@/modules/group";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { errorMessage } from "@/shared/api/errors";
 import { notifyError, notifySuccess } from "@/shared/ui/toaster";
 import * as api from "../lib/api";
+import { filtersFromQuery, filtersToQuery, rememberListQuery } from "../lib/list-query";
 import type { CustomerFilters, CustomerListItem, CustomerStats } from "../lib/types";
 
 type Resolved<T> = { key: string; data: T | null; error: string | null };
@@ -149,15 +151,34 @@ export function effectiveStatus(filters: CustomerFilters): CustomerFilters["stat
 }
 
 export function useCustomerFilters() {
-  const [filters, setFilters] = useState<CustomerFilters>(DEFAULTS);
+  /*
+    L'adresse est la seule vérité des filtres (voir `lib/list-query.ts`) : un
+    retour depuis une fiche, ou le bouton Précédent, retrouve la même liste.
+    `replace` et non `push` : chaque case cochée n'a pas à devenir une étape de
+    l'historique.
+  */
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
+  const filters = useMemo(() => filtersFromQuery(params, DEFAULTS), [params]);
+  const query = filtersToQuery(filters, DEFAULTS);
 
-  const update = useCallback((patch: Partial<CustomerFilters>) => {
-    setFilters((current) => ({ ...current, ...patch, page: patch.page ?? 1 }));
-  }, []);
+  useEffect(() => rememberListQuery(query), [query]);
 
-  const reset = useCallback(() => {
-    setFilters(DEFAULTS);
-  }, []);
+  const write = useCallback(
+    (next: CustomerFilters) => {
+      const qs = filtersToQuery(next, DEFAULTS);
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [router, pathname],
+  );
+
+  const update = useCallback(
+    (patch: Partial<CustomerFilters>) => write({ ...filters, ...patch, page: patch.page ?? 1 }),
+    [write, filters],
+  );
+
+  const reset = useCallback(() => write(DEFAULTS), [write]);
 
   /*
     « Il y a un filtre » se juge **par rapport au défaut**, pas à l'absence de

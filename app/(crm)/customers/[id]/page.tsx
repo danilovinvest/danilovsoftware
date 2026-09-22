@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { RequireAuth } from "@/modules/auth";
 import { CustomerDetailView } from "@/modules/customers";
 
@@ -11,7 +12,10 @@ export default async function CustomerPage(props: PageProps<"/customers/[id]">) 
 
   return (
     <RequireAuth permission="customers:read">
-      <CustomerDetailView customerId={id} />
+      {/* La fiche lit `?affaire=&onglet=&vue=` : Next exige une frontière. */}
+      <Suspense>
+        <CustomerDetailView customerId={id} />
+      </Suspense>
     </RequireAuth>
   );
 }

@@ -116,6 +116,14 @@ export function listDuplicates(minimum = 0.45, signal?: AbortSignal) {
  * C'est `keep` qui est dans le chemin parce que c'est la fiche sur laquelle on
  * agit — celle qui reste. Tout ou rien côté serveur.
  */
+/** « Pas un doublon » : la paire ne revient plus dans la liste. */
+export function dismissDuplicate(leftId: string, rightId: string) {
+  return apiFetch<void>("/v1/customers/duplicates/dismiss", {
+    method: "POST",
+    body: { left_id: leftId, right_id: rightId },
+  });
+}
+
 export function mergeCustomers(keep: string, absorbed: string) {
   return apiFetch<Customer>(`/v1/customers/${keep}/merge`, {
     method: "POST",
