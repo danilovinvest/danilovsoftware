@@ -46,7 +46,7 @@ import { lastListHref } from "../lib/list-query";
  */
 export function CustomerDetailView({ customerId }: { customerId: string }) {
   const router = useRouter();
-  const { customer, loading, error, reload } = useCustomer(customerId);
+  const { customer, loading, error, reload, mutate } = useCustomer(customerId);
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const VUES = ["affaires", "echanges", "taches", "courriels", "documents", "details"];
@@ -345,6 +345,12 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
               onglet: searchParams.get("onglet"),
             }}
             customer={customer}
+            onQuote={(updated) =>
+              mutate((current) => ({
+                ...current,
+                quotes: current.quotes.map((quote) => (quote.id === updated.id ? updated : quote)),
+              }))
+            }
             projects={customer.projects}
             quotes={customer.quotes}
             interactions={customer.interactions}

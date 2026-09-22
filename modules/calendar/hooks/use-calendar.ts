@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { errorMessage } from "@/shared/api/errors";
 import * as api from "../lib/api";
+import { useAgendaPrefs, writeAgendaPrefs } from "../lib/agenda-prefs";
 import {
   addDays,
   monthMatrix,
@@ -33,11 +34,16 @@ type Resolved<T> = { key: string; data: T | null; error: string | null };
  * `today` est figé au montage. Sans cela, le liseré « aujourd'hui » se
  * recalculerait à chaque rendu sur une horloge qui a bougé.
  */
-export function useCalendar() {
+export function useCalendar(me: string | null = null) {
   const [today] = useState(() => startOfDay(new Date()));
   const [cursor, setCursor] = useState(today);
-  const [view, setView] = useState<CalendarView>("mois");
-  const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set<string>());
+  // Vue, agendas et catégories masqués, « mes rendez-vous » : retenus sur ce
+  // poste d'une visite à l'autre (voir `lib/agenda-prefs.ts`).
+  const prefs = useAgendaPrefs();
+  const view = prefs.view;
+  const setView = useCallback((next: CalendarView) => writeAgendaPrefs({ view: next }), []);
+  const hidden = useMemo(() => new Set(prefs.hiddenCalendars), [prefs.hiddenCalendars]);
+  const mine = prefs.mine && me !== null;
   /**
    * Les catégories masquées, sur le modèle des agendas.
    *
@@ -45,9 +51,7 @@ export function useCalendar() {
    * dépendre de l'agenda où l'échange a été posé, et réciproquement. Les
    * confondre obligerait à cocher dix cases pour ne voir qu'une chose.
    */
-  const [hiddenKinds, setHiddenKinds] = useState<ReadonlySet<EventKind>>(
-    () => new Set<EventKind>(),
-  );
+  const hiddenKinds = useMemo(() => new Set(prefs.hiddenKinds), [prefs.hiddenKinds]);
   const [token, setToken] = useState(0);
 
   // Le mois du curseur, débordé d'une semaine de chaque côté : une grille
@@ -120,9 +124,13 @@ export function useCalendar() {
         (o) =>
           inRange(o) &&
           !hidden.has(o.event.calendar_id) &&
-          !hiddenKinds.has(o.event.kind),
+          !hiddenKinds.has(o.event.kind) &&
+          // « Mes rendez-vous » : posés pour moi, ou par moi sans destinataire.
+          (!mine ||
+            o.event.assignee_id === me ||
+            (o.event.assignee_id === null && o.event.created_by === me)),
       ),
-    [occurrences, inRange, hidden, hiddenKinds],
+    [occurrences, inRange, hidden, hiddenKinds, mine, me],
   );
 
   const calendars = useMemo(
@@ -181,22 +189,20 @@ export function useCalendar() {
   }, []);
 
   const toggleCalendar = useCallback((id: string) => {
-    setHidden((current) => {
-      const next = new Set(current);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
+    const next = new Set(hidden);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    writeAgendaPrefs({ hiddenCalendars: [...next] });
+  }, [hidden]);
 
   const toggleKind = useCallback((kind: EventKind) => {
-    setHiddenKinds((current) => {
-      const next = new Set(current);
-      if (next.has(kind)) next.delete(kind);
-      else next.add(kind);
-      return next;
-    });
-  }, []);
+    const next = new Set(hiddenKinds);
+    if (next.has(kind)) next.delete(kind);
+    else next.add(kind);
+    writeAgendaPrefs({ hiddenKinds: [...next] });
+  }, [hiddenKinds]);
+
+  const toggleMine = useCallback(() => writeAgendaPrefs({ mine: !prefs.mine }), [prefs.mine]);
 
   const step = useCallback(
     (direction: number) => {
@@ -232,6 +238,9 @@ export function useCalendar() {
     toggleCalendar,
     kinds,
     toggleKind,
+    /** Seulement mes rendez-vous : posés pour moi, ou par moi. */
+    mine,
+    toggleMine,
     reload,
     replace,
     occurrences: visible,

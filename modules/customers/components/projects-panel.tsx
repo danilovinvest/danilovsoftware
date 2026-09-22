@@ -115,12 +115,15 @@ import { askConfirm } from "@/shared/ui/confirm";
  */
 export function ProjectsPanel({
   focus = { affaire: null, onglet: null },
+  onQuote,
   customer,
   projects,
   quotes,
   interactions,
   onChanged,
 }: {
+  /** Un devis que l'écriture vient de rendre : l'écran le pose sans attendre. */
+  onQuote?: (quote: Quote) => void;
   /**
    * L'affaire désignée par l'adresse (`?affaire=&onglet=`) : elle s'ouvre, sur
    * son onglet, et vient à l'écran. Sans elle, la première s'ouvre.
@@ -329,6 +332,7 @@ export function ProjectsPanel({
             onAddQuote={() => setQuoteFor(project)}
             onEdit={() => setEditing(project)}
             onChanged={onChanged}
+            onQuote={onQuote}
           />
         );
       })}
@@ -431,6 +435,7 @@ function ProjectBlock({
   defaultOpen,
   focused = false,
   initialTab = null,
+  onQuote,
   onOverride,
   onAddQuote,
   onEdit,
@@ -453,6 +458,7 @@ function ProjectBlock({
   focused?: boolean;
   /** L'onglet demandé par l'adresse : chronologie, devis ou apres. */
   initialTab?: string | null;
+  onQuote?: (quote: Quote) => void;
   onOverride: (patch: Partial<Jalons & StepMarks>) => Promise<boolean>;
   onAddQuote: () => void;
   onEdit: () => void;
@@ -572,11 +578,17 @@ function ProjectBlock({
   const setDeposit = useAction(
     (status: PaymentStatus, amount?: string | null, paidAt?: string) => {
       if (!porteur) throw new Error("Aucun devis à mettre à jour sur cette affaire.");
-      return api.setQuoteDeposit(porteur.id, {
-        status,
-        amount: amount === undefined ? porteur.deposit_amount : amount,
-        paid_at: paidAt,
-      });
+      return api
+        .setQuoteDeposit(porteur.id, {
+          status,
+          amount: amount === undefined ? porteur.deposit_amount : amount,
+          paid_at: paidAt,
+        })
+        .then((quote) => {
+          // Le cran change tout de suite ; le rechargement complète le reste.
+          onQuote?.(quote);
+          return quote;
+        });
     },
     { inline: true },
   );
@@ -609,11 +621,17 @@ function ProjectBlock({
   const setBalance = useAction(
     (status: "en_attente" | "recu", amount?: string | null, paidAt?: string) => {
       if (!porteur) throw new Error("Aucun devis à mettre à jour sur cette affaire.");
-      return api.setQuoteBalance(porteur.id, {
-        status,
-        amount: amount === undefined ? porteur.balance_amount : amount,
-        paid_at: paidAt,
-      });
+      return api
+        .setQuoteBalance(porteur.id, {
+          status,
+          amount: amount === undefined ? porteur.balance_amount : amount,
+          paid_at: paidAt,
+        })
+        .then((quote) => {
+          // Le cran change tout de suite ; le rechargement complète le reste.
+          onQuote?.(quote);
+          return quote;
+        });
     },
   );
 
@@ -1345,6 +1363,8 @@ function ProjectBlock({
           customerId: customer.id,
           customerName: customer.display_name,
           projectId: project.id,
+          // Le rendez-vous est d'abord celui du responsable de l'affaire.
+          assigneeId: project.manager_id,
           title: `RDV — ${customer.display_name}`,
           location: site,
         }}

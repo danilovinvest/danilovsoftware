@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronLeftIcon, ChevronRightIcon, KeyboardIcon, PlusIcon } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon, KeyboardIcon, PlusIcon, UserIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { usePermission } from "@/modules/auth";
+import { useAuth, usePermission } from "@/modules/auth";
 import { errorMessage } from "@/shared/api/errors";
 import { EmptyState, ErrorNotice } from "@/shared/ui/feedback";
 import { updateEvent } from "../lib/api";
@@ -44,7 +44,8 @@ import { WeekGrid } from "./week-grid";
  * interpréter pour peindre une grille.
  */
 export function CalendarView() {
-  const calendar = useCalendar();
+  const { account } = useAuth();
+  const calendar = useCalendar(account?.id ?? null);
   const canWrite = usePermission("calendar:write");
   const [selected, setSelected] = useState<Occurrence | null>(null);
   const [now] = useState(() => new Date());
@@ -143,6 +144,8 @@ export function CalendarView() {
         // heures ne doit pas le détacher de sa fiche.
         customer_id: event.customer_id,
         project_id: event.project_id,
+        // Le collègue aussi : déplacer son rendez-vous ne le lui retire pas.
+        assignee_id: event.assignee_id,
         // La couleur aussi : glisser un bloc de deux heures ne doit pas le
         // repeindre en gris.
         color: event.event_color,
@@ -270,6 +273,21 @@ Rendez-vous, visites de chantier et absences de l&apos;équipe.
         <Card className="flex min-h-0 min-w-0 flex-1 flex-col gap-0 overflow-hidden py-0">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2">
             <div className="flex items-center gap-1">
+              {/*
+                Mes rendez-vous : ceux posés pour moi, ou par moi. Le choix est
+                retenu sur ce poste, comme la vue.
+              */}
+              <Button
+                variant={calendar.mine ? "default" : "outline"}
+                size="sm"
+                className="h-7"
+                aria-pressed={calendar.mine}
+                data-demo="agenda-mine"
+                onClick={calendar.toggleMine}
+              >
+                <UserIcon />
+                Mes rendez-vous
+              </Button>
               <Button variant="outline" size="sm" className="h-7" onClick={calendar.goToday}>
                 Aujourd&apos;hui
               </Button>
