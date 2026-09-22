@@ -64,7 +64,27 @@ impl Failure {
     fn unreachable() -> Self {
         Self::local("network_error", "L'API est injoignable.")
     }
+
+    /// Le trousseau a refusé. Le détail — « errSecInteractionNotAllowed »,
+    /// un code Windows — va au journal : il ne dit rien à la personne, qui ne
+    /// peut rien en faire. La page reçoit une phrase qui dit quoi faire.
+    fn keychain(detail: &str, message: &str) -> Self {
+        log::error!("trousseau : {detail}");
+        Self::local("keychain", message)
+    }
 }
+
+/// Ce que la page dit quand le jeton n'a pas pu être écrit ou relu : la session
+/// ne tient pas, et la cause la plus fréquente est un trousseau verrouillé ou
+/// un accès refusé à l'invite du système.
+const KEYCHAIN_UNAVAILABLE: &str = "Le trousseau de cet ordinateur n'a pas permis de garder \
+votre session. Vérifiez qu'il est déverrouillé (Trousseau d'accès sur macOS, Gestionnaire \
+d'identifiants sur Windows) et que l'accès a été autorisé, puis reconnectez-vous.";
+
+/// La déconnexion côté CRM a eu lieu, mais le poste n'a pas oublié le jeton.
+const KEYCHAIN_FORGET_FAILED: &str = "Vous êtes déconnecté du CRM, mais le trousseau de cet \
+ordinateur n'a pas pu effacer votre session. Redémarrez l'application ; si le message revient, \
+supprimez l'entrée « fr.ompt.crm » du trousseau.";
 
 #[derive(Deserialize)]
 struct Envelope {
@@ -182,7 +202,7 @@ impl Session {
                 .send()
                 .await;
             let _ = keychain::forget();
-            return Err(Failure::local("keychain", message));
+            return Err(Failure::keychain(&message, KEYCHAIN_UNAVAILABLE));
         }
         Ok(session.view)
     }
@@ -194,7 +214,9 @@ impl Session {
     /// peut-être hors ligne, et le jeton resservira au prochain essai.
     pub async fn refresh(&self) -> Result<Option<SessionView>, Failure> {
         let _guard = self.lock.lock().await;
-        let Some(token) = keychain::load().map_err(|m| Failure::local("keychain", m))? else {
+        let Some(token) =
+            keychain::load().map_err(|m| Failure::keychain(&m, KEYCHAIN_UNAVAILABLE))?
+        else {
             return Ok(None);
         };
         match self
@@ -237,7 +259,7 @@ impl Session {
                 .send()
                 .await;
         }
-        keychain::forget().map_err(|m| Failure::local("keychain", m))
+        keychain::forget().map_err(|m| Failure::keychain(&m, KEYCHAIN_FORGET_FAILED))
     }
 
     /// Prépare une connexion dans le navigateur et rend l'adresse à ouvrir.
@@ -321,6 +343,16 @@ mod tests {
         assert!(token
             .chars()
             .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_'));
+    }
+
+    // Le détail technique reste au journal : la page ne reçoit que la phrase.
+    #[test]
+    fn a_keychain_failure_hides_the_system_detail() {
+        let failure =
+            Failure::keychain("errSecInteractionNotAllowed (-25308)", KEYCHAIN_UNAVAILABLE);
+        assert_eq!(failure.code, "keychain");
+        assert!(!failure.message.contains("errSec"));
+        assert!(failure.message.contains("reconnectez-vous"));
     }
 
     #[test]

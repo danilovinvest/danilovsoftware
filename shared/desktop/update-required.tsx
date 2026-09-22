@@ -1,10 +1,19 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import { DownloadIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/shared/ui/feedback";
-import { checkForUpdate, installUpdate } from "./updates";
+import { checkForUpdate } from "./updates";
+import { UpdateProgressBar, useUpdateInstall } from "./update-progress";
+
+/** La coque ne sait installer que ce qu'elle vient de trouver : on cherche d'abord. */
+async function findUpdate(): Promise<string | null> {
+  const found = await checkForUpdate();
+  return found
+    ? null
+    : "Aucune mise à jour n'est encore disponible au téléchargement. Réessayez dans quelques minutes.";
+}
 
 /**
  * La version de l'application, envoyée à l'API sur chaque appel
@@ -42,28 +51,9 @@ function subscribe(listener: () => void) {
  */
 export function UpdateRequired() {
   const minimum = useSyncExternalStore(subscribe, () => required, () => null);
-  const [installing, setInstalling] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { installing, progress, error, install } = useUpdateInstall(findUpdate);
 
   if (minimum === null) return null;
-
-  async function install() {
-    setInstalling(true);
-    setError(null);
-    try {
-      // La coque ne sait installer que ce qu'elle vient de trouver.
-      const found = await checkForUpdate();
-      if (!found) {
-        setError("Aucune mise à jour n'est encore disponible au téléchargement. Réessayez dans quelques minutes.");
-        setInstalling(false);
-        return;
-      }
-      await installUpdate();
-    } catch (cause) {
-      setError(typeof cause === "string" ? cause : "L'installation a échoué.");
-      setInstalling(false);
-    }
-  }
 
   return (
     <div
@@ -82,6 +72,7 @@ export function UpdateRequired() {
           l&apos;application redémarrera d&apos;elle-même.
         </p>
         {error && <p className="text-danger text-xs">{error}</p>}
+        {installing && <UpdateProgressBar progress={progress} />}
         <Button onClick={install} disabled={installing} className="self-center">
           {installing ? <Spinner className="size-4" /> : <DownloadIcon />}
           {installing ? "Installation…" : "Mettre à jour"}

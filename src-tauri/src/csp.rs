@@ -48,14 +48,33 @@ impl Connect {
     }
 }
 
+/// La politique qui s'applique à cette compilation.
+///
+/// **`cargo tauri dev` lit `devCsp`, tout le reste lit `csp`** — c'est la règle
+/// de Tauri (`tauri-codegen` 2.6.3, `context.rs` ; `tauri` 2.11.5,
+/// `manager/mod.rs`), où « dev » veut dire « sans la fonction
+/// `custom-protocol` » : un `cargo tauri build --debug` est donc une
+/// compilation de production à cet égard. `devCsp` absente, `csp` vaut pour
+/// les deux. Vérifier l'autre politique que celle que Tauri embarque ferait
+/// passer, ou refuser, une adresse pour de mauvaises raisons. Le nom de la clé
+/// accompagne la valeur, pour qu'un refus dise laquelle corriger.
+pub fn policy(config: &Value, dev: bool) -> (&'static str, &Value) {
+    let security = &config["app"]["security"];
+    if dev && !security["devCsp"].is_null() {
+        ("devCsp", &security["devCsp"])
+    } else {
+        ("csp", &security["csp"])
+    }
+}
+
 /// Les sources qui bornent les appels réseau de la page.
 ///
 /// **`default-src` sert de repli**, comme le veut la spécification : une
 /// politique qui ne nomme pas `connect-src` n'autorise pas tout, elle retombe
 /// sur la directive par défaut. L'ignorer aurait rendu `Unrestricted` — donc
 /// un garde-fou qui laisse passer précisément la configuration la plus stricte.
-pub fn connect(config: &Value) -> Connect {
-    let csp = &config["app"]["security"]["csp"];
+pub fn connect(config: &Value, dev: bool) -> Connect {
+    let (_, csp) = policy(config, dev);
     match csp {
         Value::Null => Connect::Unrestricted,
         Value::String(policy) => from_policy(policy),
@@ -121,14 +140,14 @@ mod tests {
     #[test]
     fn lit_une_directive_ecrite_en_ligne() {
         let config = with_csp(json!({ "connect-src": "'self' https://api.example" }));
-        assert!(connect(&config).allows("https://api.example"));
-        assert!(!connect(&config).allows("https://autre.example"));
+        assert!(connect(&config, false).allows("https://api.example"));
+        assert!(!connect(&config, false).allows("https://autre.example"));
     }
 
     #[test]
     fn lit_une_directive_ecrite_en_tableau() {
         let config = with_csp(json!({ "connect-src": ["'self'", "https://api.example"] }));
-        assert!(connect(&config).allows("https://api.example"));
+        assert!(connect(&config, false).allows("https://api.example"));
     }
 
     #[test]
@@ -136,8 +155,8 @@ mod tests {
         let config = with_csp(json!(
             "default-src 'self'; connect-src 'self' https://api.example; img-src *"
         ));
-        assert!(connect(&config).allows("https://api.example"));
-        assert!(!connect(&config).allows("https://autre.example"));
+        assert!(connect(&config, false).allows("https://api.example"));
+        assert!(!connect(&config, false).allows("https://autre.example"));
     }
 
     // Sans connect-src, c'est default-src qui borne les appels. Rendre
@@ -145,17 +164,17 @@ mod tests {
     #[test]
     fn retombe_sur_default_src() {
         let objet = with_csp(json!({ "default-src": "'self' https://api.example" }));
-        assert!(connect(&objet).allows("https://api.example"));
-        assert!(!connect(&objet).allows("https://autre.example"));
+        assert!(connect(&objet, false).allows("https://api.example"));
+        assert!(!connect(&objet, false).allows("https://autre.example"));
 
         let chaine = with_csp(json!("default-src 'self'; img-src *"));
-        assert!(!connect(&chaine).allows("https://api.example"));
+        assert!(!connect(&chaine, false).allows("https://api.example"));
     }
 
     #[test]
     fn une_config_sans_csp_ne_borne_rien() {
-        assert_eq!(connect(&json!({})), Connect::Unrestricted);
-        assert!(connect(&json!({})).allows("https://n-importe-quoi.example"));
+        assert_eq!(connect(&json!({}), false), Connect::Unrestricted);
+        assert!(connect(&json!({}), false).allows("https://n-importe-quoi.example"));
     }
 
     // La comparaison est littérale : une barre oblique finale fait une autre
@@ -163,13 +182,47 @@ mod tests {
     #[test]
     fn la_comparaison_est_litterale() {
         let config = with_csp(json!({ "connect-src": "https://api.example" }));
-        assert!(!connect(&config).allows("https://api.example/"));
-        assert!(!connect(&config).allows("https://API.example"));
+        assert!(!connect(&config, false).allows("https://api.example/"));
+        assert!(!connect(&config, false).allows("https://API.example"));
+    }
+
+    // `localhost` n'est admis qu'en développement : la politique de
+    // production ne doit jamais le porter, et c'est `devCsp` qui l'ajoute.
+    #[test]
+    fn devcsp_ne_vaut_qu_en_developpement() {
+        let config = json!({ "app": { "security": {
+            "csp": { "connect-src": "'self' https://api.example" },
+            "devCsp": { "connect-src": "'self' https://api.example http://localhost:8080" }
+        } } });
+        assert!(!connect(&config, false).allows("http://localhost:8080"));
+        assert!(connect(&config, true).allows("http://localhost:8080"));
+    }
+
+    #[test]
+    fn sans_devcsp_le_developpement_lit_csp() {
+        let config = with_csp(json!({ "connect-src": "'self' https://api.example" }));
+        assert!(connect(&config, true).allows("https://api.example"));
+        assert!(!connect(&config, true).allows("http://localhost:8080"));
+    }
+
+    // La configuration réelle : la production n'ouvre ni `localhost` ni
+    // toutes les images du web.
+    #[test]
+    fn la_configuration_livree_ne_porte_pas_localhost() {
+        let config: Value =
+            serde_json::from_str(include_str!("../tauri.conf.json")).expect("tauri.conf.json");
+        assert!(connect(&config, false).allows("https://testbeforeproduction.xyz"));
+        assert!(!connect(&config, false).allows("http://localhost:8080"));
+        assert!(connect(&config, true).allows("http://localhost:8080"));
+        let img = policy(&config, false).1["img-src"]
+            .as_str()
+            .unwrap_or_default();
+        assert!(!img.split_whitespace().any(|s| s == "https:" || s == "*"));
     }
 
     #[test]
     fn describe_nomme_les_sources() {
         let config = with_csp(json!({ "connect-src": ["'self'", "ipc:"] }));
-        assert_eq!(connect(&config).describe(), "'self' ipc:");
+        assert_eq!(connect(&config, false).describe(), "'self' ipc:");
     }
 }

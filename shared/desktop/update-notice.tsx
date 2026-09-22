@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { DownloadIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/shared/ui/feedback";
-import { checkForUpdate, installUpdate, type AvailableUpdate } from "./updates";
+import { checkForUpdate, type AvailableUpdate } from "./updates";
+import { UpdateProgressBar, useUpdateInstall } from "./update-progress";
 
 /** Le premier regard attend que l'écran soit posé : la session passe d'abord. */
 const FIRST_CHECK_MS = 10_000;
@@ -23,8 +24,7 @@ const CHECK_EVERY_MS = 4 * 60 * 60 * 1000;
 export function UpdateNotice() {
   const [update, setUpdate] = useState<AvailableUpdate | null>(null);
   const [dismissed, setDismissed] = useState<string | null>(null);
-  const [installing, setInstalling] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { installing, progress, error, install } = useUpdateInstall();
 
   useEffect(() => {
     let alive = true;
@@ -45,17 +45,6 @@ export function UpdateNotice() {
   }, []);
 
   if (!update || dismissed === update.version) return null;
-
-  async function install() {
-    setInstalling(true);
-    setError(null);
-    try {
-      await installUpdate();
-    } catch (cause) {
-      setError(typeof cause === "string" ? cause : "L'installation a échoué.");
-      setInstalling(false);
-    }
-  }
 
   return (
     <div
@@ -80,6 +69,7 @@ export function UpdateNotice() {
         </p>
       )}
       {error && <p className="text-danger text-xs">{error}</p>}
+      {installing && <UpdateProgressBar progress={progress} />}
       <Button size="sm" disabled={installing} onClick={install}>
         {installing ? <Spinner /> : <DownloadIcon />}
         {installing ? "Installation…" : "Installer et redémarrer"}

@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { Channel, invoke } from "@tauri-apps/api/core";
 
 /**
  * Les mises à jour, demandées à la coque (`src-tauri/src/updates.rs`).
@@ -17,7 +17,21 @@ export function checkForUpdate(): Promise<AvailableUpdate | null> {
   return invoke<AvailableUpdate | null>("update_check");
 }
 
-/** Installe puis relance : la promesse ne se résout que si l'installation échoue. */
-export function installUpdate(): Promise<void> {
-  return invoke<void>("update_install");
+/**
+ * Où en est le téléchargement (`Progress` dans `updates.rs`). `total` est nul
+ * quand le serveur ne donne pas la taille : pas de pourcentage à inventer.
+ * `finished` : les octets sont arrivés, restent la vérification de la
+ * signature et l'installation.
+ */
+export type UpdateProgress =
+  | { event: "downloading"; downloaded: number; total: number | null }
+  | { event: "finished" };
+
+/**
+ * Installe puis relance : la promesse ne se résout que si l'installation échoue.
+ * La progression arrive par un canal, au rythme d'un message par pour-cent.
+ */
+export function installUpdate(onProgress?: (progress: UpdateProgress) => void): Promise<void> {
+  const channel = new Channel<UpdateProgress>(onProgress);
+  return invoke<void>("update_install", { onProgress: channel });
 }

@@ -20,12 +20,13 @@ mod updates;
 #[cfg(test)]
 mod csp;
 
+use tauri::ipc::Channel;
 use tauri::{AppHandle, State, WebviewWindowBuilder};
 use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_opener::OpenerExt;
 
 use session::{Failure, Session, SessionView};
-use updates::{Available, Pending};
+use updates::{Available, Pending, Progress};
 
 #[tauri::command]
 async fn session_refresh(session: State<'_, Session>) -> Result<Option<SessionView>, Failure> {
@@ -72,10 +73,15 @@ async fn update_check(
 }
 
 /// Installe la version trouvée, puis relance. Toujours au clic : une relance
-/// imposée ferait perdre une saisie en cours.
+/// imposée ferait perdre une saisie en cours. La progression du téléchargement
+/// revient par le canal que la page passe.
 #[tauri::command]
-async fn update_install(app: AppHandle, pending: State<'_, Pending>) -> Result<(), String> {
-    updates::install(&app, &pending).await
+async fn update_install(
+    app: AppHandle,
+    pending: State<'_, Pending>,
+    on_progress: Channel<Progress>,
+) -> Result<(), String> {
+    updates::install(&app, &pending, on_progress).await
 }
 
 /// Aligne le bandeau de la fenêtre sur le thème du CRM. La page l'annonce à

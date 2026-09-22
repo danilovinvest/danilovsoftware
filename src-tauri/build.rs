@@ -58,18 +58,36 @@ fn resolve(name: &str, default: &str) -> String {
 }
 
 /// La page ne peut appeler que ce que la CSP autorise.
+///
+/// C'est la politique **que Tauri embarquera** qui est vérifiée : `devCsp`
+/// sous `cargo tauri dev`, `csp` partout ailleurs. `localhost` ne vit que dans
+/// la première — une application livrée n'a aucune raison d'appeler une API
+/// sur le poste — si bien qu'un `build` pointé sur une API locale s'arrête ici,
+/// en le disant, plutôt que de produire un paquet qui la laisserait ouverte.
 fn check_connect_src(api: &str) {
     let raw = fs::read_to_string(CONFIG).unwrap_or_else(|e| panic!("{CONFIG} illisible : {e}"));
     let config: Value =
         serde_json::from_str(&raw).unwrap_or_else(|e| panic!("{CONFIG} illisible : {e}"));
 
-    let connect = connect(&config);
+    let dev = tauri_build::is_dev();
+    let (key, _) = policy(&config, dev);
+    let connect = connect(&config, dev);
     if !connect.allows(api) {
+        // Une API locale se sert par `cargo tauri dev`, jamais en l'ajoutant
+        // à la politique livrée : c'est précisément ce qu'on vient d'en retirer.
+        let advice = if !dev && api.contains("://localhost") {
+            "Une API locale ne sert qu'en développement : lancer `cargo tauri dev`, \
+             dont la politique (devCsp) l'admet."
+                .to_string()
+        } else {
+            format!(
+                "Ajouter l'adresse à app.security.{key}.connect-src dans {CONFIG}, \
+                 sans quoi le navigateur refusera chaque appel à l'API en silence."
+            )
+        };
         panic!(
             "OMPT_API_URL vaut « {api} », que la CSP n'autorise pas.\n\
-             Les appels réseau de la page sont bornés par : {}\n\
-             Ajouter l'adresse à app.security.csp.connect-src dans {CONFIG}, \
-             sans quoi le navigateur refusera chaque appel à l'API en silence.",
+             Les appels réseau de la page sont bornés par : {}\n{advice}",
             connect.describe()
         );
     }

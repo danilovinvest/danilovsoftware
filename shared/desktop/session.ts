@@ -67,22 +67,55 @@ export function logoutNative(): Promise<void> {
 }
 
 /**
+ * Au-delà, le navigateur n'a vraisemblablement pas rendu la main : l'invite
+ * « Ouvrir OMPT CRM » a été refusée, ignorée, ou l'onglet fermé. Deux minutes,
+ * c'est la vie du code que le portail émet — passé ce délai, même un retour
+ * tardif porterait un code mort. L'écran propose alors de recommencer, sans
+ * cesser d'écouter : la personne peut encore être en train de se connecter.
+ */
+export const BROWSER_LOGIN_PATIENCE_MS = 2 * 60 * 1000;
+
+/**
+ * Au-delà, la coque elle-même écarte le retour (`PENDING_TTL` de `session.rs`) :
+ * attendre davantage serait attendre ce qui ne peut plus arriver.
+ */
+const BROWSER_LOGIN_EXPIRY_MS = 10 * 60 * 1000;
+
+/**
  * La connexion par passkey, dans le navigateur du système.
  *
  * Aucune clé ne se signe pour `tauri://localhost` : la coque ouvre le portail
  * avec un défi PKCE, la personne s'y authentifie, et le navigateur rend la main
  * par `omptcrm://auth`. La promesse se résout quand la coque annonce la session
- * — ou son échec. Elle ne se résout jamais si la personne abandonne dans le
- * navigateur : `cancel` la libère, et un nouvel essai remplace l'ancien.
+ * — ou son échec. Si rien ne revient, elle échoue au bout de dix minutes, quand
+ * la coque ne l'accepterait plus ; `cancel` la libère plus tôt, et un nouvel
+ * essai remplace l'ancien.
  */
 export function loginWithBrowser<T extends NativeSession>(): {
   session: Promise<T>;
   cancel: () => void;
 } {
   const unlisteners: Array<() => void> = [];
-  const cancel = () => unlisteners.splice(0).forEach((unlisten) => unlisten());
+  let cancelled = false;
+  let expiry: ReturnType<typeof setTimeout> | undefined;
+  const cancel = () => {
+    cancelled = true;
+    clearTimeout(expiry);
+    unlisteners.splice(0).forEach((unlisten) => unlisten());
+  };
 
   const session = new Promise<T>((resolve, reject) => {
+    expiry = setTimeout(() => {
+      cancel();
+      reject(
+        new ApiError(
+          0,
+          "internal_error",
+          "Le navigateur n'a pas rendu la main à l'application. Relancez la connexion.",
+        ),
+      );
+    }, BROWSER_LOGIN_EXPIRY_MS);
+
     void Promise.all([
       listen<T>("session://opened", (event) => {
         cancel();
@@ -94,6 +127,13 @@ export function loginWithBrowser<T extends NativeSession>(): {
       }),
     ])
       .then((fns) => {
+        // Annulé pendant la mise en place : les écoutes arrivent après
+        // `cancel`, qui ne les a pas vues. On les libère ici, et on n'ouvre
+        // pas le navigateur pour un essai abandonné.
+        if (cancelled) {
+          fns.forEach((unlisten) => unlisten());
+          return;
+        }
         unlisteners.push(...fns);
         return call<void>("session_login_browser");
       })
