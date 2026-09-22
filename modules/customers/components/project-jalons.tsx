@@ -128,7 +128,19 @@ export function ProjectJalons({
                     {jalon.label}
                   </div>
                   <div className="text-muted-foreground/70 text-xs">
-                    {done ? formatDate(at) : jalon.hint}
+                    {/*
+                      L'acompte dit le jour où il est arrivé, jamais la date
+                      d'émission du devis que `readJalons` prend faute de mieux :
+                      un encaissement repris sans jour le dit, et « Modifier »
+                      le fait saisir (issue 114).
+                    */}
+                    {done
+                      ? jalon.picks === "deposit"
+                        ? depositPaidAt
+                          ? `Reçu le ${formatDate(depositPaidAt)}`
+                          : "Reçu, jour inconnu"
+                        : formatDate(at)
+                      : jalon.hint}
                     {/* Combien, à côté de quand : c'est ce qu'on vérifie sur le relevé. */}
                     {done && jalon.picks === "deposit" && jalons.deposit_amount && (
                       <>

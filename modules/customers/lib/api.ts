@@ -76,6 +76,16 @@ export function setCustomerReview(
   });
 }
 
+/**
+ * Client ou prospect, décidé à la main (issue 113).
+ *
+ * `true` ou `false` l'emporte sur les pièces et n'est plus défait par la
+ * promotion automatique ; `null` rend la décision aux pièces.
+ */
+export function setCustomerClient(id: string, client: boolean | null) {
+  return apiFetch<Customer>(`/v1/customers/${id}/client`, { method: "PUT", body: { client } });
+}
+
 export function getStats(issuer: string, signal?: AbortSignal) {
   return apiFetch<CustomerStats>("/v1/customers/stats", {
     query: { issuer: issuer || undefined },
@@ -348,6 +358,14 @@ export function listUnassigned(
   return apiFetch<UnassignedPage>("/v1/projects/unassigned", { query: params, signal });
 }
 
+/**
+ * Archiver une affaire, ou la désarchiver (issue 115). Rien d'autre ne bouge :
+ * ni l'étape, ni les devis.
+ */
+export function setProjectArchived(id: string, archived: boolean) {
+  return apiFetch<Project>(`/v1/projects/${id}/archive`, { method: "PUT", body: { archived } });
+}
+
 export function deleteProject(id: string) {
   return apiFetch<void>(`/v1/projects/${id}`, { method: "DELETE" });
 }
@@ -458,6 +476,20 @@ export function deleteQuote(id: string) {
 }
 
 // --- Échanges ---------------------------------------------------------------
+
+/**
+ * La taille d'une page d'historique. C'est aussi ce que la fiche en sert
+ * (`detailInteractionLimit` côté API) : la page 2 commence donc exactement là
+ * où la fiche s'arrête.
+ */
+export const INTERACTIONS_PAGE_SIZE = 50;
+
+/** Une page de l'historique d'une fiche, du plus récent au plus ancien. */
+export function listInteractions(customerId: string, page: number) {
+  return apiFetch<Paginated<Interaction>>(`/v1/customers/${customerId}/interactions`, {
+    query: { page, per_page: INTERACTIONS_PAGE_SIZE },
+  });
+}
 
 export function createInteraction(customerId: string, payload: InteractionPayload) {
   return apiFetch<Interaction>(`/v1/customers/${customerId}/interactions`, {

@@ -12,6 +12,7 @@ import {
 import { refreshSession, setAccessToken } from "@/shared/api/client";
 import * as authApi from "./lib/api";
 import type { Account, Permission, SessionResponse } from "./lib/types";
+import type { SignOutReason } from "./lib/sign-out-reason";
 
 type AuthState = {
   account: Account | null;
@@ -32,6 +33,17 @@ type AuthState = {
    */
   adoptSession: (session: SessionResponse) => void;
   logout: () => Promise<void>;
+  /**
+   * Oublie une session que le serveur vient de fermer lui-même — mot de passe
+   * changé, « Tout fermer ». Rediriger sans l'oublier laissait le compte et le
+   * jeton d'accès en mémoire : le CRM restait utilisable un quart d'heure dans
+   * un autre onglet de la même page, et la garde renvoyait sans rien dire.
+   * La garde renvoie ensuite à la connexion avec la raison, que la page
+   * de connexion affiche.
+   */
+  endSession: (reason: SignOutReason) => Promise<void>;
+  /** La raison de la dernière fermeture, tant qu'aucune session n'a repris. */
+  signOutReason: SignOutReason | null;
   can: (permission: Permission) => boolean;
   refreshAccount: () => Promise<void>;
 };
@@ -48,7 +60,7 @@ const REFRESH_MARGIN_MS = 60_000;
  */
 type SessionState =
   | { status: "loading" }
-  | { status: "ready"; account: Account | null; offline?: boolean }
+  | { status: "ready"; account: Account | null; offline?: boolean; reason?: SignOutReason }
   | { status: "offline" };
 
 /** Les réessais s'espacent — 5 s, 10 s, 20 s… — sans dépasser une minute. */
@@ -59,6 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<SessionState>({ status: "loading" });
   const account = state.status === "ready" ? state.account : null;
   const loading = state.status === "loading";
+  const signOutReason = state.status === "ready" ? (state.reason ?? null) : null;
   const offline = state.status === "offline" || (state.status === "ready" && state.offline === true);
   /** Le nombre de réessais consécutifs, pour espacer le suivant. */
   const retriesRef = useRef(0);
@@ -100,12 +113,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [clearTimer],
   );
 
-  const forget = useCallback(() => {
-    accountIdRef.current = null;
-    setAccessToken(null);
-    setState({ status: "ready", account: null });
-    clearTimer();
-  }, [clearTimer]);
+  const forget = useCallback(
+    (reason?: SignOutReason) => {
+      accountIdRef.current = null;
+      setAccessToken(null);
+      setState({ status: "ready", account: null, reason });
+      clearTimer();
+    },
+    [clearTimer],
+  );
 
   const renew = useCallback(async () => {
     // Passe par le client partagé : c'est lui qui déduplique les appels
@@ -186,12 +202,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           forget();
         }
       },
+      endSession: async (reason) => {
+        forget(reason);
+      },
+      signOutReason,
       can: (permission) => account?.permissions.includes(permission) ?? false,
       refreshAccount: async () => {
         setState({ status: "ready", account: await authApi.me() });
       },
     }),
-    [account, loading, offline, applySession, forget],
+    [account, loading, offline, signOutReason, applySession, forget],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

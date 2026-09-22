@@ -2,9 +2,16 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ExternalLinkIcon, FileIcon, FolderIcon, FolderOpenIcon } from "lucide-react";
+import {
+  ChevronRightIcon,
+  ExternalLinkIcon,
+  FileIcon,
+  FolderIcon,
+  FolderOpenIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { ListSkeleton } from "@/shared/ui/loading";
 import { EmptyState, ErrorNotice } from "@/shared/ui/feedback";
 import { formatAgo, plural } from "@/shared/lib/format";
@@ -29,9 +36,13 @@ import type { DriveItem } from "../lib/types";
  * par construction — le delta n'est pas exhaustif, un renommage y laisserait
  * un doublon — pour un contenu que personne ne cherche dans le CRM.
  *
- * Les sous-dossiers ne sont pas descendus : « Photos · 312 éléments » et un
- * lien suffisent, on ne recopie pas trois cents vignettes pour dire qu'il y a
- * des photos.
+ * Les sous-dossiers se déplient **un niveau à la fois**, et ne sont lus qu'au
+ * clic (issue 59). Ils n'étaient pas descendus du tout — « Photos · 312
+ * éléments » et un lien vers OneDrive —, si bien qu'un plan rangé dans
+ * `Plans/` restait invisible depuis la fiche. Tout lire d'avance coûterait un
+ * appel Graph par dossier pour des contenus que personne n'ouvre ; chaque
+ * dossier déplié passe par le même cache que la liste du dessus, et son
+ * contenu est décalé sous lui, pour qu'on sache toujours où l'on est.
  */
 export type DocumentedProject = {
   id: string;
@@ -71,14 +82,20 @@ export function CustomerDocuments({ projects }: { projects: DocumentedProject[] 
   );
 }
 
+/** Les dossiers d'abord, puis les fichiers, le plus récent en tête : c'est ce qu'on vient vérifier. */
+function sortEntries(items: DriveItem[]) {
+  return {
+    folders: items.filter((item) => item.folder),
+    files: items
+      .filter((item) => !item.folder)
+      .sort((a, b) => b.modified_at.localeCompare(a.modified_at)),
+  };
+}
+
 function ProjectFolder({ project, now }: { project: DocumentedProject; now: number }) {
   const { listing, loading, error, notFound } = useListing(project.drive_path);
   const items = listing?.items ?? [];
-  const folders = items.filter((item) => item.folder);
-  // Le plus récent en tête : c'est ce qu'on vient vérifier.
-  const files = items
-    .filter((item) => !item.folder)
-    .sort((a, b) => b.modified_at.localeCompare(a.modified_at));
+  const { folders, files } = sortEntries(items);
 
   const resume = loading
     ? "Lecture du dossier…"
@@ -126,34 +143,144 @@ function ProjectFolder({ project, now }: { project: DocumentedProject; now: numb
         <p className="text-muted-foreground border-t px-4 py-3 text-xs">Dossier vide.</p>
       ) : (
         <ul className="divide-y border-t">
-          {folders.map((item) => (
-            <SubfolderRow key={item.id} item={item} />
-          ))}
-          {files.map((item) => (
-            <DocumentRow key={item.id} item={item} now={now} />
-          ))}
+          <Entries parentPath={project.drive_path} items={items} depth={0} now={now} />
         </ul>
       )}
     </Card>
   );
 }
 
-function SubfolderRow({ item }: { item: DriveItem }) {
+/** Le décalage d'une ligne selon sa profondeur : le contenu d'un dossier se lit sous lui. */
+function indent(depth: number) {
+  return { paddingLeft: `${16 + depth * 20}px` };
+}
+
+/**
+ * Les lignes d'un dossier.
+ *
+ * Le chemin d'un enfant se reconstruit depuis celui qu'on vient de lire, et non
+ * depuis `item.path` : un dossier partagé rend le chemin du disque de son
+ * propriétaire, que `/v1/files/browse` ne saurait pas relire.
+ */
+function Entries({
+  parentPath,
+  items,
+  depth,
+  now,
+}: {
+  parentPath: string;
+  items: DriveItem[];
+  depth: number;
+  now: number;
+}) {
+  const { folders, files } = sortEntries(items);
   return (
-    <li className="flex items-center gap-3 px-4 py-2.5">
-      <FolderIcon className="text-info size-4 shrink-0" />
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-sm">{item.name}</div>
-        <div className="text-muted-foreground/70 text-xs">{plural(item.child_count, "élément")}</div>
-      </div>
-      <OpenLink href={item.web_url} />
-    </li>
+    <>
+      {folders.map((item, index) => (
+        <SubfolderRow
+          key={item.id}
+          item={item}
+          demo={depth === 0 && index === 0}
+          path={`${parentPath}/${item.name}`}
+          depth={depth}
+          now={now}
+        />
+      ))}
+      {files.map((item) => (
+        <DocumentRow key={item.id} item={item} depth={depth} now={now} />
+      ))}
+    </>
   );
 }
 
-function DocumentRow({ item, now }: { item: DriveItem; now: number }) {
+function SubfolderRow({
+  item,
+  demo,
+  path,
+  depth,
+  now,
+}: {
+  item: DriveItem;
+  /** Le premier sous-dossier de l'affaire porte la zone de la démo. */
+  demo: boolean;
+  path: string;
+  depth: number;
+  now: number;
+}) {
+  const [open, setOpen] = useState(false);
+  const empty = item.child_count === 0;
   return (
-    <li className="flex items-center gap-3 px-4 py-2.5">
+    <>
+      <li
+        data-demo={demo ? "documents-subfolder" : undefined}
+        className="flex items-center gap-3 py-2.5 pr-4"
+        style={indent(depth)}
+      >
+        <button
+          type="button"
+          onClick={() => setOpen((value) => !value)}
+          disabled={empty}
+          aria-expanded={open}
+          title={empty ? "Dossier vide" : open ? `Replier ${item.name}` : `Déplier ${item.name}`}
+          className="hover:text-primary flex min-w-0 flex-1 items-center gap-2 text-left disabled:cursor-default disabled:hover:text-current"
+        >
+          <ChevronRightIcon
+            className={cn(
+              "text-muted-foreground size-3.5 shrink-0 transition-transform",
+              open && "rotate-90",
+              empty && "opacity-0",
+            )}
+          />
+          {open ? (
+            <FolderOpenIcon className="text-info size-4 shrink-0" />
+          ) : (
+            <FolderIcon className="text-info size-4 shrink-0" />
+          )}
+          <span className="min-w-0">
+            <span className="block truncate text-sm">{item.name}</span>
+            <span className="text-muted-foreground/70 block text-xs">
+              {plural(item.child_count, "élément")}
+            </span>
+          </span>
+        </button>
+        <OpenLink href={item.web_url} />
+      </li>
+      {open && <SubfolderContents path={path} depth={depth + 1} now={now} />}
+    </>
+  );
+}
+
+/** Le contenu d'un sous-dossier, lu au premier dépliage et gardé dans le cache partagé. */
+function SubfolderContents({ path, depth, now }: { path: string; depth: number; now: number }) {
+  const { listing, loading, error, notFound } = useListing(path);
+  const message = loading
+    ? "Lecture du dossier…"
+    : notFound
+      ? "Dossier introuvable — il a peut-être été renommé ou déplacé."
+      : error
+        ? error
+        : listing && listing.items.length === 0
+          ? "Dossier vide."
+          : null;
+
+  if (message || !listing) {
+    return (
+      <li
+        className={cn("py-2 pr-4 text-xs", error && !notFound ? "text-danger" : "text-muted-foreground")}
+        style={indent(depth)}
+      >
+        {message}
+      </li>
+    );
+  }
+  return <Entries parentPath={path} items={listing.items} depth={depth} now={now} />;
+}
+
+function DocumentRow({ item, depth, now }: { item: DriveItem; depth: number; now: number }) {
+  return (
+    <li className="flex items-center gap-3 py-2.5 pr-4" style={indent(depth)}>
+      {/* L'emplacement du chevron d'un dossier : les noms restent alignés. */}
+      <span className="size-3.5 shrink-0" />
       <FileIcon className="text-muted-foreground size-4 shrink-0" />
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm">{item.name}</div>
@@ -172,7 +299,7 @@ function OpenLink({ href }: { href: string }) {
   if (!href) return null;
   return (
     <Button size="xs" variant="ghost" asChild>
-      <Link href={href} target="_blank" rel="noreferrer">
+      <Link href={href} target="_blank" rel="noreferrer" title="Ouvrir dans OneDrive">
         <ExternalLinkIcon />
         Ouvrir
       </Link>

@@ -10,6 +10,7 @@ import * as api from "../lib/api";
 import { readCycle, type CyclePoint } from "../lib/cycle";
 import { EMPTY_JALONS, EMPTY_MARKS, type Jalons, type StepMarks } from "../lib/jalons";
 import { useAction } from "../hooks/use-customers";
+import { ArchivedProjects } from "./archived-projects";
 import { ProjectBlock } from "./project-block";
 import { ProjectCycle } from "./project-cycle";
 import { ProjectDialog } from "./project-dialogs";
@@ -196,7 +197,23 @@ export function ProjectsPanel({
   const changed = useStableCallback(() => onChanged());
   const quoteWritten = useStableCallback((quote: Quote) => onQuote?.(quote));
 
-  if (projects.length === 0) {
+  /*
+    Les affaires archivées se replient sous les autres (issue 115) : elles ne
+    demandent rien, et les dérouler parmi les vivantes ferait chercher le
+    travail entre des affaires mortes.
+  */
+  const vivantes = projects.filter((project) => !project.archived_at);
+  const archivees = projects.filter((project) => project.archived_at);
+  const archives = (
+    <ArchivedProjects
+      projects={archivees}
+      focusId={focus.affaire}
+      canWrite={canWrite}
+      onChanged={onChanged}
+    />
+  );
+
+  if (vivantes.length === 0) {
     return (
       <div className="flex flex-col gap-4">
         {canWrite && <NewProjectButton onClick={() => setCreating(true)} />}
@@ -211,10 +228,11 @@ export function ProjectsPanel({
             <ProjectCycle points={cycleVide(now)} />
           </div>
           <EmptyState
-            title="Aucune affaire"
+            title={archivees.length > 0 ? "Aucune affaire en cours" : "Aucune affaire"}
             description="Créez une affaire pour y suivre ce cycle, du premier appel à la commande des matériaux."
           />
         </Card>
+        {archives}
         {creating && (
           <ProjectDialog
             customerId={customer.id}
@@ -242,7 +260,7 @@ export function ProjectsPanel({
       */}
       {saveJalons.error && <ErrorNotice message={saveJalons.error} />}
 
-      {projects.map((project, index) => (
+      {vivantes.map((project, index) => (
         <ProjectBlock
           /*
             L'affaire désignée par l'adresse fait partie de la clé : une autre
@@ -272,6 +290,8 @@ export function ProjectsPanel({
           onQuote={onQuote ? quoteWritten : undefined}
         />
       ))}
+
+      {archives}
 
       {/* Les boîtes ne sont montées qu'ouvertes : fermer repart d'un état neuf. */}
       {creating && (

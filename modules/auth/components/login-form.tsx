@@ -11,6 +11,7 @@ import { useAuth } from "../auth-context";
 import { DevAccountPicker } from "./dev-account-picker";
 import { PasskeyLoginButton } from "./passkey-login-button";
 import { safeNext } from "../lib/safe-next";
+import { signOutReasonMessage } from "../lib/sign-out-reason";
 
 export function LoginForm() {
   const router = useRouter();
@@ -21,6 +22,8 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  // Seul un code connu s'affiche : le texte de l'adresse n'est jamais recopié.
+  const reason = signOutReasonMessage(params.get("raison"));
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -61,6 +64,15 @@ export function LoginForm() {
         </p>
       </div>
 
+      {reason && !error && (
+        <p
+          role="status"
+          data-demo="login-raison"
+          className="bg-info-soft text-info rounded-lg px-3 py-2 text-xs"
+        >
+          {reason}
+        </p>
+      )}
       {error && <ErrorNotice message={error} />}
 
       <TextField

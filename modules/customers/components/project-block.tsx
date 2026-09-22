@@ -6,6 +6,7 @@ import { usePermission } from "@/modules/auth";
 import { Card } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { ErrorNotice } from "@/shared/ui/feedback";
+import { askConfirm } from "@/shared/ui/confirm";
 import * as api from "../lib/api";
 import { deadlineOf, deliveredAt, missionOf } from "../lib/mission";
 import { autoProofsOf } from "../lib/proofs";
@@ -194,6 +195,26 @@ export const ProjectBlock = memo(function ProjectBlock({
     api.setProjectStage(project.id, { stage: project.stage, outcome: null, outcome_note: "" }),
   );
 
+  /*
+    Archiver l'affaire (issue 115) : elle sort de Chantiers, d'Études, du
+    marketing et des dossiers à attribuer, et reste sur la fiche, repliée sous
+    « Affaires archivées ». Rien d'autre ne bouge, d'où une seule confirmation
+    — la suppression, elle, en demande deux.
+  */
+  const archive = useAction(() => api.setProjectArchived(project.id, true), { inline: true });
+  async function archiver() {
+    const ok = await askConfirm({
+      title: `Archiver l'affaire « ${project.label} »`,
+      description:
+        "Elle sort des chantiers, des études, du marketing et des dossiers à attribuer. " +
+        "Ses devis, factures et preuves restent, et elle se désarchive d'un clic depuis « Affaires archivées ».",
+      confirmLabel: "Archiver",
+      destructive: false,
+    });
+    if (!ok) return;
+    if ((await archive.run()) !== null) onChanged();
+  }
+
   const settlement = useProjectSettlement(quotes, onQuote, onChanged, {
     payments: customer.payments,
     canWrite: canWriteQuotes,
@@ -352,6 +373,7 @@ export const ProjectBlock = memo(function ProjectBlock({
 
             {/* Le règlement écrit sur le devis : un refus doit se lire quelque part. */}
             {settlement.error && <ErrorNotice message={settlement.error} />}
+            {archive.error && <ErrorNotice message={archive.error} />}
             {proofActions.error && <ErrorNotice message={proofActions.error} />}
 
             <div data-demo="next-action">
@@ -400,6 +422,7 @@ export const ProjectBlock = memo(function ProjectBlock({
               onAddQuote={onAddQuote}
               onEdit={() => onEdit(project)}
               onIssuer={() => setDialog({ kind: "issuer" })}
+              onArchive={() => void archiver()}
               onDelete={() => setDialog({ kind: "delete" })}
               onSettle={settle}
               onChanged={onChanged}

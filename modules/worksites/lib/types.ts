@@ -29,7 +29,10 @@ export type WorksiteQuote = {
   deposit_status: string;
   /** Le montant de l'acompte saisi dans le CRM, nul quand on ne le connaît pas. */
   deposit_amount: string | null;
+  /** Le jour réel de l'encaissement, nul quand personne ne l'a dit (issue 114). */
+  deposit_paid_at: string | null;
   balance_status: string;
+  balance_paid_at: string | null;
   drive_url: string;
   drive_name: string;
 };

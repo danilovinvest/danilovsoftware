@@ -30,6 +30,7 @@ import * as api from "../lib/api";
 import { CustomerForm } from "./customer-form";
 import { CustomerHeadline } from "./customer-headline";
 import { ReviewChecks } from "./review-checks";
+import { ClientToggle } from "./client-toggle";
 import { EnrichDialog } from "./enrich-dialog";
 import { DetailsPanel } from "./details-panel";
 import { EnumBadge } from "./enum-badge";
@@ -171,6 +172,13 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
             {customer.city && <span>{customer.city}</span>}
           </div>
 
+          {/* Client ou prospect, d'un clic : les pièces se trompent parfois. */}
+          {canWrite && (
+            <div className="mt-2">
+              <ClientToggle customer={customer} onChanged={reload} />
+            </div>
+          )}
+
           <CustomerHeadline customer={customer} className="mt-3" />
 
           {/*
@@ -212,7 +220,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
               quotes: customer.quotes.length,
               documents: customer.quotes.filter((quote) => quote.drive_url).length,
               contacts: customer.contacts.length,
-              interactions: customer.interactions.length,
+              interactions: customer.interactions_total,
               mail: canReadMail,
             })}
           />
@@ -329,7 +337,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
           <TabsTrigger value="echanges">
             Échanges
             <span className="text-muted-foreground ml-1.5">
-              {customer.interactions.length}
+              {customer.interactions_total}
             </span>
           </TabsTrigger>
           <TabsTrigger value="taches" data-demo="tab-taches">Tâches</TabsTrigger>
@@ -363,6 +371,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
             customerId={customer.id}
             customerName={customer.display_name}
             interactions={customer.interactions}
+            total={customer.interactions_total}
             onChanged={reload}
           />
         </TabsContent>

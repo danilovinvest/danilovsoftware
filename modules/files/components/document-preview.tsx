@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { DownloadIcon, ExternalLinkIcon, EyeIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,17 @@ export function PreviewLink({
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const source = useMemo<PreviewSource>(
+    () => ({
+      key: url,
+      name,
+      load: (signal) => apiFetchBlob("/v1/files/preview", { query: { url }, signal }),
+      externalUrl: url,
+      description: "Aperçu — le document reste dans OneDrive.",
+      pending: "Récupération du document auprès de Microsoft…",
+    }),
+    [url, name],
+  );
 
   // Sans document, rien à ouvrir : un bouton qui échouerait serait pire.
   if (!url) return <span className={className}>{children}</span>;
@@ -61,12 +72,45 @@ export function PreviewLink({
       >
         {children}
       </button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="flex h-[88vh] max-w-[min(1100px,96vw)] flex-col gap-3 sm:max-w-[min(1100px,96vw)]">
-          {open && <Preview url={url} name={name} />}
-        </DialogContent>
-      </Dialog>
+      <PreviewDialog source={open ? source : null} onClose={() => setOpen(false)} />
     </>
+  );
+}
+
+/**
+ * Ce que la fenêtre d'aperçu sait ouvrir : un fichier qu'on va chercher.
+ *
+ * Un document OneDrive passe par `/v1/files/preview`, une pièce jointe de
+ * courriel par sa propre route : la fenêtre ne connaît que la façon de le
+ * charger, pas d'où il vient.
+ */
+export type PreviewSource = {
+  /** L'identité du fichier : une autre clé, un autre chargement. */
+  key: string;
+  name: string;
+  load: (signal: AbortSignal) => Promise<Blob>;
+  /** Le document chez Microsoft, quand il y vit : « Ouvrir dans OneDrive ». */
+  externalUrl?: string;
+  /** Sous le titre : d'où vient le fichier et où il reste. */
+  description: string;
+  /** Pendant le chargement. */
+  pending: string;
+};
+
+/** La fenêtre d'aperçu seule, pilotée par l'appelant : ouverte tant que `source` n'est pas nul. */
+export function PreviewDialog({
+  source,
+  onClose,
+}: {
+  source: PreviewSource | null;
+  onClose: () => void;
+}) {
+  return (
+    <Dialog open={source !== null} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent className="flex h-[88vh] max-w-[min(1100px,96vw)] flex-col gap-3 sm:max-w-[min(1100px,96vw)]">
+        {source && <Preview source={source} />}
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -81,41 +125,42 @@ export function PreviewButton({ url, name }: { url: string; name: string }) {
 }
 
 type Loaded =
-  | { url: string; objectUrl: string; type: string; blob: Blob }
-  | { url: string; error: string };
+  | { key: string; objectUrl: string; type: string; blob: Blob }
+  | { key: string; error: string };
 
-function Preview({ url, name }: { url: string; name: string }) {
+function Preview({ source }: { source: PreviewSource }) {
+  const { key, name, load, externalUrl, description, pending } = source;
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   /** Le document que pdf.js n'a pas su lire : celui-là retombe sur le lecteur du navigateur. */
   const [illisible, setIllisible] = useState<string | null>(null);
-  const echecPdf = useCallback(() => setIllisible(url), [url]);
+  const echecPdf = useCallback(() => setIllisible(key), [key]);
 
   useEffect(() => {
     const controller = new AbortController();
     let objectUrl = "";
-    apiFetchBlob("/v1/files/preview", { query: { url }, signal: controller.signal })
+    load(controller.signal)
       .then((blob) => {
         objectUrl = URL.createObjectURL(blob);
-        setLoaded({ url, objectUrl, type: blob.type, blob });
+        setLoaded({ key, objectUrl, type: blob.type, blob });
       })
       .catch((cause) => {
-        if (!controller.signal.aborted) setLoaded({ url, error: errorMessage(cause) });
+        if (!controller.signal.aborted) setLoaded({ key, error: errorMessage(cause) });
       });
     return () => {
       controller.abort();
       // Le fichier ne vit que le temps de la fenêtre.
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [url]);
+  }, [key, load]);
 
-  const ready = loaded !== null && loaded.url === url ? loaded : null;
+  const ready = loaded !== null && loaded.key === key ? loaded : null;
 
   return (
     <>
       <DialogHeader className="flex-row items-center justify-between gap-3 space-y-0 pr-8">
         <div className="min-w-0">
           <DialogTitle className="truncate text-sm">{name}</DialogTitle>
-          <DialogDescription className="text-xs">Aperçu — le document reste dans OneDrive.</DialogDescription>
+          <DialogDescription className="text-xs">{description}</DialogDescription>
         </div>
         <div className="flex shrink-0 gap-1.5">
           {ready && "objectUrl" in ready && (
@@ -126,19 +171,21 @@ function Preview({ url, name }: { url: string; name: string }) {
               </a>
             </Button>
           )}
-          <Button size="xs" variant="outline" asChild>
-            <a href={url} target="_blank" rel="noreferrer">
-              <ExternalLinkIcon />
-              Ouvrir dans OneDrive
-            </a>
-          </Button>
+          {externalUrl && (
+            <Button size="xs" variant="outline" asChild>
+              <a href={externalUrl} target="_blank" rel="noreferrer">
+                <ExternalLinkIcon />
+                Ouvrir dans OneDrive
+              </a>
+            </Button>
+          )}
         </div>
       </DialogHeader>
 
       <div className="bg-muted/40 relative min-h-0 flex-1 overflow-hidden rounded-lg border">
         {!ready && (
           <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
-            Récupération du document auprès de Microsoft…
+            {pending}
           </div>
         )}
         {ready && "error" in ready && (
@@ -156,13 +203,13 @@ function Preview({ url, name }: { url: string; name: string }) {
           dessiné par pdf.js : le lecteur du navigateur est un greffon, que la
           politique de sécurité de l'application Windows bloque dans un cadre.
         */}
-        {ready && "objectUrl" in ready && ready.type === "application/pdf" && illisible !== url && (
+        {ready && "objectUrl" in ready && ready.type === "application/pdf" && illisible !== key && (
           <PdfPages blob={ready.blob} name={name} onFail={echecPdf} />
         )}
         {ready &&
           "objectUrl" in ready &&
           !ready.type.startsWith("image/") &&
-          (ready.type !== "application/pdf" || illisible === url) && (
+          (ready.type !== "application/pdf" || illisible === key) && (
             <iframe src={ready.objectUrl} title={name} className="h-full w-full bg-white" />
           )}
       </div>

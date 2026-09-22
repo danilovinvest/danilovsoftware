@@ -1,7 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FilePlusIcon, HardHatIcon, EllipsisIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import {
+  ArchiveIcon,
+  FilePlusIcon,
+  HardHatIcon,
+  EllipsisIcon,
+  PencilIcon,
+  Trash2Icon,
+} from "lucide-react";
 import { ClaudeButton, projectContext } from "@/modules/assistant";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,6 +47,7 @@ export function ProjectToolbar({
   onAddQuote,
   onEdit,
   onIssuer,
+  onArchive,
   onDelete,
 }: {
   project: Project;
@@ -53,6 +61,8 @@ export function ProjectToolbar({
   onAddQuote: () => void;
   onEdit: () => void;
   onIssuer: () => void;
+  /** Range l'affaire : elle sort des listes de travail et reste sur la fiche. */
+  onArchive: () => void;
   onDelete: () => void;
 }) {
   const router = useRouter();
@@ -139,6 +149,17 @@ export function ProjectToolbar({
             {canWrite && (
               <DropdownMenuItem onSelect={onIssuer}>
                 Changer de société
+              </DropdownMenuItem>
+            )}
+            {/*
+              Archiver avant supprimer, et hors du filet rouge : c'est le geste
+              qu'on veut pour une affaire morte. Il ne retire rien, et se défait
+              d'un clic depuis « Affaires archivées » (issue 115).
+            */}
+            {canWrite && (
+              <DropdownMenuItem data-demo="project-archive" onSelect={onArchive}>
+                <ArchiveIcon />
+                Archiver l&apos;affaire…
               </DropdownMenuItem>
             )}
             {canWrite && (
