@@ -299,7 +299,7 @@ export function MailPanel() {
                   {formatDate(sender.last_seen)}
                 </span>
                 <Button asChild variant="outline" size="sm" className="h-7 shrink-0">
-                  <Link href={`/customers/nouveau?email=${encodeURIComponent(sender.email)}`}>
+                  <Link href={`/customers/nouveau?email=${encodeURIComponent(sender.email)}&name=${encodeURIComponent(sender.name ?? "")}`}>
                     <UserPlusIcon className="size-3.5" />
                     Créer la fiche
                   </Link>
