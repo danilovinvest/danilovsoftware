@@ -1,8 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import type { ReactNode } from "react";
 import {
   ArchiveIcon,
+  ArrowLeftRightIcon,
   FilePlusIcon,
   HardHatIcon,
   EllipsisIcon,
@@ -15,6 +17,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -131,7 +134,10 @@ export function ProjectToolbar({
               <EllipsisIcon />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuContent align="end" className="w-72 p-1.5">
+            <DropdownMenuLabel className="text-muted-foreground px-2 pt-1 pb-1.5 text-[0.7rem] font-medium tracking-wide uppercase">
+              Affaire
+            </DropdownMenuLabel>
             {/*
               Ouvrir l'affaire côté exécution. Seulement une affaire signée : un
               chantier *est* une affaire d'étape `gagne` ou `realise`, et
@@ -139,16 +145,24 @@ export function ProjectToolbar({
             */}
             {signee && (
               <DropdownMenuItem
+                className={MENU_ITEM}
                 data-demo="project-worksite"
                 onSelect={() => router.push(`${ecran}?affaire=${project.id}`)}
               >
-                <HardHatIcon />
-                {metier === "etudes" ? "Ouvrir dans Études" : "Ouvrir dans Chantiers"}
+                <MenuAction
+                  icon={<HardHatIcon />}
+                  label={metier === "etudes" ? "Ouvrir dans Études" : "Ouvrir dans Chantiers"}
+                  hint={metier === "etudes" ? "Production, plans et rendus" : "Planning, matériaux et réception"}
+                />
               </DropdownMenuItem>
             )}
             {canWrite && (
-              <DropdownMenuItem onSelect={onIssuer}>
-                Changer de société
+              <DropdownMenuItem className={MENU_ITEM} onSelect={onIssuer}>
+                <MenuAction
+                  icon={<ArrowLeftRightIcon />}
+                  label="Changer de société"
+                  hint={`${metier === "etudes" ? "STRUCTURE" : "GROUPE"}${project.issuer ? "" : " (déduite des devis)"} → ${metier === "etudes" ? "GROUPE" : "STRUCTURE"}`}
+                />
               </DropdownMenuItem>
             )}
             {/*
@@ -157,21 +171,29 @@ export function ProjectToolbar({
               d'un clic depuis « Affaires archivées » (issue 115).
             */}
             {canWrite && (
-              <DropdownMenuItem data-demo="project-archive" onSelect={onArchive}>
-                <ArchiveIcon />
-                Archiver l&apos;affaire…
+              <DropdownMenuItem className={MENU_ITEM} data-demo="project-archive" onSelect={onArchive}>
+                <MenuAction
+                  icon={<ArchiveIcon />}
+                  label="Archiver l'affaire…"
+                  hint="Sort des listes de travail, reste sur la fiche"
+                />
               </DropdownMenuItem>
             )}
             {canWrite && (
               <>
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator className="my-1.5" />
                 <DropdownMenuItem
                   variant="destructive"
+                  className="items-start gap-2.5 px-2 py-2"
                   data-demo="project-delete-item"
                   onSelect={onDelete}
                 >
-                  <Trash2Icon />
-                  Supprimer l&apos;affaire…
+                  <MenuAction
+                    icon={<Trash2Icon />}
+                    label="Supprimer l'affaire…"
+                    hint="Définitif : devis, factures et preuves compris"
+                    danger
+                  />
                 </DropdownMenuItem>
               </>
             )}
@@ -179,5 +201,46 @@ export function ProjectToolbar({
         </DropdownMenu>
       )}
     </div>
+  );
+}
+
+/*
+  Le survol du menu reste neutre. La teinte d'accent de la palette — orange
+  dans certaines — se lisait comme une alerte sur un geste ordinaire. Seule la
+  suppression garde sa couleur, parce qu'elle en est une.
+*/
+const MENU_ITEM =
+  "items-start gap-2.5 px-2 py-2 focus:bg-muted focus:text-foreground not-data-[variant=destructive]:focus:**:text-foreground";
+
+/** Une action du menu : son icône, ce qu'elle fait, et ce qu'elle emporte. */
+function MenuAction({
+  icon,
+  label,
+  hint,
+  danger = false,
+}: {
+  icon: ReactNode;
+  label: string;
+  hint: string;
+  danger?: boolean;
+}) {
+  return (
+    <>
+      <span
+        className={
+          danger
+            ? "bg-danger-soft text-danger mt-0.5 grid size-7 shrink-0 place-items-center rounded-md [&_svg]:size-3.5"
+            : "bg-muted text-muted-foreground mt-0.5 grid size-7 shrink-0 place-items-center rounded-md [&_svg]:size-3.5"
+        }
+      >
+        {icon}
+      </span>
+      <span className="flex min-w-0 flex-col">
+        <span className="font-medium">{label}</span>
+        <span className={danger ? "text-danger/70 text-xs" : "text-muted-foreground text-xs"}>
+          {hint}
+        </span>
+      </span>
+    </>
   );
 }
