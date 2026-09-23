@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { usePermission } from "@/modules/auth";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -69,6 +70,11 @@ type Props = {
   onDone: (project: Project) => void;
 };
 
+/** Un jour `AAAA-MM-JJ` à midi local, la convention des jalons du module. */
+function midi(jour: string): string {
+  return new Date(`${jour}T12:00:00`).toISOString();
+}
+
 /** Ce qui reste à encaisser : le TTC moins l'acompte déjà reçu. */
 function resteAPayer(quote: ClosureQuote | null): string {
   if (!quote?.amount_ttc) return "";
@@ -92,6 +98,10 @@ export function ProjectClosureDialog({
   const clos = Boolean(project.finished_at);
   const porteur = paymentCarrier(quotes);
   const dejaSolde = porteur?.balance_status === "recu";
+  // Terminer un chantier et encaisser sont deux droits distincts : le serveur
+  // refuse le solde sans `quotes:write`, et l'écran ne propose donc pas un
+  // champ dont l'envoi serait rejeté. Relevé par la relecture du 23/09.
+  const peutSolder = usePermission("quotes:write");
 
   const [fin, setFin] = useState(project.finished_at ?? todayLocal());
   const [pvEnvoye, setPVEnvoye] = useState<string | null>(null);
@@ -113,10 +123,13 @@ export function ProjectClosureDialog({
       api.closeProject(project.id, {
         closed: true,
         finished_at: fin,
-        pv_sent_at: pvEnvoye ? `${pvEnvoye}T12:00:00Z` : null,
-        pv_signed_at: pvSigne ? `${pvSigne}T12:00:00Z` : null,
+        // Midi **local** converti, comme la frise, les jalons et les preuves :
+        // midi UTC en dur donnait la même journée en France mais divergeait de
+        // la convention du module, et se serait vu ailleurs.
+        pv_sent_at: pvEnvoye ? midi(pvEnvoye) : null,
+        pv_signed_at: pvSigne ? midi(pvSigne) : null,
         balance:
-          solde && porteur
+          peutSolder && solde && porteur
             ? { quote_id: porteur.id, amount: montant || null, paid_at: solde }
             : null,
       }),
@@ -199,14 +212,16 @@ export function ProjectClosureDialog({
             <Champ
               titre="Solde"
               note={
-                !porteur
-                  ? "Aucun devis ne porte le règlement."
-                  : dejaSolde
-                    ? `Déjà encaissé sur ${porteur.reference}.`
-                    : `Ira sur ${porteur.reference}.`
+                !peutSolder
+                  ? "Votre rôle ne permet pas d'écrire sur les devis."
+                  : !porteur
+                    ? "Aucun devis ne porte le règlement."
+                    : dejaSolde
+                      ? `Déjà encaissé sur ${porteur.reference}.`
+                      : `Ira sur ${porteur.reference}.`
               }
             >
-              {porteur && !dejaSolde && (
+              {peutSolder && porteur && !dejaSolde && (
                 <>
                   <Jour label="encaissé" deja={null} value={solde} onChange={setSolde} defaut={fin} />
                   {solde && (

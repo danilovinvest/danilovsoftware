@@ -415,12 +415,17 @@ function Body({
             </Button>
           )}
           {/*
-            Terminer le chantier. Le geste n'est proposé qu'une fois le
-            chantier commencé : « terminé » n'a pas de sens sur une affaire
-            qui n'a pas de date de démarrage, et le proposer là ferait du
-            bouton une case de plus au lieu d'une action.
+            Terminer le chantier, ou clôturer l'étude.
+
+            Aucune condition de date : cet écran ne sert que des affaires
+            signées, et c'est la même règle que l'entrée du menu sur la fiche
+            client -- deux conditions différentes pour le même geste se
+            lisaient comme un accident. Un premier jet exigeait une date de
+            démarrage, ce qui rendait le bouton **invisible sur toutes les
+            études** : un bureau d'études ne réserve pas de date, `started_at`
+            y est nul (relecture du 23/09).
           */}
-          {canWrite && (w.started_at || w.finished_at) && (
+          {canWrite && (
             <Button
               variant={w.finished_at ? "outline" : "default"}
               size="sm"
@@ -438,8 +443,17 @@ function Body({
         </div>
       </div>
 
+      {/*
+        Montée seulement quand on l'ouvre, et démontée en la fermant : son
+        brouillon repart donc de ce que porte l'affaire. Laissée montée en
+        permanence, elle gardait la date et le montant saisis pour l'affaire
+        précédente — le tableau permet de passer de l'une à l'autre sans fermer
+        le tiroir, et on aurait soldé le devis de la seconde au montant de la
+        première. C'est la règle du reste du module (relecture du 23/09).
+      */}
+      {cloture && (
       <ProjectClosureDialog
-        open={cloture}
+        open
         onClose={() => setCloture(false)}
         project={{ id: w.id, label: w.label, started_at: w.started_at, finished_at: w.finished_at }}
         quotes={w.quotes}
@@ -448,6 +462,7 @@ function Body({
         metier={metier}
         onDone={onChanged}
       />
+      )}
 
       <PlanEvent
         open={agenda !== null}
