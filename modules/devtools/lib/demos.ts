@@ -40,6 +40,45 @@ const FICHE_ETUDE = "/customers/7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "terminer-un-chantier",
+    title: "Terminer un chantier, et le solder",
+    date: "2026-09-23",
+    steps: [
+      {
+        path: "/chantiers",
+        target: '[data-demo="worksite-closure"]',
+        title: "Un chantier se termine",
+        body:
+          "Le CRM savait dire qu'un chantier avait commencé, jamais qu'il était fini : " +
+          "zéro affaire sur 535 portait une date de fin, pour 115 déclarées réalisées. " +
+          "Le bouton apparaît dès que le chantier a démarré, et depuis la fiche client " +
+          "comme depuis l'écran Chantiers.",
+      },
+      {
+        path: "/chantiers",
+        click: '[data-demo="worksite-closure"]',
+        target: '[data-demo="project-closure"]',
+        title: "Trois faits, un seul geste",
+        body:
+          "La fin des travaux, le procès-verbal de réception et le solde encaissé se " +
+          "décident au même moment, devant le client. Le serveur les écrit en une " +
+          "transaction : jamais un chantier terminé dont le solde n'est pas passé. " +
+          "Le jour est demandé, jamais celui du clic — on réceptionne le mardi et on " +
+          "saisit le vendredi.",
+      },
+      {
+        path: "/chantiers",
+        click: '[data-demo="worksite-closure"]',
+        target: '[data-demo="project-closure"]',
+        title: "Ce qui est déjà su n'est pas redemandé",
+        body:
+          "Un PV déjà daté s'affiche au lieu d'une case vide qui l'écraserait, et le " +
+          "solde nomme le devis qui le portera. Rouvrir ne retire que la date de fin : " +
+          "le PV et le solde ont eu lieu.",
+      },
+    ],
+  },
+  {
     id: "societe-de-la-fiche",
     title: "La société de la fiche se choisit, et les gestes se rangent",
     date: "2026-09-22",

@@ -425,6 +425,7 @@ export const ProjectBlock = memo(function ProjectBlock({
               onAddQuote={onAddQuote}
               onEdit={() => onEdit(project)}
               onIssuer={() => setDialog({ kind: "issuer" })}
+              onCloseProject={() => setDialog({ kind: "closure" })}
               onArchive={() => void archiver()}
               onDelete={() => setDialog({ kind: "delete" })}
               onSettle={settle}
@@ -441,6 +442,7 @@ export const ProjectBlock = memo(function ProjectBlock({
         project={project}
         quotes={quotes}
         jalons={jalons}
+        metier={metier}
         milestone={milestone}
         site={site}
         saving={saving}

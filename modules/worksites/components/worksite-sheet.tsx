@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CalendarPlusIcon, EyeIcon, FileTextIcon, ReceiptTextIcon } from "lucide-react";
+import { CalendarPlusIcon, CheckCircle2Icon, EyeIcon, FileTextIcon, ReceiptTextIcon, RotateCcwIcon } from "lucide-react";
 import { notifySuccess } from "@/shared/ui/toaster";
 import { PreviewLink } from "@/modules/files";
 import {
@@ -15,11 +15,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { TONE_SOFT } from "@/shared/ui/panel";
-import { euros, formatAmount, formatDate, formatDateTime } from "@/shared/lib/format";
+import { euros, formatAmount, formatDate, formatDateTime, todayLocal } from "@/shared/lib/format";
 import { usePermission } from "@/modules/auth";
 import { ClaudeButton, worksiteContext } from "@/modules/assistant";
 import {
   MILESTONE_KEYS,
+  ProjectClosureDialog,
   ProjectJalons,
   paymentCarrier,
   depositTotalOf,
@@ -105,6 +106,7 @@ function Body({
     l'agenda déplacera la date de l'affaire.
   */
   const [agenda, setAgenda] = useState<string | null>(null);
+  const [cloture, setCloture] = useState(false);
 
   /*
     Les jalons s'affichent tout de suite, puis s'enregistrent.
@@ -412,8 +414,40 @@ function Body({
               Poser à l&apos;agenda
             </Button>
           )}
+          {/*
+            Terminer le chantier. Le geste n'est proposé qu'une fois le
+            chantier commencé : « terminé » n'a pas de sens sur une affaire
+            qui n'a pas de date de démarrage, et le proposer là ferait du
+            bouton une case de plus au lieu d'une action.
+          */}
+          {canWrite && (w.started_at || w.finished_at) && (
+            <Button
+              variant={w.finished_at ? "outline" : "default"}
+              size="sm"
+              data-demo="worksite-closure"
+              onClick={() => setCloture(true)}
+            >
+              {w.finished_at ? <RotateCcwIcon /> : <CheckCircle2Icon />}
+              {w.finished_at
+                ? "Rouvrir"
+                : metier === "etudes"
+                  ? "Clôturer l'étude"
+                  : "Terminer le chantier"}
+            </Button>
+          )}
         </div>
       </div>
+
+      <ProjectClosureDialog
+        open={cloture}
+        onClose={() => setCloture(false)}
+        project={{ id: w.id, label: w.label, started_at: w.started_at, finished_at: w.finished_at }}
+        quotes={w.quotes}
+        pvSentAt={w.pv_sent_at}
+        pvSignedAt={w.pv_signed_at}
+        metier={metier}
+        onDone={onChanged}
+      />
 
       <PlanEvent
         open={agenda !== null}
@@ -544,13 +578,6 @@ function Section({
       )}
     </div>
   );
-}
-
-/** Le jour local, AAAA-MM-JJ. */
-function todayLocal(): string {
-  const now = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
 /** Une journée entière, bornes de l'agenda : la fin est exclusive. */

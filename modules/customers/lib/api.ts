@@ -285,6 +285,30 @@ export function setProjectIssuer(id: string, payload: { issuer: string | null; r
   return apiFetch<Project>(`/v1/projects/${id}/issuer`, { method: "PUT", body: payload });
 }
 
+/** Le bilan de fin d'un chantier : la date de fin, le PV, le solde. */
+export type ClosurePayload = {
+  closed: boolean;
+  /** Le jour réel de fin des travaux, obligatoire pour clôturer. */
+  finished_at?: string | null;
+  /** Le procès-verbal de réception, facultatif — il s'ajoute, il n'efface rien. */
+  pv_sent_at?: string | null;
+  pv_signed_at?: string | null;
+  /** Le solde va sur le devis qui porte le règlement, jamais sur l'affaire. */
+  balance?: { quote_id: string; amount: string | null; paid_at?: string } | null;
+};
+
+/**
+ * Termine un chantier, ou le rouvre.
+ *
+ * Une seule route pour trois faits qui se décident au même moment : le serveur
+ * les écrit en une transaction, si bien qu'une coupure ne laisse jamais un
+ * chantier terminé dont le solde n'est pas passé. Rouvrir (`closed: false`) ne
+ * retire que la date de fin — le PV et le solde se sont produits.
+ */
+export function closeProject(id: string, payload: ClosurePayload) {
+  return apiFetch<Project>(`/v1/projects/${id}/closure`, { method: "PUT", body: payload });
+}
+
 /** L'inventaire de ce que la suppression d'une affaire emporte. */
 export function getProjectDeletion(id: string, signal?: AbortSignal) {
   return apiFetch<ProjectDeletion>(`/v1/projects/${id}/deletion`, { signal });

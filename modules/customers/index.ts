@@ -42,6 +42,7 @@ export { ProjectPicker } from "./components/project-picker";
 // Le panneau des jalons d'après-signature sert aussi à la fiche latérale des
 // chantiers et des études : c'est la même liste de cases, sur la même affaire.
 export { ProjectJalons } from "./components/project-jalons";
+export { ProjectClosureDialog, type ClosureQuote } from "./components/project-closure-dialog";
 export {
   MILESTONE_KEYS,
   setMilestones,
@@ -59,4 +60,5 @@ export { listUnassigned, setProjectManager } from "./lib/api";
 export * from "./lib/types";
 export { ImportView } from "./import";
 export { paymentCarrier, settlementOf } from "./lib/settlement";
+export { closeProject, type ClosurePayload } from "./lib/api";
 export { PlanEvent } from "./components/plan-event";

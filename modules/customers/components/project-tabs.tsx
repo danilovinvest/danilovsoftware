@@ -48,6 +48,7 @@ export function ProjectTabs({
   onAddQuote,
   onEdit,
   onIssuer,
+  onCloseProject,
   onArchive,
   onDelete,
   onSettle,
@@ -76,6 +77,8 @@ export function ProjectTabs({
   onAddQuote: () => void;
   onEdit: () => void;
   onIssuer: () => void;
+  /** Termine le chantier, ou le rouvre. */
+  onCloseProject: () => void;
   onArchive: () => void;
   onDelete: () => void;
   onSettle: (kind: "acompte" | "solde") => void;
@@ -116,6 +119,7 @@ export function ProjectTabs({
           onAddQuote={onAddQuote}
           onEdit={onEdit}
           onIssuer={onIssuer}
+          onClose={onCloseProject}
           onArchive={onArchive}
           onDelete={onDelete}
         />
