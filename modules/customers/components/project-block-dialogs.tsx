@@ -6,7 +6,7 @@ import { formatDate } from "@/shared/lib/format";
 import { notifySuccess } from "@/shared/ui/toaster";
 import type { Jalons, StepMarks } from "../lib/jalons";
 import type { BlockDialog } from "../lib/project-actions";
-import type { Parcours } from "../lib/cycle";
+import type { Metier, Parcours } from "../lib/cycle";
 import type { CustomerDetail, Milestones, Project, Quote } from "../lib/types";
 import { CycleOrderDialog } from "./cycle-order-dialog";
 import { DeleteProjectDialog } from "./delete-project-dialog";
@@ -15,6 +15,7 @@ import { InteractionDialog } from "./interaction-dialog";
 import { MaterialsDialog } from "./materials-field";
 import { OutcomeDialog } from "./outcome-dialog";
 import { PlanEvent } from "./plan-event";
+import { ProjectClosureDialog } from "./project-closure-dialog";
 import { ProjectIssuerDialog } from "./project-issuer-dialog";
 import { ProjectOnboardingDrawer } from "./project-onboarding";
 import { RelanceDialog } from "./relance-dialog";
@@ -34,6 +35,7 @@ export function ProjectBlockDialogs({
   project,
   quotes,
   jalons,
+  metier,
   milestone,
   site,
   saving,
@@ -49,6 +51,8 @@ export function ProjectBlockDialogs({
   project: Project;
   quotes: Quote[];
   jalons: Jalons;
+  /** Le métier nomme le geste de clôture : on ne termine pas une étude comme un mur. */
+  metier: Metier;
   milestone: Milestones | undefined;
   site: string;
   saving: boolean;
@@ -98,6 +102,19 @@ export function ProjectBlockDialogs({
           open
           onOpenChange={openChange}
           onSaved={onChanged}
+        />
+      );
+    case "closure":
+      return (
+        <ProjectClosureDialog
+          open
+          onClose={onClose}
+          project={project}
+          quotes={quotes}
+          pvSentAt={jalons.pv_sent_at}
+          pvSignedAt={jalons.pv_signed_at}
+          metier={metier}
+          onDone={onChanged}
         />
       );
     case "order":

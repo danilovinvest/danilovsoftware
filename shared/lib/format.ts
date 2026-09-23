@@ -208,3 +208,17 @@ export function sinceDays(days: number | null): string {
 export function plural(count: number, singular: string, plural = `${singular}s`): string {
   return `${count} ${count > 1 ? plural : singular}`;
 }
+
+/**
+ * Aujourd'hui, au format `AAAA-MM-JJ`, dans le fuseau du poste.
+ *
+ * `toISOString()` rend la date en UTC : passé 22 h à Nice l'été, il annonce
+ * demain, et un chantier terminé le 3 serait daté du 4. Les trois champs
+ * locaux disent le jour qu'affiche l'horloge de celui qui saisit.
+ */
+export function todayLocal(): string {
+  const now = new Date();
+  const mois = String(now.getMonth() + 1).padStart(2, "0");
+  const jour = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}-${mois}-${jour}`;
+}

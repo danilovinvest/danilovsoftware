@@ -4,10 +4,12 @@ import { useRouter } from "next/navigation";
 import {
   ArchiveIcon,
   ArrowLeftRightIcon,
+  CheckCircle2Icon,
   FilePlusIcon,
   HardHatIcon,
   EllipsisIcon,
   PencilIcon,
+  RotateCcwIcon,
   Trash2Icon,
 } from "lucide-react";
 import { ClaudeButton, projectContext } from "@/modules/assistant";
@@ -21,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MENU_ITEM, MENU_ITEM_DANGER, MENU_LABEL, MenuAction } from "@/shared/ui/menu-action";
+import { formatDate } from "@/shared/lib/format";
 import { PROJECT_STAGE } from "../lib/labels";
 import type { Metier } from "../lib/cycle";
 import type { Project } from "../lib/types";
@@ -50,6 +53,7 @@ export function ProjectToolbar({
   onAddQuote,
   onEdit,
   onIssuer,
+  onClose,
   onArchive,
   onDelete,
 }: {
@@ -64,6 +68,8 @@ export function ProjectToolbar({
   onAddQuote: () => void;
   onEdit: () => void;
   onIssuer: () => void;
+  /** Termine le chantier — ou le rouvre s'il porte déjà une date de fin. */
+  onClose: () => void;
   /** Range l'affaire : elle sort des listes de travail et reste sur la fiche. */
   onArchive: () => void;
   onDelete: () => void;
@@ -153,6 +159,35 @@ export function ProjectToolbar({
                   icon={<HardHatIcon />}
                   label={metier === "etudes" ? "Ouvrir dans Études" : "Ouvrir dans Chantiers"}
                   hint={metier === "etudes" ? "Production, plans et rendus" : "Planning, matériaux et réception"}
+                />
+              </DropdownMenuItem>
+            )}
+            {/*
+              Terminer le chantier : la date de fin, le PV de réception et le
+              solde en un geste. Réservé à une affaire signée, pour la même
+              raison que l'entrée précédente -- on ne réceptionne pas un devis
+              qui n'a pas été accepté.
+            */}
+            {canWrite && signee && (
+              <DropdownMenuItem
+                className={MENU_ITEM}
+                data-demo="project-closure-item"
+                onSelect={onClose}
+              >
+                <MenuAction
+                  icon={project.finished_at ? <RotateCcwIcon /> : <CheckCircle2Icon />}
+                  label={
+                    project.finished_at
+                      ? "Rouvrir le chantier…"
+                      : metier === "etudes"
+                        ? "Clôturer l'étude…"
+                        : "Terminer le chantier…"
+                  }
+                  hint={
+                    project.finished_at
+                      ? `Terminé le ${formatDate(project.finished_at)}`
+                      : "Date de fin, PV de réception et solde"
+                  }
                 />
               </DropdownMenuItem>
             )}

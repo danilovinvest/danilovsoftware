@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CalendarPlusIcon, EyeIcon, FileTextIcon, ReceiptTextIcon } from "lucide-react";
+import { CalendarPlusIcon, CheckCircle2Icon, EyeIcon, FileTextIcon, ReceiptTextIcon, RotateCcwIcon } from "lucide-react";
 import { notifySuccess } from "@/shared/ui/toaster";
 import { PreviewLink } from "@/modules/files";
 import {
@@ -14,13 +14,13 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { customerHref } from "@/shared/lib/routes";
 import { TONE_SOFT } from "@/shared/ui/panel";
-import { euros, formatAmount, formatDate, formatDateTime } from "@/shared/lib/format";
+import { euros, formatAmount, formatDate, formatDateTime, todayLocal } from "@/shared/lib/format";
 import { usePermission } from "@/modules/auth";
 import { ClaudeButton, worksiteContext } from "@/modules/assistant";
 import {
   MILESTONE_KEYS,
+  ProjectClosureDialog,
   ProjectJalons,
   paymentCarrier,
   depositTotalOf,
@@ -106,6 +106,7 @@ function Body({
     l'agenda déplacera la date de l'affaire.
   */
   const [agenda, setAgenda] = useState<string | null>(null);
+  const [cloture, setCloture] = useState(false);
 
   /*
     Les jalons s'affichent tout de suite, puis s'enregistrent.
@@ -398,7 +399,7 @@ function Body({
 
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline" size="sm">
-            <Link href={customerHref(w.customer_id)}>
+            <Link href={`/customers/${w.customer_id}`}>
               Ouvrir la fiche client
             </Link>
           </Button>
@@ -413,8 +414,55 @@ function Body({
               Poser à l&apos;agenda
             </Button>
           )}
+          {/*
+            Terminer le chantier, ou clôturer l'étude.
+
+            Aucune condition de date : cet écran ne sert que des affaires
+            signées, et c'est la même règle que l'entrée du menu sur la fiche
+            client -- deux conditions différentes pour le même geste se
+            lisaient comme un accident. Un premier jet exigeait une date de
+            démarrage, ce qui rendait le bouton **invisible sur toutes les
+            études** : un bureau d'études ne réserve pas de date, `started_at`
+            y est nul (relecture du 23/09).
+          */}
+          {canWrite && (
+            <Button
+              variant={w.finished_at ? "outline" : "default"}
+              size="sm"
+              data-demo="worksite-closure"
+              onClick={() => setCloture(true)}
+            >
+              {w.finished_at ? <RotateCcwIcon /> : <CheckCircle2Icon />}
+              {w.finished_at
+                ? "Rouvrir"
+                : metier === "etudes"
+                  ? "Clôturer l'étude"
+                  : "Terminer le chantier"}
+            </Button>
+          )}
         </div>
       </div>
+
+      {/*
+        Montée seulement quand on l'ouvre, et démontée en la fermant : son
+        brouillon repart donc de ce que porte l'affaire. Laissée montée en
+        permanence, elle gardait la date et le montant saisis pour l'affaire
+        précédente — le tableau permet de passer de l'une à l'autre sans fermer
+        le tiroir, et on aurait soldé le devis de la seconde au montant de la
+        première. C'est la règle du reste du module (relecture du 23/09).
+      */}
+      {cloture && (
+      <ProjectClosureDialog
+        open
+        onClose={() => setCloture(false)}
+        project={{ id: w.id, label: w.label, started_at: w.started_at, finished_at: w.finished_at }}
+        quotes={w.quotes}
+        pvSentAt={w.pv_sent_at}
+        pvSignedAt={w.pv_signed_at}
+        metier={metier}
+        onDone={onChanged}
+      />
+      )}
 
       <PlanEvent
         open={agenda !== null}
@@ -545,13 +593,6 @@ function Section({
       )}
     </div>
   );
-}
-
-/** Le jour local, AAAA-MM-JJ. */
-function todayLocal(): string {
-  const now = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
 /** Une journée entière, bornes de l'agenda : la fin est exclusive. */

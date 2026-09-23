@@ -36,9 +36,48 @@ export type Demo = {
   affaire, dépliée d'office. Si elle disparaît, l'étape le dit au lieu de rester
   muette — la zone introuvable est signalée à l'écran.
 */
-const FICHE_ETUDE = "/customers/fiche?id=7419530d-fbb2-4937-aaf5-2403b315f71b";
+const FICHE_ETUDE = "/customers/7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
+  {
+    id: "terminer-un-chantier",
+    title: "Terminer un chantier, et le solder",
+    date: "2026-09-23",
+    steps: [
+      {
+        path: "/chantiers",
+        target: '[data-demo="worksite-closure"]',
+        title: "Un chantier se termine",
+        body:
+          "Le CRM savait dire qu'un chantier avait commencé, jamais qu'il était fini : " +
+          "zéro affaire sur 535 portait une date de fin, pour 115 déclarées réalisées. " +
+          "Le bouton apparaît dès que le chantier a démarré, et depuis la fiche client " +
+          "comme depuis l'écran Chantiers.",
+      },
+      {
+        path: "/chantiers",
+        click: '[data-demo="worksite-closure"]',
+        target: '[data-demo="project-closure"]',
+        title: "Trois faits, un seul geste",
+        body:
+          "La fin des travaux, le procès-verbal de réception et le solde encaissé se " +
+          "décident au même moment, devant le client. Le serveur les écrit en une " +
+          "transaction : jamais un chantier terminé dont le solde n'est pas passé. " +
+          "Le jour est demandé, jamais celui du clic — on réceptionne le mardi et on " +
+          "saisit le vendredi.",
+      },
+      {
+        path: "/chantiers",
+        click: '[data-demo="worksite-closure"]',
+        target: '[data-demo="project-closure"]',
+        title: "Ce qui est déjà su n'est pas redemandé",
+        body:
+          "Un PV déjà daté s'affiche au lieu d'une case vide qui l'écraserait, et le " +
+          "solde nomme le devis qui le portera. Rouvrir ne retire que la date de fin : " +
+          "le PV et le solde ont eu lieu.",
+      },
+    ],
+  },
   {
     id: "societe-de-la-fiche",
     title: "La société de la fiche se choisit, et les gestes se rangent",
@@ -102,11 +141,24 @@ export const DEMOS: Demo[] = [
         body: "Le CRM lit la boîte et n'envoie rien : « Répondre dans Gmail » ouvre le fil sur la bonne boîte. « Créer une tâche » prépare la tâche avec l'objet, l'expéditeur, la fiche et le lien vers la conversation.",
       },
       {
-        path: `${FICHE_ETUDE}&vue=courriels`,
+        path: `${FICHE_ETUDE}?vue=courriels`,
         click: "button[aria-expanded]",
         target: '[data-demo="customer-mail-open"]',
         title: "Sur la fiche : tout le courrier, et le chemin vers la conversation",
         body: "L'onglet Courriels ne s'arrête plus aux cent premiers : « Charger plus » continue. Un courriel déplié montre son texte entier — demandé au serveur s'il n'avait jamais été copié — et « Ouvrir dans la messagerie » mène à sa conversation. Retirer un courriel de la fiche se défait depuis le toast.",
+      },
+    ],
+  },
+  {
+    id: "cadre-des-reglages",
+    title: "Les réglages dans un seul cadre",
+    date: "2026-09-22",
+    steps: [
+      {
+        path: "/settings/general",
+        target: '[data-demo="settings-frame"]',
+        title: "Les réglages dans un seul cadre",
+        body: "Les sections sont à gauche, dans le cadre des réglages, et le fil d'Ariane en haut dit où l'on est. Le tiroir principal ne bascule plus : on quitte les réglages par n'importe quel module, ou par « Retour ». Sur un téléphone, la liste des sections devient un menu déroulant.",
       },
     ],
   },
@@ -180,7 +232,7 @@ export const DEMOS: Demo[] = [
         body: "Les interlocuteurs et les notes de la fiche vivaient dans le sixième onglet : au téléphone, le numéro de l'architecte était à deux clics. Ils sont sous le nom du client, le numéro s'appelle et l'adresse s'écrit d'un geste. Un clic sur un nom le corrige, le crayon corrige les notes sur place.",
       },
       {
-        path: `${FICHE_ETUDE}&vue=details`,
+        path: `${FICHE_ETUDE}?vue=details`,
         target: '[data-demo="contacts-card"]',
         title: "Un interlocuteur se corrige",
         body: "Corriger un numéro obligeait à supprimer puis recréer l'interlocuteur. Le crayon ouvre sa fiche, avec ses notes, et n'envoie que ce qui a changé.",
@@ -226,7 +278,7 @@ export const DEMOS: Demo[] = [
     date: "2026-09-22",
     steps: [
       {
-        path: `${FICHE_ETUDE}&vue=documents`,
+        path: `${FICHE_ETUDE}?vue=documents`,
         target: '[data-demo="documents-subfolder"]',
         title: "Un sous-dossier se déplie sur place",
         body: "« Photos · 312 éléments » n'était qu'un lien vers OneDrive : un plan rangé dans « Plans » restait invisible depuis la fiche. Un clic sur le dossier le déplie, un niveau à la fois, et son contenu s'affiche décalé sous lui pour qu'on sache où l'on est. Chaque fichier s'ouvre dans la même fenêtre d'aperçu que ceux du dessus, et « Ouvrir » mène toujours au dossier dans OneDrive.",
@@ -236,7 +288,7 @@ export const DEMOS: Demo[] = [
         click: '[data-demo="mail-row-with-attachments"]',
         target: '[data-demo="mail-attachments"]',
         title: "Une pièce jointe s'ouvre au lieu de répondre « 401 »",
-        body: "Le clic ouvrait une page d'erreur : le lien partait sans la session. Un PDF ou une image s'affiche maintenant dans la fenêtre d'aperçu. L'application ne sait pas encore enregistrer un fichier : pour un Word ou un Excel, elle le dit au clic, et le CRM dans le navigateur le télécharge. Une pièce de plus de 8 Mo est grisée : seul son nom a été conservé, elle reste dans la messagerie.",
+        body: "Le clic ouvrait une page d'erreur : le lien partait sans la session. Un PDF ou une image s'affiche maintenant dans la fenêtre d'aperçu, le reste s'enregistre sur l'ordinateur. Une pièce de plus de 8 Mo est grisée : seul son nom a été conservé, elle reste dans la messagerie.",
       },
     ],
   },
@@ -348,7 +400,7 @@ export const DEMOS: Demo[] = [
         body: "La croix se lisait « fermer » et effaçait l'agenda avec tous ses événements. C'est maintenant une corbeille, et la confirmation nomme l'agenda et le nombre d'événements qui partent. Même règle partout où un clic effaçait : échange, interlocuteur, événement, invitation, connecteur d'assistant, clé d'accès. Les boîtes « OK / Annuler » du navigateur ont disparu au profit de celle du CRM.",
       },
       {
-        path: "/customers/fiche?id=77c807e5-f0c4-4bad-b0f7-d404d2a00782",
+        path: "/customers/77c807e5-f0c4-4bad-b0f7-d404d2a00782",
         target: '[data-demo="next-action"]',
         title: "Le solde demande combien, et les erreurs se voient",
         body: "« Paiement reçu » cochait le solde sans montant : il ouvre maintenant la même saisie que l'acompte, montant et jour d'encaissement. Décocher « Acompte facturé » fonctionne. Et une écriture refusée ne passe plus en silence : un message apparaît en bas à droite, avec « Réessayer ». Fermer un devis, une affaire, une tâche ou une relance en cours de saisie demande confirmation.",
@@ -407,7 +459,7 @@ export const DEMOS: Demo[] = [
     date: "2026-09-21",
     steps: [
       {
-        path: "/customers/fiche?id=0b66bb72-7660-43a3-aa42-5be6e5ffe2b6",
+        path: "/customers/0b66bb72-7660-43a3-aa42-5be6e5ffe2b6",
         click: '[id$="-trigger-details"]',
         target: '[data-demo="fiche-parrain"]',
         title: "Recommandé par, choisi parmi tout le CRM",
@@ -448,7 +500,7 @@ export const DEMOS: Demo[] = [
     date: "2026-09-21",
     steps: [
       {
-        path: "/customers/fiche?id=d8ba1e88-9e2b-4cf0-bc13-54946efe1c93",
+        path: "/customers/d8ba1e88-9e2b-4cf0-bc13-54946efe1c93",
         click: '[data-demo="tab-devis"]',
         target: '[data-demo="joined-quote-docs"]',
         title: "Joint au cran, rappelé sous les devis",
@@ -462,7 +514,7 @@ export const DEMOS: Demo[] = [
     date: "2026-09-21",
     steps: [
       {
-        path: "/customers/fiche?id=77c807e5-f0c4-4bad-b0f7-d404d2a00782",
+        path: "/customers/77c807e5-f0c4-4bad-b0f7-d404d2a00782",
         target: '[data-demo="project-worksite-link"]',
         title: "Sous l'adresse, le chemin vers le chantier",
         body: "Il fallait quitter la fiche, ouvrir Chantiers et y rechercher l'affaire qu'on venait de lire. Le lien ouvre directement la fiche latérale de ce chantier — ou de cette étude, pour STRUCTURE —, sur le modèle du lien vers la fiche d'un rendez-vous dans l'agenda. Il n'apparaît que sur une affaire signée ou réalisée : les écrans Chantiers et Études ne listent que celles-là.",
@@ -486,6 +538,19 @@ export const DEMOS: Demo[] = [
         target: '[data-demo="frise-ordre"]',
         title: "Un ordre par parcours, glissé comme une tâche",
         body: "Même geste que le tableau des tâches. Il y a quatre parcours et non deux sociétés : GROUPE fait des travaux, STRUCTURE a trois missions qui n'ont pas les mêmes crans. Déplacer un cran ne coche ni ne décoche rien — seul l'ordre change, et le cran en cours devient le premier non franchi dans le nouvel ordre. Les crans du sondage, en pointillé, se rangent même quand l'affaire n'en vend pas : c'est là qu'ils tomberont le jour où elle en vendra un. « Ordre par défaut » retire l'ordre choisi au lieu d'en enregistrer une copie, qui divergerait du code au premier cran ajouté.",
+      },
+    ],
+  },
+  {
+    id: "bandeau-d-etat",
+    title: "Le pied de page dit la version et l'état du CRM",
+    date: "2026-09-21",
+    steps: [
+      {
+        path: "/dashboard",
+        target: '[data-demo="status-bar"]',
+        title: "Un point vert, une version, et rien de plus quand tout va bien",
+        body: "Le bandeau relit l'état du serveur chaque minute : la base de données, et les trois copies automatiques — messagerie, agenda Google, OneDrive. Tout va bien, c'est un point vert qu'on ne lit pas. Une copie qui n'a rien réussi depuis quatre tours passe en orange, une copie qui échoue en rouge, un serveur muet aussi — c'est le moment de ne pas saisir un devis qui ne serait pas enregistré. Un clic ouvre le détail, et chaque ligne mène aux réglages de l'intégration, où vit son journal. À droite, la version de la page chargée ; quand un déploiement a eu lieu depuis, un bouton « Recharger » apparaît à côté.",
       },
     ],
   },
@@ -540,7 +605,7 @@ export const DEMOS: Demo[] = [
           Le Faucheur porte deux affaires datées — c'est la fiche où la mention
           apparaît deux fois, donc celle où le changement se voit.
         */
-        path: "/customers/fiche?id=77c807e5-f0c4-4bad-b0f7-d404d2a00782",
+        path: "/customers/77c807e5-f0c4-4bad-b0f7-d404d2a00782",
         target: '[data-demo="project-periode"]',
         title: "La ligne de l'affaire dit quand le chantier a lieu",
         body: "Il fallait déplier l'affaire, puis ouvrir son formulaire, pour savoir si un chantier était daté. La ligne repliée le dit maintenant d'elle-même : « du 3 au 17 juin » quand les deux bornes sont connues, « depuis le 3 juin » quand il a commencé sans finir, « terminé le 17 juin » quand seule la fin est saisie. Rien ne s'affiche quand aucune date n'existe — une mention vide pousserait le nom du responsable hors de la ligne. Mesuré en production : 140 affaires sur 522 portent une date de démarrage, et aucune n'en portait de fin, faute d'un endroit où la saisir.",
@@ -560,25 +625,6 @@ export const DEMOS: Demo[] = [
     ],
   },
   {
-    id: "application-de-bureau",
-    title: "Le CRM devient une application de bureau",
-    date: "2026-09-18",
-    steps: [
-      {
-        path: "/dashboard",
-        target: '[data-demo="changer-de-societe"]',
-        title: "La société se choisit ici, et non plus par l'adresse",
-        body: "Sur le web, on choisissait sa société en choisissant son adresse — groupe.… ou structure.… — depuis le portail. L'application n'a qu'une fenêtre et pas d'adresse : le choix se fait dans ce menu, à la place du bouton de retour au portail, et l'ordinateur le retient. Il ne sert qu'à qui voit tout le groupe : un compte lié à sa société la garde quoi qu'il arrive, c'est le serveur qui l'impose. Le portail reste à un clic, en bas du menu : il s'ouvre dans le navigateur.",
-      },
-      {
-        path: "/settings",
-        target: '[data-demo="passkey-add"]',
-        title: "Une clé d'accès se crée dans le navigateur",
-        body: "Une clé d'accès est liée au domaine du CRM, et l'application n'en a pas : aucune empreinte ne peut s'y enregistrer. « Ajouter une clé » montre donc un QR code à scanner avec son téléphone — l'appareil qu'on a toujours sur soi — ou ouvre la création dans le navigateur de cet ordinateur. La connexion suit le même chemin : « Se connecter avec une clé d'accès » ouvre le portail dans le navigateur, on y pose son empreinte, on autorise l'application d'un clic, et elle reprend la main toute seule. Le mot de passe, lui, se tape dans l'application comme avant.",
-      },
-    ],
-  },
-  {
     id: "cycle-dates-sondage-deux-societes",
     title: "Le cycle d'une affaire : les dates rendues, le sondage à sa place, deux sociétés",
     date: "2026-09-18",
@@ -589,13 +635,13 @@ export const DEMOS: Demo[] = [
           rendez-vous que la règle de monotonie masquait. C'est la fiche citée
           par le dirigeant.
         */
-        path: "/customers/fiche?id=9b327b3b-6696-4f21-bb56-22a3858dac98",
+        path: "/customers/9b327b3b-6696-4f21-bb56-22a3858dac98",
         target: '[data-demo="project-cycle"]',
         title: "Les dates des rendez-vous passés sont revenues",
         body: "La frise masquait toute date qui reculait par rapport à la précédente. L'intention était bonne — « RDV 18 juin » suivi de « Signé 12 juin » fait douter de tout le reste — mais la règle se retournait contre elle : les dates d'une affaire ne sont pas saisies dans l'ordre où les crans se franchissent, et il suffisait qu'un rendez-vous soit enregistré après coup pour qu'il disparaisse de l'écran. Un rendez-vous passé n'en a pas moins eu lieu. La règle est retirée : chaque cran affiche la date qu'il porte, et l'ordre de la frise reste celui des étapes, pas celui du calendrier. Mesuré sur cette affaire : quatre dates réapparaissent.",
       },
       {
-        path: "/customers/fiche?id=9b327b3b-6696-4f21-bb56-22a3858dac98",
+        path: "/customers/9b327b3b-6696-4f21-bb56-22a3858dac98",
         target: '[data-demo="next-action"]',
         title: "On ne réclame plus une facture d'acompte déjà encaissée",
         body: "« Facture d'acompte à émettre », lisait-on ici, alors que l'acompte était encaissé et que le dossier était parti au contrôle. La cause : « à faire maintenant » cherchait le premier cran non franchi en partant du début, sans regarder ce qui l'était plus loin. Or un cran postérieur franchi rend les précédents caducs — on ne calcule pas une note de structure avant d'avoir été payé. La prochaine action se lit désormais après le dernier cran franchi, et cette affaire affiche « Calcul à réaliser — l'acompte est encaissé : l'ingénieur peut commencer. »",
@@ -605,7 +651,7 @@ export const DEMOS: Demo[] = [
           ROUGET : devis `etude + sondages`, donc mission « étude » — le cas où
           le cran sondage doit s'intercaler sans remplacer la mission déduite.
         */
-        path: "/customers/fiche?id=aeb64050-c806-4628-bc3a-7f1d5974956e",
+        path: "/customers/aeb64050-c806-4628-bc3a-7f1d5974956e",
         target: '[data-demo="cran-sondage"]',
         title: "Le sondage se place entre l'acompte et la facture",
         body: "Le sondage n'existait comme étape que pour les affaires dont c'est la mission entière. Une étude qui comporte aussi un sondage — ce que porte cette affaire, dont les devis sont une étude et des sondages — n'avait nulle part où le dire : le terrain se fait pourtant après l'acompte et avant qu'on facture le solde. Les deux crans s'insèrent donc dans la frise de l'étude, juste après l'acompte, sans déplacer la mission déduite des devis. Mesuré ici : le sondage tombe en septième position, entre l'acompte en sixième et le solde en douzième.",
@@ -616,7 +662,7 @@ export const DEMOS: Demo[] = [
           sont trente et une fiches dans ce cas, sept affaires — le cas est réel
           et rare, donc il se démontre sur une fiche nommée.
         */
-        path: "/customers/fiche?id=f8000da5-ce8a-497b-881c-3fa59a9226c9",
+        path: "/customers/f8000da5-ce8a-497b-881c-3fa59a9226c9",
         target: '[data-demo="project-cycle-second"]',
         title: "Une affaire des deux sociétés porte deux frises",
         body: "L'étude et les travaux ne se déroulent pas pareil : là où les travaux réservent une date et commandent des matériaux, l'étude remet un rapport de visite puis des plans d'exécution. Une affaire qui porte des devis des deux sociétés n'avait qu'une frise, celle de la société dominante, et la moitié de son parcours n'apparaissait nulle part. Elle en a désormais deux, chacune coiffée du nom de sa société. La seconde se lit seulement : cocher un de ses crans écrirait sur un devis qui appartient à l'autre société, et l'écran le dit au lieu d'offrir un bouton sans effet.",
@@ -634,13 +680,13 @@ export const DEMOS: Demo[] = [
           courriels, ce qui est la condition d'apparition du bouton — une fiche
           sans courrier ne le montre pas, et la démo s'ouvrirait sur du vide.
         */
-        path: "/customers/fiche?id=d4804e98-5283-42fe-ab4e-3f14d17b1720",
+        path: "/customers/d4804e98-5283-42fe-ab4e-3f14d17b1720",
         target: '[data-demo="bouton-chercher-courriels"]',
         title: "Le bouton qui ne rendait qu'une erreur",
         body: "Cette fonctionnalité n'avait jamais abouti une seule fois en production : un appel, cinq minutes d'attente, puis un encadré rouge portant une erreur de transport brute. La cause n'était ni le réseau, ni la clé, ni le compte — tous mesurés sains — mais le modèle demandé. Le CRM réclamait « moonshotai/kimi-k3 », que le catalogue de NVIDIA annonce toujours et qui ne renvoie plus rien du tout : pas un refus, pas un quota dépassé, aucun octet. Passés un par un, quatre-vingt-deux identifiants du catalogue donnent trois modèles qui répondent, quatre qui rendent 404 tout en étant listés, et cinq muets — dont celui-là, et dont le 90B vision demandé le matin même.",
       },
       {
-        path: "/customers/fiche?id=d4804e98-5283-42fe-ab4e-3f14d17b1720",
+        path: "/customers/d4804e98-5283-42fe-ab4e-3f14d17b1720",
         click: '[data-demo="bouton-chercher-courriels"]',
         target: '[data-demo="chercher-messagerie"]',
         title: "Le modèle qui répond, et qui le dit (comptez une minute)",
@@ -692,6 +738,12 @@ export const DEMOS: Demo[] = [
         target: '#member-company',
         title: "La société se change seule, et ferme les sessions",
         body: "Elle a sa propre route, comme le rôle, et pour une raison très concrète : enregistrer le formulaire remplace la ligne entière du compte, si bien qu'une société qui y voyagerait serait effacée le jour où l'on corrige une faute de frappe dans un prénom. Changer la société déconnecte la personne — elle voyage dans le jeton, et sans cela elle verrait encore un quart d'heure durant la société qu'on vient de lui retirer. Deux garde-fous s'appliquent : on n'agit que sur un compte de rang inférieur au sien, et on ne fait entrer quelqu'un que dans sa propre société — sinon la gestion des comptes serait le contournement du découpage. Le lien d'invitation porte la même société : le compte naît déjà rangé, plutôt que d'être classé après coup.",
+      },
+      {
+        path: "/dashboard",
+        target: '[data-demo="retour-portail"]',
+        title: "Et par où l'on ressort : le portail",
+        body: "Chaque société a désormais son adresse — groupe.… et structure.… — et le domaine principal est devenu un portail : on s'y authentifie une fois, puis on choisit. Ce bouton y ramène de n'importe quel écran du CRM. On y trouve les deux CRM, des raccourcis vers les listes qu'on ouvre le plus, les applications du quotidien — Gmail, Slack, le coffre à mots de passe, OneDrive — et, pour l'administration seulement, un groupe Dev. Rien à retaper en chemin : les trois adresses partagent une seule session, parce que le cookie porte le domaine principal, et une seule clé d'accès les ouvre toutes les trois puisque son domaine de référence est celui du portail.",
       },
     ],
   },
@@ -753,7 +805,7 @@ export const DEMOS: Demo[] = [
           ne conviendrait pas : une seule est dépliée, et une étape ne porte
           qu'un clic.
         */
-        path: "/customers/fiche?id=7b258702-e98d-49be-b2f2-4197cf335fc8",
+        path: "/customers/7b258702-e98d-49be-b2f2-4197cf335fc8",
         click: '[data-demo="tab-devis"]',
         target: '[data-demo="quote-amount-source"]',
         title: "Ce n'était pas invisible, c'était un mot qui manquait",
@@ -773,7 +825,7 @@ export const DEMOS: Demo[] = [
           plusieurs affaires ne conviendrait pas : une seule est dépliée, et une
           étape ne porte qu'un clic.
         */
-        path: "/customers/fiche?id=02086ac2-2cc1-455c-8c49-daeebc73048b",
+        path: "/customers/02086ac2-2cc1-455c-8c49-daeebc73048b",
         click: '[data-demo="tab-devis"]',
         target: '[data-demo="quote-amount-divergence"]',
         title: "Le CRM le dit, il ne le corrige pas",
@@ -797,7 +849,7 @@ export const DEMOS: Demo[] = [
         // donc forcement dans l'affaire affichee. La fiche essayee d'abord en
         // portait plusieurs, dont une seule est depliee, et la zone n'etait pas
         // trouvee -- constate en production avant de livrer cette etape.
-        path: "/customers/fiche?id=cf5f2622-d368-4e68-9e47-990ee24a46c1",
+        path: "/customers/cf5f2622-d368-4e68-9e47-990ee24a46c1",
         click: '[data-demo="tab-devis"]',
         target: '[data-demo="quote-amount-source"]',
         title: "D'où vient le chiffre, et comment le vérifier",
