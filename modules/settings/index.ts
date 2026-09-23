@@ -28,3 +28,8 @@ export {
 export { SETTINGS_NAVIGATION, settingsLabel } from "./lib/navigation";
 export type { PermissionEntry, Role, WorkspaceUser } from "./lib/types";
 export type { Preferences, ThemeChoice } from "./lib/preferences";
+
+// Le connecteur d'assistant en OAuth. La page de consentement, elle, n'est pas
+// reprise ici : on autorise depuis le CRM web, jamais depuis l'application.
+export { ConnectedAssistants } from "./components/connected-assistants";
+export { listGrants, revokeGrant, type OAuthGrant } from "./lib/oauth-api";

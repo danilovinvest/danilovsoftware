@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ClaudeMark, OpenAIMark } from "@/shared/ui/brand-marks";
+import { ConnectedAssistants } from "./connected-assistants";
 import { cn } from "@/lib/utils";
 import { errorMessage } from "@/shared/api/errors";
 import { EmptyState, ErrorNotice, Skeleton, Spinner } from "@/shared/ui/feedback";
@@ -20,7 +21,6 @@ import { createMcpToken, mcpConnectorUrl, revokeMcpToken } from "../lib/api";
 import { useMcpTokens } from "../hooks/use-settings";
 import { SettingsPage, SettingsRows, SettingsRow, SettingsSection } from "./settings-page";
 import { askConfirm } from "@/shared/ui/confirm";
-import { openExternal } from "@/shared/desktop/links";
 import { McpAccessChoice, type McpAccess } from "./mcp-access-choice";
 
 /**
@@ -90,8 +90,7 @@ export function AssistantPanel() {
     const adresse = (reuse ? secret : null) ?? (await create());
     if (!adresse) return;
     await copy(adresse);
-    // Dans le navigateur du système : la webview n'ouvre pas de nouvel onglet.
-    await openExternal(url);
+    window.open(url, "_blank", "noopener,noreferrer");
   }
 
   async function revoke(id: string) {
@@ -171,6 +170,19 @@ export function AssistantPanel() {
           un connecteur que sur un compte et un service dont vous acceptez qu&apos;ils
           voient ces données.
         </p>
+      </SettingsSection>
+
+      {/*
+        Les assistants branchés en OAuth, en tête : c'est le chemin qu'on veut
+        voir emprunté. Les adresses à secret restent en dessous, tant que des
+        connecteurs installés s'en servent -- couper le jour de la livraison
+        mettrait dehors ce qui marchait la veille.
+      */}
+      <SettingsSection
+        title="Assistants branchés"
+        description="Autorisés depuis l'assistant lui-même, sans secret à recopier. Coupez-en un à tout moment."
+      >
+        <ConnectedAssistants />
       </SettingsSection>
 
       <SettingsSection
