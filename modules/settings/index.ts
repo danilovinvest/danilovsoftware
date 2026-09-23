@@ -28,3 +28,8 @@ export {
 export { SETTINGS_NAVIGATION, settingsLabel } from "./lib/navigation";
 export type { PermissionEntry, Role, WorkspaceUser } from "./lib/types";
 export type { Preferences, ThemeChoice } from "./lib/preferences";
+
+// L'écran de consentement d'un connecteur d'assistant. Il vit hors du groupe
+// `(crm)` : on y arrive depuis l'assistant pour une seule question.
+export { ConsentView } from "./components/consent-view";
+export { listGrants, revokeGrant, type OAuthGrant } from "./lib/oauth-api";

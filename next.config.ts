@@ -37,23 +37,21 @@ const nextConfig: NextConfig = {
    * une ligne.
    */
   async rewrites() {
+    /*
+     * Le relais remplace l'en-tête `Host` par l'adresse interne, si bien que
+     * l'API ne saurait plus quel hôte public annoncer. Il est donc capturé et
+     * passé en paramètre — et l'API le confronte à ses origines permises avant
+     * d'y croire, un paramètre venu de l'extérieur n'étant pas une preuve.
+     */
+    const hote = [{ type: "host" as const, value: "(?<hote>.*)" }];
+    const vers = (doc: "resource" | "server") =>
+      `${API_INTERNE}/v1/oauth/metadata/${doc}?origine=https://:hote`;
+
     return [
-      {
-        source: "/.well-known/oauth-protected-resource",
-        destination: `${API_INTERNE}/v1/oauth/metadata/resource`,
-      },
-      {
-        source: "/.well-known/oauth-protected-resource/mcp",
-        destination: `${API_INTERNE}/v1/oauth/metadata/resource`,
-      },
-      {
-        source: "/.well-known/oauth-authorization-server",
-        destination: `${API_INTERNE}/v1/oauth/metadata/server`,
-      },
-      {
-        source: "/.well-known/openid-configuration",
-        destination: `${API_INTERNE}/v1/oauth/metadata/server`,
-      },
+      { source: "/.well-known/oauth-protected-resource", has: hote, destination: vers("resource") },
+      { source: "/.well-known/oauth-protected-resource/mcp", has: hote, destination: vers("resource") },
+      { source: "/.well-known/oauth-authorization-server", has: hote, destination: vers("server") },
+      { source: "/.well-known/openid-configuration", has: hote, destination: vers("server") },
     ];
   },
 };
