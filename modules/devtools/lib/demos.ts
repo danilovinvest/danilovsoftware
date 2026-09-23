@@ -40,6 +40,32 @@ const FICHE_ETUDE = "/customers/fiche?id=7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "societe-de-la-fiche",
+    title: "La société de la fiche se choisit, et les gestes se rangent",
+    date: "2026-09-22",
+    steps: [
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="customer-issuer"]',
+        title: "Le badge est devenu le bouton",
+        body: "La société se déduisait des seuls devis, et un devis rangé du mauvais côté peignait la fiche en STRUCTURE tout en la faisant disparaître de la liste de GROUPE. Le badge s'ouvre désormais : GROUPE, STRUCTURE, les deux, ou « laisser les devis décider ». Un point sur le badge dit qu'un humain a tranché.",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="customer-issuer"]',
+        target: '[data-demo="customer-issuer-auto"]',
+        title: "Chaque choix dit ce qu'il change",
+        body: "Ranger la fiche dans une société la cache à l'autre : le badge et le périmètre lisent la même règle. « Les deux » est la sortie du client qui commande une étude à STRUCTURE puis des travaux à GROUPE. Le dernier choix rend la main aux devis, et la fiche dit alors qui avait tranché, et quand.",
+      },
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="customer-more"]',
+        title: "Cinq boutons, puis trois et un menu",
+        body: "« Archiver » était rouge alors qu'archiver ne retire rien, et il voisinait une suppression définitive. Restent visibles Claude, la recherche dans les courriels et « Modifier » ; archiver et supprimer passent sous « … », chacun avec la phrase qui dit ce qu'il emporte, et la suppression seule sous un filet.",
+      },
+    ],
+  },
+  {
     id: "messagerie-conversations",
     title: "La messagerie : des conversations, un tri, le clavier",
     date: "2026-09-22",

@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import type { ReactNode } from "react";
 import {
   ArchiveIcon,
   ArrowLeftRightIcon,
@@ -21,6 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { MENU_ITEM, MENU_ITEM_DANGER, MENU_LABEL, MenuAction } from "@/shared/ui/menu-action";
 import { PROJECT_STAGE } from "../lib/labels";
 import type { Metier } from "../lib/cycle";
 import type { Project } from "../lib/types";
@@ -135,7 +135,7 @@ export function ProjectToolbar({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-72 p-1.5">
-            <DropdownMenuLabel className="text-muted-foreground px-2 pt-1 pb-1.5 text-[0.7rem] font-medium tracking-wide uppercase">
+            <DropdownMenuLabel className={MENU_LABEL}>
               Affaire
             </DropdownMenuLabel>
             {/*
@@ -184,7 +184,7 @@ export function ProjectToolbar({
                 <DropdownMenuSeparator className="my-1.5" />
                 <DropdownMenuItem
                   variant="destructive"
-                  className="items-start gap-2.5 px-2 py-2"
+                  className={MENU_ITEM_DANGER}
                   data-demo="project-delete-item"
                   onSelect={onDelete}
                 >
@@ -201,46 +201,5 @@ export function ProjectToolbar({
         </DropdownMenu>
       )}
     </div>
-  );
-}
-
-/*
-  Le survol du menu reste neutre. La teinte d'accent de la palette — orange
-  dans certaines — se lisait comme une alerte sur un geste ordinaire. Seule la
-  suppression garde sa couleur, parce qu'elle en est une.
-*/
-const MENU_ITEM =
-  "items-start gap-2.5 px-2 py-2 focus:bg-muted focus:text-foreground not-data-[variant=destructive]:focus:**:text-foreground";
-
-/** Une action du menu : son icône, ce qu'elle fait, et ce qu'elle emporte. */
-function MenuAction({
-  icon,
-  label,
-  hint,
-  danger = false,
-}: {
-  icon: ReactNode;
-  label: string;
-  hint: string;
-  danger?: boolean;
-}) {
-  return (
-    <>
-      <span
-        className={
-          danger
-            ? "bg-danger-soft text-danger mt-0.5 grid size-7 shrink-0 place-items-center rounded-md [&_svg]:size-3.5"
-            : "bg-muted text-muted-foreground mt-0.5 grid size-7 shrink-0 place-items-center rounded-md [&_svg]:size-3.5"
-        }
-      >
-        {icon}
-      </span>
-      <span className="flex min-w-0 flex-col">
-        <span className="font-medium">{label}</span>
-        <span className={danger ? "text-danger/70 text-xs" : "text-muted-foreground text-xs"}>
-          {hint}
-        </span>
-      </span>
-    </>
   );
 }
