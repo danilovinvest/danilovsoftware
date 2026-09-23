@@ -7,6 +7,7 @@ import {
   ArchiveIcon,
   Trash2Icon,
   ArrowLeftIcon,
+  EllipsisIcon,
   MailIcon,
   PencilIcon,
   PhoneIcon,
@@ -19,6 +20,15 @@ import { ClaudeButton, customerContext } from "@/modules/assistant";
 import { CustomerDocuments } from "@/modules/files";
 import { CustomerTasksPanel } from "@/modules/tasks";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MENU_ITEM, MENU_ITEM_DANGER, MENU_LABEL, MenuAction } from "@/shared/ui/menu-action";
 import { Bar, ListSkeleton } from "@/shared/ui/loading";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ErrorNotice } from "@/shared/ui/feedback";
@@ -32,6 +42,7 @@ import { CustomerHeadline } from "./customer-headline";
 import { CustomerGlance } from "./customer-glance";
 import { ReviewChecks } from "./review-checks";
 import { ClientToggle } from "./client-toggle";
+import { CustomerIssuerBadge, CustomerIssuerNote } from "./customer-issuer";
 import { EnrichDialog } from "./enrich-dialog";
 import { DetailsPanel } from "./details-panel";
 import { EnumBadge } from "./enum-badge";
@@ -148,6 +159,12 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
               </span>
             )}
             <EnumBadge value={customer.kind} entries={CUSTOMER_KIND} />
+            {/*
+              La société de la fiche, et le geste qui la range. Elle se lit ici
+              parce que c'est ici qu'on la cherche — et le badge est le bouton,
+              plutôt qu'un réglage posé ailleurs que ce qu'il règle.
+            */}
+            <CustomerIssuerBadge customer={customer} canWrite={canWrite} onChanged={reload} />
           </div>
 
           <div className="text-muted-foreground mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
@@ -173,10 +190,14 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
             {customer.city && <span>{customer.city}</span>}
           </div>
 
-          {/* Client ou prospect, d'un clic : les pièces se trompent parfois. */}
+          {/*
+            Les deux endroits où un humain contredit les pièces : la qualité de
+            client, et la société. Ils se relisent ensemble, sur la même ligne.
+          */}
           {canWrite && (
-            <div className="mt-2">
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
               <ClientToggle customer={customer} onChanged={reload} />
+              <CustomerIssuerNote customer={customer} onChanged={reload} />
             </div>
           )}
 
@@ -199,14 +220,21 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
         </div>
 
         {/*
-          Les actions passent à la ligne.
+          Les gestes de la fiche : deux qu'on fait tous les jours, un menu pour
+          le reste.
 
-          Quatre boutons sur une seule rangée sortaient de l'écran de 182 pixels
-          sur un téléphone : « Supprimer » était hors d'atteinte, et la page
-          entière défilait latéralement. `flex-wrap` suffit, et sur grand écran
-          rien ne change puisque la rangée tient.
+          Il y en avait cinq de même poids sur une rangée, et « Archiver » y
+          était rouge alors qu'archiver ne retire rien — la couleur du danger
+          portée par un rangement, juste à côté d'une suppression définitive
+          qui, elle, ne se rattrape pas. Restent Claude, la recherche dans les
+          courriels et « Modifier » ; « Archiver » et « Supprimer » passent sous
+          un « … », où la suppression vit seule, en rouge, sous un filet.
+
+          La rangée se replie (`flex-wrap`) : cinq boutons sortaient de l'écran
+          d'un téléphone de 390 pixels, et la page entière défilait alors
+          latéralement.
         */}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {/*
             Chercher dans la messagerie demande `mail:read` côté serveur : faire
             lire vingt-cinq courriels par un modèle est aussi intrusif que les
@@ -215,7 +243,6 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
           */}
           <ClaudeButton
             size="sm"
-            className="h-8"
             context={customerContext({
               name: customer.display_name,
               reference: customer.reference,
@@ -229,8 +256,10 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
           />
           {canWrite && canReadMail && (
             <Button
+              size="sm"
               variant="outline"
               data-demo="bouton-chercher-courriels"
+              title="Lire les courriels de la fiche et proposer ce qui manque"
               onClick={() => setEnriching(true)}
             >
               <SparklesIcon />
@@ -238,68 +267,100 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
             </Button>
           )}
           {canWrite && (
-            <Button variant="outline" onClick={() => setEditing(true)}>
+            <Button
+              size="sm"
+              variant="outline"
+              title="Nom, coordonnées, adresse, propriétaire"
+              onClick={() => setEditing(true)}
+            >
               <PencilIcon />
               Modifier
             </Button>
           )}
           {canDelete && (
-            <Button
-              variant="destructive"
-              disabled={remove.pending}
-              onClick={async () => {
-                const ok = await askConfirm({
-                  title: `Archiver « ${customer.display_name} »`,
-                  description:
-                    "La fiche sort de la liste par défaut. Elle reste trouvable par la recherche et en cochant « Archivé ».",
-                  confirmLabel: "Archiver",
-                  destructive: false,
-                });
-                if (!ok) return;
-                /*
-                  `!== null` et non une vérité : `useAction.run` rend `null` en
-                  cas d'échec, et l'API rend **204 sans corps** en cas de succès
-                  — donc `undefined`, qui est faux. Tester la vérité faisait
-                  échouer silencieusement toute suite d'une suppression réussie,
-                  et l'écran restait sur une fiche qui n'existait plus.
-                */
-                if ((await remove.run()) !== null) router.push(lastListHref());
-              }}
-            >
-              <ArchiveIcon />
-              Archiver
-            </Button>
-          )}
-          {/*
-            Effacer pour de bon, et le dire avant.
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  aria-label="Autres actions sur la fiche"
+                  disabled={remove.pending || purge.pending}
+                  data-demo="customer-more"
+                >
+                  <EllipsisIcon />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80 p-1.5">
+                <DropdownMenuLabel className={MENU_LABEL}>Fiche</DropdownMenuLabel>
+                {/*
+                  Archiver range, ça n'efface pas : la fiche sort de la liste
+                  par défaut et se retrouve par la recherche. C'est le geste
+                  courant, donc il vient en premier et hors du filet rouge.
+                */}
+                <DropdownMenuItem
+                  className={MENU_ITEM}
+                  data-demo="customer-archive"
+                  onSelect={async () => {
+                    const ok = await askConfirm({
+                      title: `Archiver « ${customer.display_name} »`,
+                      description:
+                        "La fiche sort de la liste par défaut. Elle reste trouvable par la recherche et en cochant « Archivé ».",
+                      confirmLabel: "Archiver",
+                      destructive: false,
+                    });
+                    if (!ok) return;
+                    /*
+                      `!== null` et non une vérité : `useAction.run` rend `null`
+                      en cas d'échec, et l'API rend **204 sans corps** en cas de
+                      succès — donc `undefined`, qui est faux. Tester la vérité
+                      faisait échouer silencieusement toute suite d'une
+                      suppression réussie, et l'écran restait sur une fiche qui
+                      n'existait plus.
+                    */
+                    if ((await remove.run()) !== null) router.push(lastListHref());
+                  }}
+                >
+                  <MenuAction
+                    icon={<ArchiveIcon />}
+                    label="Archiver la fiche…"
+                    hint="Sort des listes, reste trouvable par la recherche"
+                  />
+                </DropdownMenuItem>
+                {/*
+                  Effacer pour de bon, et le dire avant.
 
-            Archiver reste le geste courant : la fiche sort des listes et se
-            retrouve. Celui-ci ne se rattrape pas, et il existe parce qu'une
-            fiche née d'une faute de frappe continuait de remonter dans la
-            recherche sans qu'aucun écran ne sache s'en débarrasser. La
-            confirmation nomme ce qui part et ce qui reste.
-          */}
-          {canDelete && (
-            <Button
-              variant="ghost"
-              className="text-muted-foreground hover:text-destructive"
-              disabled={purge.pending}
-              onClick={async () => {
-                const ok = await askConfirm({
-                  title: `Supprimer définitivement « ${customer.display_name} »`,
-                  description:
-                    "Ses projets, devis, interlocuteurs et échanges partent avec elle. " +
-                    "Les courriels et les rendez-vous sont conservés, simplement détachés. " +
-                    "Cette suppression ne se rattrape pas.",
-                  confirmLabel: "Supprimer définitivement",
-                });
-                if (!ok) return;
-                if ((await purge.run()) !== null) router.push(lastListHref());
-              }}
-            >
-              <Trash2Icon />
-              Supprimer
-            </Button>
+                  Ce geste-là ne se rattrape pas, et il existe parce qu'une
+                  fiche née d'une faute de frappe continuait de remonter dans la
+                  recherche sans qu'aucun écran ne sache s'en débarrasser. La
+                  confirmation nomme ce qui part et ce qui reste.
+                */}
+                <DropdownMenuSeparator className="my-1.5" />
+                <DropdownMenuItem
+                  variant="destructive"
+                  className={MENU_ITEM_DANGER}
+                  data-demo="customer-purge"
+                  onSelect={async () => {
+                    const ok = await askConfirm({
+                      title: `Supprimer définitivement « ${customer.display_name} »`,
+                      description:
+                        "Ses projets, devis, interlocuteurs et échanges partent avec elle. " +
+                        "Les courriels et les rendez-vous sont conservés, simplement détachés. " +
+                        "Cette suppression ne se rattrape pas.",
+                      confirmLabel: "Supprimer définitivement",
+                    });
+                    if (!ok) return;
+                    if ((await purge.run()) !== null) router.push(lastListHref());
+                  }}
+                >
+                  <MenuAction
+                    icon={<Trash2Icon />}
+                    label="Supprimer définitivement…"
+                    hint="Affaires, devis, interlocuteurs et échanges compris"
+                    danger
+                  />
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
       </header>

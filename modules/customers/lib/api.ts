@@ -5,6 +5,7 @@ import type {
   Customer,
   CustomerDetail,
   CustomerFilters,
+  CustomerIssuerChoice,
   CustomerListItem,
   PaymentStatus,
   ProjectDeletion,
@@ -84,6 +85,16 @@ export function setCustomerReview(
  */
 export function setCustomerClient(id: string, client: boolean | null) {
   return apiFetch<Customer>(`/v1/customers/${id}/client`, { method: "PUT", body: { client } });
+}
+
+/**
+ * La société de la fiche, décidée à la main.
+ *
+ * Une société ou « tous » l'emporte sur les devis, partout où la société se
+ * lit : le badge **et** le périmètre. `null` rend la décision aux devis.
+ */
+export function setCustomerIssuer(id: string, issuer: CustomerIssuerChoice | null) {
+  return apiFetch<Customer>(`/v1/customers/${id}/issuer`, { method: "PUT", body: { issuer } });
 }
 
 export function getStats(issuer: string, signal?: AbortSignal) {

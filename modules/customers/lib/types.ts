@@ -160,6 +160,15 @@ export type CustomerListItem = {
   projects: ProjectSummary[];
 };
 
+/**
+ * Le choix humain de société sur une fiche.
+ *
+ * « tous » n'est pas une société : c'est la fiche qui appartient aux deux, ce
+ * qu'aucune valeur de `quote_issuer` ne sait dire — un devis est émis par une
+ * seule société, puisqu'il porte son SIREN.
+ */
+export type CustomerIssuerChoice = "ompt-groupe" | "ompt-structure" | "tous";
+
 export type Customer = {
   id: string;
   /**
@@ -177,6 +186,22 @@ export type Customer = {
   client_override: boolean | null;
   client_override_at: string | null;
   client_override_by_name: string;
+  /**
+   * La société de la fiche : « ompt-groupe », « ompt-structure », « mixte »
+   * quand elle porte les deux, ou vide quand rien ne la range.
+   *
+   * Union de ses devis et de ses affaires attribuées — sauf si quelqu'un a
+   * tranché, auquel cas c'est son choix, « tous » rendant « mixte ».
+   */
+  issuer: string;
+  /**
+   * La société choisie à la main, nulle quand les devis décident. `issuer` en
+   * tient déjà compte : ces trois champs disent seulement « choisie » plutôt
+   * que « déduite », et par qui.
+   */
+  issuer_override: CustomerIssuerChoice | null;
+  issuer_override_at: string | null;
+  issuer_override_by_name: string;
   reference: string;
   display_name: string;
   kind: CustomerKind;
