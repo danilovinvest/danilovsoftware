@@ -24,6 +24,13 @@ ENV NEXT_PUBLIC_DEV_LOGIN=$NEXT_PUBLIC_DEV_LOGIN
 ENV NEXT_PUBLIC_DEV_ACCOUNTS=$NEXT_PUBLIC_DEV_ACCOUNTS
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# L'adresse interne de l'API, pour les seules réécritures des métadonnées OAuth
+# (`next.config.ts`). Elle est lue **à la construction**, parce que la table des
+# réécritures est figée dans l'image -- et elle n'est délibérément pas préfixée
+# `NEXT_PUBLIC_` : rien de tout cela n'a à entrer dans le bundle du navigateur.
+ARG CRM_INTERNAL_API_URL
+ENV CRM_INTERNAL_API_URL=$CRM_INTERNAL_API_URL
+
 # La version du bundle. Le bandeau la compare à celle de l'API : différentes,
 # c'est qu'un déploiement a eu lieu depuis le chargement de la page.
 ARG NEXT_PUBLIC_BUILD_COMMIT

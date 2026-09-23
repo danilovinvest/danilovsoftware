@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ClaudeMark, OpenAIMark } from "@/shared/ui/brand-marks";
+import { ConnectedAssistants } from "./connected-assistants";
 import { cn } from "@/lib/utils";
 import { errorMessage } from "@/shared/api/errors";
 import { EmptyState, ErrorNotice, Skeleton, Spinner } from "@/shared/ui/feedback";
@@ -169,6 +170,19 @@ export function AssistantPanel() {
           un connecteur que sur un compte et un service dont vous acceptez qu&apos;ils
           voient ces données.
         </p>
+      </SettingsSection>
+
+      {/*
+        Les assistants branchés en OAuth, en tête : c'est le chemin qu'on veut
+        voir emprunté. Les adresses à secret restent en dessous, tant que des
+        connecteurs installés s'en servent -- couper le jour de la livraison
+        mettrait dehors ce qui marchait la veille.
+      */}
+      <SettingsSection
+        title="Assistants branchés"
+        description="Autorisés depuis l'assistant lui-même, sans secret à recopier. Coupez-en un à tout moment."
+      >
+        <ConnectedAssistants />
       </SettingsSection>
 
       <SettingsSection

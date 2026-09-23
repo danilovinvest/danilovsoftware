@@ -40,6 +40,32 @@ const FICHE_ETUDE = "/customers/7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "connecteur-oauth",
+    title: "Le connecteur d'assistant passe en OAuth",
+    date: "2026-09-23",
+    steps: [
+      {
+        path: "/settings/assistant",
+        target: '[data-demo="oauth-grants"]',
+        title: "Qui est branché, et depuis quand",
+        body:
+          "L'adresse à secret ne le disait pas : elle ne distinguait pas deux usages " +
+          "du même secret, et la révoquer coupait tout le monde à la fois. Mesuré le " +
+          "23/09 : quatre jetons vivants, aucun jamais utilisé. Une autorisation porte " +
+          "désormais un nom, une date, un droit — et se coupe seule.",
+      },
+      {
+        path: "/settings/assistant",
+        target: '[data-demo="oauth-grants"]',
+        title: "Plus rien à recopier",
+        body:
+          "On ajoute le CRM depuis Claude, qui renvoie ici pour l'autoriser. Le secret " +
+          "ne voyage plus dans l'adresse mais dans un en-tête, et le client prouve son " +
+          "identité par PKCE — sans quoi un code intercepté suffirait à entrer.",
+      },
+    ],
+  },
+  {
     id: "terminer-un-chantier",
     title: "Terminer un chantier, et le solder",
     date: "2026-09-23",
