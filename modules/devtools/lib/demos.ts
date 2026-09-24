@@ -40,6 +40,44 @@ const FICHE_ETUDE = "/customers/7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "enrichir-une-fiche",
+    title: "L'assistant peut enfin corriger une fiche",
+    date: "2026-09-24",
+    steps: [
+      {
+        path: "/customers",
+        target: '[data-demo="customer-table"]',
+        title: "Le connecteur savait créer, jamais corriger",
+        body:
+          "Il pouvait ouvrir une fiche et n'en changer aucun champ. Mesuré le 24/09 sur " +
+          "le premier enrichissement : le nom mal orthographié, le type « particulier » " +
+          "posé par défaut et la ville vide sont restés faux, et seuls six échanges ont " +
+          "pu être ajoutés — tous datés du jour de la saisie. Trois outils le réparent : " +
+          "modifier_fiche, ajouter_contact et modifier_contact.",
+      },
+      {
+        path: "/customers/cfd6c7df-8b0a-471b-951f-d2f4af6ad4a2",
+        target: '[data-demo="contacts-card"]',
+        title: "Une fiche porte autant d'interlocuteurs qu'il en faut",
+        body:
+          "La table existait, l'assistant ne pouvait pas y écrire : une copropriété gérée " +
+          "par un cabinet a quatre interlocuteurs, et ils finissaient dans les notes. " +
+          "Chacun porte désormais son employeur, qui n'est pas la fiche. Et chaque champ " +
+          "corrigé laisse sa trace : qui, quand, avant, après, et d'où vient la correction.",
+      },
+      {
+        path: "/customers/cfd6c7df-8b0a-471b-951f-d2f4af6ad4a2",
+        target: '[data-demo="customer-glance"]',
+        title: "Un échange à sa vraie date, et dans son sens",
+        body:
+          "« Visite » et « courrier » existent enfin — l'outil les annonçait depuis " +
+          "l'origine, la base les refusait, et une mise en demeure partait en « e-mail ». " +
+          "Un échange dit maintenant le jour où il a eu lieu, s'il était reçu ou envoyé, " +
+          "et la pièce dont il est tiré.",
+      },
+    ],
+  },
+  {
     id: "connecteur-oauth",
     title: "Le connecteur d'assistant passe en OAuth",
     date: "2026-09-23",

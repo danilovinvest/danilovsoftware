@@ -1,8 +1,11 @@
 "use client";
 
 import {
+  CircleDashedIcon,
   FileTextIcon,
+  HardHatIcon,
   MailIcon,
+  MailboxIcon,
   MapPinIcon,
   PhoneIcon,
   PhoneOutgoingIcon,
@@ -13,7 +16,7 @@ import type { LucideIcon } from "lucide-react";
 import { EmptyState } from "@/shared/ui/feedback";
 import { formatDateTime } from "@/shared/lib/format";
 import { cn } from "@/lib/utils";
-import { INTERACTION_KIND } from "../lib/labels";
+import { INTERACTION_DIRECTION, INTERACTION_KIND } from "../lib/labels";
 import type { Interaction, InteractionKind } from "../lib/types";
 
 /**
@@ -31,11 +34,14 @@ import type { Interaction, InteractionKind } from "../lib/types";
 const ICONS: Record<InteractionKind, LucideIcon> = {
   appel: PhoneIcon,
   email: MailIcon,
+  courrier: MailboxIcon,
   relance: PhoneOutgoingIcon,
   rdv: MapPinIcon,
+  visite: HardHatIcon,
   rapport: ScrollTextIcon,
   devis: FileTextIcon,
   note: StickyNoteIcon,
+  autre: CircleDashedIcon,
 };
 
 export function ProjectTimeline({
@@ -85,6 +91,13 @@ export function ProjectTimeline({
                 <span className="text-sm font-medium">{interaction.summary}</span>
                 <span className="text-muted-foreground/70 text-xs">
                   {INTERACTION_KIND[interaction.kind].label}
+                  {/*
+                    Le sens, quand on le connaît : « Reçu » et « Envoyé » ne se
+                    relisent pas pareil dans un recouvrement. Absent sur tout ce
+                    qui a été consigné avant qu'on sache le demander, et on ne
+                    l'invente pas.
+                  */}
+                  {interaction.direction && ` · ${INTERACTION_DIRECTION[interaction.direction]}`}
                 </span>
               </div>
               {interaction.details && (
@@ -95,6 +108,24 @@ export function ProjectTimeline({
               <div className="text-muted-foreground/70 mt-1 text-xs">
                 {formatDateTime(interaction.occurred_at)}
                 {interaction.author_name && ` · ${interaction.author_name}`}
+                {/*
+                  La pièce d'origine, en lien externe : le CRM en garde
+                  l'adresse et jamais le contenu, comme pour les preuves d'une
+                  affaire. `noopener` parce que la cible est hors du CRM.
+                */}
+                {interaction.source_link && (
+                  <>
+                    {" · "}
+                    <a
+                      href={interaction.source_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-foreground underline"
+                    >
+                      la pièce
+                    </a>
+                  </>
+                )}
               </div>
             </div>
           </li>

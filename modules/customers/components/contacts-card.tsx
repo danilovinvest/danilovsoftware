@@ -35,6 +35,9 @@ export function ContactCoordinates({
 }) {
   const parts = [
     contact.role_label && <span key="role">{contact.role_label}</span>,
+    // L'employeur, quand il diffère de la fiche : sur une copropriété, la
+    // personne qu'on appelle appartient au cabinet, pas à l'immeuble.
+    contact.company_name && <span key="societe">{contact.company_name}</span>,
     contact.phone && <PhoneLink key="phone" phone={contact.phone} />,
     contact.email && (
       <a
