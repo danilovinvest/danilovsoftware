@@ -8,7 +8,7 @@ import type { Tone } from "../lib/labels";
  * globals.css, sur le modèle des tags de Twenty — le cran 3 de la teinte en
  * fond, le cran 11 en texte.
  */
-const TONE_CLASSES: Record<Tone, string> = {
+export const TONE_CLASSES: Record<Tone, string> = {
   neutral: "bg-neutral-soft text-neutral",
   info: "bg-info-soft text-info",
   success: "bg-success-soft text-success",

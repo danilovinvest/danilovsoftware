@@ -33,7 +33,8 @@ import { Bar, ListSkeleton } from "@/shared/ui/loading";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ErrorNotice } from "@/shared/ui/feedback";
 import { formatPhone } from "@/shared/lib/format";
-import { CUSTOMER_KIND, CUSTOMER_STATUS } from "../lib/labels";
+import { CUSTOMER_KIND, CUSTOMER_RELATION, CUSTOMER_STATUS } from "../lib/labels";
+import { relationOf } from "../lib/classification";
 import { useCustomer } from "../hooks/use-customer";
 import { useAction } from "../hooks/use-customers";
 import * as api from "../lib/api";
@@ -45,6 +46,7 @@ import { ClientToggle } from "./client-toggle";
 import { CustomerIssuerBadge, CustomerIssuerNote } from "./customer-issuer";
 import { EnrichDialog } from "./enrich-dialog";
 import { DetailsPanel } from "./details-panel";
+import { CustomerGraph } from "./customer-graph";
 import { EnumBadge } from "./enum-badge";
 import { InteractionsPanel } from "./interactions-panel";
 import { ProjectsPanel } from "./projects-panel";
@@ -62,7 +64,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
   const { customer, loading, error, reload, mutate } = useCustomer(customerId);
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const VUES = ["affaires", "echanges", "taches", "courriels", "documents", "details"];
+  const VUES = ["affaires", "graphe", "echanges", "taches", "courriels", "documents", "details"];
   const vueDemandee = searchParams.get("vue") ?? "";
   const vue = searchParams.get("affaire") || !VUES.includes(vueDemandee) ? "affaires" : vueDemandee;
   const [editing, setEditing] = useState(false);
@@ -159,6 +161,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
               </span>
             )}
             <EnumBadge value={customer.kind} entries={CUSTOMER_KIND} />
+            <RelationBadge customer={customer} />
             {/*
               La société de la fiche, et le geste qui la range. Elle se lit ici
               parce que c'est ici qu'on la cherche — et le badge est le bouton,
@@ -398,6 +401,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
             Affaires
             <span className="text-muted-foreground ml-1.5">{customer.projects.length}</span>
           </TabsTrigger>
+          <TabsTrigger value="graphe" data-demo="tab-graphe">Graphe</TabsTrigger>
           <TabsTrigger value="echanges">
             Échanges
             <span className="text-muted-foreground ml-1.5">
@@ -428,6 +432,16 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
             interactions={customer.interactions}
             onChanged={reload}
           />
+        </TabsContent>
+
+        {/*
+          Tout ce qui gravite autour de la fiche sur un seul plan : le syndic et
+          ses autres immeubles, les interlocuteurs, les affaires, leurs pièces et
+          leurs paiements. Monté seulement quand l'onglet est ouvert — la toile et
+          le second cercle ne coûtent rien à qui ne les regarde pas.
+        */}
+        <TabsContent value="graphe" className="mt-4">
+          {vue === "graphe" && <CustomerGraph customer={customer} onChanged={reload} />}
         </TabsContent>
 
         <TabsContent value="echanges" className="mt-4">
@@ -480,4 +494,25 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
       )}
     </div>
   );
+}
+
+/**
+ * Ce que la fiche représente pour nous — le second axe, à côté du type.
+ *
+ * Déduite du type tant que personne ne tranche, et alors écrite en retrait :
+ * une supposition affichée comme un fait se relit comme un fait.
+ */
+function RelationBadge({ customer }: { customer: Parameters<typeof relationOf>[0] }) {
+  const relation = relationOf(customer);
+  if (relation.deduced) {
+    return (
+      <span
+        className="text-muted-foreground rounded-sm border border-dashed px-1.5 py-0.5 text-xs"
+        title="Déduite du type — à confirmer dans l'onglet Détails"
+      >
+        {CUSTOMER_RELATION[relation.value].label}
+      </span>
+    );
+  }
+  return <EnumBadge value={relation.value} entries={CUSTOMER_RELATION} />;
 }
