@@ -40,6 +40,41 @@ const FICHE_ETUDE = "/customers/7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "alias-liens-documents",
+    title: "Une fiche se retrouve sous tous ses noms",
+    date: "2026-09-24",
+    steps: [
+      {
+        path: "/customers",
+        target: '[data-demo="customer-table"]',
+        title: "« Menadier » retrouve « Meynadier »",
+        body:
+          "La fiche s'appelait « 47 Rue Menadier » et tous ses documents disent " +
+          "« Meynadier » : corriger l'une des deux orthographes faisait perdre l'autre. " +
+          "Les autres noms se retiennent, la recherche les prend, et elle dit par lequel " +
+          "la fiche remonte — un résultat sorti de nulle part est pire qu'aucun résultat.",
+      },
+      {
+        path: "/customers",
+        target: '[data-demo="customer-table"]',
+        title: "Le syndic sait ce qu'il gère",
+        body:
+          "Un même cabinet gère plusieurs immeubles, un même architecte suit plusieurs " +
+          "chantiers. Rien ne les reliait : le nom du syndic vivait dans les notes. " +
+          "Les deux sens se lisent — mon syndic, et les immeubles que je gère.",
+      },
+      {
+        path: "/customers",
+        target: '[data-demo="customer-table"]',
+        title: "Et fusionner ne perd plus rien",
+        body:
+          "Affaires, devis, interlocuteurs, échanges, courriels, liens, documents et " +
+          "journal des corrections suivent — et le nom de la fiche absorbée est retenu " +
+          "comme autre nom. Trois de ces tables étaient oubliées avant aujourd'hui.",
+      },
+    ],
+  },
+  {
     id: "facture-et-encaisse",
     title: "Une affaire dit enfin ce qu'elle a facturé et encaissé",
     date: "2026-09-24",
