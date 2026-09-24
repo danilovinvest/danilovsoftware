@@ -1,4 +1,5 @@
 import {
+  ClipboardCheckIcon,
   CopyIcon,
   BotIcon,
   CalendarIcon,
@@ -72,6 +73,15 @@ export const SETTINGS_NAVIGATION: SettingsSection[] = [
         label: "Messagerie",
         icon: MailIcon,
         permission: "mail:read",
+      },
+      {
+        href: "/settings/modele",
+        label: "Modèle de fiche",
+        icon: ClipboardCheckIcon,
+        // Même permission que les fiches pour *voir* le modèle ; le régler est
+        // sous `system:admin` côté API — il déplace la liste de travail de
+        // tout le monde, pas seulement la sienne.
+        permission: "customers:read",
       },
       {
         href: "/settings/doublons",
