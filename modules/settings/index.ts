@@ -13,6 +13,7 @@ export { THEME_BOOTSTRAP_SCRIPT } from "./lib/theme-bootstrap";
 export { ProfilePanel } from "./components/profile-panel";
 export { ExperiencePanel } from "./components/experience-panel";
 export { GeneralPanel } from "./components/general-panel";
+export { FicheModelPanel } from "./components/fiche-model-panel";
 export { MembersPanel } from "./components/members-panel";
 export { RolesPanel } from "./components/roles-panel";
 export { AssistantPanel } from "./components/assistant-panel";

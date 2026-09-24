@@ -40,6 +40,43 @@ const FICHE_ETUDE = "/customers/7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "modele-de-fiche",
+    title: "Ce qu'est une fiche complète, et qui se règle",
+    date: "2026-09-24",
+    steps: [
+      {
+        path: "/settings/modele",
+        target: '[data-demo="modele-de-fiche"]',
+        title: "Meynadier est l'étalon, et le CRM le sait",
+        body:
+          "Mesuré sur 388 fiches : 370 n'ont aucun interlocuteur, 346 aucune adresse " +
+          "de chantier, 344 aucun échange, et une seule porte un autre nom, un lien " +
+          "de syndic et un document. Le modèle dit ce qui manque, fiche par fiche, " +
+          "et sur toute la base.",
+      },
+      {
+        path: "/settings/modele",
+        target: '[data-demo="modele-de-fiche"]',
+        title: "Deux interrupteurs, et la frontière du réglable",
+        body:
+          "« S'applique » dit si le contrôle est évalué, « obligatoire » s'il rend la " +
+          "fiche incomplète. Les contrôles eux-mêmes restent du code : ils tournent " +
+          "en SQL sur toute la base d'un coup, et une condition libre écrite ici " +
+          "serait une porte d'injection autant qu'un piège d'entretien.",
+      },
+      {
+        path: "/settings/modele",
+        target: '[data-demo="modele-de-fiche"]',
+        title: "Un critère facultatif se compte sans faire crier",
+        body:
+          "« Des échanges semblent dater de leur saisie » attrape aussi un appel noté " +
+          "le jour même — en l'exigeant, 387 fiches sur 388 sortaient, et une liste " +
+          "de travail qui contient tout ne trie rien. Il reste actif et facultatif : " +
+          "pendant une reprise, on peut l'exiger d'un clic.",
+      },
+    ],
+  },
+  {
     id: "alias-liens-documents",
     title: "Une fiche se retrouve sous tous ses noms",
     date: "2026-09-24",
