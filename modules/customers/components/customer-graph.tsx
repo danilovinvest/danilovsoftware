@@ -77,11 +77,19 @@ export function CustomerGraph({ customer, onChanged }: { customer: CustomerDetai
   const byId = useMemo(() => new Map(graph.nodes.map((n) => [n.id, n])), [graph]);
 
   /*
-    Mémoïsés : un survol ne change que `focus`, et recréer chaque objet `data`
-    ferait redessiner toutes les cartes — le `memo` de GraphCard ne sert qu'à
-    condition que ses données gardent leur identité.
+    L'estompage ne passe pas par les données de la carte, et c'est ce qui rend
+    le `memo` de GraphCard utile.
+
+    Un survol ne change que `focus`, mais s'il entre dans `data`, tout le
+    tableau est reconstruit et chaque objet reçoit une nouvelle référence : la
+    comparaison superficielle du `memo` échoue partout, et **toutes** les cartes
+    visibles se redessinent à chaque déplacement de souris sur la toile — ce
+    que le commentaire d'origine croyait justement éviter. Relevé en relecture.
+    L'opacité est une affaire d'affichage : elle vit donc sur l'enveloppe du
+    nœud, que React Flow nous laisse habiller, et `data` ne dépend plus que du
+    nœud et de la sélection.
   */
-  const flowNodes: Node[] = useMemo(
+  const cartes: Node[] = useMemo(
     () =>
       visible.map((n) => ({
         id: n.id,
@@ -89,14 +97,18 @@ export function CustomerGraph({ customer, onChanged }: { customer: CustomerDetai
         position: { x: n.x - (n.root ? ROOT_WIDTH : CARD_WIDTH) / 2, y: n.y - 24 },
         draggable: false,
         connectable: false,
-        data: {
-          ...n,
-          selected: n.id === selectedId,
-          dimmed: focus !== null && !focus.has(n.id),
-          onSelect: setSelectedId,
-        },
+        data: { ...n, selected: n.id === selectedId, onSelect: setSelectedId },
       })),
-    [visible, selectedId, focus],
+    [visible, selectedId],
+  );
+  const flowNodes: Node[] = useMemo(
+    () =>
+      cartes.map((carte) =>
+        focus !== null && !focus.has(carte.id)
+          ? { ...carte, className: "opacity-20 transition-opacity" }
+          : { ...carte, className: "transition-opacity" },
+      ),
+    [cartes, focus],
   );
   const flowEdges: Edge[] = useMemo(() => edges.map((e) => {
     const from = byId.get(e.source);

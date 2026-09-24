@@ -43,10 +43,17 @@ export function GraphPanel({
   return (
     <aside
       className="bg-card flex flex-col gap-3 rounded-xl border p-4 lg:sticky lg:top-3"
-      aria-live="polite"
       data-demo="graph-panel"
     >
-      <div className="flex items-start gap-2.5">
+      {/*
+        L'annonce porte sur l'en-tête seul, et non sur le panneau.
+
+        Il contient deux champs de recherche dont chaque frappe change la liste
+        des résultats : sous `aria-live` global, un lecteur d'écran relisait
+        tout le panneau à chaque lettre tapée, alors que l'intention était
+        d'annoncer le changement de nœud sélectionné. Relevé en relecture.
+      */}
+      <div className="flex items-start gap-2.5" aria-live="polite">
         <span className={cn("mt-1.5 size-3 shrink-0 rounded-full", hue.solid)} aria-hidden />
         <div className="min-w-0">
           <h3 className="text-base leading-snug font-semibold">{node.label}</h3>
@@ -186,6 +193,7 @@ function ProjectReferrer({
 }) {
   const canWrite = usePermission("customers:write");
   const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
   if (!canWrite && !current) return null;
 
   async function change(id: string | null) {
@@ -194,11 +202,14 @@ function ProjectReferrer({
       setError("Une affaire n'est pas apportée par sa propre fiche.");
       return;
     }
+    setPending(true);
     try {
       await api.setProjectReferrer(projectId, id);
       onSaved();
     } catch (cause) {
       setError(errorMessage(cause));
+    } finally {
+      setPending(false);
     }
   }
 
@@ -210,6 +221,7 @@ function ProjectReferrer({
         valueName={current?.customer_name}
         onChange={(id) => void change(id)}
         placeholder="Chercher le syndic, l'architecte…"
+        disabled={!canWrite || pending}
       />
       {error && <p className="text-danger text-xs">{error}</p>}
     </div>

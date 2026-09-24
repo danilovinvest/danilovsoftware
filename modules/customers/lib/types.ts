@@ -1033,6 +1033,12 @@ export type LinkedCustomer = {
   id: string;
   name: string;
   kind: CustomerKind;
+  /**
+   * Ce qu'elle représente pour nous, quand quelqu'un l'a tranché sur sa propre
+   * fiche. La teinte d'un nœud est une adresse : la déduire du seul type
+   * peindrait en prescripteur un cabinet rangé en client final.
+   */
+  relation: CustomerRelation | null;
   status: CustomerStatus;
   city: string;
   is_client: boolean;
@@ -1059,6 +1065,7 @@ export type CustomerRelations = {
     customer_id: string;
     customer_name: string;
     customer_kind: CustomerKind;
+    customer_relation: CustomerRelation | null;
   }>;
 };
 

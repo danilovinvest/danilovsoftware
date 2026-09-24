@@ -44,7 +44,7 @@ export function ClassificationEditor({
   const [siret, setSiret] = useState(customer.siret);
   // Le syndic enregistré : la même entrée de cache que la vue graphe, lue
   // seulement quand l'appelant ne l'a pas donné.
-  const { data: relations } = useCached(
+  const { data: relations, error: lectureDuSyndic } = useCached(
     knownManager === undefined ? `customers:relations:${customer.id}` : null,
     () => api.getCustomerRelations(customer.id),
     LIVE,
@@ -57,6 +57,17 @@ export function ClassificationEditor({
           ? { id: relations.manager.id, name: relations.manager.display_name }
           : null
         : undefined;
+  /*
+    Le syndic peut rester illisible, et cela ne doit bloquer ni la relation ni
+    le SIRET.
+
+    `LIVE` ne réessaie pas sur erreur : une lecture en échec laissait `saved` à
+    `undefined` pour toujours, donc « Enregistrer » grisé sans un mot, alors
+    qu'on venait de corriger un SIRET qui n'a rien à voir avec le syndic.
+    Relevé en relecture. La requête omet alors la clé, et le serveur garde ce
+    qu'il a — c'est tout l'intérêt de lire la requête par-dessus l'état courant.
+  */
+  const syndicIllisible = knownManager === undefined && lectureDuSyndic !== undefined;
   /*
     Tant que le syndic enregistré n'est pas connu, la saisie n'est pas montée :
     partir de « aucun » puis basculer effacerait ce qu'on est en train de
@@ -72,7 +83,7 @@ export function ClassificationEditor({
   const dirty =
     relation !== (customer.relation ?? "") ||
     siret !== customer.siret ||
-    courant.id !== (saved?.id ?? null);
+    (saved !== undefined && courant.id !== saved?.id);
 
   async function save() {
     setPending(true);
@@ -81,7 +92,9 @@ export function ClassificationEditor({
       await api.setCustomerClassification(customer.id, {
         relation: relation === "" ? null : (relation as CustomerRelation),
         siret,
-        managed_by_customer_id: courant.id,
+        // Omise quand on ne sait pas ce qu'elle vaut : le serveur garde alors
+        // le syndic en place au lieu de le retirer.
+        ...(saved === undefined ? {} : { managed_by_customer_id: courant.id }),
       });
       onSaved();
     } catch (cause) {
@@ -115,14 +128,24 @@ export function ClassificationEditor({
         value={courant.id}
         valueName={courant.name}
         onChange={(id, name) => setManager({ id, name })}
-        placeholder={saved === undefined ? "Lecture du syndic…" : "Chercher le syndic…"}
-        hint="Le syndic d'une copropriété : ses interlocuteurs et ses autres immeubles apparaissent dans le graphe."
+        placeholder={
+          syndicIllisible
+            ? "Le syndic n'a pas pu être lu."
+            : saved === undefined
+              ? "Lecture du syndic…"
+              : "Chercher le syndic…"
+        }
+        hint={
+          syndicIllisible
+            ? "Le reste s'enregistre quand même, et le syndic déjà en place n'est pas touché."
+            : "Le syndic d'une copropriété : ses interlocuteurs et ses autres immeubles apparaissent dans le graphe."
+        }
         disabled={!canWrite || pending || saved === undefined}
       />
       {error && <p className="text-danger text-xs">{error}</p>}
       {canWrite && (
         <div className="flex justify-end">
-          <Button size="sm" onClick={() => void save()} disabled={!dirty || pending || saved === undefined}>
+          <Button size="sm" onClick={() => void save()} disabled={!dirty || pending}>
             {pending ? "Enregistrement…" : "Enregistrer"}
           </Button>
         </div>

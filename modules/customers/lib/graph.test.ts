@@ -199,13 +199,29 @@ const relations: CustomerRelations = {
     ],
   },
   siblings: [
-    { id: "magda", name: "SDC Villa Magda", kind: "copropriete", status: "prospect", city: "Cannes", is_client: false },
+    {
+      id: "magda",
+      name: "SDC Villa Magda",
+      kind: "copropriete",
+      relation: null,
+      status: "prospect",
+      city: "Cannes",
+      is_client: false,
+    },
   ],
   managed: [],
   referred: [],
   referred_projects: [],
   project_referrers: [
-    { project_id: "aff", customer_id: "cabinet", customer_name: "Cabinet Central Gestion", customer_kind: "syndic" },
+    {
+      project_id: "aff",
+      customer_id: "cabinet",
+      customer_name: "Cabinet Central Gestion",
+      customer_kind: "syndic",
+      // Tranché à la main sur sa propre fiche : le nœud doit prendre cette
+      // relation, pas celle que son type ferait deviner.
+      customer_relation: "partenaire_technique",
+    },
   ],
 };
 

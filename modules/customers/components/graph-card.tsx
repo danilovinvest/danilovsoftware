@@ -41,10 +41,16 @@ export const ROOT_WIDTH = 260;
 
 export type GraphCardData = GraphNode & {
   selected: boolean;
-  dimmed: boolean;
   /** Le clavier choisit une carte comme la souris : Entrée ou Espace. */
   onSelect: (id: string) => void;
 };
+
+/*
+  L'estompage au survol n'est pas ici : il vit sur l'enveloppe du nœud
+  (`customer-graph.tsx`). Le faire entrer dans `data` donnerait une nouvelle
+  référence à chaque carte dès qu'on bouge la souris, et le `memo` ci-dessous
+  ne servirait plus à rien.
+*/
 
 /**
  * Un nœud de la toile : un liseré à la teinte de sa famille, le nom, une ligne
@@ -73,7 +79,6 @@ export const GraphCard = memo(function GraphCard({ data }: NodeProps) {
         "bg-card focus-visible:ring-ring relative flex cursor-pointer overflow-hidden rounded-lg border shadow-xs transition-opacity outline-none focus-visible:ring-2",
         node.root && "border-2",
         node.selected && "ring-foreground/60 ring-2",
-        node.dimmed && "opacity-20",
       )}
       style={{ width: node.root ? ROOT_WIDTH : CARD_WIDTH }}
     >

@@ -160,11 +160,18 @@ function contactNode(id: string, contact: Contact, at: { x: number; y: number },
 
 function linkedNode(
   id: string,
-  linked: { id: string; name: string; kind: CustomerKind; status: string; city: string },
+  linked: {
+    id: string;
+    name: string;
+    kind: CustomerKind;
+    relation: CustomerRelation | null;
+    status: string;
+    city: string;
+  },
   at: { x: number; y: number },
   sub: string,
 ): GraphNode {
-  const customer = { kind: linked.kind, relation: null };
+  const customer = { kind: linked.kind, relation: linked.relation };
   return {
     id,
     layer: "relations",
@@ -366,7 +373,19 @@ function placeProjects(
         relations?.manager && referrer.customer_id === relations.manager.id ? "manager" : `fiche:${referrer.customer_id}`;
       if (!nodes.some((n) => n.id === source)) {
         nodes.push(
-          linkedNode(source, { id: referrer.customer_id, name: referrer.customer_name, kind: referrer.customer_kind, status: "", city: "" }, { x: COL.near, y: top - STEP }, "apporteur"),
+          linkedNode(
+            source,
+            {
+              id: referrer.customer_id,
+              name: referrer.customer_name,
+              kind: referrer.customer_kind,
+              relation: referrer.customer_relation,
+              status: "",
+              city: "",
+            },
+            { x: COL.near, y: top - STEP },
+            "apporteur",
+          ),
         );
       }
       edge(source, id, "apport", "apporté par");
