@@ -9,7 +9,15 @@ import { HUE } from "@/shared/ui/hue";
 import * as api from "../lib/api";
 import { buildGraph, type EdgeStyle, type GraphFamily, type GraphLayer } from "../lib/graph";
 import type { CustomerDetail } from "../lib/types";
-import { CARD_WIDTH, FAMILY_HUE, FAMILY_LABEL, GraphCard, ROOT_WIDTH } from "./graph-card";
+import {
+  CARD_WIDTH,
+  FAMILY_HUE,
+  FAMILY_LABEL,
+  GraphCard,
+  GraphViewContext,
+  ROOT_WIDTH,
+  type GraphView,
+} from "./graph-card";
 import { GraphPanel } from "./graph-panel";
 
 const NODE_TYPES = { card: GraphCard };
@@ -77,38 +85,42 @@ export function CustomerGraph({ customer, onChanged }: { customer: CustomerDetai
   const byId = useMemo(() => new Map(graph.nodes.map((n) => [n.id, n])), [graph]);
 
   /*
-    L'estompage ne passe pas par les données de la carte, et c'est ce qui rend
-    le `memo` de GraphCard utile.
+    Un nœud envoyé à React Flow est fabriqué **une fois par graphe**, et
+    masquer une couche ne fait que choisir parmi ces objets-là.
 
-    Un survol ne change que `focus`, mais s'il entre dans `data`, tout le
-    tableau est reconstruit et chaque objet reçoit une nouvelle référence : la
-    comparaison superficielle du `memo` échoue partout, et **toutes** les cartes
-    visibles se redessinent à chaque déplacement de souris sur la toile — ce
-    que le commentaire d'origine croyait justement éviter. Relevé en relecture.
-    L'opacité est une affaire d'affichage : elle vit donc sur l'enveloppe du
-    nœud, que React Flow nous laisse habiller, et `data` ne dépend plus que du
-    nœud et de la sélection.
+    C'est la condition pour que `adoptUserNodes` reconnaisse son nœud interne
+    (`userNode === internals.userNode`) et lui garde ses mesures et ses
+    poignées. Un objet neuf le fait repartir de zéro : sans `measured` sur le
+    nôtre, `parseHandles` rend `undefined`, les traits perdent leurs points
+    d'attache et la toile repasse « non initialisée ». Recopier les nœuds pour
+    y poser une classe au survol faisait donc trembler tout le graphe à chaque
+    passage de souris. Le survol et la sélection vivent maintenant dans
+    `GraphViewContext`, que la carte lit elle-même.
   */
-  const cartes: Node[] = useMemo(
+  const cartesParId = useMemo(
     () =>
-      visible.map((n) => ({
-        id: n.id,
-        type: "card",
-        position: { x: n.x - (n.root ? ROOT_WIDTH : CARD_WIDTH) / 2, y: n.y - 24 },
-        draggable: false,
-        connectable: false,
-        data: { ...n, selected: n.id === selectedId, onSelect: setSelectedId },
-      })),
-    [visible, selectedId],
+      new Map<string, Node>(
+        graph.nodes.map((n) => [
+          n.id,
+          {
+            id: n.id,
+            type: "card",
+            position: { x: n.x - (n.root ? ROOT_WIDTH : CARD_WIDTH) / 2, y: n.y - 24 },
+            draggable: false,
+            connectable: false,
+            data: n as unknown as Record<string, unknown>,
+          },
+        ]),
+      ),
+    [graph],
   );
   const flowNodes: Node[] = useMemo(
-    () =>
-      cartes.map((carte) =>
-        focus !== null && !focus.has(carte.id)
-          ? { ...carte, className: "opacity-20 transition-opacity" }
-          : { ...carte, className: "transition-opacity" },
-      ),
-    [cartes, focus],
+    () => visible.map((n) => cartesParId.get(n.id)!),
+    [visible, cartesParId],
+  );
+  const vue: GraphView = useMemo(
+    () => ({ selectedId, focus, onSelect: setSelectedId }),
+    [selectedId, focus],
   );
   const flowEdges: Edge[] = useMemo(() => edges.map((e) => {
     const from = byId.get(e.source);
@@ -170,29 +182,31 @@ export function CustomerGraph({ customer, onChanged }: { customer: CustomerDetai
             )}
           </div>
           <div className="h-[520px] sm:h-[640px]">
-            <ReactFlow
-              nodes={flowNodes}
-              edges={flowEdges}
-              nodeTypes={NODE_TYPES}
-              nodesDraggable={false}
-              nodesConnectable={false}
-              elementsSelectable={false}
-              // La carte est elle-même un bouton : le focus de xyflow ferait un
-              // second arrêt de tabulation qui ne sélectionne rien.
-              nodesFocusable={false}
-              edgesFocusable={false}
-              onNodeClick={(_, node) => setSelectedId(node.id)}
-              onNodeMouseEnter={(_, node) => setHoveredId(node.id)}
-              onNodeMouseLeave={() => setHoveredId(null)}
-              fitView
-              fitViewOptions={{ padding: 0.12 }}
-              minZoom={0.2}
-              maxZoom={1.6}
-              proOptions={{ hideAttribution: true }}
-            >
-              <Background gap={40} />
-              <Controls showInteractive={false} />
-            </ReactFlow>
+            <GraphViewContext.Provider value={vue}>
+              <ReactFlow
+                nodes={flowNodes}
+                edges={flowEdges}
+                nodeTypes={NODE_TYPES}
+                nodesDraggable={false}
+                nodesConnectable={false}
+                elementsSelectable={false}
+                // La carte est elle-même un bouton : le focus de xyflow ferait
+                // un second arrêt de tabulation qui ne sélectionne rien.
+                nodesFocusable={false}
+                edgesFocusable={false}
+                onNodeClick={(_, node) => setSelectedId(node.id)}
+                onNodeMouseEnter={(_, node) => setHoveredId(node.id)}
+                onNodeMouseLeave={() => setHoveredId(null)}
+                fitView
+                fitViewOptions={{ padding: 0.12 }}
+                minZoom={0.2}
+                maxZoom={1.6}
+                proOptions={{ hideAttribution: true }}
+              >
+                <Background gap={40} />
+                <Controls showInteractive={false} />
+              </ReactFlow>
+            </GraphViewContext.Provider>
           </div>
           <p className="text-muted-foreground pointer-events-none absolute bottom-2 left-3 text-[11px]">
             Molette pour zoomer · glisser pour se déplacer · cliquer un nœud pour sa fiche

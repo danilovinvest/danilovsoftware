@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { createContext, memo, useContext } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { cn } from "@/lib/utils";
 import { HUE } from "@/shared/ui/hue";
@@ -39,18 +39,36 @@ export const FAMILY_LABEL: Record<GraphFamily, string> = {
 export const CARD_WIDTH = 220;
 export const ROOT_WIDTH = 260;
 
-export type GraphCardData = GraphNode & {
-  selected: boolean;
+/**
+ * Ce que le survol et la sélection changent — et qui ne doit **jamais** entrer
+ * dans le nœud que React Flow reçoit.
+ *
+ * `adoptUserNodes` (@xyflow/system) réutilise son nœud interne, mesures et
+ * poignées comprises, tant que l'objet envoyé est **le même** :
+ * `userNode === internalNode.internals.userNode`. Sinon il le refabrique, et
+ * `parseHandles` rend alors `undefined` faute de `measured` sur le nôtre — les
+ * poignées sont perdues et la toile repasse « non initialisée ». Un survol qui
+ * recopie les nœuds pour y poser une classe faisait donc retomber **tous** les
+ * traits au centre des cartes le temps d'une trame, puis revenir : c'est le
+ * tremblement qu'on nous a signalé.
+ *
+ * L'état d'affichage passe donc par un contexte. Le `memo` ci-dessous ne le
+ * bloque pas — c'est voulu, seules les cartes se redessinent — mais les objets
+ * de nœuds, eux, ne bougent plus d'un survol à l'autre.
+ */
+export type GraphView = {
+  selectedId: string;
+  /** Les nœuds à garder nets. `null` : rien n'est survolé, tout est net. */
+  focus: Set<string> | null;
   /** Le clavier choisit une carte comme la souris : Entrée ou Espace. */
   onSelect: (id: string) => void;
 };
 
-/*
-  L'estompage au survol n'est pas ici : il vit sur l'enveloppe du nœud
-  (`customer-graph.tsx`). Le faire entrer dans `data` donnerait une nouvelle
-  référence à chaque carte dès qu'on bouge la souris, et le `memo` ci-dessous
-  ne servirait plus à rien.
-*/
+export const GraphViewContext = createContext<GraphView>({
+  selectedId: "root",
+  focus: null,
+  onSelect: () => {},
+});
 
 /**
  * Un nœud de la toile : un liseré à la teinte de sa famille, le nom, une ligne
@@ -60,7 +78,10 @@ export type GraphCardData = GraphNode & {
  * toile entière, avant d'ouvrir quoi que ce soit.
  */
 export const GraphCard = memo(function GraphCard({ data }: NodeProps) {
-  const node = data as unknown as GraphCardData;
+  const node = data as unknown as GraphNode;
+  const { selectedId, focus, onSelect } = useContext(GraphViewContext);
+  const selected = node.id === selectedId;
+  const estompee = focus !== null && !focus.has(node.id);
   const hue = HUE[FAMILY_HUE[node.family]];
   const missing = node.rows.some((row) => row.value === null);
   return (
@@ -68,17 +89,18 @@ export const GraphCard = memo(function GraphCard({ data }: NodeProps) {
       role="button"
       tabIndex={0}
       aria-label={`${node.label}, ${node.sub}`}
-      aria-pressed={node.selected}
+      aria-pressed={selected}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
-          node.onSelect(node.id);
+          onSelect(node.id);
         }
       }}
       className={cn(
         "bg-card focus-visible:ring-ring relative flex cursor-pointer overflow-hidden rounded-lg border shadow-xs transition-opacity outline-none focus-visible:ring-2",
         node.root && "border-2",
-        node.selected && "ring-foreground/60 ring-2",
+        selected && "ring-foreground/60 ring-2",
+        estompee && "opacity-20",
       )}
       style={{ width: node.root ? ROOT_WIDTH : CARD_WIDTH }}
     >
