@@ -38,6 +38,14 @@ export function ContactCoordinates({
     // L'employeur, quand il diffère de la fiche : sur une copropriété, la
     // personne qu'on appelle appartient au cabinet, pas à l'immeuble.
     contact.company_name && <span key="societe">{contact.company_name}</span>,
+    // Les autres numéros, comptés plutôt qu'alignés : une carte
+    // d'interlocuteur tient sur une ligne, et six numéros la feraient déborder.
+    contact.phones.length > 0 && (
+      <span key="autres-tel">{`+${contact.phones.length} n° au dossier`}</span>
+    ),
+    contact.emails.length > 0 && (
+      <span key="autres-mails">{`+${contact.emails.length} adresse${contact.emails.length > 1 ? "s" : ""}`}</span>
+    ),
     contact.phone && <PhoneLink key="phone" phone={contact.phone} />,
     contact.email && (
       <a
