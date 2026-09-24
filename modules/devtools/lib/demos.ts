@@ -40,6 +40,43 @@ const FICHE_ETUDE = "/customers/7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "enrichir-une-fiche",
+    title: "L'assistant peut enfin corriger une fiche",
+    date: "2026-09-24",
+    steps: [
+      {
+        path: "/customers",
+        target: '[data-demo="customer-table"]',
+        title: "Le connecteur savait créer, jamais corriger",
+        body:
+          "Il pouvait ouvrir une fiche et n'en changer aucun champ. Mesuré le 24/09 sur " +
+          "le premier enrichissement : le nom mal orthographié, le type « particulier » " +
+          "posé par défaut et la ville vide sont restés faux, et seuls six échanges ont " +
+          "pu être ajoutés — tous datés du jour de la saisie. Trois outils le réparent : " +
+          "modifier_fiche, ajouter_contact et modifier_contact.",
+      },
+      {
+        path: "/customers",
+        target: '[data-demo="customer-table"]',
+        title: "Une correction se relit",
+        body:
+          "Chaque champ corrigé laisse sa trace : qui, quand, la valeur d'avant et celle " +
+          "d'après, et d'où vient la correction — l'interface ou l'assistant. Sans elle, " +
+          "une valeur fausse écrite en masse serait indiscernable d'une saisie d'origine.",
+      },
+      {
+        path: "/customers",
+        target: '[data-demo="customer-table"]',
+        title: "Un échange à sa vraie date, et dans son sens",
+        body:
+          "« Visite » et « courrier » existent enfin — l'outil les annonçait depuis " +
+          "l'origine, la base les refusait, et une mise en demeure partait en « e-mail ». " +
+          "Un échange dit maintenant le jour où il a eu lieu, s'il était reçu ou envoyé, " +
+          "et la pièce dont il est tiré.",
+      },
+    ],
+  },
+  {
     id: "connecteur-oauth",
     title: "Le connecteur d'assistant passe en OAuth",
     date: "2026-09-23",
