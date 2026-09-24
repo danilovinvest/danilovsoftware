@@ -56,17 +56,18 @@ export const DEMOS: Demo[] = [
           "modifier_fiche, ajouter_contact et modifier_contact.",
       },
       {
-        path: "/customers",
-        target: '[data-demo="customer-table"]',
-        title: "Une correction se relit",
+        path: "/customers/cfd6c7df-8b0a-471b-951f-d2f4af6ad4a2",
+        target: '[data-demo="contacts-card"]',
+        title: "Une fiche porte autant d'interlocuteurs qu'il en faut",
         body:
-          "Chaque champ corrigé laisse sa trace : qui, quand, la valeur d'avant et celle " +
-          "d'après, et d'où vient la correction — l'interface ou l'assistant. Sans elle, " +
-          "une valeur fausse écrite en masse serait indiscernable d'une saisie d'origine.",
+          "La table existait, l'assistant ne pouvait pas y écrire : une copropriété gérée " +
+          "par un cabinet a quatre interlocuteurs, et ils finissaient dans les notes. " +
+          "Chacun porte désormais son employeur, qui n'est pas la fiche. Et chaque champ " +
+          "corrigé laisse sa trace : qui, quand, avant, après, et d'où vient la correction.",
       },
       {
-        path: "/customers",
-        target: '[data-demo="customer-table"]',
+        path: "/customers/cfd6c7df-8b0a-471b-951f-d2f4af6ad4a2",
+        target: '[data-demo="customer-glance"]',
         title: "Un échange à sa vraie date, et dans son sens",
         body:
           "« Visite » et « courrier » existent enfin — l'outil les annonçait depuis " +
