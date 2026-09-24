@@ -328,12 +328,16 @@ export const QuoteList = memo(function QuoteList({
 });
 
 /*
-  Une facture se reconnaît à sa référence, et `kind` ne peut pas servir : la
-  copie OneDrive pose `travaux` sur toutes les pièces qu'elle crée, factures
-  comprises. Le serveur tient la même règle en SQL — `est_facture`, migration 59.
+  La nature de la pièce vient du serveur, elle ne se devine plus ici.
+
+  Elle se lisait de la référence, et `kind` ne pouvait pas servir : la copie
+  OneDrive pose `travaux` sur toutes les pièces qu'elle crée, factures
+  comprises. Le serveur portait la même règle en SQL, donc deux copies d'une
+  même vérité qui auraient divergé au premier ajustement. Depuis la
+  migration 82, c'est une colonne, et elle voyage avec le devis.
 */
 function estFacture(quote: Quote): boolean {
-  return quote.reference.toUpperCase().startsWith("FA");
+  return quote.piece === "facture";
 }
 
 function amount(quote: Quote): number {

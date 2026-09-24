@@ -338,12 +338,29 @@ export type Project = {
   updated_at: string;
 };
 
+/**
+ * La nature d'une facture, qui commande la somme.
+ *
+ * Une facture d'acompte est un appel de fonds sur la facture qui suit, pas du
+ * chiffre d'affaires en plus : les additionner compterait deux fois le même
+ * marché. Nulle sur une facture ordinaire — elle n'a rien de particulier à
+ * annoncer — et nulle sur un devis.
+ */
+export type InvoiceKind = "acompte" | "situation" | "solde" | "avoir";
+
 export type Quote = {
   id: string;
   project_id: string;
   project_label: string;
   customer_id: string;
   reference: string;
+  /** Ce que la pièce est. Servi par le serveur, plus deviné d'une référence. */
+  piece: "devis" | "facture";
+  invoice_kind: InvoiceKind | null;
+  /** Le devis dont la facture est tirée, quand on le sait. */
+  source_quote_id: string | null;
+  /** L'échéance de règlement — c'est par elle que se cherchent les impayés. */
+  due_at: string | null;
   kind: QuoteKind;
   label: string;
   status: QuoteStatus;
@@ -831,6 +848,15 @@ export type QuotePayload = Omit<
   | "deposit_invoiced_at"
   | "deposit_paid_at"
   | "balance_paid_at"
+  // La nature d'une pièce n'est pas un champ de formulaire : le serveur la
+  // pose à la création, depuis la référence, pour les quatre chemins qui
+  // créent un devis. Et `PATCH /v1/quotes/{id}` remplace la ligne entière —
+  // envoyer ces champs depuis un écran qui ne les connaît pas les effacerait
+  // à chaque correction.
+  | "piece"
+  | "invoice_kind"
+  | "source_quote_id"
+  | "due_at"
   // La provenance d'un montant est un fait du serveur : la lecture des PDF la
   // pose, une correction humaine la reprend. Un formulaire ne l'envoie jamais.
   | "amount_source"
