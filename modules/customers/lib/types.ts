@@ -64,11 +64,23 @@ export type PaymentStatus = "non_applicable" | "en_attente" | "recu";
 export type InteractionKind =
   | "appel"
   | "email"
+  | "courrier"
   | "relance"
   | "rdv"
+  | "visite"
   | "rapport"
   | "devis"
-  | "note";
+  | "note"
+  | "autre";
+
+/**
+ * Le sens d'un échange : qui a parlé le premier.
+ *
+ * Nul sur les milliers d'échanges consignés avant qu'on sache le demander —
+ * « on ne sait pas » n'est pas « sortant », et leur en inventer un les
+ * peindrait tous du même côté.
+ */
+export type InteractionDirection = "entrant" | "sortant";
 
 /** Ligne du tableau : les agrégats sont calculés par l'API. */
 /**
@@ -228,6 +240,8 @@ export type Contact = {
   customer_id: string;
   full_name: string;
   role_label: string;
+  /** L'employeur de l'interlocuteur, quand il diffère de la fiche. */
+  company_name: string;
   email: string;
   phone: string;
   is_primary: boolean;
@@ -408,6 +422,10 @@ export type Interaction = {
   summary: string;
   details: string;
   author_name: string;
+  direction: InteractionDirection | null;
+  /** La pièce d'où l'échange est tiré : un fil Gmail, un fichier, un rendez-vous. */
+  source_link: string;
+  contact_id: string | null;
   created_at: string;
   updated_at: string;
 };

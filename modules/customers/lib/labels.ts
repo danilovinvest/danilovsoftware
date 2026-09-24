@@ -2,6 +2,7 @@ import type {
   CustomerKind,
   CustomerSource,
   CustomerStatus,
+  InteractionDirection,
   InteractionKind,
   InterventionScope,
   PaymentStatus,
@@ -146,11 +147,22 @@ export const PAYMENT_STATUS: Entry<PaymentStatus> = {
 export const INTERACTION_KIND: Entry<InteractionKind> = {
   appel: { label: "Appel", tone: "neutral" },
   email: { label: "E-mail", tone: "neutral" },
+  // Une mise en demeure part en recommandé : la ranger en « e-mail » efface
+  // ce qui lui donne sa valeur juridique.
+  courrier: { label: "Courrier", tone: "warning" },
   relance: { label: "Relance", tone: "warning" },
   rdv: { label: "Rendez-vous", tone: "info" },
+  visite: { label: "Visite", tone: "info" },
   rapport: { label: "Rapport", tone: "success" },
   devis: { label: "Devis", tone: "info" },
   note: { label: "Note", tone: "neutral" },
+  autre: { label: "Autre", tone: "neutral" },
+};
+
+/** Le sens d'un échange, tel que la fiche l'affiche. */
+export const INTERACTION_DIRECTION: Record<InteractionDirection, string> = {
+  entrant: "Reçu",
+  sortant: "Envoyé",
 };
 
 export const SORT_OPTIONS = [

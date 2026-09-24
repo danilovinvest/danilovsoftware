@@ -21,6 +21,7 @@ import type { Contact, ContactPayload } from "../lib/types";
 const EMPTY: ContactPayload = {
   full_name: "",
   role_label: "",
+  company_name: "",
   email: "",
   phone: "",
   is_primary: false,
@@ -31,6 +32,7 @@ function toPayload(contact: Contact): ContactPayload {
   return {
     full_name: contact.full_name,
     role_label: contact.role_label,
+    company_name: contact.company_name,
     email: contact.email,
     phone: contact.phone,
     is_primary: contact.is_primary,
@@ -113,6 +115,17 @@ export function ContactDialog({
             placeholder="Architecte, propriétaire…"
             value={values.role_label}
             onChange={(event) => setValues({ ...values, role_label: event.target.value })}
+          />
+          {/*
+            L'employeur, qui n'est pas la fiche : une copropriété est gérée par
+            un cabinet, et la gestionnaire qu'on appelle appartient au cabinet.
+            Sans ce champ, son employeur se perdait dans les notes.
+          */}
+          <TextField
+            label="Société"
+            placeholder="Cabinet, agence, entreprise…"
+            value={values.company_name}
+            onChange={(event) => setValues({ ...values, company_name: event.target.value })}
           />
           <TextField
             label="E-mail"

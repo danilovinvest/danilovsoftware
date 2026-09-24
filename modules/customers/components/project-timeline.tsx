@@ -1,8 +1,11 @@
 "use client";
 
 import {
+  CircleDashedIcon,
   FileTextIcon,
+  HardHatIcon,
   MailIcon,
+  MailboxIcon,
   MapPinIcon,
   PhoneIcon,
   PhoneOutgoingIcon,
@@ -31,11 +34,14 @@ import type { Interaction, InteractionKind } from "../lib/types";
 const ICONS: Record<InteractionKind, LucideIcon> = {
   appel: PhoneIcon,
   email: MailIcon,
+  courrier: MailboxIcon,
   relance: PhoneOutgoingIcon,
   rdv: MapPinIcon,
+  visite: HardHatIcon,
   rapport: ScrollTextIcon,
   devis: FileTextIcon,
   note: StickyNoteIcon,
+  autre: CircleDashedIcon,
 };
 
 export function ProjectTimeline({
