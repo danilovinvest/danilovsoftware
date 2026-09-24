@@ -13,6 +13,7 @@ import type {
   StepProof,
 } from "../lib/types";
 import { depositTotalOf, type SettlementTransfers } from "./deposit-field";
+import { InvoiceTotals } from "./invoice-totals";
 import { JoinedQuoteDocs } from "./joined-quote-docs";
 import { ProjectJalons } from "./project-jalons";
 import { ProjectTimeline } from "./project-timeline";
@@ -131,6 +132,8 @@ export function ProjectTabs({
 
       <TabsContent value="devis" className="pt-4">
         <div className="flex flex-col gap-3">
+          {/* En tête des devis : c'est l'argent qui est entré, ou qui doit entrer. */}
+          <InvoiceTotals project={project} />
           <QuoteList
             quotes={quotes}
             payments={customer.payments}

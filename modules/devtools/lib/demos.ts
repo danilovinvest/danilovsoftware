@@ -40,6 +40,46 @@ const FICHE_ETUDE = "/customers/7419530d-fbb2-4937-aaf5-2403b315f71b";
 
 export const DEMOS: Demo[] = [
   {
+    id: "facture-et-encaisse",
+    title: "Une affaire dit enfin ce qu'elle a facturé et encaissé",
+    date: "2026-09-24",
+    steps: [
+      {
+        path: "/customers/de2ea332-b3dd-491a-8ea4-b423612731aa",
+        click: '[data-demo="tab-devis"]',
+        target: '[data-demo="invoice-totals"]',
+        title: "Trois chiffres qu'aucune requête ne savait rendre",
+        body:
+          "Cette affaire porte deux factures et affichait « 0 TTC ». Elle dit désormais " +
+          "facturé, encaissé et reste à payer. Le facturé écarte les factures d'acompte : " +
+          "FA2025-0416 (2 860 €) est un appel de fonds sur FA2025-0421 (5 720 €), et les " +
+          "additionner compterait deux fois le même marché — 8 580 € au lieu de 5 720 €.",
+      },
+      {
+        path: "/customers/de2ea332-b3dd-491a-8ea4-b423612731aa",
+        click: '[data-demo="tab-devis"]',
+        target: '[data-demo="invoice-totals"]',
+        title: "Et il dit ce qu'il ne sait pas",
+        body:
+          "Mesuré le 24/09 : 154 acomptes sont marqués encaissés, cinq portent un montant. " +
+          "Annoncer un reste à payer égal à la totalité du marché sur les autres ferait " +
+          "douter de tout l'écran. Le bloc compte donc les règlements dont le montant " +
+          "manque et se tait sur le reste, plutôt que d'afficher un chiffre faux.",
+      },
+      {
+        path: "/customers/de2ea332-b3dd-491a-8ea4-b423612731aa",
+        click: '[data-demo="tab-devis"]',
+        target: '[data-demo="invoice-totals"]',
+        title: "Une pièce sait ce qu'elle est",
+        body:
+          "« Est-ce une facture ? » se devinait d'une expression régulière sur la référence, " +
+          "à huit endroits. C'est désormais une colonne, posée à la naissance de la pièce " +
+          "pour les quatre chemins qui en créent — le formulaire, la copie OneDrive, " +
+          "l'import Excel et l'assistant. Le front a cessé de tenir sa propre copie de la règle.",
+      },
+    ],
+  },
+  {
     id: "enrichir-une-fiche",
     title: "L'assistant peut enfin corriger une fiche",
     date: "2026-09-24",

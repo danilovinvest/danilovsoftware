@@ -762,6 +762,12 @@ export type ProjectPayload = Omit<
   | "updated_at"
   | "quote_count"
   | "total_amount_ttc"
+  // Trois chiffres calculés par le serveur à chaque lecture, jamais stockés et
+  // jamais envoyés : les poser dans un formulaire en ferait une copie qui
+  // divergerait du jour où une facture entre.
+  | "invoiced_amount_ttc"
+  | "collected_amount_ttc"
+  | "settlements_without_amount"
   | "last_reminder_at"
   | "source_status"
   // Posé par la base à la création, jamais modifiable.
