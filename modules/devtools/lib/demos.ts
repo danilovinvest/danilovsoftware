@@ -38,7 +38,51 @@ export type Demo = {
 */
 const FICHE_ETUDE = "/customers/7419530d-fbb2-4937-aaf5-2403b315f71b";
 
+/*
+  La fiche SDC Meynadier-Faure, qui a servi de modèle à la vue graphe : une
+  copropriété gérée par un cabinet, une affaire, un devis, deux factures, trois
+  virements.
+*/
+const FICHE_COPRO = "/customers/de2ea332-b3dd-491a-8ea4-b423612731aa";
+
 export const DEMOS: Demo[] = [
+  {
+    id: "fiche-en-graphe",
+    title: "La fiche client en graphe",
+    date: "2026-09-24",
+    steps: [
+      {
+        path: FICHE_COPRO,
+        click: '[data-demo="tab-graphe"]',
+        target: '[data-demo="customer-graph"]',
+        title: "Tout ce qui gravite autour de la fiche, sur un seul plan",
+        body:
+          "Le syndic et ses autres immeubles à gauche, les affaires au centre, leurs devis, " +
+          "factures et virements à droite, l'activité en bas. Les trois boutons du haut " +
+          "masquent une couche. Survoler un nœud éclaire ses voisins, le cliquer ouvre sa fiche " +
+          "à droite. Un point orange signale un champ à renseigner.",
+      },
+      {
+        path: FICHE_COPRO,
+        click: '[data-demo="tab-graphe"]',
+        target: '[data-demo="graph-panel"]',
+        title: "Le panneau dit ce qui manque, et le complète sur place",
+        body:
+          "Sur la fiche centrale : la relation, le SIRET et le syndic qui la gère. Sur une " +
+          "affaire : qui l'a apportée — souvent le syndic, dessiné alors en tirets bleus.",
+      },
+      {
+        path: `${FICHE_COPRO}?vue=details`,
+        target: '[data-demo="fiche-classification"]',
+        title: "Trois axes au lieu d'un",
+        body:
+          "Le type dit qui c'est (six nouveaux : copropriété, ingénieur, maître d'œuvre, " +
+          "notaire, fournisseur, sous-traitant). La relation dit ce qu'il représente pour " +
+          "nous — déduite du type tant que personne ne tranche, et l'en-tête l'écrit alors " +
+          "en pointillés. Le statut reste le même.",
+      },
+    ],
+  },
   {
     id: "modele-de-fiche",
     title: "Ce qu'est une fiche complète, et qui se règle",

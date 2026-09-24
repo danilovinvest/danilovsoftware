@@ -9,6 +9,8 @@ import { CUSTOMER_SOURCE } from "../lib/labels";
 import { ContactsCard } from "./contacts-card";
 import { EnumBadge } from "./enum-badge";
 import { ReferrerPicker } from "./referrer-picker";
+import { ClassificationEditor } from "./classification-card";
+import { formatSiret } from "../lib/classification";
 import type { CustomerDetail } from "../lib/types";
 
 /** Onglet « Détails » : ce qu'on consulte de temps en temps, pas tous les jours. */
@@ -40,6 +42,25 @@ export function DetailsPanel({
           <Row label="Demande reçue le">{formatDate(customer.requested_at)}</Row>
           <Row label="Responsable">{customer.owner_name || "Non assigné"}</Row>
           <Row label="Raison sociale">{customer.company_name || "—"}</Row>
+          <Row label="SIRET">{customer.siret ? formatSiret(customer.siret) : "—"}</Row>
+        </CardContent>
+      </Card>
+
+      {/*
+        Les deux autres axes de la fiche et son syndic — ce que la vue graphe
+        lit. La clé remonte l'éditeur quand la fiche relue diffère, pour qu'il
+        reparte des valeurs enregistrées plutôt que de sa saisie d'avant.
+      */}
+      <Card className="gap-0 py-0">
+        <CardHeader className="border-b py-4">
+          <CardTitle className="text-sm">Classement</CardTitle>
+        </CardHeader>
+        <CardContent className="py-4 text-sm">
+          <ClassificationEditor
+            key={`${customer.relation}:${customer.siret}`}
+            customer={customer}
+            onSaved={onChanged}
+          />
         </CardContent>
       </Card>
 

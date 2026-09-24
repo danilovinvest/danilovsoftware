@@ -55,6 +55,7 @@ export function CustomerPicker({
   placeholder = "Chercher un client ou un prospect…",
   className,
   allowCreate = false,
+  disabled = false,
 }: {
   /** Absent dans une barre de filtres, où le champ se lit seul. */
   label?: string;
@@ -73,6 +74,8 @@ export function CustomerPicker({
    * ce qui existe, et « Créer » y serait une fausse manœuvre à portée de clic.
    */
   allowCreate?: boolean;
+  /** Le temps que l'écran appelant sache quoi afficher, ou pendant un envoi. */
+  disabled?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -162,7 +165,7 @@ export function CustomerPicker({
           */}
           <button
             type="button"
-            disabled={creation}
+            disabled={creation || disabled}
             aria-label={nouvelle ? "Supprimer la fiche créée" : "Retirer la fiche"}
             title={
               nouvelle
@@ -294,6 +297,7 @@ export function CustomerPicker({
           value={query}
           placeholder={placeholder}
           className="pl-8"
+          disabled={disabled}
           onChange={(event) => {
             setQuery(event.target.value);
             setOpen(true);

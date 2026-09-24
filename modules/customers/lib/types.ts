@@ -5,12 +5,34 @@ export type CustomerSource =
   | "email"
   | "recommandation"
   | "autre";
+/**
+ * Qui c'est. Six valeurs sont venues avec la vue graphe (migration 82) : une
+ * copropriété n'est ni une société ni un syndic, et un ingénieur qui prescrit
+ * n'est pas un architecte.
+ */
 export type CustomerKind =
   | "particulier"
   | "societe"
+  | "copropriete"
   | "syndic"
   | "architecte"
+  | "ingenieur"
+  | "maitre_oeuvre"
+  | "notaire"
+  | "fournisseur"
+  | "sous_traitant"
   | "autre";
+
+/**
+ * Ce qu'il représente pour nous — le second axe, distinct du type : un syndic
+ * est un type, et le plus souvent un prescripteur.
+ */
+export type CustomerRelation =
+  | "client_final"
+  | "prescripteur"
+  | "partenaire_technique"
+  | "fournisseur"
+  | "sous_traitant";
 /** Étape du pipeline, ordonnée : une affaire n'en occupe qu'une à la fois. */
 /**
  * Les types d'intervention, dans l'ordre où le dirigeant les a dictés.
@@ -52,7 +74,13 @@ export type ProjectOutcome =
   | "transfere"
   | "stand_by"
   | "bloque_tiers";
-export type QuoteKind = "etude" | "sondages" | "travaux" | "attestation" | "autre";
+export type QuoteKind =
+  | "etude"
+  | "sondages"
+  | "travaux"
+  | "attestation"
+  | "maitre_oeuvre"
+  | "autre";
 export type QuoteStatus =
   | "a_faire"
   | "envoye"
@@ -233,6 +261,14 @@ export type Customer = {
   created_at: string;
   updated_at: string;
   review: Review;
+  /**
+   * Nulle tant que personne ne tranche : « on ne sait pas » n'est pas
+   * « client final ». L'écran la déduit du type en attendant (`relationOf`).
+   * Ces trois champs ne s'écrivent que par `setCustomerClassification`.
+   */
+  relation: CustomerRelation | null;
+  /** Quatorze chiffres, ou vide quand on ne le connaît pas. */
+  siret: string;
 };
 
 export type Contact = {
@@ -990,4 +1026,56 @@ export type DuplicatePair = {
   right: DuplicateSide;
   /** Similarité des deux intitulés, entre 0 et 1. */
   score: number;
+};
+
+/** Une fiche voisine, telle que la vue graphe la dessine. */
+export type LinkedCustomer = {
+  id: string;
+  name: string;
+  kind: CustomerKind;
+  /**
+   * Ce qu'elle représente pour nous, quand quelqu'un l'a tranché sur sa propre
+   * fiche. La teinte d'un nœud est une adresse : la déduire du seul type
+   * peindrait en prescripteur un cabinet rangé en client final.
+   */
+  relation: CustomerRelation | null;
+  status: CustomerStatus;
+  city: string;
+  is_client: boolean;
+};
+
+/**
+ * Le second cercle d'une fiche, servi à l'ouverture de la vue graphe : son
+ * syndic et ses interlocuteurs, ses autres immeubles, ce qu'elle a apporté.
+ */
+export type CustomerRelations = {
+  manager: (Customer & { contacts: Contact[] }) | null;
+  siblings: LinkedCustomer[];
+  managed: LinkedCustomer[];
+  referred: LinkedCustomer[];
+  referred_projects: Array<{
+    id: string;
+    label: string;
+    stage: ProjectStage;
+    customer_id: string;
+    customer_name: string;
+  }>;
+  project_referrers: Array<{
+    project_id: string;
+    customer_id: string;
+    customer_name: string;
+    customer_kind: CustomerKind;
+    customer_relation: CustomerRelation | null;
+  }>;
+};
+
+export type ClassificationPayload = {
+  relation?: CustomerRelation | null;
+  siret?: string;
+  /**
+   * Le syndic. Il n'a pas de colonne sur la fiche : il vit dans les liens
+   * entre fiches (rôle `syndic`), et se relit par `getCustomerRelations`.
+   * Omis, il garde sa valeur ; `null` le retire.
+   */
+  managed_by_customer_id?: string | null;
 };

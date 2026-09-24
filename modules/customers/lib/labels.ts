@@ -1,5 +1,6 @@
 import type {
   CustomerKind,
+  CustomerRelation,
   CustomerSource,
   CustomerStatus,
   InteractionDirection,
@@ -77,9 +78,24 @@ export const PROJECT_MISSION: Entry<ProjectMission> = {
 export const CUSTOMER_KIND: Entry<CustomerKind> = {
   particulier: { label: "Particulier", tone: "neutral" },
   societe: { label: "Société", tone: "neutral" },
+  copropriete: { label: "Copropriété", tone: "neutral" },
   syndic: { label: "Syndic", tone: "neutral" },
   architecte: { label: "Architecte", tone: "neutral" },
+  ingenieur: { label: "Ingénieur / BET", tone: "neutral" },
+  maitre_oeuvre: { label: "Maître d'œuvre", tone: "neutral" },
+  notaire: { label: "Notaire / avocat", tone: "neutral" },
+  fournisseur: { label: "Fournisseur", tone: "neutral" },
+  sous_traitant: { label: "Sous-traitant", tone: "neutral" },
   autre: { label: "Autre", tone: "neutral" },
+};
+
+/** Ce qu'une fiche représente pour nous. Nulle en base tant que personne ne tranche. */
+export const CUSTOMER_RELATION: Entry<CustomerRelation> = {
+  client_final: { label: "Client final", tone: "success" },
+  prescripteur: { label: "Prescripteur", tone: "info" },
+  partenaire_technique: { label: "Partenaire technique", tone: "warning" },
+  fournisseur: { label: "Fournisseur", tone: "neutral" },
+  sous_traitant: { label: "Sous-traitant", tone: "neutral" },
 };
 
 /**
@@ -126,6 +142,7 @@ export const QUOTE_KIND: Entry<QuoteKind> = {
   sondages: { label: "Sondages", tone: "neutral" },
   travaux: { label: "Travaux", tone: "neutral" },
   attestation: { label: "Attestation", tone: "neutral" },
+  maitre_oeuvre: { label: "Maîtrise d'œuvre", tone: "neutral" },
   autre: { label: "Autre", tone: "neutral" },
 };
 

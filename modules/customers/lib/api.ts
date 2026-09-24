@@ -1,6 +1,8 @@
 import { apiFetch, type Paginated } from "@/shared/api/client";
 import type {
+  ClassificationPayload,
   Contact,
+  CustomerRelations,
   ContactPayload,
   Customer,
   CustomerDetail,
@@ -356,6 +358,28 @@ export function setCustomerReferrer(
       customer_id: referrer?.kind === "fiche" ? referrer.id : null,
       contact_id: referrer?.kind === "interlocuteur" ? referrer.id : null,
     },
+  });
+}
+
+/**
+ * La relation, le SIRET et le syndic d'une fiche. Leur propre route : le
+ * formulaire de la fiche remplace la ligne entière et les effacerait. Un champ
+ * omis garde sa valeur, `null` retire, `""` vide le SIRET.
+ */
+export function setCustomerClassification(id: string, body: ClassificationPayload) {
+  return apiFetch<Customer>(`/v1/customers/${id}/classification`, { method: "PUT", body });
+}
+
+/** Le second cercle de la fiche, pour la vue graphe. */
+export function getCustomerRelations(id: string, signal?: AbortSignal) {
+  return apiFetch<CustomerRelations>(`/v1/customers/${id}/relations`, { signal });
+}
+
+/** Qui a apporté l'affaire — nul le retire. */
+export function setProjectReferrer(projectId: string, customerId: string | null) {
+  return apiFetch<void>(`/v1/projects/${projectId}/referrer`, {
+    method: "PUT",
+    body: { customer_id: customerId },
   });
 }
 
