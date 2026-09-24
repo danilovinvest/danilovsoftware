@@ -22,6 +22,10 @@ const EMPTY: ContactPayload = {
   full_name: "",
   role_label: "",
   company_name: "",
+  // L'écran ne saisit pas encore les numéros secondaires : il les renvoie
+  // tels quels pour ne pas les effacer, comme il le fait déjà pour la société.
+  emails: [],
+  phones: [],
   email: "",
   phone: "",
   is_primary: false,
@@ -33,6 +37,8 @@ function toPayload(contact: Contact): ContactPayload {
     full_name: contact.full_name,
     role_label: contact.role_label,
     company_name: contact.company_name,
+    emails: contact.emails,
+    phones: contact.phones,
     email: contact.email,
     phone: contact.phone,
     is_primary: contact.is_primary,

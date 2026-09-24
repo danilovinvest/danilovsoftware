@@ -242,8 +242,16 @@ export type Contact = {
   role_label: string;
   /** L'employeur de l'interlocuteur, quand il diffère de la fiche. */
   company_name: string;
+  /**
+   * L'adresse et le numéro **principaux** : ceux auxquels on écrit et on
+   * appelle d'abord, et c'est l'adresse que la messagerie compare en premier
+   * pour rattacher un courriel à la fiche.
+   */
   email: string;
   phone: string;
+  /** Les autres, quand la personne en a plusieurs. */
+  emails: string[];
+  phones: string[];
   is_primary: boolean;
   notes: string;
   created_at: string;
