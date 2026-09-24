@@ -333,6 +333,22 @@ export type Project = {
   internal_deadline_at: string | null;
   quote_count: number;
   total_amount_ttc: string;
+  /**
+   * Ce que l'affaire a facturé, encaissé, et ce qu'elle ignore.
+   *
+   * Le facturé écarte les factures d'acompte : un acompte est un appel de
+   * fonds sur la facture qui suit, et les additionner compterait deux fois le
+   * même marché. L'encaissé lit les virements, et retombe sur le montant porté
+   * par la pièce quand aucun n'est saisi.
+   *
+   * `settlements_without_amount` est ce qui empêche l'écran de mentir :
+   * mesuré le 24/09, 154 acomptes sont marqués reçus et **5** portent un
+   * montant. Sans lui, cent une affaires afficheraient un reste à payer égal à
+   * la totalité du marché alors que l'argent est encaissé.
+   */
+  invoiced_amount_ttc: string;
+  collected_amount_ttc: string;
+  settlements_without_amount: number;
   last_reminder_at: string | null;
   created_at: string;
   updated_at: string;
@@ -746,6 +762,12 @@ export type ProjectPayload = Omit<
   | "updated_at"
   | "quote_count"
   | "total_amount_ttc"
+  // Trois chiffres calculés par le serveur à chaque lecture, jamais stockés et
+  // jamais envoyés : les poser dans un formulaire en ferait une copie qui
+  // divergerait du jour où une facture entre.
+  | "invoiced_amount_ttc"
+  | "collected_amount_ttc"
+  | "settlements_without_amount"
   | "last_reminder_at"
   | "source_status"
   // Posé par la base à la création, jamais modifiable.
