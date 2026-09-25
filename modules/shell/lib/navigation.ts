@@ -200,6 +200,25 @@ export const NAV_SECTIONS: NavSection[] = [
         permission: "customers:read",
       },
       {
+        /*
+          Les ouvriers partagent l'ambre des Chantiers, et c'est délibéré.
+
+          Les dix teintes d'adresse sont prises, et en inventer une onzième
+          pour un écran voisin brouillerait celles qui servent déjà. L'ambre
+          est la couleur du terrain : les chantiers et les gens qui y vont se
+          lisent ensemble, et c'est la seule paire du CRM où le partage dit
+          quelque chose plutôt que de créer une confusion.
+        */
+        href: "/ouvriers",
+        label: "Ouvriers",
+        icon: HardHatIcon,
+        hue: "amber",
+        // L'équipe de chantier appartient à OMPT GROUPE : un bureau d'études
+        // n'envoie personne poser des étais.
+        scopes: ["ompt-groupe"],
+        permission: "workers:read",
+      },
+      {
         href: "/mail",
         label: "Messagerie",
         icon: MailIcon,

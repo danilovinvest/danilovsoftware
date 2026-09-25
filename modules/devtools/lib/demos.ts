@@ -47,6 +47,43 @@ const FICHE_COPRO = "/customers/de2ea332-b3dd-491a-8ea4-b423612731aa";
 
 export const DEMOS: Demo[] = [
   {
+    id: "ouvriers-pointage",
+    title: "Les ouvriers et leur pointage",
+    date: "2026-09-25",
+    steps: [
+      {
+        path: "/ouvriers",
+        target: '[data-demo="ouvriers-grille"]',
+        title: "La grille du mois, et les totaux que le classeur ne calculait pas",
+        body:
+          "Le suivi vivait dans « Calendrier ouvriers.xlsx ». Ses trois colonnes de droite — " +
+          "jours travaillés, salaire, fiche de paie — étaient vides sur les trente lignes : " +
+          "le comptage se faisait à la main, hors du fichier. Les deux colonnes de droite " +
+          "sont maintenant comptées par le serveur. Une case se clique et tourne : " +
+          "présent, absent, chômé, formation, vide.",
+      },
+      {
+        path: "/ouvriers",
+        target: '[data-demo="ouvriers-equipe"]',
+        title: "L'équipe s'ajoute et se retire ici",
+        body:
+          "Les dix noms du classeur sont déjà là. Quelqu'un qui part est **archivé** et non " +
+          "supprimé : son pointage passé reste vrai, et l'effacer trouerait les mois déjà " +
+          "comptés. Seule une fiche jamais pointée s'efface pour de bon.",
+      },
+      {
+        path: "/ouvriers",
+        target: '[data-demo="ouvriers-portail"]',
+        title: "L'écran de chantier, et son mot de passe",
+        body:
+          "L'équipe pointe depuis ouvrier.testbeforeproduction.xyz, avec un seul mot de passe " +
+          "partagé : dix ouvriers sur une tablette au dépôt, c'est un secret à tenir et non " +
+          "dix. Le changer ferme immédiatement les tablettes déjà déverrouillées — " +
+          "ce qu'on veut d'un appareil perdu.",
+      },
+    ],
+  },
+  {
     id: "fiche-en-graphe",
     title: "La fiche client en graphe",
     date: "2026-09-24",
