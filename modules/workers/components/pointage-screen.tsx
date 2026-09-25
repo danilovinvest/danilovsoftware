@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState, useSyncExternalStore } from "react";
-import { CheckIcon, XIcon } from "lucide-react";
+import { CheckIcon, PieChartIcon, XIcon } from "lucide-react";
 import { ApiError } from "@/shared/api/errors";
 import { LIVE, useCached } from "@/shared/api/cache";
 import * as api from "../lib/pointage";
@@ -28,10 +28,13 @@ import * as api from "../lib/pointage";
  * ne suit ni la palette ni le mode sombre. C'est l'exception assumée à la règle
  * des jetons de couleur, bornée à ce seul fichier.
  *
- * **Deux boutons, et rien d'autre.** Pas de mois, pas d'historique, pas de
- * total : l'écran répond à une seule question. Ce qui est pointé reste
- * modifiable jusqu'à la fin de la journée — on se trompe de ligne, et un écran
- * qui refuserait de revenir en arrière obligerait à appeler le bureau.
+ * **Trois boutons, et rien d'autre.** Là, pas là, ou une demi-journée — la
+ * troisième a été demandée parce qu'une matinée travaillée n'est ni l'un ni
+ * l'autre, et que la compter d'un côté fausse la paie. Pas de mois, pas
+ * d'historique, pas de total : l'écran répond à une seule question. Ce qui est
+ * pointé reste modifiable jusqu'à la fin de la journée — on se trompe de
+ * ligne, et un écran qui refuserait de revenir en arrière obligerait à appeler
+ * le bureau.
  */
 export function PointageScreen() {
   const [secret, setSecret] = useState("");
@@ -65,7 +68,7 @@ export function PointageScreen() {
     }
   }
 
-  async function pointer(id: string, statut: "present" | "absent") {
+  async function pointer(id: string, statut: "present" | "absent" | "demi") {
     const actuel = etat?.attendance.find((a) => a.worker_id === id)?.status;
     setOccupe(id);
     setRefus("");
@@ -191,7 +194,7 @@ export function PointageScreen() {
               <span className="min-w-0 flex-1 truncate text-base font-medium sm:text-lg">
                 {w.full_name}
               </span>
-              <div className="flex shrink-0 gap-2">
+              <div className="flex shrink-0 gap-1.5 sm:gap-2">
                 <button
                   type="button"
                   disabled={occupe === w.id}
@@ -204,7 +207,21 @@ export function PointageScreen() {
                       : "border-neutral-200 text-green-600"
                   }`}
                 >
-                  <CheckIcon className="size-7 sm:size-8" strokeWidth={3} />
+                  <CheckIcon className="size-6 sm:size-8" strokeWidth={3} />
+                </button>
+                <button
+                  type="button"
+                  disabled={occupe === w.id}
+                  onClick={() => void pointer(w.id, "demi")}
+                  aria-pressed={statut === "demi"}
+                  aria-label={`${w.full_name} : une demi-journée`}
+                  className={`${CIBLE} ${
+                    statut === "demi"
+                      ? "border-amber-500 bg-amber-500 text-white"
+                      : "border-neutral-200 text-amber-600"
+                  }`}
+                >
+                  <PieChartIcon className="size-6 sm:size-8" strokeWidth={3} />
                 </button>
                 <button
                   type="button"
@@ -218,7 +235,7 @@ export function PointageScreen() {
                       : "border-neutral-200 text-red-600"
                   }`}
                 >
-                  <XIcon className="size-7 sm:size-8" strokeWidth={3} />
+                  <XIcon className="size-6 sm:size-8" strokeWidth={3} />
                 </button>
               </div>
             </li>
@@ -232,9 +249,22 @@ export function PointageScreen() {
         </p>
       )}
 
-      <p className="mt-8 text-center text-xs text-neutral-400">
-        Appuyer à nouveau sur le même bouton retire le pointage.
-      </p>
+      <div className="mt-8 flex flex-col items-center gap-2 text-xs text-neutral-500">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+          <span className="inline-flex items-center gap-1.5">
+            <CheckIcon className="size-4 text-green-600" strokeWidth={3} /> Présent
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <PieChartIcon className="size-4 text-amber-600" strokeWidth={3} /> Demi-journée
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <XIcon className="size-4 text-red-600" strokeWidth={3} /> Absent
+          </span>
+        </div>
+        <p className="text-neutral-400">
+          Appuyer à nouveau sur le même bouton retire le pointage.
+        </p>
+      </div>
     </main>
   );
 }
@@ -258,8 +288,11 @@ function Cadre({ children }: { children: React.ReactNode }) {
 }
 
 /** La cible du doigt : 56 pixels au téléphone, 64 au-delà. */
+// La cible du doigt. Trois boutons au lieu de deux : 48 pixels au téléphone
+// pour que la ligne tienne sur 390 px sans rogner le nom, 64 au-delà. C'est le
+// minimum recommandé pour une cible tactile, et on ne descend pas en dessous.
 const CIBLE =
-  "grid size-14 place-items-center rounded-xl border-2 transition-colors sm:size-16";
+  "grid size-12 place-items-center rounded-xl border-2 transition-colors sm:size-16";
 
 const BOUTON_SOMBRE =
   "mt-4 w-full rounded-xl bg-neutral-900 py-4 text-base font-semibold text-white disabled:opacity-40 sm:text-lg";

@@ -17,6 +17,7 @@ import type { WorkerStatus } from "../lib/types";
 import { DayList } from "./day-list";
 import { MonthGrid } from "./month-grid";
 import { PortalCard } from "./portal-card";
+import { ReportCard } from "./report-card";
 
 /**
  * Les ouvriers : le pointage du mois, l'équipe, le secret de l'écran de dépôt.
@@ -212,6 +213,8 @@ export function WorkersView() {
 
         <PortalCard />
       </div>
+
+      <ReportCard month={grille.month} />
     </div>
   );
 }

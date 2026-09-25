@@ -16,7 +16,8 @@ import { CASE_CLASSES } from "./case-classes";
  * plutôt que d'ouvrir un menu : trente et une colonnes sur dix lignes font
  * trois cent dix cases, et un menu par case rendrait la reprise d'un mois
  * insupportable. L'ordre du cycle suit la fréquence mesurée dans le classeur,
- * les deux valeurs courantes d'abord.
+ * les deux valeurs courantes d'abord, puis la demi-journée — la seule qui ne
+ * vienne pas du classeur, et qu'on pose en corrigeant plutôt qu'en saisissant.
  *
  * La grille défile dans **son propre cadre** : ce qui est trop large ne doit
  * jamais emporter la page.
@@ -161,7 +162,8 @@ export function MonthGrid({
 const SUITE: Record<WorkerStatus | "vide", WorkerStatus | ""> = {
   vide: "present",
   present: "absent",
-  absent: "chome",
+  absent: "demi",
+  demi: "chome",
   chome: "formation",
   formation: "",
 };

@@ -51,7 +51,7 @@ export function today(signal?: AbortSignal) {
  * choisir permettrait de réécrire un mois clos depuis un écran qui n'a ni
  * compte ni permission.
  */
-export function mark(workerId: string, status: "present" | "absent" | "") {
+export function mark(workerId: string, status: "present" | "absent" | "demi" | "") {
   return apiFetch<AttendanceDay | void>(`/v1/pointage/${workerId}`, {
     method: "PUT",
     body: { status },

@@ -4,6 +4,7 @@ import type { WorkerStatus } from "./types";
 export const STATUS_LABEL: Record<WorkerStatus, string> = {
   present: "Présent",
   absent: "Absent",
+  demi: "Demi-journée",
   formation: "Formation",
   chome: "Chômé",
 };
@@ -18,6 +19,11 @@ export const STATUS_LABEL: Record<WorkerStatus, string> = {
 export const STATUS_MARK: Record<WorkerStatus, string> = {
   present: "p",
   absent: "a",
+  // « ½ » plutôt qu'une lettre : la demi-journée n'existait pas dans le
+  // classeur, donc aucune habitude à respecter, et le signe se lit sans
+  // légende — ce qu'aucune lettre de plus n'aurait fait sur une case de sept
+  // pixels au milieu de p, a, f et /.
+  demi: "½",
   formation: "f",
   chome: "/",
 };
@@ -28,9 +34,12 @@ export const STATUS_MARK: Record<WorkerStatus, string> = {
  * Chômé est neutre et non « mauvais » : un dimanche n'est pas une absence, et
  * les colorer pareil ferait lire la fermeture d'août comme un mois de défaut.
  */
-export const STATUS_TONE: Record<WorkerStatus, "success" | "danger" | "info" | "neutral"> = {
+export const STATUS_TONE: Record<WorkerStatus, "success" | "danger" | "info" | "warning" | "neutral"> = {
   present: "success",
   absent: "danger",
+  // Ambre : ni la réussite du vert, ni l'alerte du rouge. Une demi-journée
+  // n'est pas un défaut, c'est une journée entamée.
+  demi: "warning",
   formation: "info",
   chome: "neutral",
 };

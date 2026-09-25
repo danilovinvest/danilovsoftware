@@ -13,6 +13,7 @@ import type { WorkerStatus } from "../lib/types";
 export const CASE_CLASSES: Record<WorkerStatus, string> = {
   present: "bg-success text-background border-transparent",
   absent: "bg-danger text-background border-transparent",
+  demi: "bg-warning text-background border-transparent",
   formation: "bg-info text-background border-transparent",
   chome: "bg-muted text-muted-foreground border-transparent",
 };
