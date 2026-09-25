@@ -23,6 +23,9 @@ export type Permission =
   | "mail:write"
   | "automations:read"
   | "automations:write"
+  | "workers:read"
+  | "workers:write"
+  | "workers:admin"
   | "imports:run"
   | "system:admin";
 
