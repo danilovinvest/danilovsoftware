@@ -1,12 +1,10 @@
 import { apiBase } from "@/shared/lib/env";
-import { refreshNative } from "@/shared/desktop/session";
-import { APP_VERSION, markUpdateRequired } from "@/shared/desktop/update-required";
 import { ApiError } from "./errors";
 
 /**
  * Le jeton d'accès ne vit qu'en mémoire : ni localStorage ni cookie lisible,
- * donc rien à voler pour un script injecté. Il est reconstruit au lancement par
- * la coque, qui garde le refresh token dans le trousseau du système.
+ * donc rien à voler pour un script injecté. Il est reconstruit au chargement de
+ * la page à partir du cookie de refresh (httpOnly).
  */
 let accessToken: string | null = null;
 let refreshPromise: Promise<MinimalSession | null> | null = null;
@@ -48,39 +46,39 @@ export function getAccessToken() {
 }
 
 /**
- * Renouvelle la session par la coque.
+ * Renouvelle la session à partir du cookie httpOnly.
  *
- * C'est le SEUL endroit de l'interface qui demande un renouvellement : les
- * appels concurrents partagent la même promesse. L'API fait tourner le refresh
- * token à chaque appel et révoque toutes les sessions si un jeton consommé est
- * rejoué — la coque sérialise de son côté, et cette promesse partagée évite de
- * lui envoyer dix demandes quand dix requêtes rencontrent le même 401.
- *
- * Une API injoignable lève une erreur sans rien oublier : la coque garde le
- * jeton, qui resservira au prochain essai.
+ * C'est le SEUL endroit du front qui appelle /v1/auth/refresh : les appels
+ * concurrents partagent la même promesse. L'API fait tourner le refresh token
+ * à chaque appel et révoque toutes les sessions si un jeton déjà consommé est
+ * rejoué — deux refresh en parallèle déconnecteraient donc l'utilisateur.
  */
+/*
+  `null` veut dire « le serveur refuse » : la session est finie. Une coupure
+  réseau ou une panne du serveur **lève** une `ApiError` : elle ne dit rien de
+  la session, et la confondre avec un refus renvoyait à l'écran de connexion au
+  premier wifi coupé ou au réveil d'une veille, en perdant la saisie en cours.
+*/
 export function refreshSession<T extends MinimalSession>(): Promise<T | null> {
-  refreshPromise ??= refreshNative<T & { token_type: string; expires_in: number; user: unknown }>()
-    .then((session) => {
-      if (session) accessToken = session.access_token;
-      else endSession();
-      return session;
+  refreshPromise ??= fetch(`${apiBase()}/v1/auth/refresh`, {
+    method: "POST",
+    credentials: "include",
+  })
+    .catch(() => {
+      throw new ApiError(0, "network_error", "L'API est injoignable.");
     })
-    /*
-      Un refus (4xx) : la session est finie, `null`. Tout le reste — réseau,
-      serveur, trousseau — **lève** : ce n'est pas la fin de la session, et le
-      confondre renvoyait à l'écran de connexion au premier wifi coupé ou au
-      réveil d'une veille. La coque, elle, garde le jeton dans ce cas.
-    */
-    .catch((error: unknown) => {
-      const status = error instanceof ApiError ? error.status : 0;
-      if (status >= 400 && status < 500) {
+    .then(async (response) => {
+      // Toute réponse 4xx est un refus : cookie absent, expiré ou révoqué.
+      if (response.status >= 400 && response.status < 500) {
         endSession();
         return null;
       }
-      throw error instanceof ApiError
-        ? error
-        : new ApiError(0, "network_error", "L'API est injoignable.");
+      if (!response.ok) {
+        throw new ApiError(response.status, "internal_error", "Le serveur ne répond pas.");
+      }
+      const session = (await response.json()) as MinimalSession;
+      accessToken = session.access_token;
+      return session;
     })
     .finally(() => {
       refreshPromise = null;
@@ -91,7 +89,18 @@ export function refreshSession<T extends MinimalSession>(): Promise<T | null> {
 
 type RequestOptions = {
   method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
-  body?: unknown;
+  /**
+   * Le corps, **déjà sous forme d'objet** : c'est `apiFetch` qui sérialise.
+   *
+   * Le type était `unknown`, et une chaîne en est un. Passer un
+   * `JSON.stringify(...)` compilait donc sans un mot, partait sérialisé deux
+   * fois, et le serveur recevait une chaîne JSON là où il attendait un objet —
+   * « le champ "" attend un type struct ». Sept appels d'un même module y sont
+   * passés, sans que `tsc`, ESLint ni deux relectures ne puissent le voir.
+   * `object` refuse une chaîne, un nombre et un booléen : la faute ne compile
+   * plus.
+   */
+  body?: object | FormData;
   query?: Record<string, string | string[] | number | undefined | null>;
   signal?: AbortSignal;
   /** Interne : empêche une boucle de refresh infinie. */
@@ -125,12 +134,10 @@ export async function apiFetchBlob(
   const { query, signal, retryOnUnauthorized = true } = options;
   const headers: Record<string, string> = {};
   if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
-  // La version voyage sur chaque appel : l'API refuse (426) celles qu'elle ne sert plus.
-  if (APP_VERSION) headers["X-App-Version"] = APP_VERSION;
 
   let response: Response;
   try {
-    response = await fetch(buildUrl(path, query), { headers, signal });
+    response = await fetch(buildUrl(path, query), { headers, credentials: "include", signal });
   } catch (cause) {
     if (cause instanceof DOMException && cause.name === "AbortError") throw cause;
     throw new ApiError(0, "network_error", "L'API est injoignable.");
@@ -144,7 +151,6 @@ export async function apiFetchBlob(
   if (!response.ok) {
     const payload = await response.json().catch(() => null);
     const error = payload?.error;
-    if (response.status === 426) markUpdateRequired(error?.min_version ?? "");
     throw new ApiError(
       response.status,
       error?.code ?? "internal_error",
@@ -166,14 +172,13 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   const isForm = typeof FormData !== "undefined" && body instanceof FormData;
   if (body !== undefined && !isForm) headers["Content-Type"] = "application/json";
   if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
-  // La version voyage sur chaque appel : l'API refuse (426) celles qu'elle ne sert plus.
-  if (APP_VERSION) headers["X-App-Version"] = APP_VERSION;
 
   let response: Response;
   try {
     response = await fetch(url, {
       method,
       headers,
+      credentials: "include",
       signal,
       body: body === undefined ? undefined : isForm ? (body as FormData) : JSON.stringify(body),
     });
@@ -195,7 +200,6 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
 
   if (!response.ok) {
     const error = payload?.error;
-    if (response.status === 426) markUpdateRequired(error?.min_version ?? "");
     throw new ApiError(
       response.status,
       error?.code ?? "internal_error",

@@ -27,7 +27,7 @@ export type Pointage = {
 export function unlock(password: string) {
   return apiFetch<{ ok: boolean }>("/v1/pointage/session", {
     method: "POST",
-    body: JSON.stringify({ password }),
+    body: { password },
     retryOnUnauthorized: false,
   });
 }
@@ -54,7 +54,7 @@ export function today(signal?: AbortSignal) {
 export function mark(workerId: string, status: "present" | "absent" | "") {
   return apiFetch<AttendanceDay | void>(`/v1/pointage/${workerId}`, {
     method: "PUT",
-    body: JSON.stringify({ status }),
+    body: { status },
     retryOnUnauthorized: false,
   });
 }
