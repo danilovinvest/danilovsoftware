@@ -66,6 +66,19 @@ export function PointageScreen() {
       await api.mark(id, actuel === statut ? "" : statut);
       await mutate();
     } catch (cause) {
+      /*
+        Un 401 ici veut dire que le mot de passe a changé pendant que la
+        tablette restait ouverte — le cas même que le CRM annonce avant de le
+        changer. Sans ce `mutate()`, l'écran gardait la liste à l'affichage et
+        se contentait de « le pointage n'est pas passé » jusqu'à la prochaine
+        revalidation, throttlée à la minute : des boutons qui « ne marchent
+        plus » sans dire qu'il faut ressaisir. Relever l'erreur de lecture
+        fait basculer l'écran sur le mot de passe tout de suite.
+      */
+      if (cause instanceof ApiError && cause.status === 401) {
+        await mutate();
+        return;
+      }
       setRefus(cause instanceof Error ? cause.message : "Le pointage n'est pas passé.");
     } finally {
       setOccupe(null);
@@ -74,6 +87,34 @@ export function PointageScreen() {
 
   if (etat === undefined && !verrouille && !panne) {
     return <main className="min-h-dvh bg-white" />;
+  }
+
+  /*
+    Une panne alors qu'on n'a **jamais** rien reçu n'est pas la même chose
+    qu'une relecture ratée. Le bandeau « ce qui est affiché peut dater » au-
+    dessus d'une liste vide se lisait « l'équipe est vide » là où l'API ne
+    répond pas du tout.
+  */
+  if (panne && etat === undefined) {
+    return (
+      <main className="grid min-h-dvh place-items-center bg-white px-6 text-neutral-900">
+        <div className="max-w-xs text-center">
+          <p role="alert" className="text-base font-semibold text-red-600">
+            Le pointage est injoignable.
+          </p>
+          <p className="mt-2 text-sm text-neutral-500">
+            Rien n&apos;a pu être chargé. Prévenir le bureau, et réessayer.
+          </p>
+          <button
+            type="button"
+            onClick={() => void mutate()}
+            className="mt-4 w-full rounded-xl bg-neutral-900 py-3 text-base font-semibold text-white"
+          >
+            Réessayer
+          </button>
+        </div>
+      </main>
+    );
   }
 
   if (verrouille) {
