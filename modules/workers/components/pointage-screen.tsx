@@ -9,21 +9,29 @@ import * as api from "../lib/pointage";
 /**
  * L'écran de pointage du dépôt.
  *
- * **Volontairement hors du thème du CRM.** C'est un écran de kiosque : une
- * tablette posée au dépôt, ouverte par dix personnes, qui doit avoir la même
- * tête quel que soit le réglage de l'appareil. Le blanc est donc écrit ici et
- * ne suit ni la palette ni le mode sombre — c'est l'exception assumée à la
- * règle des jetons de couleur, et elle tient à ce que cette page n'appartient
- * pas à la surface thémée du CRM.
+ * **Écrit pour le téléphone d'abord.** C'est une tablette ou un téléphone posé
+ * au dépôt, tenu à bout de bras, parfois avec des gants : les tailles de base
+ * sont celles du petit écran, et ce sont les grandes largeurs qui reçoivent un
+ * modificateur (`sm:`), jamais l'inverse. Les cibles font 56 pixels au doigt et
+ * 64 au-delà.
+ *
+ * **Il n'y a jamais d'écran vide.** La première version rendait
+ * `<main className="min-h-dvh bg-white" />` tant que la réponse n'était pas
+ * arrivée — c'est-à-dire un blanc complet, servi tel quel par le rendu serveur.
+ * Sur un poste cela clignote ; sur un téléphone en 4G cela dure, et c'est une
+ * page blanche. Le cadre et le titre sont donc peints **tout de suite**, et
+ * seul le contenu attend. Un écran qui ne dit pas son nom ne se distingue pas
+ * d'une panne.
+ *
+ * **Volontairement hors du thème du CRM.** Un appareil ouvert par dix personnes
+ * doit avoir la même tête quel que soit son réglage : le blanc est écrit ici et
+ * ne suit ni la palette ni le mode sombre. C'est l'exception assumée à la règle
+ * des jetons de couleur, bornée à ce seul fichier.
  *
  * **Deux boutons, et rien d'autre.** Pas de mois, pas d'historique, pas de
- * total : l'écran répond à une seule question, et chaque chose de plus est une
- * occasion de se tromper avec des gants. Les cibles font 64 pixels, parce
- * qu'on appuie dessus debout.
- *
- * **Ce qui est déjà pointé reste modifiable** jusqu'à la fin de la journée :
- * on se trompe de ligne, et un écran qui refuserait de revenir en arrière
- * obligerait à appeler le bureau.
+ * total : l'écran répond à une seule question. Ce qui est pointé reste
+ * modifiable jusqu'à la fin de la journée — on se trompe de ligne, et un écran
+ * qui refuserait de revenir en arrière obligerait à appeler le bureau.
  */
 export function PointageScreen() {
   const [secret, setSecret] = useState("");
@@ -44,6 +52,7 @@ export function PointageScreen() {
   */
   const verrouille = error instanceof ApiError && error.status === 401;
   const panne = error !== undefined && !verrouille;
+  const charge = etat === undefined && !verrouille && !panne;
 
   async function deverrouiller() {
     setRefus("");
@@ -71,9 +80,7 @@ export function PointageScreen() {
         tablette restait ouverte — le cas même que le CRM annonce avant de le
         changer. Sans ce `mutate()`, l'écran gardait la liste à l'affichage et
         se contentait de « le pointage n'est pas passé » jusqu'à la prochaine
-        revalidation, throttlée à la minute : des boutons qui « ne marchent
-        plus » sans dire qu'il faut ressaisir. Relever l'erreur de lecture
-        fait basculer l'écran sur le mot de passe tout de suite.
+        revalidation, throttlée à la minute.
       */
       if (cause instanceof ApiError && cause.status === 401) {
         await mutate();
@@ -85,85 +92,83 @@ export function PointageScreen() {
     }
   }
 
-  if (etat === undefined && !verrouille && !panne) {
-    return <main className="min-h-dvh bg-white" />;
-  }
-
-  /*
-    Une panne alors qu'on n'a **jamais** rien reçu n'est pas la même chose
-    qu'une relecture ratée. Le bandeau « ce qui est affiché peut dater » au-
-    dessus d'une liste vide se lisait « l'équipe est vide » là où l'API ne
-    répond pas du tout.
-  */
+  // Une panne alors qu'on n'a **jamais** rien reçu n'est pas une relecture
+  // ratée : le bandeau « ce qui est affiché peut dater » au-dessus d'une liste
+  // vide se lisait « l'équipe est vide » là où l'API ne répond pas du tout.
   if (panne && etat === undefined) {
     return (
-      <main className="grid min-h-dvh place-items-center bg-white px-6 text-neutral-900">
-        <div className="max-w-xs text-center">
-          <p role="alert" className="text-base font-semibold text-red-600">
-            Le pointage est injoignable.
-          </p>
-          <p className="mt-2 text-sm text-neutral-500">
-            Rien n&apos;a pu être chargé. Prévenir le bureau, et réessayer.
-          </p>
-          <button
-            type="button"
-            onClick={() => void mutate()}
-            className="mt-4 w-full rounded-xl bg-neutral-900 py-3 text-base font-semibold text-white"
-          >
-            Réessayer
-          </button>
+      <Cadre>
+        <p role="alert" className="text-center text-base font-semibold text-red-600">
+          Le pointage est injoignable.
+        </p>
+        <p className="mt-2 text-center text-sm text-neutral-500">
+          Rien n&apos;a pu être chargé. Prévenir le bureau, et réessayer.
+        </p>
+        <button type="button" onClick={() => void mutate()} className={BOUTON_SOMBRE}>
+          Réessayer
+        </button>
+      </Cadre>
+    );
+  }
+
+  if (charge) {
+    return (
+      <Cadre>
+        {/* Trois lignes grises à la forme de ce qui vient : on sait où l'on
+            arrive avant que ce soit arrivé, plutôt qu'un blanc. */}
+        <div className="flex flex-col gap-3" aria-hidden>
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-16 animate-pulse rounded-xl bg-neutral-100 sm:h-20" />
+          ))}
         </div>
-      </main>
+        <p className="mt-4 text-center text-sm text-neutral-400">Chargement…</p>
+      </Cadre>
     );
   }
 
   if (verrouille) {
     return (
-      <main className="grid min-h-dvh place-items-center bg-white px-6 text-neutral-900">
-        <div className="w-full max-w-xs">
-          <h1 className="mb-1 text-center text-2xl font-bold">Pointage</h1>
-          <p className="mb-6 text-center text-sm text-neutral-500">OMPT · équipe de chantier</p>
-          <input
-            type="password"
-            autoComplete="current-password"
-            value={secret}
-            onChange={(e) => setSecret(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") void deverrouiller();
-            }}
-            placeholder="Mot de passe"
-            aria-label="Mot de passe"
-            className="w-full rounded-xl border border-neutral-300 px-4 py-4 text-center text-lg outline-none focus:border-neutral-900"
-          />
-          {refus !== "" && (
-            <p role="alert" className="mt-3 text-center text-sm text-red-600">
-              {refus}
-            </p>
-          )}
-          <button
-            type="button"
-            onClick={() => void deverrouiller()}
-            disabled={secret === ""}
-            className="mt-4 w-full rounded-xl bg-neutral-900 py-4 text-lg font-semibold text-white disabled:opacity-40"
-          >
-            Entrer
-          </button>
-        </div>
-      </main>
+      <Cadre>
+        <input
+          type="password"
+          autoComplete="current-password"
+          value={secret}
+          onChange={(e) => setSecret(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") void deverrouiller();
+          }}
+          placeholder="Mot de passe"
+          aria-label="Mot de passe"
+          className="w-full rounded-xl border border-neutral-300 px-4 py-4 text-center text-lg outline-none focus:border-neutral-900"
+        />
+        {refus !== "" && (
+          <p role="alert" className="mt-3 text-center text-sm text-red-600">
+            {refus}
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={() => void deverrouiller()}
+          disabled={secret === ""}
+          className={BOUTON_SOMBRE}
+        >
+          Entrer
+        </button>
+      </Cadre>
     );
   }
 
   return (
     <main className="min-h-dvh bg-white px-4 py-6 text-neutral-900">
       <header className="mx-auto mb-6 max-w-md text-center">
-        <p className="text-lg font-semibold capitalize">
+        <p className="text-base font-semibold capitalize sm:text-lg">
           {maintenant?.toLocaleDateString("fr-FR", {
             weekday: "long",
             day: "numeric",
             month: "long",
           }) ?? " "}
         </p>
-        <p className="text-4xl font-bold tabular-nums">
+        <p className="text-3xl font-bold tabular-nums sm:text-4xl">
           {maintenant?.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) ??
             " "}
         </p>
@@ -175,15 +180,17 @@ export function PointageScreen() {
         </p>
       )}
 
-      <ul className="mx-auto flex max-w-md flex-col gap-3">
+      <ul className="mx-auto flex max-w-md flex-col gap-2.5 sm:gap-3">
         {etat?.workers.map((w) => {
           const statut = etat.attendance.find((a) => a.worker_id === w.id)?.status;
           return (
             <li
               key={w.id}
-              className="flex items-center justify-between gap-3 rounded-xl border border-neutral-200 px-4 py-2"
+              className="flex items-center justify-between gap-2 rounded-xl border border-neutral-200 px-3 py-2 sm:gap-3 sm:px-4"
             >
-              <span className="min-w-0 flex-1 truncate text-lg font-medium">{w.full_name}</span>
+              <span className="min-w-0 flex-1 truncate text-base font-medium sm:text-lg">
+                {w.full_name}
+              </span>
               <div className="flex shrink-0 gap-2">
                 <button
                   type="button"
@@ -191,13 +198,13 @@ export function PointageScreen() {
                   onClick={() => void pointer(w.id, "present")}
                   aria-pressed={statut === "present"}
                   aria-label={`${w.full_name} est là`}
-                  className={`grid size-16 place-items-center rounded-xl border-2 transition-colors ${
+                  className={`${CIBLE} ${
                     statut === "present"
                       ? "border-green-600 bg-green-600 text-white"
                       : "border-neutral-200 text-green-600"
                   }`}
                 >
-                  <CheckIcon className="size-8" strokeWidth={3} />
+                  <CheckIcon className="size-7 sm:size-8" strokeWidth={3} />
                 </button>
                 <button
                   type="button"
@@ -205,13 +212,13 @@ export function PointageScreen() {
                   onClick={() => void pointer(w.id, "absent")}
                   aria-pressed={statut === "absent"}
                   aria-label={`${w.full_name} n'est pas là`}
-                  className={`grid size-16 place-items-center rounded-xl border-2 transition-colors ${
+                  className={`${CIBLE} ${
                     statut === "absent"
                       ? "border-red-600 bg-red-600 text-white"
                       : "border-neutral-200 text-red-600"
                   }`}
                 >
-                  <XIcon className="size-8" strokeWidth={3} />
+                  <XIcon className="size-7 sm:size-8" strokeWidth={3} />
                 </button>
               </div>
             </li>
@@ -233,7 +240,32 @@ export function PointageScreen() {
 }
 
 /**
- * L'heure de la tablette, rafraîchie toutes les trente secondes.
+ * Le cadre commun aux trois états d'attente — chargement, verrouillage, panne.
+ *
+ * Il existe pour qu'aucun d'eux ne soit un écran vide : le titre est peint dès
+ * le rendu serveur, avant que la moindre réponse soit arrivée.
+ */
+function Cadre({ children }: { children: React.ReactNode }) {
+  return (
+    <main className="grid min-h-dvh place-items-center bg-white px-5 py-8 text-neutral-900">
+      <div className="w-full max-w-xs">
+        <h1 className="mb-1 text-center text-2xl font-bold sm:text-3xl">Pointage</h1>
+        <p className="mb-6 text-center text-sm text-neutral-500">OMPT · équipe de chantier</p>
+        {children}
+      </div>
+    </main>
+  );
+}
+
+/** La cible du doigt : 56 pixels au téléphone, 64 au-delà. */
+const CIBLE =
+  "grid size-14 place-items-center rounded-xl border-2 transition-colors sm:size-16";
+
+const BOUTON_SOMBRE =
+  "mt-4 w-full rounded-xl bg-neutral-900 py-4 text-base font-semibold text-white disabled:opacity-40 sm:text-lg";
+
+/**
+ * L'heure de l'appareil, rafraîchie toutes les trente secondes.
  *
  * `useSyncExternalStore` et non un `useState` posé dans un effet : le serveur
  * n'a pas la même horloge que l'appareil, et peindre une heure au rendu côté
