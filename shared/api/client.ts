@@ -89,7 +89,18 @@ export function refreshSession<T extends MinimalSession>(): Promise<T | null> {
 
 type RequestOptions = {
   method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
-  body?: unknown;
+  /**
+   * Le corps, **déjà sous forme d'objet** : c'est `apiFetch` qui sérialise.
+   *
+   * Le type était `unknown`, et une chaîne en est un. Passer un
+   * `JSON.stringify(...)` compilait donc sans un mot, partait sérialisé deux
+   * fois, et le serveur recevait une chaîne JSON là où il attendait un objet —
+   * « le champ "" attend un type struct ». Sept appels d'un même module y sont
+   * passés, sans que `tsc`, ESLint ni deux relectures ne puissent le voir.
+   * `object` refuse une chaîne, un nombre et un booléen : la faute ne compile
+   * plus.
+   */
+  body?: object | FormData;
   query?: Record<string, string | string[] | number | undefined | null>;
   signal?: AbortSignal;
   /** Interne : empêche une boucle de refresh infinie. */

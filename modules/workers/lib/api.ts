@@ -20,7 +20,7 @@ export function getMonth(mois: string, signal?: AbortSignal) {
 export function createWorker(full_name: string) {
   return apiFetch<Worker>("/v1/workers", {
     method: "POST",
-    body: JSON.stringify({ full_name }),
+    body: { full_name },
   });
 }
 
@@ -28,7 +28,7 @@ export function createWorker(full_name: string) {
 export function updateWorker(id: string, patch: { full_name?: string; position?: number }) {
   return apiFetch<Worker>(`/v1/workers/${id}`, {
     method: "PATCH",
-    body: JSON.stringify(patch),
+    body: patch,
   });
 }
 
@@ -36,7 +36,7 @@ export function updateWorker(id: string, patch: { full_name?: string; position?:
 export function archiveWorker(id: string, archived: boolean) {
   return apiFetch<Worker>(`/v1/workers/${id}/archive`, {
     method: "PUT",
-    body: JSON.stringify({ archived }),
+    body: { archived },
   });
 }
 
@@ -55,7 +55,7 @@ export function deleteWorker(id: string) {
 export function markAttendance(id: string, day: string, status: WorkerStatus | "") {
   return apiFetch<void>(`/v1/workers/${id}/attendance`, {
     method: "PUT",
-    body: JSON.stringify({ day, status }),
+    body: { day, status },
   });
 }
 
@@ -73,6 +73,6 @@ export function getPortalState(signal?: AbortSignal) {
 export function setPortalPassword(password: string) {
   return apiFetch<PortalState>("/v1/workers/portal/password", {
     method: "PUT",
-    body: JSON.stringify({ password }),
+    body: { password },
   });
 }
