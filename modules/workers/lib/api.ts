@@ -1,5 +1,13 @@
 import { apiFetch } from "@/shared/api/client";
-import type { PortalState, Worker, WorkerMonth, WorkerStatus } from "./types";
+import { apiBase } from "@/shared/lib/env";
+import type {
+  PortalState,
+  Report,
+  ReportState,
+  Worker,
+  WorkerMonth,
+  WorkerStatus,
+} from "./types";
 
 /** L'équipe. `archives` inclut ceux qui l'ont quittée. */
 export function listWorkers(archives = false, signal?: AbortSignal) {
@@ -75,4 +83,45 @@ export function setPortalPassword(password: string) {
     method: "PUT",
     body: { password },
   });
+}
+
+// --- Le rapport mensuel au comptable ----------------------------------------
+
+export function getReportState(signal?: AbortSignal) {
+  return apiFetch<ReportState>("/v1/workers/report", { signal });
+}
+
+/** Ce que le comptable recevrait, sans rien envoyer. */
+export function previewReport(mois: string, signal?: AbortSignal) {
+  return apiFetch<Report>(`/v1/workers/report/preview?mois=${mois}`, { signal });
+}
+
+export function setReport(recipient: string, enabled: boolean) {
+  return apiFetch<ReportState>("/v1/workers/report", {
+    method: "PUT",
+    body: { recipient, enabled },
+  });
+}
+
+/**
+ * Envoyer le rapport tout de suite, pour l'essayer.
+ *
+ * Le serveur **ne marque pas** le mois : un essai ne doit pas empêcher l'envoi
+ * automatique du dernier jour du mois.
+ */
+export function sendReport(mois: string) {
+  return apiFetch<{ month: string; libelle: string }>(
+    `/v1/workers/report/send?mois=${mois}`,
+    { method: "POST" },
+  );
+}
+
+/**
+ * L'adresse du fichier, pour le regarder sans l'envoyer.
+ *
+ * Un lien direct ne porte pas le jeton d'accès — il ne vit qu'en mémoire —
+ * donc le bouton le télécharge par `fetch` et non par un `href`.
+ */
+export function reportCsvUrl(mois: string): string {
+  return `${apiBase()}/v1/workers/report/csv?mois=${mois}`;
 }

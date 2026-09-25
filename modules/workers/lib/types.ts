@@ -5,16 +5,49 @@
 /**
  * Ce qu'une case peut valoir.
  *
- * Quatre valeurs **mesurées** sur les trois mois réels du classeur
- * « Calendrier ouvriers.xlsx », et pas une de plus : présent 190 fois, chômé
- * 260, absent 21, formation 14. L'écran de chantier n'écrit que les deux
- * premières — une croix verte, une croix rouge — mais la grille du CRM doit
- * savoir représenter un dimanche et la fermeture du mois d'août, qui sont
- * les 260.
+ * Quatre valeurs viennent du classeur « Calendrier ouvriers.xlsx », mesurées
+ * sur ses trois mois réels : présent 190 fois, chômé 260, absent 21,
+ * formation 14. La cinquième, la **demi-journée**, vient du dirigeant : elle
+ * n'est ni une présence ni une absence, et la compter d'un côté ou de l'autre
+ * fausse la paie dans les deux sens. Elle vaut 0,5 jour travaillé.
  */
-export type WorkerStatus = "present" | "absent" | "formation" | "chome";
+export type WorkerStatus = "present" | "absent" | "demi" | "formation" | "chome";
 
-export const WORKER_STATUSES: WorkerStatus[] = ["present", "absent", "formation", "chome"];
+export const WORKER_STATUSES: WorkerStatus[] = [
+  "present",
+  "absent",
+  "demi",
+  "formation",
+  "chome",
+];
+
+/** L'état du rapport mensuel au comptable, jamais un secret. */
+export type ReportState = {
+  recipient: string;
+  enabled: boolean;
+  last_sent_month: string;
+  last_sent_at: string | null;
+  last_error: string;
+  /** Faux si aucune boîte n'est raccordée : rien ne pourrait partir. */
+  can_send: boolean;
+};
+
+export type ReportLine = {
+  worker: string;
+  jours_travailles: number;
+  demi_journees: number;
+  absences: number;
+  formations: number;
+  dates_absences: string[];
+};
+
+export type Report = {
+  month: string;
+  libelle: string;
+  lignes: ReportLine[];
+  /** Combien de samedis le mois comptait, et qui sont restés dehors. */
+  samedis_exclus: number;
+};
 
 export type Worker = {
   id: string;

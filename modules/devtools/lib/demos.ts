@@ -47,6 +47,43 @@ const FICHE_COPRO = "/customers/de2ea332-b3dd-491a-8ea4-b423612731aa";
 
 export const DEMOS: Demo[] = [
   {
+    id: "comptable-et-demi-journee",
+    title: "La demi-journée, et le rapport au comptable",
+    date: "2026-09-25",
+    steps: [
+      {
+        path: "/ouvriers",
+        target: '[data-demo="ouvriers-grille"]',
+        title: "Une cinquième valeur : la demi-journée",
+        body:
+          "Les quatre premières étaient mesurées dans le classeur. Celle-ci ne s'y trouvait " +
+          "pas : une matinée travaillée n'est ni une présence ni une absence, et la compter " +
+          "d'un côté fausse la paie dans les deux sens. Elle vaut 0,5 jour, en ambre — " +
+          "ni le vert de la réussite, ni le rouge de l'alerte.",
+      },
+      {
+        path: "/ouvriers",
+        target: '[data-demo="ouvriers-comptable"]',
+        title: "Le rapport part tout seul le dernier jour du mois",
+        body:
+          "C'est le **seul** courriel que ce CRM envoie : la messagerie lit, les invitations " +
+          "se copient à la main, les automatisations passent par Telegram. Il part par la " +
+          "boîte déjà raccordée, avec le mot de passe d'application qui sert à la lire — " +
+          "aucun secret de plus. Fermé tant qu'aucune adresse n'est écrite.",
+      },
+      {
+        path: "/ouvriers",
+        target: '[data-demo="ouvriers-comptable"]',
+        title: "Les samedis n'y sont pas comptés",
+        body:
+          "Demandé tel quel : un samedi n'est pas un jour ouvré de la paie, et y retenir une " +
+          "absence retiendrait une journée qui n'était pas due. Ils restent visibles dans la " +
+          "grille au-dessus, où se décide s'ils ont été travaillés. « Voir ce qu'il recevrait » " +
+          "montre le décompte, « Envoyer un essai » l'envoie sans consommer l'envoi du mois.",
+      },
+    ],
+  },
+  {
     id: "ouvriers-pointage",
     title: "Les ouvriers et leur pointage",
     date: "2026-09-25",
