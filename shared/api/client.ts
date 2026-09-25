@@ -31,8 +31,26 @@ export function onSessionEnd(listener: () => void): () => void {
   };
 }
 
+/*
+  Une session ne se termine que si elle a commencé.
+
+  Effacer un jeton déjà nul n'est pas une fin de session, c'est un geste sans
+  objet — et il arrive tout le temps : au chargement d'une page anonyme,
+  `AuthProvider` tente le renouvellement, reçoit 401 et « oublie » une session
+  qui n'existait pas. Prévenir les écouteurs dans ce cas vidait le cache SWR
+  par `unload({ revalidate: false })`, ce qui **jette les requêtes en vol sans
+  les relancer**.
+
+  Mesuré sur l'écran de pointage, qui n'a pas de session de CRM par
+  construction : les journaux montraient `/v1/pointage` répondre 200 et
+  `/v1/auth/refresh` répondre 401 en alternance, et l'écran restait sur
+  « Chargement… » indéfiniment — la réponse arrivait puis était jetée. Le même
+  effet, inoffensif mais réel, se produisait sur la page de connexion.
+*/
 function endSession() {
+  const avaitUneSession = accessToken !== null;
   accessToken = null;
+  if (!avaitUneSession) return;
   for (const listener of sessionEndListeners) listener();
 }
 
