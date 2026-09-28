@@ -158,9 +158,13 @@ export function ProjectJalons({
                   )}
                 </div>
 
-                {jalon.picks === "date" ? (
+                {jalon.picks === "date" || jalon.picks === "day" ? (
                   <DatePickerButton
+                    // Remonté quand la date change, comme MaterialsButton : le
+                    // brouillon repart de la valeur au lieu d'un jour périmé.
+                    key={at ?? "vide"}
                     value={at}
+                    past={jalon.picks === "day"}
                     disabled={disabled}
                     onPick={(value) => onToggle(jalon.key, value)}
                   />
@@ -258,28 +262,34 @@ function MaterialsButton({
   );
 }
 
+/**
+ * Une date au calendrier. Par défaut on réserve un démarrage de chantier ;
+ * `past` date ce qui a déjà eu lieu — aujourd'hui proposé, jamais imposé.
+ */
 function DatePickerButton({
   value,
+  past = false,
   disabled,
   onPick,
 }: {
   value: string | null;
+  past?: boolean;
   disabled?: boolean;
   onPick: (value: string | null) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState(() => value?.slice(0, 10) ?? nextMonday());
+  const [draft, setDraft] = useState(() => value?.slice(0, 10) ?? (past ? today() : nextMonday()));
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button size="xs" variant={value ? "ghost" : "default"} disabled={disabled}>
-          {value ? "Changer" : "Réserver une date"}
+        <Button size="xs" variant={value ? "ghost" : past ? "outline" : "default"} disabled={disabled}>
+          {value ? "Changer" : past ? "Marquer fait" : "Réserver une date"}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-72" align="end">
         <div className="flex flex-col gap-3">
-          <DateField label="Date de démarrage" value={draft} onChange={setDraft} />
+          <DateField label={past ? "Fait le" : "Date de démarrage"} value={draft} onChange={setDraft} />
           <div className="flex justify-between gap-2">
             {value && (
               <Button
@@ -301,13 +311,20 @@ function DatePickerButton({
                 setOpen(false);
               }}
             >
-              Réserver
+              {past ? "Enregistrer" : "Réserver"}
             </Button>
           </div>
         </div>
       </PopoverContent>
     </Popover>
   );
+}
+
+/** Le jour local : `toISOString` rendrait la veille entre minuit et deux heures. */
+function today(): string {
+  const at = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}`;
 }
 
 /** Un chantier démarre un lundi. C'est le défaut le moins surprenant. */

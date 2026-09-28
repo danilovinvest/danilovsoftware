@@ -183,7 +183,7 @@ function PasswordSection() {
   return (
     <SettingsSection
       title="Mot de passe"
-      description="Le changer ferme toutes vos sessions, sur cet appareil comme sur les autres."
+      description="Le changer ferme toutes vos sessions, sur cet appareil comme sur les autres, et débranche les assistants connectés au CRM. Vos clés d'accès restent valables."
     >
       <form onSubmit={submit} className="flex flex-col gap-3">
         {error && !Object.keys(fields).length && <ErrorNotice message={error} />}

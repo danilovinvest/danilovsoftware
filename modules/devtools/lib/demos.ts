@@ -47,6 +47,24 @@ const FICHE_COPRO = "/customers/de2ea332-b3dd-491a-8ea4-b423612731aa";
 
 export const DEMOS: Demo[] = [
   {
+    id: "acompte-facture-le",
+    title: "L'acompte facturé se date, et se corrige",
+    date: "2026-09-28",
+    steps: [
+      {
+        path: FICHE_COPRO,
+        click: '[data-demo="tab-apres"]',
+        target: '[data-demo="jalon-deposit_invoiced_at"]',
+        title: "Le jour de la facture, pas celui du clic",
+        body:
+          "« Acompte facturé » datait du jour où l'on cochait, et la première date posée " +
+          "restait à vie : FA2025-0416 porte encore celle de sa copie depuis OneDrive. " +
+          "La case ouvre maintenant un calendrier — aujourd'hui proposé, jamais imposé — " +
+          "et « Changer » corrige le jour. Un acompte déjà reçu le reste.",
+      },
+    ],
+  },
+  {
     id: "comptable-et-demi-journee",
     title: "La demi-journée, et le rapport au comptable",
     date: "2026-09-25",

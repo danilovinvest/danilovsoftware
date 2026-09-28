@@ -169,9 +169,10 @@ export function ProjectTabs({
           disabled={!canWrite || busy}
           onToggle={async (key, value) => {
             // « Facturé » appartient au devis : décoché, il dit qu'il n'y a pas
-            // d'acompte. Les autres jalons passent par leur table.
+            // d'acompte, daté il corrige le jour. Les autres jalons passent par
+            // leur table.
             if (key === "deposit_invoiced_at") {
-              await settlement.facturerAcompte(value !== null);
+              await settlement.facturerAcompte(value);
               return;
             }
             // L'encaissement passe par l'éditeur des règlements ; ce chemin ne

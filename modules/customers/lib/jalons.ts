@@ -285,11 +285,13 @@ export type Jalon = {
    * Ce que la ligne fait saisir, au lieu de cocher la date du jour.
    *
    * `"date"` — une date choisie au calendrier : un chantier se réserve pour
-   * dans six semaines. `"materials"` — la liste de ce qui a été commandé, et
-   * la date suit. `"deposit"` — le montant encaissé, qui se corrige ensuite.
+   * dans six semaines. `"day"` — le jour où c'est arrivé, qui se corrige : une
+   * facture d'acompte rattrapée n'est pas partie le jour du clic.
+   * `"materials"` — la liste de ce qui a été commandé, et la date suit.
+   * `"deposit"` — le montant encaissé, qui se corrige ensuite.
    * `false` — une case, et c'est tout.
    */
-  picks: false | "date" | "materials" | "deposit";
+  picks: false | "date" | "day" | "materials" | "deposit";
   /**
    * Une étape qui n'arrive pas toujours — des corrections, un rapport validé
    * par un tiers. Elle ne bloque pas la suite quand elle reste vide.
@@ -302,7 +304,7 @@ const ACOMPTE: Jalon[] = [
     key: "deposit_invoiced_at",
     label: "Acompte facturé",
     hint: "La facture d'acompte est partie",
-    picks: false,
+    picks: "day",
   },
 ];
 

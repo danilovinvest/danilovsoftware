@@ -450,8 +450,11 @@ export function updateQuote(id: string, payload: QuotePayload) {
  */
 export function setQuoteDeposit(
   id: string,
-  /** `paid_at` (AAAA-MM-JJ) corrige le jour de l'encaissement ; absent, il ne change pas. */
-  payload: { status: PaymentStatus; amount: string | null; paid_at?: string },
+  /**
+   * `paid_at` et `invoiced_at` (AAAA-MM-JJ) corrigent le jour de l'encaissement
+   * et celui de la facturation ; absents, ils ne changent pas.
+   */
+  payload: { status: PaymentStatus; amount: string | null; paid_at?: string; invoiced_at?: string },
 ) {
   return apiFetch<Quote>(`/v1/quotes/${id}/deposit`, { method: "PUT", body: payload });
 }
