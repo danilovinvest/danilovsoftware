@@ -160,6 +160,9 @@ export function ProjectJalons({
 
                 {jalon.picks === "date" || jalon.picks === "day" ? (
                   <DatePickerButton
+                    // Remonté quand la date change, comme MaterialsButton : le
+                    // brouillon repart de la valeur au lieu d'un jour périmé.
+                    key={at ?? "vide"}
                     value={at}
                     past={jalon.picks === "day"}
                     disabled={disabled}
