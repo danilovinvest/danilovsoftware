@@ -45,6 +45,19 @@ export function useProjectSettlement(
 
   const setDeposit = useAction(write(api.setQuoteDeposit, "deposit_amount"), { inline: true });
   const setBalance = useAction(write(api.setQuoteBalance, "balance_amount"), { inline: true });
+  // La facturation de l'acompte : son jour seul, montant et encaissement gardés.
+  const setInvoiced = useAction(
+    (status: PaymentStatus, invoicedAt?: string) => {
+      if (!porteur) throw new Error("Aucun devis à mettre à jour sur cette affaire.");
+      return api
+        .setQuoteDeposit(porteur.id, { status, amount: porteur.deposit_amount, invoiced_at: invoicedAt })
+        .then((quote) => {
+          onQuote?.(quote);
+          return quote;
+        });
+    },
+    { inline: true },
+  );
 
   /** Écrit, recharge sur un succès, et rend la réussite : un panneau ne se ferme que sur elle. */
   async function run(
@@ -63,7 +76,7 @@ export function useProjectSettlement(
   const retirerAcompte = () => run(setDeposit, "en_attente");
   const solder = (amount: string | null, paidAt?: string) => run(setBalance, "recu", amount, paidAt);
   const retirerSolde = () => run(setBalance, "en_attente");
-  const pending = setDeposit.pending || setBalance.pending;
+  const pending = setDeposit.pending || setBalance.pending || setInvoiced.pending;
 
   /**
    * L'éditeur des règlements, réglé sur la pièce porteuse : le même pour la
@@ -104,13 +117,24 @@ export function useProjectSettlement(
     encaisser,
     /** Retire l'encaissement. Le montant reste sur le devis, le statut repart en attente. */
     retirerAcompte,
-    /** L'acompte est facturé, ou — décoché — il n'y en a pas. */
-    facturerAcompte: (invoiced: boolean) =>
-      run(setDeposit, invoiced ? "en_attente" : "non_applicable"),
+    /**
+     * L'acompte est facturé, au jour donné s'il l'est, ou — `null` — il n'y en
+     * a pas. Le statut courant est gardé : corriger le jour d'un acompte déjà
+     * reçu ne doit pas le faire repasser « en attente ».
+     */
+    facturerAcompte: async (invoicedAt?: string | null): Promise<boolean> => {
+      if (invoicedAt === null) return run(setDeposit, "non_applicable");
+      const current = porteur?.deposit_status;
+      const status: PaymentStatus =
+        current === undefined || current === "non_applicable" ? "en_attente" : current;
+      const ok = (await setInvoiced.run(status, invoicedAt?.slice(0, 10))) !== null;
+      if (ok) onChanged();
+      return ok;
+    },
     solder,
     retirerSolde,
     editorProps,
     pending,
-    error: setDeposit.error ?? setBalance.error,
+    error: setDeposit.error ?? setBalance.error ?? setInvoiced.error,
   };
 }

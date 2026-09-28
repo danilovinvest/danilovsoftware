@@ -286,7 +286,7 @@ export const ProjectBlock = memo(function ProjectBlock({
         if (await reopen.run()) onChanged();
         return;
       case "deposit_invoiced":
-        await settlement.facturerAcompte(true);
+        await settlement.facturerAcompte();
         return;
       case "book_date":
         // Réserver une date demande de choisir : on emmène l'utilisateur là
