@@ -397,19 +397,19 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
           centré dans une largeur qu'on ne voit pas en entier.
         */}
         <TabsList className="max-w-full justify-start overflow-x-auto">
-          <TabsTrigger value="affaires">
+          <TabsTrigger className={TAB} value="affaires">
             Affaires
             <TabCount value={customer.projects.length} />
           </TabsTrigger>
-          <TabsTrigger value="graphe" data-demo="tab-graphe">Graphe</TabsTrigger>
-          <TabsTrigger value="echanges">
+          <TabsTrigger className={TAB} value="graphe" data-demo="tab-graphe">Graphe</TabsTrigger>
+          <TabsTrigger className={TAB} value="echanges">
             Échanges
             <TabCount value={customer.interactions_total} />
           </TabsTrigger>
-          <TabsTrigger value="taches" data-demo="tab-taches">Tâches</TabsTrigger>
-          {canReadMail && <TabsTrigger value="courriels">Courriels</TabsTrigger>}
-          <TabsTrigger value="documents">Documents</TabsTrigger>
-          <TabsTrigger value="details">Détails</TabsTrigger>
+          <TabsTrigger className={TAB} value="taches" data-demo="tab-taches">Tâches</TabsTrigger>
+          {canReadMail && <TabsTrigger className={TAB} value="courriels">Courriels</TabsTrigger>}
+          <TabsTrigger className={TAB} value="documents">Documents</TabsTrigger>
+          <TabsTrigger className={TAB} value="details">Détails</TabsTrigger>
         </TabsList>
 
         <TabsContent value="affaires" className="mt-4">
@@ -516,17 +516,24 @@ function RelationBadge({ customer }: { customer: Parameters<typeof relationOf>[0
 }
 
 /**
- * Le compte d'un onglet, dans une pastille.
+ * Les onglets de la fiche, plus aérés que ceux de shadcn.
  *
- * Un chiffre nu, de la teinte des libellés inactifs, se lisait comme un
- * onglet de plus : « Affaires 1 Graphe ». La pastille l'attache à son
- * libellé. `bg-foreground/10` et non `bg-muted` : la barre est déjà `muted`,
- * la pastille y aurait disparu — celle-ci ressort sur l'onglet gris comme sur
- * l'onglet actif, dans les deux thèmes.
+ * Le compte d'un onglet se lisait comme un onglet de plus — « Affaires 1
+ * Graphe » — parce qu'il était exactement aussi loin de son libellé (6 px de
+ * `gap` plus sa marge) que de l'onglet suivant (deux fois `px-1.5`). Habiller
+ * le chiffre n'y changeait rien : c'est l'écart qui groupe. La pastille colle
+ * donc à son libellé (le seul `gap`) et les onglets s'écartent à 24 px.
+ */
+const TAB = "px-3";
+
+/**
+ * Le compte d'un onglet, dans une pastille. `bg-foreground/10` et non
+ * `bg-muted` : la barre est déjà `muted`, la pastille y aurait disparu — celle-ci
+ * ressort sur l'onglet gris comme sur l'onglet actif, dans les deux thèmes.
  */
 function TabCount({ value }: { value: number }) {
   return (
-    <span className="bg-foreground/10 text-foreground/70 ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[11px] leading-none font-medium tabular-nums">
+    <span className="bg-foreground/10 text-foreground/70 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[11px] leading-none font-medium tabular-nums">
       {value}
     </span>
   );
