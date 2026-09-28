@@ -399,14 +399,12 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
         <TabsList className="max-w-full justify-start overflow-x-auto">
           <TabsTrigger value="affaires">
             Affaires
-            <span className="text-muted-foreground ml-1.5">{customer.projects.length}</span>
+            <TabCount value={customer.projects.length} />
           </TabsTrigger>
           <TabsTrigger value="graphe" data-demo="tab-graphe">Graphe</TabsTrigger>
           <TabsTrigger value="echanges">
             Échanges
-            <span className="text-muted-foreground ml-1.5">
-              {customer.interactions_total}
-            </span>
+            <TabCount value={customer.interactions_total} />
           </TabsTrigger>
           <TabsTrigger value="taches" data-demo="tab-taches">Tâches</TabsTrigger>
           {canReadMail && <TabsTrigger value="courriels">Courriels</TabsTrigger>}
@@ -515,4 +513,21 @@ function RelationBadge({ customer }: { customer: Parameters<typeof relationOf>[0
     );
   }
   return <EnumBadge value={relation.value} entries={CUSTOMER_RELATION} />;
+}
+
+/**
+ * Le compte d'un onglet, dans une pastille.
+ *
+ * Un chiffre nu, de la teinte des libellés inactifs, se lisait comme un
+ * onglet de plus : « Affaires 1 Graphe ». La pastille l'attache à son
+ * libellé. `bg-foreground/10` et non `bg-muted` : la barre est déjà `muted`,
+ * la pastille y aurait disparu — celle-ci ressort sur l'onglet gris comme sur
+ * l'onglet actif, dans les deux thèmes.
+ */
+function TabCount({ value }: { value: number }) {
+  return (
+    <span className="bg-foreground/10 text-foreground/70 ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[11px] leading-none font-medium tabular-nums">
+      {value}
+    </span>
+  );
 }
