@@ -389,14 +389,15 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
         }}
       >
         {/*
-          Six onglets font 484 pixels, l'écran d'un téléphone en fait 390.
+          Sept onglets ne tiennent pas sur un téléphone de 390 pixels.
 
-          La barre défile donc dans son propre cadre plutôt que de pousser la
-          page entière : c'est la règle qui vaut déjà pour les tableaux larges.
-          `justify-start` pour que « Affaires » reste à gauche au lieu d'être
-          centré dans une largeur qu'on ne voit pas en entier.
+          La barre défilait dans son cadre, et le dirigeant n'en voulait pas :
+          un onglet coupé au bord ne se voit pas, et le premier glissait hors de
+          l'écran. Elle passe donc à la ligne (`flex-wrap`, hauteur libérée de
+          son `h-8`) plutôt que de défiler — rien ne pousse la page de côté pour
+          autant. `justify-start` garde « Affaires » à gauche.
         */}
-        <TabsList className="max-w-full justify-start overflow-x-auto">
+        <TabsList className="max-w-full flex-wrap justify-start group-data-horizontal/tabs:h-auto">
           <TabsTrigger className={TAB} value="affaires">
             Affaires
             <TabCount value={customer.projects.length} />
@@ -524,7 +525,9 @@ function RelationBadge({ customer }: { customer: Parameters<typeof relationOf>[0
  * le chiffre n'y changeait rien : c'est l'écart qui groupe. La pastille colle
  * donc à son libellé (le seul `gap`) et les onglets s'écartent à 24 px.
  */
-const TAB = "px-3";
+// Hauteur fixe et pas d'étirement : sur deux lignes, les onglets gardent leur
+// taille au lieu de s'étaler pour remplir la rangée.
+const TAB = "h-7 flex-none px-3";
 
 /**
  * Le compte d'un onglet, dans une pastille. `bg-foreground/10` et non
