@@ -1,5 +1,5 @@
 import type { Milestones, PaymentStatus, Project, ProjectMission, Quote } from "./types";
-import { paymentCarrier } from "./settlement";
+import { balanceFact, depositFact, paymentCarrier } from "./settlement";
 
 /**
  * Les jalons d'après-signature d'une affaire.
@@ -132,6 +132,8 @@ export function readJalons(
   project?: { started_at: string | null } | Project,
 ): Jalons {
   const signed = signedQuote(quotes);
+  const deposit = depositFact(quotes);
+  const balance = balanceFact(quotes);
   const m = milestones?.find((entry) => entry.project_id === projectId);
 
   return {
@@ -142,15 +144,13 @@ export function readJalons(
       signed && signed.deposit_status !== "non_applicable"
         ? (signed.deposit_invoiced_at ?? signed.issued_at)
         : null,
-    deposit_paid_at:
-      signed && signed.deposit_status === "recu"
-        ? (signed.deposit_paid_at ?? signed.issued_at)
-        : null,
+    // Le jour de l'encaissement se lit comme la frise le lit (`depositFact`) :
+    // le paiement de la facture d'acompte redate la marque posée à la main.
+    deposit_paid_at: deposit.done ? (deposit.at ?? signed?.issued_at ?? null) : null,
     deposit_amount: signed?.deposit_amount ?? null,
-    balance_paid_at:
-      signed && signed.balance_status === "recu"
-        ? (signed.balance_paid_at ?? signed.issued_at)
-        : null,
+    // Le solde n'est encaissé qu'à 100 % payé (`balanceFact`) : une situation
+    // payée ne le date plus.
+    balance_paid_at: balance.done ? (balance.at ?? signed?.issued_at ?? null) : null,
     rib_sent_at: m?.rib_sent_at ?? null,
     insurance_sent_at: m?.insurance_sent_at ?? null,
     worksite_date: project?.started_at ?? null,

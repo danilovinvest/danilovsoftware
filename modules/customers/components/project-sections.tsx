@@ -129,6 +129,11 @@ function MoneySection({ customer, project, quotes, proofs, settlement, canWrite,
         payments={customer.payments}
         carrierId={settlement.porteur?.id ?? null}
         onSettle={onSettle}
+        // Les affaires vivantes de la fiche : une pièce ne change que
+        // d'affaire, jamais de client.
+        moveTargets={customer.projects
+          .filter((p) => p.archived_at === null)
+          .map((p) => ({ id: p.id, label: p.label, reference: p.reference }))}
         onChanged={onChanged}
       />
       <JoinedQuoteDocs proofs={proofs} />

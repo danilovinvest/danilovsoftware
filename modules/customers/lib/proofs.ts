@@ -1,5 +1,6 @@
 import type { CycleStep } from "./cycle";
 import type { Interaction, ProofBatch, Quote } from "./types";
+import { pieceRefText } from "./piece-ref";
 
 /**
  * Ce qui prouve déjà un cran, sans qu'on ait rien à joindre.
@@ -38,7 +39,8 @@ const isDepositInvoice = (quote: Quote) =>
 
 function quoteProof(quote: Quote, prefix: string): AutoProof {
   return {
-    label: `${prefix} ${quote.reference || quote.label || ""}`.trim(),
+    // La lettre de la société devant le numéro : FA2026-0005 existe des deux côtés.
+    label: `${prefix} ${pieceRefText(quote.issuer, quote.reference) || quote.label || ""}`.trim(),
     href: quote.drive_url,
     at: quote.issued_at,
   };

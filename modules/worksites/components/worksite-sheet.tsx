@@ -25,6 +25,7 @@ import {
   paymentCarrier,
   depositTotalOf,
   missionOf,
+  PieceRef,
   PlanEvent,
   projectReference,
   setMilestones,
@@ -572,9 +573,12 @@ function Section({
                 name={quote.drive_name || quote.reference || quote.label}
                 className="hover:bg-accent/50 flex w-full items-center gap-2 px-2.5 py-2 transition-colors"
               >
-                <span className="font-mono text-[11px]">
-                  {quote.reference || "sans référence"}
-                </span>
+                <PieceRef
+                  issuer={quote.issuer}
+                  reference={quote.reference}
+                  fallback="sans référence"
+                  className="text-[11px]"
+                />
                 <span className="text-muted-foreground min-w-0 flex-1 truncate text-[11px]">
                   {quote.drive_name || quote.label}
                 </span>

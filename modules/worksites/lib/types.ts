@@ -35,6 +35,8 @@ export type WorksiteQuote = {
   balance_paid_at: string | null;
   drive_url: string;
   drive_name: string;
+  /** La société qui émet : le même numéro existe des deux côtés (G ou S). */
+  issuer: string | null;
 };
 
 export type Worksite = {

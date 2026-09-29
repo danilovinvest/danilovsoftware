@@ -51,6 +51,53 @@ const FICHE_COPRO = "/customers/de2ea332-b3dd-491a-8ea4-b423612731aa";
 
 export const DEMOS: Demo[] = [
   {
+    id: "socle-pieces",
+    title: "Les pièces : numéros par société, déplacement, encaissé, frise",
+    date: "2026-09-29",
+    steps: [
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="tab-devis"]',
+        target: '[data-demo="piece-ref"]',
+        title: "G ou S devant chaque numéro",
+        body:
+          "Chaque société numérote de son côté : DE2026-0016 existe chez GROUPE et chez " +
+          "STRUCTURE. La lettre dit laquelle, sur la ligne d'un devis, les preuves de la " +
+          "frise, les chantiers et la recherche ⌘K — qui montre désormais les deux pièces. " +
+          "Le même numéro se saisit une fois par société, par l'écran comme par l'assistant.",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: ['[data-demo="tab-devis"]', '[data-demo="quote-menu"]'],
+        target: '[data-demo="quote-move"]',
+        title: "Déplacer une pièce vers une autre affaire",
+        body:
+          "Une étude ou des sondages rangés dans la mauvaise affaire changent d'affaire, avec " +
+          "leurs virements. Seules les affaires de la même fiche sont proposées, et " +
+          "l'historique des deux affaires garde une note du déplacement.",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="tab-devis"]',
+        target: '[data-demo="quote-balance-line"], [data-demo="quote-menu"]',
+        title: "L'encaissé de chaque pièce se voit et se corrige",
+        body:
+          "Le solde d'une pièce s'affiche à côté de son acompte, et le « … » d'une pièce qui ne " +
+          "porte pas le règlement de l'affaire ouvre « Corriger l'acompte / le solde de cette " +
+          "pièce » : un montant hérité de la reprise se corrige ou se retire.",
+      },
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="project-cycle"]',
+        title: "Une frise fidèle aux paiements",
+        body:
+          "« Solde encaissé » n'est coché qu'à 100 % payé : une facture de situation réglée ne " +
+          "le coche plus. « Acompte encaissé » prend le jour du vrai paiement de sa facture, et " +
+          "une marque posée à tort se retire depuis le cran.",
+      },
+    ],
+  },
+  {
     id: "graphe-global",
     title: "Le graphe de toute la base, vivant",
     date: "2026-09-29",

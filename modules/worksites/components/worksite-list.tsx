@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import { projectReference } from "@/modules/customers";
+import { pieceRefText, projectReference } from "@/modules/customers";
 import { euros, formatDate } from "@/shared/lib/format";
 import { STUDY_STATUS, WORKSITE_STATUS } from "../lib/labels";
 import type { Metier, ReadWorksite } from "../lib/types";
@@ -127,7 +127,7 @@ export function WorksiteList({
                             : "text-muted-foreground",
                         )}
                       >
-                        {quote.reference || "sans référence"}
+                        {pieceRefText(quote.issuer, quote.reference) || "sans référence"}
                         {quote.drive_url && <ExternalLinkIcon className="size-2.5" />}
                       </a>
                     ))}

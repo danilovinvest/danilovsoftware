@@ -540,6 +540,18 @@ export function deleteQuote(id: string) {
   return apiFetch<void>(`/v1/quotes/${id}`, { method: "DELETE" });
 }
 
+/**
+ * Range une pièce sous une autre affaire **de la même fiche**, avec ses
+ * virements ; l'historique des deux affaires le note (29/09). Une autre fiche
+ * est le geste du déplacement d'affaire, pas de celui-ci.
+ */
+export function moveQuote(id: string, projectId: string) {
+  return apiFetch<Quote>(`/v1/quotes/${id}/project`, {
+    method: "PUT",
+    body: { project_id: projectId },
+  });
+}
+
 // --- Échanges ---------------------------------------------------------------
 
 /**
