@@ -51,6 +51,46 @@ const FICHE_COPRO = "/customers/de2ea332-b3dd-491a-8ea4-b423612731aa";
 
 export const DEMOS: Demo[] = [
   {
+    id: "fiche-simplifiee-affaire",
+    title: "Une affaire ouverte, sans onglets dans les onglets",
+    date: "2026-09-29",
+    steps: [
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="project-line"]',
+        title: "La ligne de l'affaire dit l'essentiel",
+        body: "Numéro, intitulé, délai, frise, prochaine action et montant, sur une ligne ; la mission, l'adresse, la période et le responsable en gris dessous. L'étape n'y est plus en pastille : la frise la dit déjà.",
+      },
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="project-issuer"]',
+        title: "La société se change par son badge",
+        body: "STRUCTURE ou GROUPE, et « déduite » tant que personne n'a tranché. C'est désormais le seul endroit où l'affaire change de société : le menu répétait le même geste sous un autre nom.",
+      },
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="next-action"]',
+        title: "Un seul bandeau « à faire »",
+        body: "L'action et qui la porte vivaient dans deux cadres empilés. Ils sont dans le même bandeau : ce qu'il faut faire et ses boutons en haut, sous un filet la personne chargée et l'échéance, avec « Assigner » ou « M'attribuer » en gestes secondaires.",
+      },
+      {
+        path: FICHE_ETUDE,
+        target:
+          '[data-demo="tab-devis"], [data-demo="tab-apres"], [data-demo="tab-chronologie"], [data-demo="tab-notes"]',
+        title: "Des sections au lieu d'onglets",
+        body: "Devis & règlements, Après-signature, Chronologie, Notes : elles se lisent de haut en bas et disent repliées ce qu'elles contiennent — nombre de devis, jalons franchis (« 3/7 »), échanges. Tant qu'un devis n'est pas signé ou qu'un règlement est attendu, les devis s'ouvrent d'office ; ensuite, l'après-signature. Les liens « &onglet=devis » ouvrent toujours la bonne.",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="project-delete"]',
+        target:
+          '[data-demo="project-edit"], [data-demo="project-new-quote"], [data-demo="project-archive"], [data-demo="project-delete-item"]',
+        title: "Tous les gestes dans « … »",
+        body: "Modifier l'affaire, nouveau devis, ouvrir dans Chantiers ou Études, terminer ou rouvrir, archiver, supprimer : un menu, un exemplaire de chaque geste. Claude reste une icône à côté, comme dans l'en-tête de la fiche. Supprimer demande toujours deux confirmations.",
+      },
+    ],
+  },
+  {
     id: "fiche-simplifiee-entete",
     title: "La fiche client, simplifiée sans rien retirer",
     date: "2026-09-29",
@@ -613,6 +653,7 @@ export const DEMOS: Demo[] = [
       },
       {
         path: FICHE_ETUDE,
+        click: '[data-demo="tab-notes"]',
         target: '[data-demo="project-notes"]',
         title: "Chaque affaire a ses notes",
         body: "Le contexte d'une affaire — accès, digicode, contraintes — s'écrivait dans les notes de la fiche, mêlé aux autres affaires. Il se lit maintenant dans l'affaire dépliée, se corrige sur place, et « Modifier l'affaire » le propose aussi.",
@@ -709,7 +750,7 @@ export const DEMOS: Demo[] = [
         path: FICHE_ETUDE,
         target: '[data-demo="project-delete"]',
         title: "Une barre d'affaire plus courte",
-        body: "Sept boutons côte à côte devenaient des clics ratés. Restent Devis et Modifier ; le reste passe dans « … », où « Supprimer l'affaire » est séparé et en rouge.",
+        body: "Sept boutons côte à côte devenaient des clics ratés. Tout passe dans « … », sur la ligne de l'affaire, où « Supprimer l'affaire » est séparé et en rouge.",
       },
       {
         path: FICHE_ETUDE,
@@ -890,9 +931,10 @@ export const DEMOS: Demo[] = [
     steps: [
       {
         path: "/customers/77c807e5-f0c4-4bad-b0f7-d404d2a00782",
-        target: '[data-demo="project-worksite-link"]',
-        title: "Sous l'adresse, le chemin vers le chantier",
-        body: "Il fallait quitter la fiche, ouvrir Chantiers et y rechercher l'affaire qu'on venait de lire. Le lien ouvre directement la fiche latérale de ce chantier — ou de cette étude, pour STRUCTURE —, sur le modèle du lien vers la fiche d'un rendez-vous dans l'agenda. Il n'apparaît que sur une affaire signée ou réalisée : les écrans Chantiers et Études ne listent que celles-là.",
+        click: '[data-demo="project-delete"]',
+        target: '[data-demo="project-worksite"]',
+        title: "Dans le menu de l'affaire, le chemin vers le chantier",
+        body: "Il fallait quitter la fiche, ouvrir Chantiers et y rechercher l'affaire qu'on venait de lire. « Ouvrir dans Chantiers », dans le menu « … » de l'affaire, ouvre directement la fiche latérale de ce chantier — ou de cette étude, pour STRUCTURE —, sur le modèle du lien vers la fiche d'un rendez-vous dans l'agenda. Il n'apparaît que sur une affaire signée ou réalisée : les écrans Chantiers et Études ne listent que celles-là.",
       },
     ],
   },
@@ -988,11 +1030,11 @@ export const DEMOS: Demo[] = [
       {
         /*
           La fiche d'exemple des démos : une seule affaire, dépliée d'office,
-          donc « Modifier » est atteignable en un clic. Le Faucheur en porte
-          plusieurs et resterait replié.
+          donc « Modifier » est atteignable par son menu « … ». Le Faucheur en
+          porte plusieurs et resterait replié.
         */
         path: FICHE_ETUDE,
-        click: '[data-demo="project-edit"]',
+        click: ['[data-demo="project-delete"]', '[data-demo="project-edit"]'],
         target: '[data-demo="project-dates"]',
         title: "Et la fin du chantier se saisit enfin",
         body: "La colonne existait depuis mars et l'agenda l'écrivait déjà : poser un événement « Chantier » avec sa date de fin la renseignait. Mais l'API ne la servait dans aucune réponse et aucun formulaire ne l'envoyait — une affaire terminée ne savait le dire qu'à l'événement qui l'avait datée, sans que la fiche puisse le montrer ni le corriger. C'est ici, et ici seulement, qu'une date se retire : un événement d'agenda n'écrit que ce qu'il sait et n'efface jamais, la fiche voit l'état complet et fait autorité.",
@@ -1279,7 +1321,8 @@ export const DEMOS: Demo[] = [
       },
       {
         path: FICHE_ETUDE,
-        target: '[data-demo="project-edit"], [data-demo="project-delete"]',
+        click: '[data-demo="project-delete"]',
+        target: '[data-demo="project-edit"], [data-demo="project-delete-item"]',
         title: "Modifier et supprimer, en toutes lettres",
         body: "Supprimer demande deux confirmations : la première liste ce qui part (devis, factures, preuves, jalons) et ce qui reste (échanges, rendez-vous, dossier OneDrive), la seconde dit que c'est définitif. La copie OneDrive ne recrée plus une affaire supprimée.",
       },
@@ -1386,7 +1429,7 @@ export const DEMOS: Demo[] = [
       },
       {
         path: FICHE_ETUDE,
-        click: '[data-demo="project-edit"]',
+        click: ['[data-demo="project-delete"]', '[data-demo="project-edit"]'],
         target: '#project-mission, [data-demo="project-delais"]',
         title: "Choisir la mission, poser les délais",
         body: "« Promis au client » engage l'entreprise, « Deadline interne » est la marge qu'on se donne. Tant que rien n'est rendu, l'affaire affiche le temps qu'il reste.",

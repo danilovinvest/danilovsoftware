@@ -6,7 +6,6 @@ import { usePermission } from "@/modules/auth";
 import { Card } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { ErrorNotice } from "@/shared/ui/feedback";
-import { askConfirm } from "@/shared/ui/confirm";
 import * as api from "../lib/api";
 import { deadlineOf, deliveredAt, missionOf } from "../lib/mission";
 import { autoProofsOf } from "../lib/proofs";
@@ -31,6 +30,7 @@ import {
   type BlockDialog,
 } from "../lib/project-actions";
 import { useAction } from "../hooks/use-customers";
+import { useArchiveProject } from "../hooks/use-archive-project";
 import { useCycleOrders } from "../hooks/use-cycle-orders";
 import { useProjectSettlement } from "../hooks/use-project-settlement";
 import { useStepProofActions } from "../hooks/use-step-proof-actions";
@@ -40,14 +40,16 @@ import type {
   Project,
   Quote,
 } from "../lib/types";
+import { defaultSection, sectionFromParam } from "../lib/project-sections";
+import { useProjectSections } from "../hooks/use-project-sections";
 import { ProjectNextAssignment } from "./next-assignment";
 import { ProjectOnboardingButton, projetIncomplet } from "./project-onboarding";
 import { ProjectBlockDialogs } from "./project-block-dialogs";
 import { ProjectCyclePanel } from "./project-cycle-panel";
 import { ProjectHeader } from "./project-header";
+import { ProjectLineActions } from "./project-line-actions";
 import { ProjectNextAction } from "./project-next-action";
-import { ProjectNotes } from "./project-notes";
-import { PROJECT_TABS, ProjectTabs } from "./project-tabs";
+import { ProjectSections } from "./project-sections";
 
 export type ProjectBlockProps = {
   customer: CustomerDetail;
@@ -64,7 +66,7 @@ export type ProjectBlockProps = {
   defaultOpen: boolean;
   /** Désignée par l'adresse : elle vient à l'écran au montage. */
   focused?: boolean;
-  /** L'onglet demandé par l'adresse : chronologie, devis ou apres. */
+  /** La section demandée par l'adresse (`?onglet=`) : devis, apres ou chronologie. */
   initialTab?: string | null;
   onQuote?: (quote: Quote) => void;
   onOverride: (project: Project, patch: Partial<Jalons & StepMarks>) => Promise<boolean>;
@@ -76,8 +78,9 @@ export type ProjectBlockProps = {
 /**
  * Une affaire : un accordéon.
  *
- * Replié, il répond à « où en est-on » sans qu'on l'ouvre. Déplié, il dit quoi
- * faire, puis montre l'histoire, les devis et l'après-signature.
+ * Replié, il répond à « où en est-on » sans qu'on l'ouvre. Déplié : la frise,
+ * un seul bandeau « à faire » — l'action et qui la porte —, puis des sections
+ * repliables — devis et règlements, après-signature, chronologie, notes.
  *
  * **Mémorisé** : une saisie dans une affaire — un cran coché, une écriture en
  * vol — ne fait plus rendre les autres affaires de la fiche. Les accessoires
@@ -106,9 +109,10 @@ export const ProjectBlock = memo(function ProjectBlock({
 }: ProjectBlockProps) {
   const router = useRouter();
   const [open, setOpen] = useState(defaultOpen);
-  const [tab, setTab] = useState(() =>
-    initialTab && PROJECT_TABS.includes(initialTab) ? initialTab : "chronologie",
-  );
+  // La section de l'adresse d'abord ; sinon celle que l'affaire réclame. Lue
+  // une fois : le bloc est remonté quand l'adresse change d'affaire ou d'onglet.
+  const [asked] = useState(() => sectionFromParam(initialTab));
+  const sections = useProjectSections(asked ?? defaultSection(quotes));
   /** La boîte ouverte, une à la fois. */
   const [dialog, setDialog] = useState<BlockDialog | null>(null);
   // Stable : la liste des devis est mémorisée, et ne se rend pas à chaque cran coché.
@@ -118,10 +122,14 @@ export const ProjectBlock = memo(function ProjectBlock({
   );
   const bloc = useRef<HTMLDivElement>(null);
   // Une affaire désignée par un lien vient à l'écran : sur une fiche à six
-  // affaires, elle serait sinon dépliée hors de vue.
+  // affaires, elle serait sinon dépliée hors de vue. Un lien qui nomme une
+  // section (`&onglet=devis`) mène à la section elle-même.
+  const { reveal } = sections;
   useEffect(() => {
-    if (focused) bloc.current?.scrollIntoView({ block: "start", behavior: "smooth" });
-  }, [focused]);
+    if (!focused) return;
+    if (asked) reveal(asked);
+    else bloc.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+  }, [focused, asked, reveal]);
 
   const onOverride = (patch: Partial<Jalons & StepMarks>) => overrideFor(project, patch);
   const onAddQuote = () => addQuoteFor(project);
@@ -196,25 +204,7 @@ export const ProjectBlock = memo(function ProjectBlock({
     api.setProjectStage(project.id, { stage: project.stage, outcome: null, outcome_note: "" }),
   );
 
-  /*
-    Archiver l'affaire (issue 115) : elle sort de Chantiers, d'Études, du
-    marketing et des dossiers à attribuer, et reste sur la fiche, repliée sous
-    « Affaires archivées ». Rien d'autre ne bouge, d'où une seule confirmation
-    — la suppression, elle, en demande deux.
-  */
-  const archive = useAction(() => api.setProjectArchived(project.id, true), { inline: true });
-  async function archiver() {
-    const ok = await askConfirm({
-      title: `Archiver l'affaire « ${project.label} »`,
-      description:
-        "Elle sort des chantiers, des études, du marketing et des dossiers à attribuer. " +
-        "Ses devis, factures et preuves restent, et elle se désarchive d'un clic depuis « Affaires archivées ».",
-      confirmLabel: "Archiver",
-      destructive: false,
-    });
-    if (!ok) return;
-    if ((await archive.run()) !== null) onChanged();
-  }
+  const archive = useArchiveProject(project, onChanged);
 
   const settlement = useProjectSettlement(quotes, onQuote, onChanged, {
     payments: customer.payments,
@@ -289,10 +279,10 @@ export const ProjectBlock = memo(function ProjectBlock({
         await settlement.facturerAcompte();
         return;
       case "book_date":
-        // Réserver une date demande de choisir : on emmène l'utilisateur là
-        // où le sélecteur se trouve.
+        // Réserver une date demande de choisir : on ouvre la section où le
+        // sélecteur se trouve, et on l'amène à l'écran.
         setOpen(true);
-        setTab("apres");
+        sections.reveal("apres");
         return;
       case "open_worksite":
         // Le chantier **est** cette affaire : on emmène son identifiant.
@@ -325,6 +315,23 @@ export const ProjectBlock = memo(function ProjectBlock({
           points={points}
           action={action}
           open={open}
+          actions={
+            <ProjectLineActions
+              project={project}
+              metier={metier}
+              site={site}
+              quotes={quotes}
+              interactionsCount={interactions.length}
+              canWrite={canWrite}
+              canWriteQuotes={canWriteQuotes}
+              onIssuer={() => setDialog({ kind: "issuer" })}
+              onEdit={() => onEdit(project)}
+              onAddQuote={onAddQuote}
+              onClose={() => setDialog({ kind: "closure" })}
+              onArchive={() => void archive.archiver()}
+              onDelete={() => setDialog({ kind: "delete" })}
+            />
+          }
         />
 
         <CollapsibleContent>
@@ -364,6 +371,28 @@ export const ProjectBlock = memo(function ProjectBlock({
               }
             />
 
+            {/* Le règlement écrit sur le devis : un refus doit se lire quelque part. */}
+            {settlement.error && <ErrorNotice message={settlement.error} />}
+            {archive.error && <ErrorNotice message={archive.error} />}
+            {proofActions.error && <ErrorNotice message={proofActions.error} />}
+
+            {/* Un seul bandeau « à faire » : l'action, puis qui la porte. */}
+            <ProjectNextAction
+              action={action}
+              onAct={act}
+              pending={reopen.pending || busy}
+              readOnly={!canWrite}
+              className="scroll-mt-4"
+            >
+              <ProjectNextAssignment
+                project={project}
+                customerName={customer.display_name}
+                action={action}
+                canWrite={canWrite}
+                onChanged={onChanged}
+              />
+            </ProjectNextAction>
+
             {/*
               L'affaire ne dit pas de quoi il s'agit : on ne chiffre pas ce qu'on
               n'a pas nommé. L'alerte disparaît dès que le type est posé.
@@ -372,45 +401,12 @@ export const ProjectBlock = memo(function ProjectBlock({
               <ProjectOnboardingButton onClick={() => setDialog({ kind: "complete" })} />
             )}
 
-            {/* Le règlement écrit sur le devis : un refus doit se lire quelque part. */}
-            {settlement.error && <ErrorNotice message={settlement.error} />}
-            {archive.error && <ErrorNotice message={archive.error} />}
-            {proofActions.error && <ErrorNotice message={proofActions.error} />}
-
-            <div data-demo="next-action">
-              {canWrite && (
-                <ProjectNextAction
-                  action={action}
-                  onAct={act}
-                  pending={reopen.pending || busy}
-                />
-              )}
-              <ProjectNextAssignment
-                project={project}
-                customerName={customer.display_name}
-                action={action}
-                canWrite={canWrite}
-                onChanged={onChanged}
-              />
-            </div>
-
-            <ProjectNotes project={project} canWrite={canWrite} onChanged={onChanged} />
-
-            {project.source_status && (
-              <p className="text-muted-foreground text-xs">
-                Suivi Excel :{" "}
-                <span className="font-mono text-[0.7rem]">« {project.source_status} »</span>
-              </p>
-            )}
-
-            <ProjectTabs
-              tab={tab}
-              onTabChange={setTab}
+            <ProjectSections
+              sections={sections}
               customer={customer}
               project={project}
               metier={metier}
               mission={mission}
-              site={site}
               quotes={quotes}
               interactions={interactions}
               proofs={preuves}
@@ -418,16 +414,9 @@ export const ProjectBlock = memo(function ProjectBlock({
               settlement={settlement}
               depositTransfers={settlementProps("acompte").transfers}
               canWrite={canWrite}
-              canWriteQuotes={canWriteQuotes}
               busy={busy}
               onMaterials={commanderMateriaux}
               onOverride={onOverride}
-              onAddQuote={onAddQuote}
-              onEdit={() => onEdit(project)}
-              onIssuer={() => setDialog({ kind: "issuer" })}
-              onCloseProject={() => setDialog({ kind: "closure" })}
-              onArchive={() => void archiver()}
-              onDelete={() => setDialog({ kind: "delete" })}
               onSettle={settle}
               onChanged={onChanged}
             />

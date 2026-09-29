@@ -68,7 +68,9 @@ function Spotlight({ demo, index, step }: { demo: Demo; index: number; step: Dem
       if (clicked < clicks.length) {
         const trigger = document.querySelector<HTMLElement>(clicks[clicked]);
         if (trigger) {
-          activate(trigger);
+          // Déjà ouvert, on ne le touche pas : une section repliable ou un
+          // menu cliqué une seconde fois se refermerait sur la zone à montrer.
+          if (trigger.getAttribute("aria-expanded") !== "true") activate(trigger);
           clicked += 1;
         }
       }

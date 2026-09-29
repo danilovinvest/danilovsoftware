@@ -20,6 +20,7 @@ import {
   StarIcon,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { TONE_BUTTON, TONE_BUTTON_SOFT, TONE_SOFT, TONE_TEXT } from "@/shared/ui/panel";
@@ -71,17 +72,28 @@ export function ProjectNextAction({
   action,
   onAct,
   pending,
+  readOnly = false,
   className,
+  children,
 }: {
   action: NextAction;
   onAct: (key: ActionKey) => void;
   pending?: boolean;
+  /** Sans droit d'écriture : la phrase reste, les boutons partent. */
+  readOnly?: boolean;
   className?: string;
+  /**
+   * Qui porte l'action, sous un filet dans le même bandeau. C'était un second
+   * cadre pointillé sous le premier : deux boîtes pour une seule question —
+   * quoi faire, et qui le fait.
+   */
+  children?: ReactNode;
 }) {
   const Icon = action.alert ? AlertTriangleIcon : ICONS[action.actions[0]?.key ?? "interaction"];
 
   return (
     <div
+      data-demo="next-action"
       className={cn(
         "flex flex-wrap items-center gap-x-4 gap-y-3 rounded-md border px-3 py-2.5",
         // Le fond ne se teinte que lorsqu'il y a lieu de s'inquiéter. Colorer
@@ -103,7 +115,7 @@ export function ProjectNextAction({
         )}
       </div>
 
-      <div className="flex shrink-0 flex-wrap items-center gap-2">
+      <div className={cn("flex shrink-0 flex-wrap items-center gap-2", readOnly && "hidden")}>
         {action.actions.map((entry) => {
           const EntryIcon = ICONS[entry.key];
           return (
@@ -131,6 +143,8 @@ export function ProjectNextAction({
           );
         })}
       </div>
+
+      {children && <div className="border-foreground/10 basis-full border-t pt-2">{children}</div>}
     </div>
   );
 }
