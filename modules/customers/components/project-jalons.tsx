@@ -4,7 +4,6 @@ import { useState } from "react";
 import { CheckIcon, InfoIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { DateField } from "@/shared/ui/date-time-field";
 import { formatDate } from "@/shared/lib/format";
 import { cn } from "@/lib/utils";
 import { jalonOrder, type Jalons } from "../lib/jalons";
@@ -15,7 +14,8 @@ import {
   type SettlementTransfers,
 } from "./deposit-field";
 import { MaterialsEditor, MaterialsTags } from "./materials-field";
-import type { Metier } from "../lib/cycle";
+import { StepDateButton } from "./step-date-editor";
+import { stepWrite, type Metier } from "../lib/cycle";
 import type { ProjectMission } from "../lib/types";
 
 /**
@@ -26,12 +26,12 @@ import type { ProjectMission } from "../lib/types";
  * encore de colonne en base et le disent, plutôt que de faire croire qu'ils
  * sont suivis.
  *
- * **Deux lignes ne se cochent pas, elles se saisissent.** « Date de chantier »
- * se choisit au calendrier : cocher poserait la date du jour, alors qu'on
- * réserve un chantier pour dans six semaines — et c'est le seul jalon qui
- * alerte quand il manque, parce que c'est là que tout attend. « Matériaux
- * commandés » se liste : une date seule ne dit pas ce qu'on attend à la
- * livraison, et c'était la demande du dirigeant.
+ * **Aucune ligne ne se coche d'un clic, toutes se saisissent** — et par les
+ * éditeurs du cran de la frise, sous le même nom : une date au calendrier
+ * (`StepDateButton`, le jour où c'est arrivé ; le lundi qui vient pour une
+ * date de chantier, qu'on réserve), la liste des matériaux commandés, la boîte
+ * des règlements pour l'acompte. Cocher posait la date du jour, faux dès qu'on
+ * rattrapait l'étape de la semaine passée.
  */
 export function ProjectJalons({
   metier,
@@ -158,18 +158,14 @@ export function ProjectJalons({
                   )}
                 </div>
 
-                {jalon.picks === "date" || jalon.picks === "day" ? (
-                  <DatePickerButton
-                    // Remonté quand la date change, comme MaterialsButton : le
-                    // brouillon repart de la valeur au lieu d'un jour périmé.
-                    key={at ?? "vide"}
-                    value={at}
-                    past={jalon.picks === "day"}
-                    disabled={disabled}
-                    onPick={(value) => onToggle(jalon.key, value)}
-                  />
-                ) : jalon.picks === "materials" ? (
+                {/*
+                  Chaque ligne ouvre la saisie que le cran de la frise ouvre
+                  pour le même fait : le même calendrier, les mêmes matériaux,
+                  la même boîte des règlements.
+                */}
+                {jalon.picks === "materials" ? (
                   <MaterialsButton
+                    title={jalon.label}
                     marked={at}
                     materials={jalons.materials}
                     disabled={disabled}
@@ -188,14 +184,13 @@ export function ProjectJalons({
                     onRemove={onDepositRemove}
                   />
                 ) : (
-                  <Button
-                    size="xs"
-                    variant={done ? "ghost" : "outline"}
+                  <StepDateButton
+                    title={jalon.label}
+                    value={at}
+                    mode={jalon.picks === "date" ? "booking" : "past"}
                     disabled={disabled}
-                    onClick={() => onToggle(jalon.key, done ? null : new Date().toISOString())}
-                  >
-                    {done ? "Annuler" : "Marquer fait"}
-                  </Button>
+                    onPick={(value) => onToggle(jalon.key, value)}
+                  />
                 )}
               </div>
             </li>
@@ -227,11 +222,13 @@ export function ProjectJalons({
  * ici doit être exactement celle qu'on retrouve là.
  */
 function MaterialsButton({
+  title,
   marked,
   materials,
   disabled,
   onSave,
 }: {
+  title: string;
   marked: string | null;
   materials: string[];
   disabled?: boolean;
@@ -247,89 +244,21 @@ function MaterialsButton({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80" align="end">
-        <MaterialsEditor
-          key={`${marked ?? "vide"}·${materials.join("|")}`}
-          value={materials}
-          marked={marked}
-          pending={disabled}
-          note="Écrit la commande et sa date dans les jalons de l'affaire."
-          onSave={(list) => onSave(list)}
-          onRemove={() => onSave(null)}
-          onClose={() => setOpen(false)}
-        />
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-/**
- * Une date au calendrier. Par défaut on réserve un démarrage de chantier ;
- * `past` date ce qui a déjà eu lieu — aujourd'hui proposé, jamais imposé.
- */
-function DatePickerButton({
-  value,
-  past = false,
-  disabled,
-  onPick,
-}: {
-  value: string | null;
-  past?: boolean;
-  disabled?: boolean;
-  onPick: (value: string | null) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState(() => value?.slice(0, 10) ?? (past ? today() : nextMonday()));
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button size="xs" variant={value ? "ghost" : past ? "outline" : "default"} disabled={disabled}>
-          {value ? "Changer" : past ? "Marquer fait" : "Réserver une date"}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-72" align="end">
         <div className="flex flex-col gap-3">
-          <DateField label={past ? "Fait le" : "Date de démarrage"} value={draft} onChange={setDraft} />
-          <div className="flex justify-between gap-2">
-            {value && (
-              <Button
-                size="xs"
-                variant="ghost"
-                onClick={() => {
-                  onPick(null);
-                  setOpen(false);
-                }}
-              >
-                Retirer
-              </Button>
-            )}
-            <Button
-              size="xs"
-              className="ml-auto"
-              onClick={() => {
-                onPick(new Date(`${draft}T08:00:00`).toISOString());
-                setOpen(false);
-              }}
-            >
-              {past ? "Enregistrer" : "Réserver"}
-            </Button>
-          </div>
+          <p className="text-sm font-medium">{title}</p>
+          <MaterialsEditor
+            key={`${marked ?? "vide"}·${materials.join("|")}`}
+            value={materials}
+            marked={marked}
+            pending={disabled}
+            note={stepWrite("materiaux").note}
+            onSave={(list) => onSave(list)}
+            onRemove={() => onSave(null)}
+            onClose={() => setOpen(false)}
+          />
         </div>
       </PopoverContent>
     </Popover>
   );
 }
 
-/** Le jour local : `toISOString` rendrait la veille entre minuit et deux heures. */
-function today(): string {
-  const at = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}`;
-}
-
-/** Un chantier démarre un lundi. C'est le défaut le moins surprenant. */
-function nextMonday(): string {
-  const at = new Date();
-  at.setDate(at.getDate() + ((8 - at.getDay()) % 7 || 7));
-  return at.toISOString().slice(0, 10);
-}

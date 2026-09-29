@@ -350,7 +350,7 @@ function cycleVide(now: number): CyclePoint[] {
 
 function NewProjectButton({ onClick }: { onClick: () => void }) {
   return (
-    <Button size="sm" variant="outline" onClick={onClick} data-demo="project-new">
+    <Button size="xs" variant="outline" onClick={onClick} data-demo="project-new">
       <PlusIcon />
       Nouvelle affaire
     </Button>

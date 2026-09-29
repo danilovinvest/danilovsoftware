@@ -85,18 +85,10 @@ export function CycleOrderDialog({
 }
 
 /*
-  Les libellés courts de la frise se répètent d'un parcours à l'autre — deux
-  « Rapport », deux « Envoi » — et sur un cran de quatorze pixels c'est sans
-  gêne. Ici on range, côte à côte, un rapport de visite et un rapport de
-  sondage : il faut les distinguer.
+  Ici on range, côte à côte, un rapport de visite et un rapport de sondage : le
+  nom entier du cran (`CYCLE_LABEL.label`), jamais l'étiquette courte de la
+  frise. Il n'y a plus de table à part — les noms sont désormais distincts.
 */
-const EDITOR_LABEL: Partial<Record<CycleStep, string>> = {
-  rapport: "Rapport de visite",
-  rapport_sondage: "Rapport de sondage",
-  chantier: "Date de chantier",
-  plans: "Envoi du dossier",
-  envoi: "Envoi du rapport",
-};
 
 function Editor({ initial, onDone }: { initial: Parcours; onDone: () => void }) {
   const orders = useCycleOrders();
@@ -248,7 +240,7 @@ function StepChip({
     >
       <GripVerticalIcon className="text-muted-foreground size-3.5" />
       <span className="text-muted-foreground w-4 text-right text-xs tabular-nums">{index + 1}</span>
-      <span className="font-medium">{EDITOR_LABEL[step] ?? CYCLE_LABEL[step].label}</span>
+      <span className="font-medium">{CYCLE_LABEL[step].label}</span>
       {optional && <span className="text-muted-foreground text-[11px]">si sondage vendu</span>}
     </li>
   );

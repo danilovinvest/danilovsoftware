@@ -1,15 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { PlusIcon, Trash2Icon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatAmount, formatDate } from "@/shared/lib/format";
+import { askConfirm } from "@/shared/ui/confirm";
 import { cn } from "@/lib/utils";
 import * as api from "../lib/api";
 import { useAction } from "../hooks/use-customers";
 import { parseAmountInput } from "../lib/amount";
 import type { QuotePayment } from "../lib/types";
+import { RowMenu } from "./row-menu";
 
 /**
  * Les virements d'un règlement, un par ligne.
@@ -69,19 +71,27 @@ export function QuotePayments({
                 {formatAmount(payment.amount)}
               </span>
               {payment.reference && <span className="truncate">{payment.reference}</span>}
+              {/*
+                Retirer un virement changeait le montant du règlement d'un clic,
+                sans rien demander : il passe par le « … » de la ligne et se
+                confirme, comme toute suppression de la fiche.
+              */}
               {canWrite && (
-                <Button
-                  size="icon-xs"
-                  variant="ghost"
-                  className="text-muted-foreground/50 hover:text-danger ml-auto"
-                  aria-label={`Retirer le virement du ${formatDate(payment.paid_at)}`}
-                  disabled={enCours}
-                  onClick={async () => {
-                    if (await retirer.run(quoteId, payment.id)) onChanged();
-                  }}
-                >
-                  <Trash2Icon />
-                </Button>
+                <span className="ml-auto">
+                  <RowMenu
+                    label={`Actions sur le virement du ${formatDate(payment.paid_at)}`}
+                    disabled={enCours}
+                    onDelete={async () => {
+                      const ok = await askConfirm({
+                        title: `Supprimer le virement du ${formatDate(payment.paid_at)}`,
+                        description: `${formatAmount(payment.amount)} quittent le règlement, dont le montant suit les virements restants — vide s'il n'en reste aucun.`,
+                        confirmLabel: "Supprimer",
+                      });
+                      if (ok && (await retirer.run(quoteId, payment.id))) onChanged();
+                    }}
+                    deleteLabel="Supprimer le virement…"
+                  />
+                </span>
               )}
             </li>
           ))}

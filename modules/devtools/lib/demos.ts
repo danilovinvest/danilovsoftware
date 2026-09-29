@@ -51,6 +51,78 @@ const FICHE_COPRO = "/customers/de2ea332-b3dd-491a-8ea4-b423612731aa";
 
 export const DEMOS: Demo[] = [
   {
+    id: "fiche-simplifiee-editeurs",
+    title: "Un fait, un nom, une saisie — où qu'on l'ouvre",
+    date: "2026-09-29",
+    steps: [
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="cran-acompte"]',
+        target: '[data-demo="cran-reglement"]',
+        title: "Le cran ouvre la boîte des règlements",
+        body:
+          "L'acompte et le solde se saisissaient dans le panneau du cran, dans une boîte " +
+          "depuis « à faire maintenant » et la ligne du devis, dans un autre panneau " +
+          "depuis l'après-signature. Le cran garde ses preuves, et « Encaisser » ouvre la " +
+          "même boîte que partout ailleurs.",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: ['[data-demo="cran-acompte"]', '[data-demo="cran-reglement"]'],
+        target: '[data-demo="reglement-editeur"]',
+        title: "Une boîte, un titre",
+        body:
+          "« Acompte encaissé » ou « Solde encaissé », quel que soit le bouton qui l'ouvre : " +
+          "la frise, « à faire maintenant », la ligne du devis, l'après-signature ou la fiche " +
+          "d'un chantier. Montant, jour du relevé et virements, comme avant. « Paiement reçu » " +
+          "s'appelle désormais « Solde encaissé », le nom du cran.",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="cran-calcul"]',
+        target: '[data-demo="step-date-editor"]',
+        title: "Une date se saisit au même calendrier",
+        body:
+          "Le cran faisait taper sa date dans un champ natif ; la ligne de l'après-signature " +
+          "posait la date du jour d'un clic, et « Annuler » y voulait dire « Retirer ». Les " +
+          "deux ouvrent maintenant la même saisie : le calendrier, « Marquer franchi », " +
+          "« Changer la date » et « Retirer ».",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="tab-apres"]',
+        target: '[data-demo="jalon-calc_done_at"]',
+        title: "Un jalon porte le même nom partout",
+        body:
+          "« Calcul terminé » ici, « Calcul terminé » dans le panneau du cran. Les crans " +
+          "« Envoi » et « Rapport » désignaient chacun deux faits ; ils s'appellent désormais " +
+          "« Dossier envoyé », « Rapport envoyé », « Rapport de visite » et « Rapport de " +
+          "sondage envoyé ». La frise garde une étiquette courte, qui dit la même chose.",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="tab-devis"]',
+        target: '[data-demo="quote-menu"]',
+        title: "Un « … » par ligne, et supprimer se confirme",
+        body:
+          "Le crayon et la corbeille d'un devis se touchaient. Ils sont dans un menu, comme " +
+          "pour un interlocuteur, un échange de l'historique, un virement et une preuve. " +
+          "Supprimer demande toujours confirmation, et dit ce que la suppression emporte.",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: '[role="tab"][id$="-trigger-echanges"]',
+        target: '[data-demo="note-call"]',
+        title: "Noter un échange, Planifier, Relancer",
+        body:
+          "Les mêmes verbes dans l'onglet Échanges et dans les actions d'une affaire. " +
+          "« Enregistrer un échange », « Noter la visite » et « Noter un appel » deviennent " +
+          "« Noter un échange » ; « Relancer par e-mail », qui n'envoyait aucun e-mail, " +
+          "devient « Relancer ».",
+      },
+    ],
+  },
+  {
     id: "fiche-simplifiee-affaire",
     title: "Une affaire ouverte, sans onglets dans les onglets",
     date: "2026-09-29",
@@ -162,7 +234,7 @@ export const DEMOS: Demo[] = [
           "« Acompte facturé » datait du jour où l'on cochait, et la première date posée " +
           "restait à vie : FA2025-0416 porte encore celle de sa copie depuis OneDrive. " +
           "La case ouvre maintenant un calendrier — aujourd'hui proposé, jamais imposé — " +
-          "et « Changer » corrige le jour. Un acompte déjà reçu le reste.",
+          "et « Modifier » corrige le jour. Un acompte déjà reçu le reste.",
       },
     ],
   },
@@ -649,7 +721,7 @@ export const DEMOS: Demo[] = [
         path: FICHE_ETUDE,
         target: '[data-demo="contacts-card"]',
         title: "Un interlocuteur se corrige",
-        body: "Corriger un numéro obligeait à supprimer puis recréer l'interlocuteur. Le crayon ouvre sa fiche, avec ses notes, et n'envoie que ce qui a changé.",
+        body: "Corriger un numéro obligeait à supprimer puis recréer l'interlocuteur. Un clic sur son nom, ou « Modifier » dans son « … », ouvre sa fiche, avec ses notes, et n'envoie que ce qui a changé.",
       },
       {
         path: FICHE_ETUDE,
@@ -754,7 +826,7 @@ export const DEMOS: Demo[] = [
       },
       {
         path: FICHE_ETUDE,
-        click: '[data-demo="cran-solde"]',
+        click: ['[data-demo="cran-solde"]', '[data-demo="cran-reglement"]'],
         target: '[data-demo="reglement-editeur"]',
         title: "Une seule saisie des règlements",
         body: "Frise, « à faire maintenant », après-signature et fiche chantier ouvrent la même saisie : montant, jour d'encaissement — demandé, jamais le jour du clic d'office — et virements. Dans le devis, le taux de TVA calcule le TTC à partir du HT, ou l'inverse, et les montants s'écrivent à la française.",
@@ -903,7 +975,7 @@ export const DEMOS: Demo[] = [
     steps: [
       {
         path: FICHE_ETUDE,
-        click: '[data-demo="cran-acompte"]',
+        click: ['[data-demo="cran-acompte"]', '[data-demo="cran-reglement"]'],
         target: '[data-demo="reglement-date"]',
         title: "Encaissé le",
         body: "Toutes les dates de la frise se corrigeaient, sauf ces deux-là : le serveur posait le jour du clic, et le solde n'avait même aucune date — la frise affichait celle de l'émission du devis. Le jour se saisit maintenant avec le montant, et ne part au serveur que s'il a changé : corriger un montant ne réécrit jamais la date.",
@@ -1005,7 +1077,7 @@ export const DEMOS: Demo[] = [
     steps: [
       {
         path: FICHE_ETUDE,
-        click: '[data-demo="cran-solde"]',
+        click: ['[data-demo="cran-solde"]', '[data-demo="cran-reglement"]'],
         target: '[data-demo="reglement-editeur"]',
         title: "Encaisser le solde, c'est dire combien",
         body: "« Solde encaissé » était une case : on affirmait avoir été payé sans jamais écrire le montant, alors que c'est ce chiffre qu'on rapproche du relevé de banque. L'acompte avait reçu son montant en juin ; le solde en avait autant besoin, et pour la même raison — ce n'est pas le reste à payer calculé du devis, un avenant ou une remise de fin de chantier le déplacent. C'est le même éditeur que l'acompte, pas un second : seuls les mots changent. Mesuré en production : quatre devis sont marqués soldés, aucun ne portait de montant. Le formulaire du devis porte le même champ, qui n'apparaît que si un solde est attendu ou reçu. Au passage, encaisser un solde ne renvoie plus le devis entier : il a sa route à lui, comme l'acompte — le remplacement complet effaçait la provenance du montant lu dans le PDF, si bien que solder un devis remettait sa lecture en file d'attente.",

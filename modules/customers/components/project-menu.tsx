@@ -70,7 +70,7 @@ export function ProjectMenu({
           l'ouvrent pour montrer chacune de ses entrées.
         */}
         <Button
-          size="icon-sm"
+          size="icon-xs"
           variant="ghost"
           aria-label="Actions sur l'affaire"
           data-demo="project-delete"

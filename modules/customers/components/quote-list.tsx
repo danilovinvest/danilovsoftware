@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useState } from "react";
-import { BanknoteIcon, FileTextIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import { BanknoteIcon, FileTextIcon } from "lucide-react";
 import { usePermission } from "@/modules/auth";
 import { PreviewLink } from "@/modules/files";
 import { ClaudeButton, quoteContext } from "@/modules/assistant";
@@ -17,6 +17,7 @@ import { useAction } from "../hooks/use-customers";
 import { EnumBadge } from "./enum-badge";
 import { QuoteDialog } from "./quote-dialog";
 import { QuotePayments } from "./quote-payments";
+import { RowMenu } from "./row-menu";
 import type { Quote, QuotePayment } from "../lib/types";
 
 // ---------------------------------------------------------------------------
@@ -59,6 +60,19 @@ export const QuoteList = memo(function QuoteList({
     On ne pouvait que le supprimer, ce qui perdait aussi ce qu'il avait de juste.
   */
   const [editing, setEditing] = useState<Quote | null>(null);
+
+  async function supprimer(quote: Quote) {
+    const nom = quote.reference || quote.label || "ce devis";
+    const ok = await askConfirm({
+      title: `Supprimer le devis « ${nom} »`,
+      description: quote.drive_url
+        ? "Son PDF est encore dans OneDrive : la copie suivante le recréera. Supprimer d'abord le fichier, ou corriger le devis."
+        : "Il n'a pas de document : sa suppression est définitive.",
+      confirmLabel: "Supprimer le devis",
+    });
+    if (!ok) return;
+    if ((await remove.run(quote.id)) !== null) onChanged();
+  }
 
   if (quotes.length === 0) {
     return (
@@ -201,6 +215,22 @@ export const QuoteList = memo(function QuoteList({
                   invoice: estFacture(quote),
                 })}
               />
+              {/*
+                Un devis peut être faux : deux fois le même repris d'un dossier
+                OneDrive, un montant lu de travers, une référence attribuée à la
+                mauvaise affaire. On le corrige ou on le supprime ici, à la ligne
+                où on le voit — par un seul menu, là où un crayon et une
+                corbeille se touchaient.
+              */}
+              <RowMenu
+                label={`Actions sur ${quote.reference || quote.label || "le devis"}`}
+                demo="quote-menu"
+                disabled={remove.pending}
+                onEdit={canWrite ? () => setEditing(quote) : undefined}
+                editLabel="Modifier le devis…"
+                onDelete={canDelete ? () => void supprimer(quote) : undefined}
+                deleteLabel="Supprimer le devis…"
+              />
               {quote.drive_url && (
                 <PreviewLink
                   url={quote.drive_url}
@@ -264,47 +294,6 @@ export const QuoteList = memo(function QuoteList({
                   </div>
                 );
               })}
-
-              {/*
-                Un devis peut être faux : deux fois le même repris d'un dossier
-                OneDrive, un montant lu de travers, une référence attribuée à la
-                mauvaise affaire. On le corrige ou on le supprime ici, à la ligne
-                où on le voit.
-              */}
-              {canWrite && (
-                <Button
-                  size="icon-sm"
-                  variant="ghost"
-                  className="text-muted-foreground/50 hover:text-foreground -my-1"
-                  aria-label="Modifier le devis"
-                  onClick={() => setEditing(quote)}
-                >
-                  <PencilIcon />
-                </Button>
-              )}
-              {canDelete && (
-                <Button
-                  size="icon-sm"
-                  variant="ghost"
-                  className="text-muted-foreground/50 hover:text-danger -my-1"
-                  aria-label="Supprimer le devis"
-                  disabled={remove.pending}
-                  onClick={async () => {
-                    const nom = quote.reference || quote.label || "ce devis";
-                    const ok = await askConfirm({
-                      title: `Supprimer le devis « ${nom} »`,
-                      description: quote.drive_url
-                        ? "Son PDF est encore dans OneDrive : la copie suivante le recréera. Supprimer d'abord le fichier, ou corriger le devis."
-                        : "Il n'a pas de document : sa suppression est définitive.",
-                      confirmLabel: "Supprimer le devis",
-                    });
-                    if (!ok) return;
-                    if ((await remove.run(quote.id)) !== null) onChanged();
-                  }}
-                >
-                  <Trash2Icon />
-                </Button>
-              )}
             </li>
           );
         })}

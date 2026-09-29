@@ -1,12 +1,10 @@
 "use client";
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { usePermission } from "@/modules/auth";
 import { Card } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { ErrorNotice } from "@/shared/ui/feedback";
-import * as api from "../lib/api";
 import { deadlineOf, deliveredAt, missionOf } from "../lib/mission";
 import { autoProofsOf } from "../lib/proofs";
 import {
@@ -17,21 +15,12 @@ import {
   projectMetier,
   readCycle,
   stepMarkedAt,
-  stepWrite,
-  type ActionKey,
-  type CycleStep,
 } from "../lib/cycle";
 import { readJalons, readMarks, type Jalons, type StepMarks } from "../lib/jalons";
-import {
-  DIALOG_ACTIONS,
-  STAMP_ACTIONS,
-  isDialogAction,
-  isStampAction,
-  type BlockDialog,
-} from "../lib/project-actions";
-import { useAction } from "../hooks/use-customers";
+import type { BlockDialog } from "../lib/project-actions";
 import { useArchiveProject } from "../hooks/use-archive-project";
 import { useCycleOrders } from "../hooks/use-cycle-orders";
+import { useProjectGestures } from "../hooks/use-project-gestures";
 import { useProjectSettlement } from "../hooks/use-project-settlement";
 import { useStepProofActions } from "../hooks/use-step-proof-actions";
 import type {
@@ -107,7 +96,6 @@ export const ProjectBlock = memo(function ProjectBlock({
   onEdit,
   onChanged,
 }: ProjectBlockProps) {
-  const router = useRouter();
   const [open, setOpen] = useState(defaultOpen);
   // La section de l'adresse d'abord ; sinon celle que l'affaire réclame. Lue
   // une fois : le bloc est remonté quand l'adresse change d'affaire ou d'onglet.
@@ -200,10 +188,6 @@ export const ProjectBlock = memo(function ProjectBlock({
     now,
   );
 
-  const reopen = useAction(() =>
-    api.setProjectStage(project.id, { stage: project.stage, outcome: null, outcome_note: "" }),
-  );
-
   const archive = useArchiveProject(project, onChanged);
 
   const settlement = useProjectSettlement(quotes, onQuote, onChanged, {
@@ -212,90 +196,20 @@ export const ProjectBlock = memo(function ProjectBlock({
   });
   const settlementProps = settlement.editorProps;
 
-  /*
-    Cocher un cran de la frise.
-
-    Chaque cran écrit là où le fait vit déjà — l'affaire, le devis, les jalons —
-    et `stepWrite` est le seul endroit qui le dit. Un cran n'attend jamais celui
-    d'avant.
-  */
-  function marquerCran(step: CycleStep, at: string | null): void | Promise<void> {
-    const write = stepWrite(step);
-    switch (write.target) {
-      case "mark":
-      case "jalon":
-      case "materials":
-        // `poserJalon` peint avant d'écrire : le panneau peut se fermer sur un
-        // cran déjà vert.
-        void onOverride({ [write.field]: at } as Partial<Jalons & StepMarks>);
-        return;
-      case "worksite_date":
-        void onOverride({ worksite_date: at });
-        return;
-      case "quote":
-        // Porté par le devis : aucun aperçu local possible, le panneau attend
-        // l'aller-retour au lieu de se fermer sur un point resté gris.
-        if (write.field === "deposit") {
-          return (at ? settlement.encaisser(null, at) : settlement.retirerAcompte()).then(() => {});
-        }
-        return (at ? settlement.solder(null, at) : settlement.retirerSolde()).then(() => {});
-    }
-  }
-
-  /**
-   * La commande de matériaux : ce qui a été commandé, et quand. `null` retire
-   * les deux. La date déjà posée est **conservée** : compléter la liste trois
-   * jours plus tard ne doit pas faire croire qu'on a commandé aujourd'hui.
-   */
-  function commanderMateriaux(list: string[] | null): Promise<boolean> {
-    if (list === null) return onOverride({ materials: [], materials_ordered_at: null });
-    return onOverride({
-      materials: list,
-      materials_ordered_at: jalons.materials_ordered_at ?? new Date().toISOString(),
-    });
-  }
-
-  async function act(key: ActionKey) {
-    if (isStampAction(key)) {
-      void onOverride({ [STAMP_ACTIONS[key]]: new Date().toISOString() });
-      return;
-    }
-    if (isDialogAction(key)) {
-      setDialog(DIALOG_ACTIONS[key]);
-      return;
-    }
-    switch (key) {
-      case "open_calendar":
-        router.push("/calendar");
-        return;
-      case "new_quote":
-        onAddQuote();
-        return;
-      case "reopen":
-      case "resume":
-        if (await reopen.run()) onChanged();
-        return;
-      case "deposit_invoiced":
-        await settlement.facturerAcompte();
-        return;
-      case "book_date":
-        // Réserver une date demande de choisir : on ouvre la section où le
-        // sélecteur se trouve, et on l'amène à l'écran.
-        setOpen(true);
-        sections.reveal("apres");
-        return;
-      case "open_worksite":
-        // Le chantier **est** cette affaire : on emmène son identifiant.
-        router.push(`/chantiers?affaire=${project.id}`);
-        return;
-      default: {
-        // Une action ajoutée à `ActionKey` sans table ni branche ferait un
-        // bouton muet : le typage refuse de compiler plutôt.
-        const unhandled: never = key;
-        return unhandled;
-      }
-    }
-  }
+  const gestures = useProjectGestures({
+    project,
+    jalons,
+    onOverride,
+    onAddQuote,
+    openDialog: setDialog,
+    revealAfterSignature: () => {
+      setOpen(true);
+      sections.reveal("apres");
+    },
+    invoiceDeposit: () => settlement.facturerAcompte(),
+    onChanged,
+  });
+  const { marquerCran, commanderMateriaux } = gestures;
 
   const site = [project.site_address, project.site_postal_code, project.site_city]
     .filter(Boolean)
@@ -351,12 +265,7 @@ export const ProjectBlock = memo(function ProjectBlock({
                       onAddQuote,
                       materials: jalons.materials,
                       onMaterials: commanderMateriaux,
-                      deposit: settlementProps("acompte"),
-                      onDeposit: settlement.encaisser,
-                      onDepositRemove: settlement.retirerAcompte,
-                      balance: settlementProps("solde"),
-                      onBalance: settlement.solder,
-                      onBalanceRemove: settlement.retirerSolde,
+                      onSettle: settle,
                       negotiationNote: marks.negotiation_note,
                       onNote: (note) => onOverride({ negotiation_note: note }),
                       proofs: (step) => preuves.filter((proof) => proof.step === step),
@@ -379,8 +288,8 @@ export const ProjectBlock = memo(function ProjectBlock({
             {/* Un seul bandeau « à faire » : l'action, puis qui la porte. */}
             <ProjectNextAction
               action={action}
-              onAct={act}
-              pending={reopen.pending || busy}
+              onAct={gestures.act}
+              pending={gestures.reopenPending || busy}
               readOnly={!canWrite}
               className="scroll-mt-4"
             >

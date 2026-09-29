@@ -19,7 +19,14 @@ import { INTERACTION_KIND, toOptions } from "../lib/labels";
 import type { InteractionKind, Project } from "../lib/types";
 
 /**
- * Enregistrer un échange depuis l'affaire.
+ * Noter un échange depuis l'affaire.
+ *
+ * Le verbe est celui de l'onglet « Échanges » : deux boutons pour le même
+ * geste ne doivent pas se nommer différemment. Les deux formulaires restent
+ * distincts, et c'est voulu — celui-ci écrit une trace rattachée à
+ * **l'affaire**, que la frise lit pour franchir « Contact », sans passer par
+ * l'agenda ; l'onglet consigne un événement d'agenda de la fiche, dont le
+ * compte rendu ne devient une trace que s'il est rempli.
  *
  * L'onglet « Échanges » de la fiche sait déjà le faire, mais il est ailleurs et
  * ne présélectionne rien. Ici l'affaire est connue, le type est choisi par le
@@ -65,7 +72,7 @@ export function InteractionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{planning ? "Planifier le rendez-vous" : "Enregistrer un échange"}</DialogTitle>
+          <DialogTitle>{planning ? "Planifier le rendez-vous" : "Noter un échange"}</DialogTitle>
           <DialogDescription>
             {planning
               ? "La visite sur site est obligatoire avant d'établir un devis. Un sondage peut s'y ajouter."

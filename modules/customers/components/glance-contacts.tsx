@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { PencilIcon, PlusIcon, Trash2Icon, UsersIcon } from "lucide-react";
+import { PlusIcon, UsersIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { askConfirm } from "@/shared/ui/confirm";
 import * as api from "../lib/api";
 import { useAction } from "../hooks/use-customers";
 import type { Contact } from "../lib/types";
 import { ContactCoordinates } from "./contact-coordinates";
 import { ContactDialog } from "./contact-dialog";
+import { RowMenu } from "./row-menu";
 
 /**
  * Les interlocuteurs de la fiche, et tout ce qu'on en fait, dans l'en-tête.
@@ -38,9 +38,9 @@ export function GlanceContacts({
 
   async function retirer(contact: Contact) {
     const ok = await askConfirm({
-      title: `Retirer ${contact.full_name}`,
+      title: `Supprimer ${contact.full_name}`,
       description: "L'interlocuteur et ses coordonnées quittent la fiche, définitivement.",
-      confirmLabel: "Retirer",
+      confirmLabel: "Supprimer",
     });
     if (!ok) return;
     // `!== null` : la route rend 204 sans corps, donc `undefined` en cas de succès.
@@ -124,27 +124,17 @@ function ContactRow({
       )}
       {contact.is_primary && <Badge variant="secondary">Principal</Badge>}
       <ContactCoordinates contact={contact} />
+      {/* Un seul « … » par ligne, comme les devis et l'historique. */}
       {canWrite && (
-        <span className="flex shrink-0 items-center">
-          <Button
-            size="icon-xs"
-            variant="ghost"
-            aria-label={`Modifier ${contact.full_name}`}
-            data-demo="contact-edit"
-            onClick={onEdit}
-          >
-            <PencilIcon />
-          </Button>
-          <Button
-            size="icon-xs"
-            variant="ghost"
-            aria-label={`Retirer ${contact.full_name}`}
-            disabled={busy}
-            onClick={onRemove}
-          >
-            <Trash2Icon />
-          </Button>
-        </span>
+        <RowMenu
+          label={`Actions sur ${contact.full_name}`}
+          demo="contact-edit"
+          disabled={busy}
+          onEdit={onEdit}
+          editLabel="Modifier l'interlocuteur…"
+          onDelete={onRemove}
+          deleteLabel="Supprimer l'interlocuteur…"
+        />
       )}
       {contact.notes && (
         <p className="text-muted-foreground basis-full pl-5.5 text-xs whitespace-pre-line line-clamp-2">

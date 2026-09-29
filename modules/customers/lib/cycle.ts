@@ -234,25 +234,35 @@ export function applyOrder(base: CycleStep[], custom?: readonly string[]): Cycle
 /** Conservé pour ce qui n'a pas besoin de distinguer : la frise des travaux. */
 export const CYCLE_ORDER: CycleStep[] = TRAVAUX_ORDRE;
 
-export const CYCLE_LABEL: Record<CycleStep, { label: string; hint: string }> = {
-  contact: { label: "Contact", hint: "Appels, e-mails, premiers échanges" },
-  rdv: { label: "RDV", hint: "Visite sur site — obligatoire avant tout devis" },
-  rapport: { label: "Rapport", hint: "Rapport de visite remis au client" },
-  devis: { label: "Devis", hint: "Chiffrage établi et transmis" },
-  negociation: { label: "Négociation", hint: "En attente de la réponse du client" },
-  signe: { label: "Signé", hint: "Devis accepté" },
-  acompte: { label: "Acompte", hint: "Facture d'acompte, RIB, assurance, encaissement" },
-  chantier: { label: "Date", hint: "Date de chantier réservée" },
-  materiaux: { label: "Matériaux", hint: "Béton, acier et fournitures commandés" },
-  plans: { label: "Envoi", hint: "Dossier définitif et plans d'exécution envoyés au client" },
-  calcul: { label: "Calcul", hint: "Note de calcul faite par l'ingénieur" },
-  dossier: { label: "Dossier", hint: "Plans dessinés, relus et validés : le dossier définitif" },
-  redaction: { label: "Rédaction", hint: "Rapport ou attestation rédigé" },
-  envoi: { label: "Envoi", hint: "Rapport ou attestation envoyé au client" },
-  sondage: { label: "Sondage", hint: "Sondage réalisé sur site" },
-  rapport_sondage: { label: "Rapport", hint: "Rapport de sondage envoyé au client" },
-  solde: { label: "Solde", hint: "Facture de solde encaissée" },
-  avis: { label: "Avis", hint: "Avis client recueilli — après encaissement" },
+/**
+ * Le nom de chaque cran, dit une seule fois.
+ *
+ * `label` est **le** nom du cran : le panneau qui l'édite, l'infobulle, et la
+ * ligne de l'après-signature qui écrit la même colonne le portent à
+ * l'identique — un test le fige (`step-names.test.ts`). « Envoi » désignait à la
+ * fois le dossier d'une étude et le rapport d'une attestation ; « Rapport »,
+ * la visite et le sondage. `short` n'est que l'étiquette de la frise, où dix
+ * crans tiennent sur une ligne, et ne dit jamais autre chose que `label`.
+ */
+export const CYCLE_LABEL: Record<CycleStep, { label: string; short: string; hint: string }> = {
+  contact: { label: "Contact", short: "Contact", hint: "Appels, e-mails, premiers échanges" },
+  rdv: { label: "Rendez-vous", short: "RDV", hint: "Visite sur site — obligatoire avant tout devis" },
+  rapport: { label: "Rapport de visite", short: "Rapport visite", hint: "Rapport de visite remis au client" },
+  devis: { label: "Devis", short: "Devis", hint: "Chiffrage établi et transmis" },
+  negociation: { label: "Négociation", short: "Négociation", hint: "En attente de la réponse du client" },
+  signe: { label: "Signé", short: "Signé", hint: "Devis accepté" },
+  acompte: { label: "Acompte encaissé", short: "Acompte", hint: "Facture d'acompte, RIB, assurance, encaissement" },
+  chantier: { label: "Date de chantier", short: "Date chantier", hint: "Date de chantier réservée" },
+  materiaux: { label: "Matériaux commandés", short: "Matériaux", hint: "Béton, acier et fournitures commandés" },
+  plans: { label: "Dossier envoyé", short: "Envoi dossier", hint: "Dossier définitif et plans d'exécution envoyés au client" },
+  calcul: { label: "Calcul terminé", short: "Calcul", hint: "Note de calcul faite par l'ingénieur" },
+  dossier: { label: "Dossier définitif", short: "Dossier", hint: "Plans dessinés, relus et validés : le dossier définitif" },
+  redaction: { label: "Rapport rédigé", short: "Rédaction", hint: "Rapport ou attestation rédigé" },
+  envoi: { label: "Rapport envoyé", short: "Envoi rapport", hint: "Rapport ou attestation envoyé au client" },
+  sondage: { label: "Sondage réalisé", short: "Sondage", hint: "Sondage réalisé sur site" },
+  rapport_sondage: { label: "Rapport de sondage envoyé", short: "Rapport sondage", hint: "Rapport de sondage envoyé au client" },
+  solde: { label: "Solde encaissé", short: "Solde", hint: "Facture de solde encaissée" },
+  avis: { label: "Avis reçu", short: "Avis", hint: "Avis client recueilli — après encaissement" },
 };
 
 /**
@@ -1227,7 +1237,7 @@ export function nextAction(
       detail: "Aucun échange n'est encore enregistré sur cette affaire.",
       tone: "info",
       alert: false,
-      actions: [{ key: "interaction", label: "Enregistrer un échange", primary: true }],
+      actions: [{ key: "interaction", label: "Noter un échange", primary: true }],
     };
   }
 
@@ -1242,7 +1252,7 @@ export function nextAction(
         alert: false,
         actions: [
           { key: "open_calendar", label: "Voir dans l'agenda", primary: true },
-          { key: "interaction", label: "Noter la visite" },
+          { key: "interaction", label: "Noter un échange" },
         ],
       };
     }
@@ -1283,7 +1293,7 @@ export function nextAction(
       tone: waitingTone(days),
       alert: days > FRESH_DAYS,
       actions: [
-        { key: "relance", label: "Relancer par e-mail", primary: true },
+        { key: "relance", label: "Relancer", primary: true },
         { key: "refuse", label: "Refusé" },
         { key: "postpone", label: "Reporté" },
       ],
@@ -1311,7 +1321,7 @@ export function nextAction(
       tone: waitingTone(days),
       alert: days > FRESH_DAYS,
       actions: [
-        { key: "relance", label: "Relancer par e-mail", primary: true },
+        { key: "relance", label: "Relancer", primary: true },
         { key: "refuse", label: "Refusé" },
         { key: "postpone", label: "Reporté" },
       ],
@@ -1337,7 +1347,7 @@ export function nextAction(
         detail: "Un rapport ou une attestation se règle en une fois, avant la rédaction.",
         tone: waitingTone(days),
         alert: days > FRESH_DAYS,
-        actions: [{ key: "balance_paid", label: "Paiement reçu", primary: true }],
+        actions: [{ key: "balance_paid", label: "Solde encaissé", primary: true }],
       };
     }
     const redaction = at("redaction");
@@ -1478,7 +1488,7 @@ export function nextAction(
     if (rapport.state !== "done") {
       return enProduction(rapport, project, now, "Rapport de sondage à envoyer", "Le sondage est fait.", {
         key: "send_survey_report",
-        label: "Rapport envoyé",
+        label: "Rapport de sondage envoyé",
       });
     }
     return soldeEtAvis(at, jalons, "rapport_sondage");
