@@ -8,6 +8,7 @@ import { EmptyState, ErrorNotice } from "@/shared/ui/feedback";
 import { ListSkeleton } from "@/shared/ui/loading";
 import { plural } from "@/shared/lib/format";
 import { viewSpec } from "../lib/views";
+import { QueueChoices } from "./queue-choices";
 import { ThreadRow } from "./thread-row";
 import type { MailView, ThreadSummary } from "../lib/types";
 
@@ -45,6 +46,7 @@ export function ThreadList({
   onLoadMore,
   searchRef,
   rowRef,
+  onClassified,
 }: {
   view: MailView;
   draft: string;
@@ -65,6 +67,8 @@ export function ThreadList({
   onLoadMore: () => void;
   searchRef: Ref<HTMLInputElement>;
   rowRef: (key: string) => (element: HTMLButtonElement | null) => void;
+  /** Une conversation de la file vient d'être rangée : la liste se relit. */
+  onClassified: () => void;
 }) {
   const spec = viewSpec(view);
 
@@ -136,6 +140,7 @@ export function ThreadList({
                     now={now}
                     onOpen={() => onOpen(thread)}
                   />
+                  {thread.queued && <QueueChoices thread={thread} onDone={onClassified} />}
                 </li>
               );
             })}

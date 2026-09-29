@@ -163,6 +163,12 @@ function useContactGestures({ customerId, canWrite, onChanged }: ListProps) {
   const [editing, setEditing] = useState<Contact | null | undefined>(undefined);
   const remove = useAction((id: string) => api.deleteContact(id));
   const promote = useAction((id: string) => api.updateContact(id, { is_primary: true }));
+  const share = useAction((contact: Contact) => api.setContactSharedAddress(contact.id, !contact.shared_address), {
+    success: (result) =>
+      result.shared_address
+        ? "Adresse partagée : ses courriels seront rangés par indice, ou dans « À classer »"
+        : "L'adresse rattache de nouveau ses courriels à cette fiche",
+  });
 
   async function retirer(contact: Contact) {
     const ok = await askConfirm({
@@ -179,13 +185,18 @@ function useContactGestures({ customerId, canWrite, onChanged }: ListProps) {
     if ((await promote.run(contact.id)) !== null) onChanged();
   }
 
+  async function partager(contact: Contact) {
+    if ((await share.run(contact)) !== null) onChanged();
+  }
+
   const gestures = (contact: Contact): ContactGestures =>
     canWrite
       ? {
           onEdit: () => setEditing(contact),
           onRemove: () => void retirer(contact),
           onMakePrimary: () => void principal(contact),
-          busy: remove.pending || promote.pending,
+          onToggleShared: () => void partager(contact),
+          busy: remove.pending || promote.pending || share.pending,
         }
       : {};
 

@@ -13,6 +13,7 @@ import type {
   ThreadPage,
   UnknownSender,
   AttachResult,
+  RerouteReport,
 } from "./types";
 
 export function listAccounts(signal?: AbortSignal) {
@@ -144,6 +145,28 @@ export function attachCustomerMail(customerId: string, ids: string[], rememberSe
     method: "POST",
     body: { ids, remember_sender: rememberSender },
   });
+}
+
+/**
+ * Rattache toute la conversation d'un message à une fiche, sans retenir
+ * d'adresse : c'est le geste de la file « à classer », dont l'adresse est
+ * justement partagée — la retenir sur la fiche la ferait rattacher à tort.
+ */
+export function attachThreadToCustomer(customerId: string, messageId: string) {
+  return apiFetch<AttachResult>(`/v1/customers/${customerId}/mail/attach`, {
+    method: "POST",
+    body: { ids: [messageId], remember_sender: false, whole_thread: true },
+  });
+}
+
+/** « Aucune » : la conversation ne concerne aucune des fiches proposées. */
+export function dismissThread(messageId: string) {
+  return apiFetch<{ dismissed: number }>(`/v1/mail/threads/${messageId}/dismiss`, { method: "PUT" });
+}
+
+/** Repasse les indices sur les rattachements par adresse partagée. Simule sans `apply`. */
+export function rerouteMail(apply: boolean) {
+  return apiFetch<RerouteReport>("/v1/mail/reroute", { method: "POST", body: { apply } });
 }
 
 export function detachCustomerMail(customerId: string, messageId: string) {

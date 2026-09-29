@@ -51,6 +51,48 @@ const FICHE_COPRO = "/customers/de2ea332-b3dd-491a-8ea4-b423612731aa";
 
 export const DEMOS: Demo[] = [
   {
+    id: "routage-courriels",
+    title: "Les courriels d'une adresse partagée trouvent leur immeuble, ou attendent qu'on les classe",
+    date: "2026-09-29",
+    steps: [
+      {
+        path: FICHE_COPRO,
+        target: '[title^="Adresse partagée : ses courriels"]',
+        title: "Une adresse partagée",
+        body:
+          "M. Dalmasso, une gestionnaire de syndic : ils écrivent pour plusieurs dossiers. Leur " +
+          "adresse reste sur la fiche pour leur écrire, mais ne rattache plus rien seule. Le « … » " +
+          "de l'interlocuteur la déclare partagée, ou la rend à la fiche.",
+      },
+      {
+        path: "/mail?vue=a_classer",
+        target: '[data-demo="mail-thread-list"]',
+        title: "Le routage par indices, puis la file « À classer »",
+        body:
+          "Un courriel d'adresse partagée est lu : l'adresse du chantier (« 1 rue Chabaud »), une " +
+          "référence DE ou FA de la société qui le reçoit, le nom de la fiche dans l'objet. Une " +
+          "fiche seule en tête le reçoit ; sinon il attend ici, au lieu de tomber sur la mauvaise.",
+      },
+      {
+        path: "/mail?vue=a_classer",
+        target: '[data-demo="mail-queue-choices"]',
+        title: "Un clic pour ranger",
+        body:
+          "Le pourquoi, puis les fiches en lice : « Rattacher » range toute la conversation sans " +
+          "retenir l'adresse, « Aucune » la sort de la file pour de bon.",
+      },
+      {
+        path: "/settings/messagerie",
+        target: '[data-demo="mail-reroute"]',
+        title: "Reprendre ce qui a été mal rangé",
+        body:
+          "Réservé à l'administration : les courriels qu'une adresse partagée avait rangés seule " +
+          "sont relus. Simuler d'abord — rien ne bouge —, puis re-router : désignés, ils changent " +
+          "de fiche ; ambigus, ils vont dans « À classer ». Les rattachements à la main ne bougent pas.",
+      },
+    ],
+  },
+  {
     id: "tiers-et-payeur",
     title: "Les tiers sortent des clients, et une affaire dit qui la paie",
     date: "2026-09-29",

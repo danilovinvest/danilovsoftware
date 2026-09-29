@@ -1,6 +1,6 @@
 "use client";
 
-import { MailIcon, PhoneIcon, StarIcon } from "lucide-react";
+import { CheckIcon, MailIcon, PhoneIcon, SplitIcon, StarIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { formatPhone } from "@/shared/lib/format";
@@ -13,6 +13,8 @@ export type ContactGestures = {
   onEdit?: () => void;
   onRemove?: () => void;
   onMakePrimary?: () => void;
+  /** Déclarer l'adresse partagée, ou la rendre à la fiche. */
+  onToggleShared?: () => void;
   busy?: boolean;
 };
 
@@ -64,6 +66,7 @@ export function CompactContactRow({
       <span className="flex min-w-0 items-center gap-1.5">
         <ContactName contact={contact} onEdit={gestures.onEdit} className="max-w-40 sm:max-w-56" />
         {contact.is_primary && <PrimaryBadge />}
+        {contact.shared_address && <SharedBadge />}
       </span>
       <span className="text-muted-foreground truncate text-xs" title={role || undefined}>
         {role}
@@ -121,6 +124,7 @@ export function FullContactRow({
         <div className="flex min-w-0 items-center gap-1.5">
           <ContactName contact={contact} onEdit={gestures.onEdit} />
           {contact.is_primary && <PrimaryBadge />}
+          {contact.shared_address && <SharedBadge />}
         </div>
         {role && <p className="text-muted-foreground text-xs">{role}</p>}
         {(phones.length > 0 || emails.length > 0) && (
@@ -194,6 +198,23 @@ function PrimaryBadge() {
   );
 }
 
+/**
+ * L'adresse ne rattache aucun courriel à elle seule : la personne écrit pour
+ * plusieurs dossiers. Dit sur la ligne, sans quoi on se demanderait pourquoi
+ * ses courriels n'arrivent pas sur la fiche.
+ */
+function SharedBadge() {
+  return (
+    <Badge
+      variant="outline"
+      className="h-4 shrink-0 px-1.5 text-[10px]"
+      title="Adresse partagée : ses courriels sont rangés par indice, ou dans « À classer »"
+    >
+      Partagée
+    </Badge>
+  );
+}
+
 /** Un seul « … » par ligne, comme les devis et l'historique. */
 function ContactMenu({
   contact,
@@ -205,7 +226,9 @@ function ContactMenu({
   demo?: string;
 }) {
   const makePrimary = contact.is_primary ? undefined : gestures.onMakePrimary;
-  if (!gestures.onEdit && !gestures.onRemove && !makePrimary) {
+  // Sans adresse, il n'y a rien à partager.
+  const toggleShared = emailsOf(contact).length > 0 ? gestures.onToggleShared : undefined;
+  if (!gestures.onEdit && !gestures.onRemove && !makePrimary && !toggleShared) {
     // La colonne reste là, vide : la grille de l'en-tête ne se décale pas.
     return <span aria-hidden />;
   }
@@ -223,6 +246,12 @@ function ContactMenu({
         <DropdownMenuItem onSelect={makePrimary}>
           <StarIcon />
           Définir comme principal
+        </DropdownMenuItem>
+      )}
+      {toggleShared && (
+        <DropdownMenuItem onSelect={toggleShared} data-demo="contact-shared-address">
+          {contact.shared_address ? <CheckIcon /> : <SplitIcon />}
+          Adresse partagée : ne rattache pas les courriels
         </DropdownMenuItem>
       )}
     </RowMenu>

@@ -21,6 +21,7 @@ import { SelectField, TextField } from "@/shared/ui/form";
 import { SettingsPage, SettingsRow, SettingsRows, SettingsSection } from "@/modules/settings";
 import { useMailbox } from "../hooks/use-mail";
 import * as api from "../lib/api";
+import { RerouteSection } from "./reroute-section";
 
 /**
  * Raccorder la boîte de l'entreprise.
@@ -277,6 +278,8 @@ export function MailPanel() {
         )}
 
       </SettingsSection>
+
+      <RerouteSection />
 
       {unknown.length > 0 && (
         <SettingsSection

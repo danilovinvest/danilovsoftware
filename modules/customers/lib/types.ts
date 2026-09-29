@@ -300,6 +300,13 @@ export type Contact = {
   phones: string[];
   is_primary: boolean;
   notes: string;
+  /**
+   * L'adresse est partagée (29/09) : une gestionnaire, un ingénieur qui écrit
+   * pour plusieurs dossiers. Gardée pour écrire, elle ne rattache plus aucun
+   * courriel à elle seule — le routage lit l'adresse du chantier, la
+   * référence d'une pièce, le nom dans l'objet, ou range dans « À classer ».
+   */
+  shared_address: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -790,7 +797,9 @@ export type CustomerPayload = {
 
 export type ContactPayload = Omit<
   Contact,
-  "id" | "customer_id" | "created_at" | "updated_at"
+  // L'adresse partagée a sa route (`setContactSharedAddress`) : le formulaire
+  // ne la porte pas, et ne doit pas pouvoir l'effacer.
+  "id" | "customer_id" | "created_at" | "updated_at" | "shared_address"
 >;
 
 /**

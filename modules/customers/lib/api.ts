@@ -191,6 +191,14 @@ export function updateContact(id: string, payload: Partial<ContactPayload>) {
   return apiFetch<Contact>(`/v1/contacts/${id}`, { method: "PATCH", body: payload });
 }
 
+/** Déclare partagée — ou non — l'adresse d'un interlocuteur (route à part : le formulaire ne la porte pas). */
+export function setContactSharedAddress(id: string, shared: boolean) {
+  return apiFetch<{ id: string; shared_address: boolean }>(`/v1/contacts/${id}/shared-address`, {
+    method: "PUT",
+    body: { shared },
+  });
+}
+
 export function deleteContact(id: string) {
   return apiFetch<void>(`/v1/contacts/${id}`, { method: "DELETE" });
 }
