@@ -61,3 +61,21 @@ export function notifySuccess(message: string, action?: { label: string; onClick
     action: action ? { label: action.label, onClick: () => action.onClick() } : undefined,
   });
 }
+
+/**
+ * Rien n'a échoué, mais le geste n'a peut-être pas abouti, et une suite existe.
+ *
+ * Ni succès ni erreur : « Claude ne s'est pas ouvert ? » ne sait pas lequel des
+ * deux s'est produit, et le dit en proposant l'autre chemin.
+ */
+export function notifyHint(
+  message: string,
+  description: string,
+  action: { label: string; onClick: () => void },
+) {
+  toast(message, {
+    description,
+    duration: 10000,
+    action: { label: action.label, onClick: () => action.onClick() },
+  });
+}

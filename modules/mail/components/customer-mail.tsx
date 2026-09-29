@@ -120,7 +120,7 @@ export function CustomerMail({ customerId }: { customerId: string }) {
         <span className="text-muted-foreground ml-auto text-xs tabular-nums">
           {shown.length < mail.total ? `${shown.length} sur ${mail.total}` : plural(mail.total, "courriel")}
         </span>
-        <ClaudeButton size="xs" context={customerMailContext({ total: mail.total })} />
+        <ClaudeButton size="xs" context={customerMailContext({ total: mail.total, customerId })} />
         {/* « Tout retirer » porte sur la fiche entière, pas sur ce qui est à
             l'écran : c'est le seul geste qui répare une fiche ayant ramassé des
             milliers de messages. */}

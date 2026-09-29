@@ -295,6 +295,9 @@ function Body({
           size="xs"
           className="mt-1 self-start"
           context={worksiteContext({
+            id: w.id,
+            reference: projectReference(w.reference, metier),
+            customerId: w.customer_id,
             customer: w.customer_name,
             label: w.label,
             status: status.label,

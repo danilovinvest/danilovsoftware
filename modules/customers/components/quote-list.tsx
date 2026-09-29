@@ -204,6 +204,9 @@ export const QuoteList = memo(function QuoteList({
                 size="xs"
                 iconOnly
                 context={quoteContext({
+                  id: quote.id,
+                  project: quote.project_label,
+                  projectId: quote.project_id,
                   reference: quote.reference,
                   kind: QUOTE_KIND[quote.kind].label,
                   document: quote.drive_name,

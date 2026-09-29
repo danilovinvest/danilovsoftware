@@ -132,7 +132,11 @@ export function ThreadActions({
         context={mailContext({
           subject: thread.subject,
           from: last ? (last.from_name || last.from_email) : "",
+          fromEmail: last?.from_email,
+          date: last ? new Date(last.sent_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : undefined,
+          messageId: last?.id,
           customer: thread.customer_id ? thread.customer_name : null,
+          customerId: thread.customer_id || null,
         })}
       />
     </div>

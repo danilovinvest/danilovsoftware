@@ -51,6 +51,45 @@ const FICHE_COPRO = "/customers/de2ea332-b3dd-491a-8ea4-b423612731aa";
 
 export const DEMOS: Demo[] = [
   {
+    id: "claude-ouvre-l-app",
+    title: "Le bouton Claude ouvre l'application, la demande déjà écrite",
+    date: "2026-09-29",
+    steps: [
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="claude-fiche"]',
+        title: "Claude n'est plus un aperçu",
+        body:
+          "Le bouton ouvrait un panneau dont « Envoyer » restait grisé. Il ouvre maintenant " +
+          "l'application Claude — sur Mac, Windows, iPhone ou Android — sur une conversation " +
+          "neuve, la demande déjà écrite. Même geste sur chaque affaire, chaque devis, un " +
+          "courriel, les chantiers, les études et le tableau de bord.",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="claude-fiche"]',
+        target: '[data-demo="claude-menu"]',
+        title: "Une demande par ligne, écrite d'après l'écran",
+        body:
+          "Chaque ligne ouvre Claude avec un texte qui dit d'emblée « avec le MCP CRM » :" +
+          "Claude lit alors le CRM par votre connecteur, avec les droits de votre compte, au " +
+          "lieu de répondre de mémoire. Le texte nomme la fiche, sa référence et son " +
+          "identifiant ; une demande qui écrirait dit où, et Claude attend votre validation.",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="claude-fiche"]',
+        target: '[data-demo="claude-open"]',
+        title: "Ou une conversation sans demande",
+        body:
+          "« Ouvrir dans Claude » confie seulement l'objet : Claude en fait le point et attend " +
+          "votre question. Sans l'application de bureau, un rappel propose la même demande " +
+          "sur claude.ai. Sur téléphone, l'application s'ouvre ; le texte pré-rempli n'y est " +
+          "pas garanti par Anthropic.",
+      },
+    ],
+  },
+  {
     id: "fiche-simplifiee-editeurs",
     title: "Un fait, un nom, une saisie — où qu'on l'ouvre",
     date: "2026-09-29",
@@ -478,7 +517,7 @@ export const DEMOS: Demo[] = [
           "modifier_fiche, ajouter_contact et modifier_contact.",
       },
       {
-        path: "/customers/cfd6c7df-8b0a-471b-951f-d2f4af6ad4a2",
+        path: "/customers/cfd6c7df-8b0a-471b-951f-d2f4af6ad4a2?vue=fiche",
         target: '[data-demo="contacts-card"]',
         title: "Une fiche porte autant d'interlocuteurs qu'il en faut",
         body:
@@ -718,7 +757,7 @@ export const DEMOS: Demo[] = [
         body: "Les interlocuteurs et les notes de la fiche vivaient dans le sixième onglet : au téléphone, le numéro de l'architecte était à deux clics. Ils sont sous le nom du client, le numéro s'appelle et l'adresse s'écrit d'un geste. Un clic sur un nom le corrige, le crayon corrige les notes sur place.",
       },
       {
-        path: FICHE_ETUDE,
+        path: `${FICHE_ETUDE}?vue=fiche`,
         target: '[data-demo="contacts-card"]',
         title: "Un interlocuteur se corrige",
         body: "Corriger un numéro obligeait à supprimer puis recréer l'interlocuteur. Un clic sur son nom, ou « Modifier » dans son « … », ouvre sa fiche, avec ses notes, et n'envoie que ce qui a changé.",

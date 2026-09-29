@@ -1,28 +1,30 @@
 "use client";
 
-import { useState } from "react";
-import { InfoIcon, PencilLineIcon } from "lucide-react";
+import { MessageSquarePlusIcon, PencilLineIcon, SparklesIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import { Textarea } from "@/components/ui/textarea";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ClaudeMark } from "@/shared/ui/brand-marks";
+import { MENU_ITEM, MENU_LABEL, MenuAction } from "@/shared/ui/menu-action";
 import { cn } from "@/lib/utils";
-import type { ClaudeContext } from "../lib/contexts";
+import { buildPrompt, claudeLinks } from "../lib/claude-link";
+import type { ClaudeContext, ClaudePrompt } from "../lib/contexts";
+import { openInClaude } from "../lib/open-claude";
 
 /**
  * « Demander à Claude », là où un écran a de quoi lui confier.
  *
- * **L'assistant n'est pas encore branché, et le panneau le dit.** Le bouton
- * existe pour montrer où Claude interviendra et avec quoi : ce qu'il recevrait
- * de l'écran, ce qu'on pourrait lui demander, et ce que chaque demande
- * modifierait. Rien ne quitte le navigateur, et « Envoyer » reste désactivé —
- * un bouton qui ferait semblant de répondre serait pire que pas de bouton.
+ * Le bouton ouvre un menu : les demandes que l'écran suggère, puis « Ouvrir
+ * dans Claude ». Chacune ouvre **l'application Claude** sur une conversation
+ * neuve, la demande déjà écrite — c'est Claude qui lit ensuite le CRM, par le
+ * connecteur MCP de la personne et avec ses droits. Le CRM n'envoie rien
+ * lui-même : il écrit la demande, l'appareil ouvre l'application.
  *
  * La couleur est celle de la marque, la seule valeur littérale admise ici :
  * elle désigne un éditeur, pas un état du CRM, et ne suit donc pas le thème.
@@ -32,143 +34,71 @@ export function ClaudeButton({
   size = "sm",
   iconOnly = false,
   className,
+  demo,
 }: {
   context: ClaudeContext;
   size?: "sm" | "xs";
   /** Le logo seul, pour une ligne de liste où le libellé ne tient pas. */
   iconOnly?: boolean;
   className?: string;
+  /** Le repère des démos (`data-demo`), posé sur le bouton. */
+  demo?: string;
 }) {
-  const [open, setOpen] = useState(false);
+  const open = (demand?: ClaudePrompt) => openInClaude(claudeLinks(buildPrompt(context, demand)));
 
   return (
-    <>
-      <Button
-        type="button"
-        variant="outline"
-        size={iconOnly ? (size === "xs" ? "icon-xs" : "icon-sm") : size}
-        className={cn("hover:border-[#d97757]/50 hover:bg-[#d97757]/10", className)}
-        title={`Demander à Claude — ${context.subject}`}
-        aria-label={`Demander à Claude — ${context.subject}`}
-        onClick={(event) => {
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size={iconOnly ? (size === "xs" ? "icon-xs" : "icon-sm") : size}
+          className={cn("hover:border-[#d97757]/50 hover:bg-[#d97757]/10", className)}
+          title={`Demander à Claude — ${context.subject}`}
+          aria-label={`Demander à Claude — ${context.subject}`}
+          data-demo={demo}
           // Un bouton posé dans une ligne cliquable ne doit pas l'ouvrir aussi.
-          event.stopPropagation();
-          setOpen(true);
-        }}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <ClaudeMark className="size-3.5 text-[#d97757]" />
+          {!iconOnly && "Claude"}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        className="w-80 p-1.5"
+        data-demo="claude-menu"
+        // Le menu vit dans un portail, mais React fait remonter ses clics
+        // jusqu'à la ligne qui porte le bouton.
+        onClick={(event) => event.stopPropagation()}
       >
-        <ClaudeMark className="size-3.5 text-[#d97757]" />
-        {!iconOnly && "Claude"}
-      </Button>
-
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent className="w-full gap-0 overflow-y-auto sm:max-w-md">
-          {/* Le brouillon repart à zéro à chaque ouverture. */}
-          {open && <ClaudePanel context={context} />}
-        </SheetContent>
-      </Sheet>
-    </>
-  );
-}
-
-function ClaudePanel({ context }: { context: ClaudeContext }) {
-  const [draft, setDraft] = useState("");
-  const [picked, setPicked] = useState<string | null>(null);
-
-  return (
-    <>
-      <SheetHeader className="gap-2 pb-3">
-        <div className="flex items-center gap-2.5">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#d97757]/12">
-            <ClaudeMark className="size-5 text-[#d97757]" />
-          </span>
-          <div className="min-w-0">
-            <SheetTitle className="flex items-center gap-2 text-base">
-              Demander à Claude
-              <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase">
-                Aperçu
-              </span>
-            </SheetTitle>
-            <SheetDescription className="truncate text-sm">{context.subject}</SheetDescription>
-          </div>
-        </div>
-      </SheetHeader>
-
-      <div className="flex flex-col gap-5 px-4 pb-6">
-        <p className="bg-info-soft text-info flex items-start gap-2 rounded-lg px-3 py-2 text-xs">
-          <InfoIcon className="mt-0.5 size-3.5 shrink-0" />
-          <span>
-            L&apos;assistant n&apos;est pas encore branché : ce panneau montre ce
-            que Claude recevrait et ce qu&apos;il pourrait faire. Rien n&apos;est
-            envoyé.
-          </span>
-        </p>
-
-        <section>
-          <h3 className="text-muted-foreground mb-2 text-[11px] font-semibold tracking-wide uppercase">
-            Ce que Claude recevrait
-          </h3>
-          <ul className="flex flex-col gap-1.5">
-            {context.items.map((item) => (
-              <li key={item.label} className="flex gap-2 text-sm">
-                <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-[#d97757]" />
-                <span className="min-w-0">
-                  <span className="font-medium">{item.label}</span>
-                  <span className="text-muted-foreground"> — {item.detail}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section>
-          <h3 className="text-muted-foreground mb-2 text-[11px] font-semibold tracking-wide uppercase">
-            Ce qu&apos;il pourrait faire
-          </h3>
-          <div className="flex flex-col gap-2">
-            {context.prompts.map((prompt) => (
-              <button
-                key={prompt.label}
-                type="button"
-                onClick={() => {
-                  setPicked(prompt.label);
-                  setDraft(prompt.label);
-                }}
-                className={cn(
-                  "hover:bg-muted/50 flex flex-col gap-0.5 rounded-lg border px-3 py-2 text-left transition-colors",
-                  picked === prompt.label && "border-[#d97757]/60 bg-[#d97757]/5",
-                )}
-              >
-                <span className="text-sm font-medium">{prompt.label}</span>
-                <span className="text-muted-foreground text-xs">{prompt.detail}</span>
-                {prompt.writes && (
-                  <span className="text-warning mt-1 flex items-center gap-1 text-[11px] font-medium">
-                    <PencilLineIcon className="size-3" />
-                    Modifierait : {prompt.writes}, après votre validation
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section className="flex flex-col gap-2">
-          <Textarea
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            placeholder="Ou posez votre question…"
-            rows={3}
+        <DropdownMenuLabel className={cn(MENU_LABEL, "flex items-center gap-1.5")}>
+          <ClaudeMark className="size-3 text-[#d97757]" />
+          <span className="truncate">{context.subject}</span>
+        </DropdownMenuLabel>
+        {context.prompts.map((prompt) => (
+          <DropdownMenuItem key={prompt.label} className={MENU_ITEM} onSelect={() => open(prompt)}>
+            <MenuAction
+              icon={<SparklesIcon />}
+              label={prompt.label}
+              hint={prompt.writes ? `${prompt.detail} Modifierait : ${prompt.writes}, après votre validation.` : prompt.detail}
+              trailing={prompt.writes ? <PencilLineIcon className="text-warning size-3" aria-label="Écrit dans le CRM" /> : undefined}
+            />
+          </DropdownMenuItem>
+        ))}
+        <DropdownMenuSeparator className="my-1.5" />
+        <DropdownMenuItem className={MENU_ITEM} onSelect={() => open()} data-demo="claude-open">
+          <MenuAction
+            icon={<MessageSquarePlusIcon />}
+            label="Ouvrir dans Claude"
+            hint="Une conversation neuve sur cet écran, sans demande : vous posez la question."
           />
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-muted-foreground/70 text-[11px]">
-              Bientôt, avec les droits de votre compte.
-            </p>
-            <Button size="sm" disabled title="L'assistant n'est pas encore branché">
-              <ClaudeMark className="size-3.5" />
-              Envoyer
-            </Button>
-          </div>
-        </section>
-      </div>
-    </>
+        </DropdownMenuItem>
+        <p className="text-muted-foreground px-2 pt-1.5 pb-1 text-[11px] leading-snug">
+          Claude lira {context.items.map((item) => item.label.toLowerCase()).join(", ")} par votre
+          connecteur CRM (Réglages → Assistant), avec les droits de votre compte.
+        </p>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

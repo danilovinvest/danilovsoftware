@@ -23,6 +23,12 @@ export type ClaudePrompt = {
 export type ClaudeContext = {
   /** De quoi l'on parle, en une ligne. */
   subject: string;
+  /**
+   * L'objet dit pour Claude, qui va le chercher par le connecteur : sa nature,
+   * son nom, ses références et, quand l'écran les a, les identifiants que les
+   * outils du connecteur prennent. Complète « ouvre … ».
+   */
+  target: string;
   items: ClaudeContextItem[];
   prompts: ClaudePrompt[];
 };
@@ -31,7 +37,18 @@ function count(n: number, singular: string, plural = `${singular}s`): string {
   return `${n} ${n > 1 ? plural : singular}`;
 }
 
+/** « (a, b) », sans les parties vides — et rien du tout quand tout l'est. */
+function refs(...parts: (string | null | undefined | false)[]): string {
+  const kept = parts.filter((part): part is string => Boolean(part));
+  return kept.length > 0 ? ` (${kept.join(", ")})` : "";
+}
+
+function crmId(id: string | null | undefined, what = "identifiant CRM"): string | null {
+  return id ? `${what} ${id}` : null;
+}
+
 export function customerContext(input: {
+  id?: string;
   name: string;
   reference: string;
   projects: number;
@@ -43,6 +60,7 @@ export function customerContext(input: {
 }): ClaudeContext {
   return {
     subject: `La fiche ${input.name}`,
+    target: `la fiche client « ${input.name} »${refs(input.reference && `référence ${input.reference}`, crmId(input.id))}`,
     items: [
       { label: "Fiche", detail: `${input.name} · ${input.reference}, coordonnées et interlocuteurs (${input.contacts})` },
       { label: "Affaires", detail: `${count(input.projects, "affaire")}, leur frise et leurs jalons` },
@@ -74,6 +92,10 @@ export function customerContext(input: {
 }
 
 export function projectContext(input: {
+  id?: string;
+  /** Le numéro de dossier tel qu'on le dit : `STR-2026-0148`. */
+  reference?: string;
+  customerId?: string;
   label: string;
   stage: string;
   site: string;
@@ -83,6 +105,11 @@ export function projectContext(input: {
 }): ClaudeContext {
   return {
     subject: `L'affaire « ${input.label} »`,
+    target: `l'affaire « ${input.label} »${refs(
+      input.reference && `dossier ${input.reference}`,
+      crmId(input.id, "identifiant de l'affaire"),
+      crmId(input.customerId, "identifiant de la fiche"),
+    )}`,
     items: [
       { label: "Affaire", detail: `${input.label} · ${input.stage}${input.site ? ` · ${input.site}` : ""}` },
       { label: "Devis et factures", detail: `${count(input.quotes, "pièce")}, dont ${input.documents} avec leur PDF` },
@@ -109,6 +136,10 @@ export function projectContext(input: {
 }
 
 export function quoteContext(input: {
+  id?: string;
+  /** L'intitulé de l'affaire qui porte la pièce. */
+  project?: string;
+  projectId?: string;
   reference: string;
   kind: string;
   document: string;
@@ -118,6 +149,9 @@ export function quoteContext(input: {
   const piece = input.invoice ? "La facture" : "Le devis";
   return {
     subject: `${piece} ${input.reference || input.kind}`,
+    target: `${input.invoice ? "la facture" : "le devis"} ${input.reference || `« ${input.kind} » sans référence`}${
+      input.project ? ` de l'affaire « ${input.project} »` : ""
+    }${refs(crmId(input.id, "identifiant de la pièce"), crmId(input.projectId, "identifiant de l'affaire"))}`,
     items: [
       { label: piece, detail: `${input.reference || "sans référence"} · ${input.kind}` },
       {
@@ -148,10 +182,23 @@ export function quoteContext(input: {
 export function mailContext(input: {
   subject: string;
   from: string;
+  fromEmail?: string;
+  /** Le jour du dernier message, déjà écrit en français. */
+  date?: string;
   customer: string | null;
+  customerId?: string | null;
+  messageId?: string;
 }): ClaudeContext {
+  const sender = input.fromEmail && input.fromEmail !== input.from ? `${input.from} <${input.fromEmail}>` : input.from;
   return {
     subject: `Le courriel « ${input.subject || "sans objet"} »`,
+    target: `la conversation « ${input.subject || "sans objet"} »${sender ? `, dernier message de ${sender}` : ""}${
+      input.date ? ` le ${input.date}` : ""
+    }${refs(
+      crmId(input.messageId, "identifiant du message"),
+      input.customer && `fiche « ${input.customer} »`,
+      crmId(input.customerId, "identifiant de la fiche"),
+    )}`,
     items: [
       { label: "Message", detail: `De ${input.from}, corps et pièces jointes` },
       { label: "Fil", detail: "Les réponses du même échange" },
@@ -189,9 +236,16 @@ export function mailContext(input: {
   };
 }
 
-export function customerMailContext(input: { total: number }): ClaudeContext {
+export function customerMailContext(input: {
+  total: number;
+  customer?: string;
+  customerId?: string;
+}): ClaudeContext {
   return {
     subject: "Les courriels de la fiche",
+    target: `les courriels rattachés à ${input.customer ? `la fiche « ${input.customer} »` : "la fiche client"}${refs(
+      crmId(input.customerId, "identifiant de la fiche"),
+    )}`,
     items: [{ label: "Courriels", detail: `${count(input.total, "message")} rattachés, corps compris` }],
     prompts: [
       { label: "Résumer les échanges", detail: "Ce qui a été demandé, promis et envoyé, dans l'ordre." },
@@ -213,6 +267,9 @@ export function worksitesContext(input: {
   const what = input.etudes ? "étude" : "chantier";
   return {
     subject: input.etudes ? "Les études en cours" : "Les chantiers en cours",
+    target: input.etudes
+      ? "les études signées d'OMPT STRUCTURE (affaires gagnées ou réalisées)"
+      : "les chantiers signés d'OMPT GROUPE (affaires gagnées ou réalisées)",
     items: [
       { label: input.etudes ? "Études" : "Chantiers", detail: `${count(input.total, what)}, dates, devis et factures` },
       { label: "Listes de travail", detail: `${count(input.alerts, "affaire")} signalées` },
@@ -235,6 +292,10 @@ export function worksitesContext(input: {
 }
 
 export function worksiteContext(input: {
+  id?: string;
+  /** Le numéro de dossier tel qu'on le dit : `GRP-2026-0031`. */
+  reference?: string;
+  customerId?: string;
   customer: string;
   label: string;
   status: string;
@@ -245,6 +306,11 @@ export function worksiteContext(input: {
 }): ClaudeContext {
   return {
     subject: `${input.etudes ? "L'étude" : "Le chantier"} ${input.customer}`,
+    target: `${input.etudes ? "l'étude" : "le chantier"} « ${input.label} » de ${input.customer}${refs(
+      input.reference && `dossier ${input.reference}`,
+      crmId(input.id, "identifiant de l'affaire"),
+      crmId(input.customerId, "identifiant de la fiche"),
+    )}`,
     items: [
       { label: input.etudes ? "Étude" : "Chantier", detail: `${input.label} · ${input.status}` },
       { label: "Pièces", detail: `${count(input.quotes, "devis", "devis")}, ${count(input.invoices, "facture")}` },
@@ -266,6 +332,7 @@ export function worksiteContext(input: {
 export function dashboardContext(input: { relances: number; blocked: number }): ClaudeContext {
   return {
     subject: "Le tableau de bord",
+    target: "mon tableau de bord : les devis à relancer, les affaires signées mais bloquées, l'agenda et les tâches du jour",
     items: [
       { label: "Relances", detail: `${count(input.relances, "devis", "devis")} en attente de réponse` },
       { label: "Signé, bloqué", detail: `${count(input.blocked, "affaire")} qui attendent autre chose` },

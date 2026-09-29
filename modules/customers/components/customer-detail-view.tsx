@@ -195,7 +195,9 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
           )}
           <ClaudeButton
             size="sm"
+            demo="claude-fiche"
             context={customerContext({
+              id: customer.id,
               name: customer.display_name,
               reference: customer.reference,
               projects: customer.projects.length,
