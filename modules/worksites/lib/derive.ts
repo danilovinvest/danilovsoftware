@@ -175,6 +175,19 @@ function alert(read: ReadWorksite, reason: string): Alert {
   };
 }
 
+/**
+ * Une affaire arrêtée ou en pause n'attend personne.
+ *
+ * Les listes de travail ne lisaient pas l'issue : un chantier signé puis
+ * arrêté (`arrete`, migration 103) serait resté « signé, aucune date de
+ * démarrage » indéfiniment, et une étude en pause aurait réclamé son acompte.
+ * C'est la règle des dossiers à attribuer et de « Mes dossiers », qui lisent
+ * `outcome IS NULL`. Le tableau, lui, les garde : l'affaire existe toujours.
+ */
+function avance(read: ReadWorksite): boolean {
+  return read.worksite.outcome === "";
+}
+
 /** Le total d'une liste de travail. Nul quand rien n'y est chiffré. */
 export function alertTotal(rows: Alert[]): number | null {
   const chiffres = rows.filter((row) => row.amount !== null);
@@ -197,7 +210,8 @@ export function alertTotal(rows: Alert[]): number | null {
  * plans rendus, ou d'une facture de solde. Chacune se lit sur une colonne
  * réelle, et chacune est peuplée.
  */
-export function studyAlerts(reads: ReadWorksite[]) {
+export function studyAlerts(all: ReadWorksite[]) {
+  const reads = all.filter(avance);
   const attente = reads
     .filter((r) => r.study === "acompte_attendu")
     .map((r) => alert(r, "Signée, acompte non encaissé — l'étude ne démarre pas"));
@@ -239,7 +253,8 @@ export function studyAlerts(reads: ReadWorksite[]) {
   return { unplanned: attente, running: production, toInvoice: aFacturer, noDeposit: avis };
 }
 
-export function alerts(reads: ReadWorksite[]) {
+export function alerts(all: ReadWorksite[]) {
+  const reads = all.filter(avance);
   const unplanned = reads
     .filter((r) => r.status === "a_planifier")
     .map((r) =>

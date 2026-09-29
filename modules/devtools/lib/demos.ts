@@ -51,6 +51,43 @@ const FICHE_COPRO = "/customers/de2ea332-b3dd-491a-8ea4-b423612731aa";
 
 export const DEMOS: Demo[] = [
   {
+    id: "arreter-ou-pause",
+    title: "Arrêter ou mettre en pause une affaire, depuis la frise",
+    date: "2026-09-29",
+    steps: [
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="frise-arret"]',
+        title: "Un bouton explicite, sous la frise",
+        body:
+          "« Arrêter ou mettre en pause » vit maintenant sous la frise de chaque affaire " +
+          "ouverte, et non plus seulement dans « à faire maintenant » avant la signature. Un " +
+          "chantier signé qui s'interrompt a enfin un endroit où le dire.",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="frise-arret"]',
+        target: '[data-demo="arret-choix"]',
+        title: "D'abord : pause ou arrêt",
+        body:
+          "Une affaire en pause reviendra, une affaire arrêtée ne reviendra pas d'elle-même. " +
+          "Le choix vient en premier, et le bouton final dit exactement ce qu'il fait : " +
+          "« Mettre en pause » ou « Arrêter l'affaire ».",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: ['[data-demo="frise-arret"]', '[data-demo="arret-choix"] [role="radio"]:last-child'],
+        target: '[data-demo="arret-dialog"]',
+        title: "Puis la raison, obligatoire pour un arrêt",
+        body:
+          "Une affaire signée propose d'abord « Arrêté en cours de route » — ce n'est pas une " +
+          "vente ratée. La raison écrite est exigée pour arrêter, facultative pour une pause, " +
+          "qui peut poser une tâche de reprise. Ensuite, la frise porte une pastille " +
+          "« En pause » ou « Arrêtée » avec la raison, et le bouton devient « Reprendre ».",
+      },
+    ],
+  },
+  {
     id: "claude-ouvre-l-app",
     title: "Le bouton Claude ouvre l'application, la demande déjà écrite",
     date: "2026-09-29",

@@ -72,6 +72,7 @@ export type ProjectOutcome =
   | "concurrence"
   | "refuse_par_nous"
   | "transfere"
+  | "arrete"
   | "stand_by"
   | "bloque_tiers";
 export type QuoteKind =

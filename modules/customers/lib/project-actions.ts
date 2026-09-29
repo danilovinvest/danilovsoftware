@@ -20,7 +20,7 @@ import type { InteractionKind } from "./types";
  */
 export type BlockDialog =
   | { kind: "relance" }
-  | { kind: "outcome"; mode: "refuse" | "postpone" }
+  | { kind: "outcome"; mode: "stop" | "pause" | null }
   | { kind: "log"; interaction: InteractionKind }
   | { kind: "plan" }
   | { kind: "materials" }
@@ -66,8 +66,8 @@ export const DIALOG_ACTIONS = {
   interaction: { kind: "log", interaction: "appel" },
   plan_rdv: { kind: "plan" },
   relance: { kind: "relance" },
-  refuse: { kind: "outcome", mode: "refuse" },
-  postpone: { kind: "outcome", mode: "postpone" },
+  refuse: { kind: "outcome", mode: "stop" },
+  postpone: { kind: "outcome", mode: "pause" },
   deposit_paid: { kind: "settlement", reglement: "acompte" },
   balance_paid: { kind: "settlement", reglement: "solde" },
   order_materials: { kind: "materials" },

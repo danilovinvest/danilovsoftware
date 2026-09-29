@@ -1204,7 +1204,8 @@ export function nextAction(
     const reason = PROJECT_OUTCOME[project.outcome!].label.toLowerCase();
     return {
       step: at("negociation").step,
-      title: "Affaire non aboutie",
+      // Un chantier signé arrêté n'est pas une vente ratée : il le dit.
+      title: project.outcome === "arrete" ? "Affaire arrêtée" : "Affaire non aboutie",
       detail: note ? `${reason} — ${note}` : reason,
       tone: "neutral",
       alert: false,
