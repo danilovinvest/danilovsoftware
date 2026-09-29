@@ -12,6 +12,7 @@ import {
   toOptions,
 } from "../lib/labels";
 import { CYCLE_FILTERS } from "../lib/cycle";
+import { CUSTOMER_CATEGORIES, categoryFilters, categoryOf } from "../lib/categories";
 import { REVIEW_FILTERS } from "../lib/review";
 import { effectiveStatus, useDebounced } from "../hooks/use-customers";
 import type {
@@ -236,6 +237,17 @@ export function CustomerFiltersBar({
           onValueChange={(value) =>
             onChange({ source: value ? [value as CustomerSource] : undefined })
           }
+        />
+        {/* La catégorie : syndics, fournisseurs, apporteurs… Les mêmes
+            entrées que sous « Fiches client » dans la barre latérale. */}
+        <SelectField
+          id="filtre-categorie"
+          options={CUSTOMER_CATEGORIES.map((c) => ({ value: c.key, label: c.label }))}
+          emptyLabel="Toutes les catégories"
+          placeholder="Catégorie"
+          wrapperClassName="w-44"
+          value={categoryOf(filters)}
+          onValueChange={(value) => onChange(categoryFilters(value))}
         />
         <SelectField
           options={SORT_OPTIONS}

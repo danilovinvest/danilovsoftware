@@ -51,6 +51,48 @@ const FICHE_COPRO = "/customers/de2ea332-b3dd-491a-8ea4-b423612731aa";
 
 export const DEMOS: Demo[] = [
   {
+    id: "categories-et-menu",
+    title: "Syndics, fournisseurs, apporteurs : les fiches par catégorie",
+    date: "2026-09-29",
+    steps: [
+      {
+        path: "/customers",
+        target: '[data-demo="nav-sub-/customers"]',
+        title: "Un menu sous « Fiches client »",
+        body:
+          "La colonne se déplie sur les listes qu'on ouvre le plus : clients, prospects, " +
+          "copropriétés, syndics, prescripteurs, apporteurs d'affaires, fournisseurs, " +
+          "sous-traitants — et le graphe de toute la base, tout en bas.",
+      },
+      {
+        path: "/customers",
+        click: '[data-sidebar="sidebar"] a[href="/customers?type=syndic"]',
+        target: '[data-demo="fiche-categorie"]',
+        title: "Chaque ligne dit ce qu'est la fiche",
+        body:
+          "Le type, la relation quand elle contredit le type, et « Apporteur » pour une fiche " +
+          "qui nous a amené une affaire. Une particulière cliente n'en porte aucun : ce sont " +
+          "les autres qu'on cherche.",
+      },
+      {
+        path: "/customers",
+        target: "#filtre-categorie",
+        title: "La même question, depuis la liste",
+        body:
+          "Le filtre « Catégorie » propose les mêmes entrées que la colonne. Les prescripteurs " +
+          "se lisent sur la relation effective : un architecte que personne n'a classé en est un.",
+      },
+      {
+        path: "/customers/graphe",
+        target: '[data-demo="graphe-global"]',
+        title: "Le graphe de toute la base",
+        body:
+          "Toutes les fiches, leurs syndics, leurs apporteurs et les interlocuteurs qu'elles " +
+          "partagent. La toile arrive ; l'API qui la nourrit et la tient à jour est en place.",
+      },
+    ],
+  },
+  {
     id: "arreter-ou-pause",
     title: "Arrêter ou mettre en pause une affaire, depuis la frise",
     date: "2026-09-29",

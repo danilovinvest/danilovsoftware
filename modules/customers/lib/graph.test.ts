@@ -165,6 +165,7 @@ const payment = (id: string, quote_id: string, amount: string, paid_at: string):
 const detail: CustomerDetail = {
   ...customer(),
   referrer: null,
+  is_referrer: false,
   contacts: [contact("vidal", "Me Vidal", { role_label: "contact sur place", phone: "06 86 42 18 43" })],
   projects: [project],
   quotes: [

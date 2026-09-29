@@ -8,7 +8,7 @@ import type { NextAction } from "../lib/cycle";
 import type { CustomerListItem, ProjectSummary, Review } from "../lib/types";
 import { EnumBadge } from "./enum-badge";
 import { ProjectCycle } from "./project-cycle";
-import { ActionCell, IssuerBadge, PhoneLink, ReviewBox, readListProject } from "./customer-list-parts";
+import { ActionCell, CategoryBadges, IssuerBadge, PhoneLink, ReviewBox, readListProject } from "./customer-list-parts";
 
 /** Une fiche lue pour la liste, telle que le tableau la prépare. */
 export type ListRow = {
@@ -70,6 +70,7 @@ export function CustomerCards({
                   {customer.display_name}
                 </Link>
                 <IssuerBadge issuer={customer.issuer} />
+                <CategoryBadges customer={customer} />
                 <p className="text-muted-foreground truncate font-mono text-xs">
                   {customer.reference}
                   {customer.city && ` · ${customer.city}`}

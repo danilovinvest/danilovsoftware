@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { Suspense, useEffect } from "react";
 import { ChevronRightIcon } from "lucide-react";
 import { useAuth } from "@/modules/auth";
 import {
@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/sidebar";
 import { NAV_ACTIVE_CLASS, NAV_ITEM_CLASS } from "@/shared/ui/nav";
 import { cn } from "@/lib/utils";
-import { NAV_SECTIONS, isNavItemVisible } from "../lib/navigation";
+import { NAV_SECTIONS, isNavItemVisible, isSubItemActive, type NavItem } from "../lib/navigation";
 import { useScope } from "@/modules/group";
 import { SidebarSearch } from "./sidebar-search";
 
@@ -198,26 +198,24 @@ function WorkspaceNav() {
                         </SidebarMenuButton>
                       </CollapsibleTrigger>
                       <CollapsibleContent>
-                        {/*
-                          Les sous-entrées ne prennent pas de pilule : leur
-                          parente la porte déjà, et deux pilules pleines
-                          l'une sous l'autre ne diraient plus laquelle est
-                          l'écran. Elles s'écrivent plus foncé, rien de plus.
-                        */}
-                        <SidebarMenuSub className="border-border mx-0 ml-4 gap-0.5 py-1 pr-0 pl-2.5">
-                          {subItems.map((sub) => (
-                            <SidebarMenuSubItem key={sub.href}>
-                              <SidebarMenuSubButton
-                                asChild
-                                isActive={pathname === sub.href}
-                                className="text-foreground/65 data-active:text-foreground h-8 rounded-lg px-2 text-[13px] data-active:bg-transparent data-active:font-medium"
-                              >
-                                <Link href={sub.href}>
-                                  <span>{sub.label}</span>
-                                </Link>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))}
+                        <SidebarMenuSub
+                          data-demo={`nav-sub-${item.href}`}
+                          className="border-border mx-0 ml-4 gap-0.5 py-1 pr-0 pl-2.5"
+                        >
+                          {/*
+                            Les sous-entrées lisent l'adresse (« Syndics » et
+                            « Fournisseurs » ne diffèrent que par elle), et
+                            `useSearchParams` exige une frontière : sans elle,
+                            chaque page du CRM renoncerait au rendu statique. Le
+                            repli dessine la même liste, sans entrée active.
+                          */}
+                          <Suspense
+                            fallback={
+                              <SubEntries items={subItems} pathname={pathname} params={NO_PARAMS} />
+                            }
+                          >
+                            <LiveSubEntries items={subItems} pathname={pathname} />
+                          </Suspense>
                         </SidebarMenuSub>
                       </CollapsibleContent>
                     </SidebarMenuItem>
@@ -230,4 +228,42 @@ function WorkspaceNav() {
       </SidebarContent>
     </>
   );
+}
+
+type SubItem = NonNullable<NavItem["items"]>[number];
+
+const NO_PARAMS = { get: () => null };
+
+function LiveSubEntries({ items, pathname }: { items: SubItem[]; pathname: string }) {
+  const params = useSearchParams();
+  return <SubEntries items={items} pathname={pathname} params={params} />;
+}
+
+/**
+ * Les sous-entrées ne prennent pas de pilule : leur parente la porte déjà, et
+ * deux pilules pleines l'une sous l'autre ne diraient plus laquelle est
+ * l'écran. Elles s'écrivent plus foncé, rien de plus.
+ */
+function SubEntries({
+  items,
+  pathname,
+  params,
+}: {
+  items: SubItem[];
+  pathname: string;
+  params: { get(name: string): string | null };
+}) {
+  return items.map((sub) => (
+    <SidebarMenuSubItem key={sub.href}>
+      <SidebarMenuSubButton
+        asChild
+        isActive={isSubItemActive(sub.href, items, pathname, params)}
+        className="text-foreground/65 data-active:text-foreground h-8 rounded-lg px-2 text-[13px] data-active:bg-transparent data-active:font-medium"
+      >
+        <Link href={sub.href}>
+          <span>{sub.label}</span>
+        </Link>
+      </SidebarMenuSubButton>
+    </SidebarMenuSubItem>
+  ));
 }

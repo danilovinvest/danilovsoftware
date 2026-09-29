@@ -25,6 +25,7 @@ import { ProjectCycle } from "./project-cycle";
 import { CustomerCards, type ListRow } from "./customer-cards";
 import {
   ActionCell,
+  CategoryBadges,
   IssuerBadge,
   PhoneLink,
   ReviewBox,
@@ -224,6 +225,7 @@ export function CustomerTable({
                             {customer.display_name}
                           </Link>
                           <IssuerBadge issuer={customer.issuer} />
+                          <CategoryBadges customer={customer} />
                           <p className="text-muted-foreground truncate font-mono text-xs">
                             {customer.reference}
                             {customer.city && ` · ${customer.city}`}

@@ -111,12 +111,37 @@ export const NAV_SECTIONS: NavSection[] = [
         label: "Fiches client",
         icon: FileTextIcon,
         hue: "indigo",
-        // Une entrée simple, sans sous-menu. La synchronisation Excel en est
-        // sortie : un geste d'administration rare n'a pas sa place dans la
-        // colonne qu'on parcourt toute la journée. Elle reste à portée par la
-        // recherche (⌘K), sous `imports:run`. Un menu dépliant pour la seule
-        // « Toutes les fiches » serait un clic de plus pour rien.
         permission: "customers:read",
+        /*
+          Un menu dépliant, et cette fois il a de quoi se déplier.
+
+          Il avait été retiré quand il ne portait plus que « Toutes les
+          fiches » : un clic de plus pour rien. Le 29/09 le dirigeant a demandé
+          de « différencier les syndics, les fournisseurs, les apporteurs
+          d'affaires » depuis la colonne : chaque sous-entrée est une liste
+          filtrée, écrite dans le format de l'adresse de la liste
+          (`customers/lib/list-query.ts`), et ses catégories sont celles du
+          filtre « Catégorie » (`customers/lib/categories.ts`) — un test tient
+          les deux d'accord. « Clients » est la liste par défaut, donc sans
+          paramètre ; « Toutes » coche tous les statuts.
+
+          Le graphe ferme la liste : c'est la même base, vue d'un coup.
+        */
+        items: [
+          { href: "/customers?statut=tous", label: "Toutes" },
+          { href: "/customers", label: "Clients" },
+          { href: "/customers?statut=prospect", label: "Prospects" },
+          { href: "/customers?type=copropriete", label: "Copropriétés" },
+          { href: "/customers?type=syndic", label: "Syndics" },
+          {
+            href: "/customers?relation=prescripteur,partenaire_technique",
+            label: "Prescripteurs",
+          },
+          { href: "/customers?apporteur=1", label: "Apporteurs d'affaires" },
+          { href: "/customers?relation=fournisseur", label: "Fournisseurs" },
+          { href: "/customers?relation=sous_traitant", label: "Sous-traitants" },
+          { href: "/customers/graphe", label: "Graphe" },
+        ],
       },
       {
         href: "/etudes",
@@ -310,4 +335,36 @@ export function firstAllowedHref(
   scope: Scope,
 ): string | null {
   return NAVIGATION.find((item) => isNavItemVisible(item, can, scope))?.href ?? null;
+}
+
+/** Ce qu'il faut d'une adresse pour lire ses paramètres, `useSearchParams` compris. */
+type ParamReader = { get(name: string): string | null };
+
+/**
+ * Une sous-entrée est-elle l'écran courant ?
+ *
+ * Le chemin ne suffit plus : « Syndics » et « Fournisseurs » mènent tous deux à
+ * `/customers`, et ne diffèrent que par leurs paramètres. Une sous-entrée est
+ * active quand son chemin est celui de la page **et** que chacun des paramètres
+ * qui distinguent ses sœurs y vaut la même chose — absent compris. Les autres
+ * paramètres (la recherche, la page, le tri) ne comptent pas : chercher un nom
+ * parmi les syndics reste dans « Syndics ».
+ *
+ * Sans paramètre chez aucune sœur, c'est l'égalité des chemins d'avant : la
+ * facturation n'a pas changé de comportement.
+ */
+export function isSubItemActive(
+  href: string,
+  siblings: ReadonlyArray<{ href: string }>,
+  pathname: string,
+  params: ParamReader,
+): boolean {
+  const target = new URL(href, "http://crm.local");
+  if (target.pathname !== pathname) return false;
+  const keys = new Set(
+    siblings.flatMap((sibling) => [...new URL(sibling.href, "http://crm.local").searchParams.keys()]),
+  );
+  return [...keys].every(
+    (key) => (params.get(key) ?? "") === (target.searchParams.get(key) ?? ""),
+  );
 }

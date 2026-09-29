@@ -1,4 +1,5 @@
 import type { CustomerFilters, CustomerSource, CustomerStatus } from "./types";
+import { CUSTOMER_KIND, CUSTOMER_RELATION } from "./labels";
 
 /**
  * Les filtres de la liste des fiches, dans l'adresse.
@@ -28,6 +29,9 @@ export function filtersToQuery(filters: CustomerFilters, defaults: CustomerFilte
     params.set("statut", filters.status?.length ? filters.status.join(",") : TOUS);
   }
   if (filters.source?.length) params.set("source", filters.source.join(","));
+  if (filters.kind?.length) params.set("type", filters.kind.join(","));
+  if (filters.relation?.length) params.set("relation", filters.relation.join(","));
+  if (filters.referrer) params.set("apporteur", "1");
   if (filters.city) params.set("ville", filters.city);
   if (filters.owner_id) params.set("responsable", filters.owner_id);
   if (filters.sort && filters.sort !== defaults.sort) params.set("tri", filters.sort);
@@ -61,6 +65,11 @@ export function filtersFromQuery(
 
   const source = params.get("source");
   if (source) out.source = source.split(",").filter(Boolean) as CustomerSource[];
+  const kinds = known(params.get("type"), CUSTOMER_KIND);
+  if (kinds.length > 0) out.kind = kinds;
+  const relations = known(params.get("relation"), CUSTOMER_RELATION);
+  if (relations.length > 0) out.relation = relations;
+  if (params.get("apporteur") === "1") out.referrer = true;
   const city = params.get("ville");
   if (city) out.city = city;
   const owner = params.get("responsable");
@@ -70,6 +79,20 @@ export function filtersFromQuery(
   const page = Number(params.get("page"));
   if (Number.isInteger(page) && page > 1) out.page = page;
   return out;
+}
+
+/** Les valeurs d'une liste « a,b » que l'énumération connaît, les autres ignorées. */
+function known<T extends string>(raw: string | null, entries: Record<T, unknown>): T[] {
+  if (!raw) return [];
+  return raw.split(",").filter((value): value is T => Object.hasOwn(entries, value));
+}
+
+/**
+ * Une catégorie est-elle posée ? Type, relation ou apporteur : ce que la barre
+ * latérale propose sous « Fiches client ».
+ */
+export function hasCategory(filters: CustomerFilters): boolean {
+  return Boolean(filters.kind?.length || filters.relation?.length || filters.referrer);
 }
 
 /*

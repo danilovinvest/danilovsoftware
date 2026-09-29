@@ -11,7 +11,8 @@ import { formatDate, formatPhone } from "@/shared/lib/format";
 import * as api from "../lib/api";
 import { nextAction, readCycle, type CycleOrders, type Metier, type NextAction } from "../lib/cycle";
 import { EMPTY_MARKS, readJalons } from "../lib/jalons";
-import type { CustomerFilters, ProjectSummary, Review } from "../lib/types";
+import { categoryLabels } from "../lib/categories";
+import type { CustomerFilters, CustomerListItem, ProjectSummary, Review } from "../lib/types";
 
 /*
   Les morceaux communs au tableau et aux cartes de la liste des fiches.
@@ -61,6 +62,34 @@ export function IssuerBadge({ issuer }: { issuer: string }) {
       )}
     >
       {societe.label}
+    </span>
+  );
+}
+
+/**
+ * Ce qui distingue la fiche : son type, sa relation quand elle contredit le
+ * type, « Apporteur » quand elle nous a amené une affaire (`categoryLabels`).
+ *
+ * En contour et non en plein : le badge plein est la société, qui se lit en
+ * premier. Une particulière cliente finale n'en porte aucun — c'est neuf fiches
+ * sur dix, et ce sont les autres qu'on cherche.
+ */
+export function CategoryBadges({ customer }: { customer: CustomerListItem }) {
+  const labels = categoryLabels(customer);
+  if (labels.length === 0) return null;
+  return (
+    <span data-demo="fiche-categorie" className="ml-2 inline-flex flex-wrap gap-1 align-middle">
+      {labels.map((entry) => (
+        <span
+          key={entry.key}
+          className={cn(
+            "rounded-md border px-1.5 py-0.5 text-[0.6rem] font-medium",
+            entry.key === "referrer" ? "text-warning" : "text-muted-foreground",
+          )}
+        >
+          {entry.label}
+        </span>
+      ))}
     </span>
   );
 }

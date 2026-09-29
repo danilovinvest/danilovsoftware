@@ -14,6 +14,10 @@ import type { Customer, CustomerKind, CustomerRelation } from "./types";
  * Un syndic, un architecte, un notaire ou un maître d'œuvre nous amènent des
  * clients. Un ingénieur travaille avec nous. Le reste est, jusqu'à preuve du
  * contraire, un client — c'est ce qu'était toute fiche avant la migration 82.
+ *
+ * Sa jumelle serveur est `relationByKind` (`api/internal/customers/relation_rule.go`),
+ * qui filtre la liste par relation et écrit `relation_effective` sur les nœuds
+ * du graphe de toute la base. Les deux évoluent ensemble.
  */
 const RELATION_BY_KIND: Record<CustomerKind, CustomerRelation> = {
   particulier: "client_final",

@@ -181,6 +181,10 @@ export type CustomerListItem = {
   reference: string;
   display_name: string;
   kind: CustomerKind;
+  /** La relation choisie à la main, nulle quand le type la laisse deviner. */
+  relation: CustomerRelation | null;
+  /** A apporté une affaire chez un autre (dans le périmètre), ou recommandé une fiche. */
+  is_referrer: boolean;
   status: CustomerStatus;
   source: CustomerSource;
   company_name: string;
@@ -665,6 +669,8 @@ export type ReferrerCandidate = Referrer & { status: string; city: string };
 export type CustomerDetail = Customer & {
   /** De qui vient ce client, quand il a été recommandé. */
   referrer: Referrer | null;
+  /** Apporteur d'affaires : a apporté une affaire chez un autre, ou recommandé une fiche. */
+  is_referrer: boolean;
   contacts: Contact[];
   projects: Project[];
   quotes: Quote[];
@@ -711,6 +717,13 @@ export type CustomerFilters = {
   search?: string;
   status?: CustomerStatus[];
   source?: CustomerSource[];
+  /**
+   * Les catégories de la barre latérale : le type, la relation **effective**
+   * (choisie, à défaut déduite du type — `relationOf`), les apporteurs.
+   */
+  kind?: CustomerKind[];
+  relation?: CustomerRelation[];
+  referrer?: boolean;
   city?: string;
   owner_id?: string;
   sort?: "recent" | "name" | "updated" | "requested" | "amount";
