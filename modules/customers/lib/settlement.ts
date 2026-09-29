@@ -130,10 +130,17 @@ function newestBy<Q>(quotes: Q[], date: (q: Q) => string | null): Q {
  * Le marché, l'encaissé, et s'ils se comptent — la règle de `montant_du_marche`
  * et `montant_encaisse`, sur les montants que chaque pièce porte (le serveur y
  * recopie la somme des virements). Une pièce dont une facture est tirée ne
- * compte plus pour elle-même.
+ * compte plus pour elle-même — un avoir, lui, n'éteint pas sa facture.
  */
 function marketAndCollected(quotes: FactQuote[]): { market: number; collected: number; known: boolean } {
-  const mothers = new Set(quotes.map((q) => q.source_quote_id).filter((id) => id !== null));
+  // Un avoir ne fait pas de sa facture une « mère » : elle garde ses
+  // encaissements (migration 105).
+  const mothers = new Set(
+    quotes
+      .filter((q) => q.invoice_kind !== "avoir")
+      .map((q) => q.source_quote_id)
+      .filter((id) => id !== null),
+  );
   let signed = 0;
   let offered = 0;
   let hasSigned = false;

@@ -1,3 +1,5 @@
+import type { PaymentPart } from "./receipt-types";
+
 export type CustomerStatus = "prospect" | "client" | "perdu" | "archive";
 export type CustomerSource =
   | "site_web"
@@ -648,6 +650,11 @@ export type QuotePayment = {
   note: string;
   created_at: string;
   created_by_name: string;
+  /** Les lignes d'un même virement réparti partagent ce groupe. */
+  group_id: string | null;
+  /** Le compte sur lequel il est tombé (migration 104), nul tant qu'on ne l'a pas dit. */
+  bank_account_id: string | null;
+  bank_account_label: string;
 };
 
 /**
@@ -681,6 +688,11 @@ export type CustomerDetail = Customer & {
   milestones: Milestones[];
   /** Les virements des devis de la fiche, chacun disant son `quote_id`. */
   payments: QuotePayment[];
+  /**
+   * Ce que la fiche a reçu sans que cela règle une pièce : parts hors CRM et
+   * encaissements en attente d'affectation.
+   */
+  unallocated_parts: PaymentPart[];
   /** Les preuves jointes aux crans de la frise, toutes affaires confondues. */
   step_proofs: StepProof[];
 };

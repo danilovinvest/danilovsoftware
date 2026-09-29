@@ -65,3 +65,9 @@ export { ImportView } from "./import";
 export { paymentCarrier, settlementOf } from "./lib/settlement";
 export { closeProject, type ClosurePayload } from "./lib/api";
 export { PlanEvent } from "./components/plan-event";
+// L'encaissement complet (29/09) : la liste « À affecter » de la facturation
+// affecte et saisit par les mêmes boîtes que la fiche.
+export { AllocateDialog } from "./components/allocate-dialog";
+export { ReceiptDialog } from "./components/receipt-dialog";
+export { listPendingReceipts } from "./lib/receipts-api";
+export * from "./lib/receipt-types";

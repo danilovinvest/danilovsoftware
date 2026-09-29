@@ -177,6 +177,9 @@ export const NAV_SECTIONS: NavSection[] = [
         permission: "quotes:read",
         items: [
           { href: "/billing", label: "Factures" },
+          // Les virements reçus avant leur pièce (29/09) : la seule liste de
+          // la facturation qui lit la base aujourd'hui.
+          { href: "/billing/a-affecter", label: "À affecter" },
           {
             href: "/billing/tresorerie",
             label: "Flux de trésorerie",

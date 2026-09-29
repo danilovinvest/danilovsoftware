@@ -4,4 +4,5 @@
  */
 export { BillingView } from "./components/billing-view";
 export { TreasuryView } from "./components/treasury-view";
+export { PendingReceiptsView } from "./components/pending-receipts-view";
 export * from "./lib/types";

@@ -160,12 +160,16 @@ const payment = (id: string, quote_id: string, amount: string, paid_at: string):
   note: "",
   created_at: paid_at,
   created_by_name: "",
+  group_id: null,
+  bank_account_id: null,
+  bank_account_label: "",
 });
 
 const detail: CustomerDetail = {
   ...customer(),
   referrer: null,
   is_referrer: false,
+  unallocated_parts: [],
   contacts: [contact("vidal", "Me Vidal", { role_label: "contact sur place", phone: "06 86 42 18 43" })],
   projects: [project],
   quotes: [

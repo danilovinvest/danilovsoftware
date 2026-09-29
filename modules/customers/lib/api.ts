@@ -485,7 +485,14 @@ export function setQuoteBalance(
  */
 export function addQuotePayment(
   quoteId: string,
-  payload: { paid_at: string; amount: string; reference?: string; kind?: "acompte" | "solde" },
+  payload: {
+    paid_at: string;
+    amount: string;
+    reference?: string;
+    kind?: "acompte" | "solde";
+    /** Le compte crédité (migration 104), facultatif. */
+    bank_account_id?: string | null;
+  },
 ) {
   return apiFetch<Quote>(`/v1/quotes/${quoteId}/payments`, { method: "POST", body: payload });
 }

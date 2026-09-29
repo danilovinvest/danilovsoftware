@@ -51,6 +51,52 @@ const FICHE_COPRO = "/customers/de2ea332-b3dd-491a-8ea4-b423612731aa";
 
 export const DEMOS: Demo[] = [
   {
+    id: "encaissements-complets",
+    title: "Encaissements complets : compte crédité, avoirs, virement sans facture",
+    date: "2026-09-29",
+    steps: [
+      {
+        path: FICHE_COPRO,
+        click: ['[data-demo="tab-devis"]', '[data-demo="quote-payment-add"]'],
+        target: '[data-demo="reglement-virements"]',
+        title: "Le compte crédité de chaque virement",
+        body:
+          "Un virement dit sur quel compte il est tombé : GROUPE principal, GROUPE " +
+          "sous-compte 3, OMPT STRUCTURE ou AVENUE DE GRASSE. Il se choisit à la saisie et se " +
+          "corrige depuis le « … » du virement (« Compte crédité… ») — le solde de Theuwissen " +
+          "se range enfin sur le sous-compte 3.",
+      },
+      {
+        path: FICHE_COPRO,
+        click: ['[data-demo="tab-devis"]', '[data-demo="quote-menu"]'],
+        target: '[data-demo="quote-credit-note"]',
+        title: "Émettre un avoir sur une facture",
+        body:
+          "L'avoir naît lié à la facture qu'il annule, dans son affaire et chez sa société. " +
+          "La facture affiche alors son net à payer, l'avoir dit « annule FA… », et les " +
+          "impayés, le facturé et le solde de la facture tiennent compte de lui.",
+      },
+      {
+        path: FICHE_COPRO,
+        target: '[data-demo="receipt-new"]',
+        title: "Un virement sans facture",
+        body:
+          "L'argent arrivé avant sa pièce s'inscrit sur la fiche du payeur — montant, jour, " +
+          "compte, libellé du relevé — et attend. « Affecter… » le répartit ensuite sur une ou " +
+          "plusieurs pièces ; ce qui n'est pas affecté reste en attente.",
+      },
+      {
+        path: "/billing/a-affecter",
+        target: '[data-demo="pending-new"]',
+        title: "« À affecter », pour toute la base",
+        body:
+          "Facturation → À affecter liste tous les encaissements en attente, y compris ceux " +
+          "dont le payeur n'est pas reconnu sur le relevé. On y saisit un virement, on choisit " +
+          "le payeur et les pièces au moment d'affecter.",
+      },
+    ],
+  },
+  {
     id: "socle-pieces",
     title: "Les pièces : numéros par société, déplacement, encaissé, frise",
     date: "2026-09-29",
