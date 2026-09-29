@@ -51,6 +51,69 @@ const FICHE_COPRO = "/customers/de2ea332-b3dd-491a-8ea4-b423612731aa";
 
 export const DEMOS: Demo[] = [
   {
+    id: "graphe-global",
+    title: "Le graphe de toute la base, vivant",
+    date: "2026-09-29",
+    steps: [
+      {
+        path: "/customers/graphe",
+        target: '[data-demo="graphe-global"]',
+        title: "Toutes les fiches, et ce qui les relie",
+        body:
+          "Chaque point est une fiche, sa couleur dit ce qu'elle est (syndic, copropriété, " +
+          "prescripteur, apporteur…) et sa taille son nombre de connexions. Les petits points " +
+          "verts sont des interlocuteurs communs : une personne présente sur plusieurs fiches, " +
+          "dessinée en étoile. Survoler montre un nœud, double-cliquer ouvre la fiche.",
+      },
+      {
+        path: "/customers/graphe",
+        target: '[data-demo="graphe-chiffres"]',
+        title: "Les chiffres de ce qu'on regarde",
+        body:
+          "Fiches et liens affichés, groupes reliés, et les cinq fiches les plus connectées : " +
+          "un clic cadre la toile sur elle.",
+      },
+      {
+        path: "/customers/graphe",
+        target: '[data-demo="graphe-filtres"]',
+        title: "Chercher, puis choisir ce qu'on voit",
+        body:
+          "La recherche trouve une fiche ou un interlocuteur et zoome dessus. Les catégories " +
+          "servent aussi de légende. Traits pleins fléchés : liens posés à la main ; traits fins " +
+          "et pâles : liens déduits. Les fiches sans lien et les archivées sont masquées par " +
+          "défaut, à un interrupteur près.",
+      },
+      {
+        path: "/customers/graphe",
+        click: '[data-demo="graphe-chiffres"] button',
+        target: '[data-demo="graphe-selection"]',
+        title: "Une fiche et ses voisins",
+        body:
+          "Choisir un nœud éteint le reste et ouvre ce panneau : catégorie, ville, affaires, " +
+          "connexions, et les voisins rangés par nature du lien — « A pour syndic », « Affaires " +
+          "apportées par »… Chaque voisin se choisit à son tour.",
+      },
+      {
+        path: "/customers/graphe",
+        target: '[data-demo="graphe-fraicheur"]',
+        title: "Il se met à jour tout seul",
+        body:
+          "Une fiche créée ou corrigée, un interlocuteur ajouté, un syndic posé : la toile se " +
+          "relit dans les quinze secondes, sans bouger ce qui était déjà placé, et le nouveau " +
+          "nœud s'allume un instant.",
+      },
+      {
+        path: FICHE_COPRO,
+        click: '[data-demo="tab-graphe"]',
+        target: '[data-demo="graphe-global-lien"]',
+        title: "Depuis une fiche",
+        body:
+          "L'onglet Graphe d'une fiche montre son voisinage immédiat ; ce lien ouvre le graphe " +
+          "global centré sur elle.",
+      },
+    ],
+  },
+  {
     id: "categories-et-menu",
     title: "Syndics, fournisseurs, apporteurs : les fiches par catégorie",
     date: "2026-09-29",
@@ -88,7 +151,7 @@ export const DEMOS: Demo[] = [
         title: "Le graphe de toute la base",
         body:
           "Toutes les fiches, leurs syndics, leurs apporteurs et les interlocuteurs qu'elles " +
-          "partagent. La toile arrive ; l'API qui la nourrit et la tient à jour est en place.",
+          "partagent, sur une toile qui se tient à jour — voir la démo « Le graphe de toute la base ».",
       },
     ],
   },
