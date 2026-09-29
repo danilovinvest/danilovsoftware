@@ -3,9 +3,9 @@ import type { ReactNode } from "react";
 /*
   Une entrée de menu qui dit ce qu'elle fait, et ce qu'elle emporte.
 
-  Le gabarit vient de la barre d'une affaire (`project-toolbar.tsx`), où sept
-  boutons de même poids ont été ramenés aux deux qu'on fait tous les jours et à
-  un menu « … » pour le reste. Trois menus le portent désormais — l'affaire, la
+  Le gabarit vient de la barre d'une affaire, où sept boutons de même poids ont
+  été ramenés à un menu « … » (`project-menu.tsx`), qui porte désormais tous
+  les gestes de l'affaire. Trois menus le portent désormais — l'affaire, la
   société de la fiche, les gestes de la fiche — et trois copies auraient divergé
   au premier ajustement : c'est pour cela qu'il vit ici plutôt que recopié.
 

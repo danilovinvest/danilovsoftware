@@ -69,13 +69,18 @@ export function ProjectNextAssignment({
   return (
     <div data-demo="next-assignment" className="flex flex-col gap-2">
       {attribuer.error && <ErrorNotice message={attribuer.error} />}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg border border-dashed px-3 py-2 text-xs">
+      {/*
+        Une ligne sous l'action, dans le même bandeau : qui s'en charge, et pour
+        quand. Assigner et s'attribuer l'affaire restent des gestes secondaires —
+        le geste principal est celui de l'action, au-dessus.
+      */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
         {task ? (
           <>
             <UserCheckIcon className="text-success size-3.5 shrink-0" />
             <span className="min-w-0">
-              <span className="font-medium">{task.title}</span>
-              <span className="text-muted-foreground"> · {task.assignee_name || "sans responsable"}</span>
+              <span className="font-medium">{task.assignee_name || "Sans responsable"}</span>
+              <span className="text-muted-foreground"> · {task.title}</span>
               {task.due_at && (
                 <span className={cn(task.is_overdue ? "text-danger font-medium" : "text-muted-foreground")}>
                   {" "}
@@ -90,9 +95,14 @@ export function ProjectNextAssignment({
           </>
         ) : (
           <>
-            <span className="text-muted-foreground">Prochaine action : personne n&apos;en est chargé.</span>
+            <span className="text-muted-foreground">Personne n&apos;en est chargé.</span>
             {canWrite && (
-              <Button size="xs" className="ml-auto" onClick={() => setAssigning(true)}>
+              <Button
+                size="xs"
+                variant="outline"
+                className="ml-auto"
+                onClick={() => setAssigning(true)}
+              >
                 <UserPlusIcon />
                 Assigner
               </Button>

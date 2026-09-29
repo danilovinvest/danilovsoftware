@@ -8,7 +8,6 @@ import {
   MailIcon,
   PaperclipIcon,
   StickyNoteIcon,
-  Trash2Icon,
   UploadIcon,
 } from "lucide-react";
 import { browse, PreviewLink, type DriveItem } from "@/modules/files";
@@ -21,6 +20,7 @@ import { cn } from "@/lib/utils";
 import type { AutoProof } from "../lib/proofs";
 import type { StepProof, StepProofInput } from "../lib/types";
 import { askConfirm } from "@/shared/ui/confirm";
+import { RowMenu } from "./row-menu";
 
 /**
  * Les preuves d'un cran : ce qui le prouve déjà, et ce qu'on y joint.
@@ -166,11 +166,12 @@ function ProofRow({
           {proof.created_by_name && ` · joint par ${proof.created_by_name}`}
         </span>
       </span>
+      {/* Le « … » de toute ligne de la fiche : retirer se confirme. */}
       {canWrite && (
-        <button
-          type="button"
+        <RowMenu
+          label="Actions sur la preuve"
           disabled={pending}
-          onClick={async () => {
+          onDelete={async () => {
             const ok = await askConfirm({
               title: "Retirer cette preuve",
               description:
@@ -179,11 +180,8 @@ function ProofRow({
             });
             if (ok) void onRemove(proof.id);
           }}
-          className="text-muted-foreground hover:text-destructive rounded p-0.5 opacity-60 group-hover:opacity-100"
-          aria-label="Retirer la preuve"
-        >
-          <Trash2Icon className="size-3" />
-        </button>
+          deleteLabel="Retirer la preuve…"
+        />
       )}
     </li>
   );

@@ -62,10 +62,10 @@ export function CustomerAgenda({
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<CalendarEvent | null>(null);
   /*
-    « Noter un appel » ouvre le même formulaire, daté de la demi-heure qui vient
-    de passer : un échange daté du passé se consigne. Il n'y avait que
+    « Noter un échange » ouvre le même formulaire, daté de la demi-heure qui
+    vient de passer : un échange daté du passé se consigne. Il n'y avait que
     « Planifier », si bien que noter un appel passait par un bouton qui disait
-    le contraire.
+    le contraire. Le verbe est celui des actions d'une affaire.
   */
   const [passe, setPasse] = useState<{ from: Date; to: Date; allDay: boolean } | null>(null);
 
@@ -135,7 +135,7 @@ export function CustomerAgenda({
                 }}
               >
                 <PhoneIcon />
-                Noter un appel
+                Noter un échange
               </Button>
               <Button
                 size="sm"
@@ -215,7 +215,7 @@ export function CustomerAgenda({
                 kind: "echange",
                 customerId,
                 customerName,
-                title: passe ? `Appel — ${customerName}` : undefined,
+                title: passe ? `Échange — ${customerName}` : undefined,
               }
         }
       />

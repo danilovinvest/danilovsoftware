@@ -15,8 +15,12 @@
 export type DemoStep = {
   /** L'écran où se trouve la zone. Absent, l'étape reste sur l'écran courant. */
   path?: string;
-  /** Un élément à cliquer d'abord — un onglet, un bouton qui ouvre un tiroir. */
-  click?: string;
+  /**
+   * Un élément à cliquer d'abord — un onglet, un bouton qui ouvre un tiroir.
+   * Une liste se clique dans l'ordre, chacun dès qu'il paraît : l'entrée d'un
+   * menu n'existe qu'une fois le menu ouvert.
+   */
+  click?: string | string[];
   /** La zone à entourer. */
   target: string;
   title: string;
@@ -47,6 +51,176 @@ const FICHE_COPRO = "/customers/de2ea332-b3dd-491a-8ea4-b423612731aa";
 
 export const DEMOS: Demo[] = [
   {
+    id: "fiche-simplifiee-editeurs",
+    title: "Un fait, un nom, une saisie — où qu'on l'ouvre",
+    date: "2026-09-29",
+    steps: [
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="cran-acompte"]',
+        target: '[data-demo="cran-reglement"]',
+        title: "Le cran ouvre la boîte des règlements",
+        body:
+          "L'acompte et le solde se saisissaient dans le panneau du cran, dans une boîte " +
+          "depuis « à faire maintenant » et la ligne du devis, dans un autre panneau " +
+          "depuis l'après-signature. Le cran garde ses preuves, et « Encaisser » ouvre la " +
+          "même boîte que partout ailleurs.",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: ['[data-demo="cran-acompte"]', '[data-demo="cran-reglement"]'],
+        target: '[data-demo="reglement-editeur"]',
+        title: "Une boîte, un titre",
+        body:
+          "« Acompte encaissé » ou « Solde encaissé », quel que soit le bouton qui l'ouvre : " +
+          "la frise, « à faire maintenant », la ligne du devis, l'après-signature ou la fiche " +
+          "d'un chantier. Montant, jour du relevé et virements, comme avant. « Paiement reçu » " +
+          "s'appelle désormais « Solde encaissé », le nom du cran.",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="cran-calcul"]',
+        target: '[data-demo="step-date-editor"]',
+        title: "Une date se saisit au même calendrier",
+        body:
+          "Le cran faisait taper sa date dans un champ natif ; la ligne de l'après-signature " +
+          "posait la date du jour d'un clic, et « Annuler » y voulait dire « Retirer ». Les " +
+          "deux ouvrent maintenant la même saisie : le calendrier, « Marquer franchi », " +
+          "« Changer la date » et « Retirer ».",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="tab-apres"]',
+        target: '[data-demo="jalon-calc_done_at"]',
+        title: "Un jalon porte le même nom partout",
+        body:
+          "« Calcul terminé » ici, « Calcul terminé » dans le panneau du cran. Les crans " +
+          "« Envoi » et « Rapport » désignaient chacun deux faits ; ils s'appellent désormais " +
+          "« Dossier envoyé », « Rapport envoyé », « Rapport de visite » et « Rapport de " +
+          "sondage envoyé ». La frise garde une étiquette courte, qui dit la même chose.",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="tab-devis"]',
+        target: '[data-demo="quote-menu"]',
+        title: "Un « … » par ligne, et supprimer se confirme",
+        body:
+          "Le crayon et la corbeille d'un devis se touchaient. Ils sont dans un menu, comme " +
+          "pour un interlocuteur, un échange de l'historique, un virement et une preuve. " +
+          "Supprimer demande toujours confirmation, et dit ce que la suppression emporte.",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: '[role="tab"][id$="-trigger-echanges"]',
+        target: '[data-demo="note-call"]',
+        title: "Noter un échange, Planifier, Relancer",
+        body:
+          "Les mêmes verbes dans l'onglet Échanges et dans les actions d'une affaire. " +
+          "« Enregistrer un échange », « Noter la visite » et « Noter un appel » deviennent " +
+          "« Noter un échange » ; « Relancer par e-mail », qui n'envoyait aucun e-mail, " +
+          "devient « Relancer ».",
+      },
+    ],
+  },
+  {
+    id: "fiche-simplifiee-affaire",
+    title: "Une affaire ouverte, sans onglets dans les onglets",
+    date: "2026-09-29",
+    steps: [
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="project-line"]',
+        title: "La ligne de l'affaire dit l'essentiel",
+        body: "Numéro, intitulé, délai, frise, prochaine action et montant, sur une ligne ; la mission, l'adresse, la période et le responsable en gris dessous. L'étape n'y est plus en pastille : la frise la dit déjà.",
+      },
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="project-issuer"]',
+        title: "La société se change par son badge",
+        body: "STRUCTURE ou GROUPE, et « déduite » tant que personne n'a tranché. C'est désormais le seul endroit où l'affaire change de société : le menu répétait le même geste sous un autre nom.",
+      },
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="next-action"]',
+        title: "Un seul bandeau « à faire »",
+        body: "L'action et qui la porte vivaient dans deux cadres empilés. Ils sont dans le même bandeau : ce qu'il faut faire et ses boutons en haut, sous un filet la personne chargée et l'échéance, avec « Assigner » ou « M'attribuer » en gestes secondaires.",
+      },
+      {
+        path: FICHE_ETUDE,
+        target:
+          '[data-demo="tab-devis"], [data-demo="tab-apres"], [data-demo="tab-chronologie"], [data-demo="tab-notes"]',
+        title: "Des sections au lieu d'onglets",
+        body: "Devis & règlements, Après-signature, Chronologie, Notes : elles se lisent de haut en bas et disent repliées ce qu'elles contiennent — nombre de devis, jalons franchis (« 3/7 »), échanges. Tant qu'un devis n'est pas signé ou qu'un règlement est attendu, les devis s'ouvrent d'office ; ensuite, l'après-signature. Les liens « &onglet=devis » ouvrent toujours la bonne.",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="project-delete"]',
+        target:
+          '[data-demo="project-edit"], [data-demo="project-new-quote"], [data-demo="project-archive"], [data-demo="project-delete-item"]',
+        title: "Tous les gestes dans « … »",
+        body: "Modifier l'affaire, nouveau devis, ouvrir dans Chantiers ou Études, terminer ou rouvrir, archiver, supprimer : un menu, un exemplaire de chaque geste. Claude reste une icône à côté, comme dans l'en-tête de la fiche. Supprimer demande toujours deux confirmations.",
+      },
+    ],
+  },
+  {
+    id: "fiche-simplifiee-entete",
+    title: "La fiche client, simplifiée sans rien retirer",
+    date: "2026-09-29",
+    steps: [
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="customer-status"]',
+        title: "Une seule zone de statut",
+        body:
+          "Statut, qualité de client, type, relation, société, relecture : les badges se " +
+          "lisent tous au même endroit, à côté du nom. Il y avait en dessous un bouton " +
+          "« Passer en client », deux phrases « choisi à la main » et deux cases à cocher. " +
+          "La rangée entière ouvre désormais le menu « Statut ».",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="customer-status"]',
+        target:
+          '[data-demo="client-toggle"], [data-demo="customer-issuer-auto"], [data-demo="review-completed"]',
+        title: "Tout ce qu'un humain tranche, dans un menu",
+        body:
+          "Client ou prospect, la société de la fiche, « Vérifiée » et « Fiche complète ». " +
+          "Rendre la main s'appelle partout « Laisser les pièces décider » — la société " +
+          "disait « les devis », pour le même geste. Qui a tranché et quand se lit toujours " +
+          "sans rien ouvrir, sur une seule ligne sous les coordonnées.",
+      },
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="customer-glance"]',
+        title: "Les interlocuteurs se gèrent ici, entièrement",
+        body:
+          "Ils s'affichaient deux fois : sous le nom pour les lire, dans l'onglet Détails " +
+          "pour en ajouter et en retirer. Il n'en reste qu'une liste, qui fait tout — " +
+          "ajouter, corriger, retirer, le badge « Principal » et les notes de chacun. " +
+          "La ligne « où en est l'affaire » a quitté l'en-tête : chaque affaire le dit déjà.",
+      },
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="customer-more"]',
+        title: "Deux boutons et un menu",
+        body:
+          "« Modifier » et Claude restent visibles. « Chercher dans les courriels » rejoint " +
+          "archiver et supprimer sous « … » : c'est une reprise ponctuelle, pas un geste " +
+          "de tous les jours.",
+      },
+      {
+        path: `${FICHE_ETUDE}?vue=fiche`,
+        target: '[data-demo="fiche-informations"]',
+        title: "« Détails » devient « Fiche », en dernier",
+        body:
+          "Les onglets suivent l'usage : Affaires, Échanges, Tâches, Courriels, Documents, " +
+          "Graphe, puis Fiche. Chaque carte porte son geste — « Modifier » ouvre le " +
+          "formulaire de la fiche, le classement et le parrain s'écrivent sur place. Les " +
+          "anciens liens « ?vue=details » ouvrent toujours cet onglet.",
+      },
+    ],
+  },
+  {
     id: "acompte-facture-le",
     title: "L'acompte facturé se date, et se corrige",
     date: "2026-09-28",
@@ -60,7 +234,7 @@ export const DEMOS: Demo[] = [
           "« Acompte facturé » datait du jour où l'on cochait, et la première date posée " +
           "restait à vie : FA2025-0416 porte encore celle de sa copie depuis OneDrive. " +
           "La case ouvre maintenant un calendrier — aujourd'hui proposé, jamais imposé — " +
-          "et « Changer » corrige le jour. Un acompte déjà reçu le reste.",
+          "et « Modifier » corrige le jour. Un acompte déjà reçu le reste.",
       },
     ],
   },
@@ -164,7 +338,7 @@ export const DEMOS: Demo[] = [
           "affaire : qui l'a apportée — souvent le syndic, dessiné alors en tirets bleus.",
       },
       {
-        path: `${FICHE_COPRO}?vue=details`,
+        path: `${FICHE_COPRO}?vue=fiche`,
         target: '[data-demo="fiche-classification"]',
         title: "Trois axes au lieu d'un",
         body:
@@ -403,7 +577,7 @@ export const DEMOS: Demo[] = [
       },
       {
         path: FICHE_ETUDE,
-        click: '[data-demo="customer-issuer"]',
+        click: '[data-demo="customer-status"]',
         target: '[data-demo="customer-issuer-auto"]',
         title: "Chaque choix dit ce qu'il change",
         body: "Ranger la fiche dans une société la cache à l'autre : le badge et le périmètre lisent la même règle. « Les deux » est la sortie du client qui commande une étude à STRUCTURE puis des travaux à GROUPE. Le dernier choix rend la main aux devis, et la fiche dit alors qui avait tranché, et quand.",
@@ -544,13 +718,14 @@ export const DEMOS: Demo[] = [
         body: "Les interlocuteurs et les notes de la fiche vivaient dans le sixième onglet : au téléphone, le numéro de l'architecte était à deux clics. Ils sont sous le nom du client, le numéro s'appelle et l'adresse s'écrit d'un geste. Un clic sur un nom le corrige, le crayon corrige les notes sur place.",
       },
       {
-        path: `${FICHE_ETUDE}?vue=details`,
+        path: FICHE_ETUDE,
         target: '[data-demo="contacts-card"]',
         title: "Un interlocuteur se corrige",
-        body: "Corriger un numéro obligeait à supprimer puis recréer l'interlocuteur. Le crayon ouvre sa fiche, avec ses notes, et n'envoie que ce qui a changé.",
+        body: "Corriger un numéro obligeait à supprimer puis recréer l'interlocuteur. Un clic sur son nom, ou « Modifier » dans son « … », ouvre sa fiche, avec ses notes, et n'envoie que ce qui a changé.",
       },
       {
         path: FICHE_ETUDE,
+        click: '[data-demo="tab-notes"]',
         target: '[data-demo="project-notes"]',
         title: "Chaque affaire a ses notes",
         body: "Le contexte d'une affaire — accès, digicode, contraintes — s'écrivait dans les notes de la fiche, mêlé aux autres affaires. Il se lit maintenant dans l'affaire dépliée, se corrige sur place, et « Modifier l'affaire » le propose aussi.",
@@ -564,6 +739,7 @@ export const DEMOS: Demo[] = [
     steps: [
       {
         path: FICHE_ETUDE,
+        click: '[data-demo="customer-status"]',
         target: '[data-demo="client-toggle"]',
         title: "Client ou prospect, dans les deux sens",
         body: "Une fiche que ses pièces disaient cliente ne pouvait pas redevenir prospect : la promotion automatique la reclassait au tour suivant. Le bouton pose désormais un choix, qui l'emporte sur les pièces dans la liste, les compteurs et la fiche. L'écran dit qui l'a fait et quand, et « laisser les pièces décider » le retire.",
@@ -646,11 +822,11 @@ export const DEMOS: Demo[] = [
         path: FICHE_ETUDE,
         target: '[data-demo="project-delete"]',
         title: "Une barre d'affaire plus courte",
-        body: "Sept boutons côte à côte devenaient des clics ratés. Restent Devis et Modifier ; le reste passe dans « … », où « Supprimer l'affaire » est séparé et en rouge.",
+        body: "Sept boutons côte à côte devenaient des clics ratés. Tout passe dans « … », sur la ligne de l'affaire, où « Supprimer l'affaire » est séparé et en rouge.",
       },
       {
         path: FICHE_ETUDE,
-        click: '[data-demo="cran-solde"]',
+        click: ['[data-demo="cran-solde"]', '[data-demo="cran-reglement"]'],
         target: '[data-demo="reglement-editeur"]',
         title: "Une seule saisie des règlements",
         body: "Frise, « à faire maintenant », après-signature et fiche chantier ouvrent la même saisie : montant, jour d'encaissement — demandé, jamais le jour du clic d'office — et virements. Dans le devis, le taux de TVA calcule le TTC à partir du HT, ou l'inverse, et les montants s'écrivent à la française.",
@@ -772,7 +948,7 @@ export const DEMOS: Demo[] = [
     steps: [
       {
         path: "/customers/0b66bb72-7660-43a3-aa42-5be6e5ffe2b6",
-        click: '[id$="-trigger-details"]',
+        click: '[id$="-trigger-fiche"]',
         target: '[data-demo="fiche-parrain"]',
         title: "Recommandé par, choisi parmi tout le CRM",
         body: "La source disait « Recommandation » sans dire par qui. La recherche porte sur toutes les fiches, archivées comprises, et sur les interlocuteurs de chacune — c'est souvent l'architecte ou le voisin d'un client qui recommande. La personne introuvable se crée d'ici, comme une fiche. Le même champ apparaît à la création d'un client dès que la source est « Recommandation ». Le parrain s'ouvre d'un clic, et s'écrit par sa propre route : corriger le téléphone de la fiche ne l'efface pas.",
@@ -799,7 +975,7 @@ export const DEMOS: Demo[] = [
     steps: [
       {
         path: FICHE_ETUDE,
-        click: '[data-demo="cran-acompte"]',
+        click: ['[data-demo="cran-acompte"]', '[data-demo="cran-reglement"]'],
         target: '[data-demo="reglement-date"]',
         title: "Encaissé le",
         body: "Toutes les dates de la frise se corrigeaient, sauf ces deux-là : le serveur posait le jour du clic, et le solde n'avait même aucune date — la frise affichait celle de l'émission du devis. Le jour se saisit maintenant avec le montant, et ne part au serveur que s'il a changé : corriger un montant ne réécrit jamais la date.",
@@ -827,9 +1003,10 @@ export const DEMOS: Demo[] = [
     steps: [
       {
         path: "/customers/77c807e5-f0c4-4bad-b0f7-d404d2a00782",
-        target: '[data-demo="project-worksite-link"]',
-        title: "Sous l'adresse, le chemin vers le chantier",
-        body: "Il fallait quitter la fiche, ouvrir Chantiers et y rechercher l'affaire qu'on venait de lire. Le lien ouvre directement la fiche latérale de ce chantier — ou de cette étude, pour STRUCTURE —, sur le modèle du lien vers la fiche d'un rendez-vous dans l'agenda. Il n'apparaît que sur une affaire signée ou réalisée : les écrans Chantiers et Études ne listent que celles-là.",
+        click: '[data-demo="project-delete"]',
+        target: '[data-demo="project-worksite"]',
+        title: "Dans le menu de l'affaire, le chemin vers le chantier",
+        body: "Il fallait quitter la fiche, ouvrir Chantiers et y rechercher l'affaire qu'on venait de lire. « Ouvrir dans Chantiers », dans le menu « … » de l'affaire, ouvre directement la fiche latérale de ce chantier — ou de cette étude, pour STRUCTURE —, sur le modèle du lien vers la fiche d'un rendez-vous dans l'agenda. Il n'apparaît que sur une affaire signée ou réalisée : les écrans Chantiers et Études ne listent que celles-là.",
       },
     ],
   },
@@ -900,7 +1077,7 @@ export const DEMOS: Demo[] = [
     steps: [
       {
         path: FICHE_ETUDE,
-        click: '[data-demo="cran-solde"]',
+        click: ['[data-demo="cran-solde"]', '[data-demo="cran-reglement"]'],
         target: '[data-demo="reglement-editeur"]',
         title: "Encaisser le solde, c'est dire combien",
         body: "« Solde encaissé » était une case : on affirmait avoir été payé sans jamais écrire le montant, alors que c'est ce chiffre qu'on rapproche du relevé de banque. L'acompte avait reçu son montant en juin ; le solde en avait autant besoin, et pour la même raison — ce n'est pas le reste à payer calculé du devis, un avenant ou une remise de fin de chantier le déplacent. C'est le même éditeur que l'acompte, pas un second : seuls les mots changent. Mesuré en production : quatre devis sont marqués soldés, aucun ne portait de montant. Le formulaire du devis porte le même champ, qui n'apparaît que si un solde est attendu ou reçu. Au passage, encaisser un solde ne renvoie plus le devis entier : il a sa route à lui, comme l'acompte — le remplacement complet effaçait la provenance du montant lu dans le PDF, si bien que solder un devis remettait sa lecture en file d'attente.",
@@ -925,11 +1102,11 @@ export const DEMOS: Demo[] = [
       {
         /*
           La fiche d'exemple des démos : une seule affaire, dépliée d'office,
-          donc « Modifier » est atteignable en un clic. Le Faucheur en porte
-          plusieurs et resterait replié.
+          donc « Modifier » est atteignable par son menu « … ». Le Faucheur en
+          porte plusieurs et resterait replié.
         */
         path: FICHE_ETUDE,
-        click: '[data-demo="project-edit"]',
+        click: ['[data-demo="project-delete"]', '[data-demo="project-edit"]'],
         target: '[data-demo="project-dates"]',
         title: "Et la fin du chantier se saisit enfin",
         body: "La colonne existait depuis mars et l'agenda l'écrivait déjà : poser un événement « Chantier » avec sa date de fin la renseignait. Mais l'API ne la servait dans aucune réponse et aucun formulaire ne l'envoyait — une affaire terminée ne savait le dire qu'à l'événement qui l'avait datée, sans que la fiche puisse le montrer ni le corriger. C'est ici, et ici seulement, qu'une date se retire : un événement d'agenda n'écrit que ce qu'il sait et n'efface jamais, la fiche voit l'état complet et fait autorité.",
@@ -993,13 +1170,14 @@ export const DEMOS: Demo[] = [
           sans courrier ne le montre pas, et la démo s'ouvrirait sur du vide.
         */
         path: "/customers/d4804e98-5283-42fe-ab4e-3f14d17b1720",
+        click: '[data-demo="customer-more"]',
         target: '[data-demo="bouton-chercher-courriels"]',
         title: "Le bouton qui ne rendait qu'une erreur",
         body: "Cette fonctionnalité n'avait jamais abouti une seule fois en production : un appel, cinq minutes d'attente, puis un encadré rouge portant une erreur de transport brute. La cause n'était ni le réseau, ni la clé, ni le compte — tous mesurés sains — mais le modèle demandé. Le CRM réclamait « moonshotai/kimi-k3 », que le catalogue de NVIDIA annonce toujours et qui ne renvoie plus rien du tout : pas un refus, pas un quota dépassé, aucun octet. Passés un par un, quatre-vingt-deux identifiants du catalogue donnent trois modèles qui répondent, quatre qui rendent 404 tout en étant listés, et cinq muets — dont celui-là, et dont le 90B vision demandé le matin même.",
       },
       {
         path: "/customers/d4804e98-5283-42fe-ab4e-3f14d17b1720",
-        click: '[data-demo="bouton-chercher-courriels"]',
+        click: ['[data-demo="customer-more"]', '[data-demo="bouton-chercher-courriels"]'],
         target: '[data-demo="chercher-messagerie"]',
         title: "Le modèle qui répond, et qui le dit (comptez une minute)",
         body: "Le modèle retenu a été mesuré avant d'être choisi : il répond en 171 millisecondes, et il sait lire une image, si bien que l'analyse des devis en PDF n'aura pas à en changer. La fenêtre annonce désormais quel modèle a lu et en combien de temps — c'est la même phrase qu'avant, mais elle a enfin quelque chose à dire. Deux garde-fous l'accompagnent. Le silence est borné à une minute au lieu de cinq : un modèle qui n'a pas commencé à répondre en une minute ne répondra pas, alors qu'une génération déjà commencée peut légitimement durer, et les deux ne se règlent pas ensemble. Et une erreur de transport ne s'affiche plus jamais : le détail va au journal, l'écran reçoit une phrase qui dit quoi faire. Les refus déjà rédigés en français, eux, continuent de s'afficher tels quels — « le modèle est saturé », « le dossier est trop long » sont écrits pour être lus.",
@@ -1215,7 +1393,8 @@ export const DEMOS: Demo[] = [
       },
       {
         path: FICHE_ETUDE,
-        target: '[data-demo="project-edit"], [data-demo="project-delete"]',
+        click: '[data-demo="project-delete"]',
+        target: '[data-demo="project-edit"], [data-demo="project-delete-item"]',
         title: "Modifier et supprimer, en toutes lettres",
         body: "Supprimer demande deux confirmations : la première liste ce qui part (devis, factures, preuves, jalons) et ce qui reste (échanges, rendez-vous, dossier OneDrive), la seconde dit que c'est définitif. La copie OneDrive ne recrée plus une affaire supprimée.",
       },
@@ -1322,7 +1501,7 @@ export const DEMOS: Demo[] = [
       },
       {
         path: FICHE_ETUDE,
-        click: '[data-demo="project-edit"]',
+        click: ['[data-demo="project-delete"]', '[data-demo="project-edit"]'],
         target: '#project-mission, [data-demo="project-delais"]',
         title: "Choisir la mission, poser les délais",
         body: "« Promis au client » engage l'entreprise, « Deadline interne » est la marge qu'on se donne. Tant que rien n'est rendu, l'affaire affiche le temps qu'il reste.",

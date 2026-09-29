@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2Icon } from "lucide-react";
 import { usePermission } from "@/modules/auth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -12,6 +11,7 @@ import { INTERACTION_KIND } from "../lib/labels";
 import { useAction } from "../hooks/use-customers";
 import { CustomerAgenda } from "./customer-agenda";
 import { EnumBadge } from "./enum-badge";
+import { RowMenu } from "./row-menu";
 import type { Interaction } from "../lib/types";
 import { askConfirm } from "@/shared/ui/confirm";
 
@@ -70,6 +70,21 @@ export function InteractionsPanel({
   const seen = new Set(interactions.map((item) => item.id));
   const shown = [...interactions, ...extra.filter((item) => !seen.has(item.id))];
   const remaining = Math.max(0, total - shown.length);
+
+  async function supprimer(item: Interaction) {
+    const ok = await askConfirm({
+      title: "Supprimer cet échange",
+      description: `« ${item.summary || INTERACTION_KIND[item.kind].label} » disparaît de l'historique de la fiche, définitivement.`,
+      confirmLabel: "Supprimer",
+    });
+    if (!ok) return;
+    if ((await remove.run(item.id)) === null) return;
+    setMore((current) => ({
+      ...current,
+      items: current.items.filter((entry) => entry.id !== item.id),
+    }));
+    onChanged();
+  }
 
   async function showMore() {
     // La page qui contient la première ligne manquante. Après une suppression,
@@ -131,28 +146,13 @@ export function InteractionsPanel({
                   </p>
                 </div>
                 {canWrite && (
-                  <Button
-                    size="icon-sm"
-                    variant="ghost"
-                    aria-label="Supprimer l'échange"
+                  <RowMenu
+                    label={`Actions sur l'échange « ${item.summary || INTERACTION_KIND[item.kind].label} »`}
+                    demo="historique-menu"
                     disabled={remove.pending}
-                    onClick={async () => {
-                      const ok = await askConfirm({
-                        title: "Supprimer cet échange",
-                        description: `« ${item.summary || INTERACTION_KIND[item.kind].label} » disparaît de l'historique de la fiche, définitivement.`,
-                        confirmLabel: "Supprimer",
-                      });
-                      if (!ok) return;
-                      if ((await remove.run(item.id)) === null) return;
-                      setMore((current) => ({
-                        ...current,
-                        items: current.items.filter((entry) => entry.id !== item.id),
-                      }));
-                      onChanged();
-                    }}
-                  >
-                    <Trash2Icon />
-                  </Button>
+                    onDelete={() => void supprimer(item)}
+                    deleteLabel="Supprimer l'échange…"
+                  />
                 )}
               </li>
             ))}

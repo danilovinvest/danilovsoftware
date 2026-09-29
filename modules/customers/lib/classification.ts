@@ -4,7 +4,7 @@ import type { Customer, CustomerKind, CustomerRelation } from "./types";
  * Les trois axes d'une fiche : qui c'est (le type), ce qu'il représente pour
  * nous (la relation), où en est-on (le statut).
  *
- * Module pur : la vue graphe, l'onglet Détails et l'en-tête lisent la même
+ * Module pur : la vue graphe, l'onglet Fiche et l'en-tête lisent la même
  * déduction. Deux copies diraient « prescripteur » ici et « client final » là.
  */
 

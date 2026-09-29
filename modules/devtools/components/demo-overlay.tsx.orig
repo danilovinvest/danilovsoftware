@@ -64,21 +64,16 @@ function Spotlight({ demo, index, step }: { demo: Demo; index: number; step: Dem
       return;
     }
     const started = performance.now();
-    // Les clics à faire, un par image au plus : l'entrée d'un menu n'existe
-    // qu'une fois le menu ouvert, et Radix l'ouvre au rendu suivant.
-    const clicks = step.click === undefined ? [] : [step.click].flat();
-    let clicked = 0;
+    let clicked = !step.click;
     let scrolled = false;
     let frame = 0;
 
     const tick = () => {
-      if (clicked < clicks.length) {
-        const trigger = document.querySelector<HTMLElement>(clicks[clicked]);
+      if (!clicked && step.click) {
+        const trigger = document.querySelector<HTMLElement>(step.click);
         if (trigger) {
-          // Déjà ouvert, on ne le touche pas : une section repliable ou un
-          // menu cliqué une seconde fois se refermerait sur la zone à montrer.
-          if (trigger.getAttribute("aria-expanded") !== "true") activate(trigger);
-          clicked += 1;
+          activate(trigger);
+          clicked = true;
         }
       }
       const found = Array.from(document.querySelectorAll<HTMLElement>(step.target)).filter(

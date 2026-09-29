@@ -47,7 +47,7 @@ export function ProjectNotes({
         />
         <div className="flex gap-2">
           <Button
-            size="sm"
+            size="xs"
             disabled={save.pending}
             onClick={async () => {
               if ((await save.run(draft)) === null) return;
@@ -57,7 +57,7 @@ export function ProjectNotes({
           >
             Enregistrer
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => setDraft(null)}>
+          <Button size="xs" variant="ghost" onClick={() => setDraft(null)}>
             Annuler
           </Button>
         </div>
@@ -89,7 +89,7 @@ export function ProjectNotes({
       <p className="min-w-0 flex-1 whitespace-pre-line">{project.notes}</p>
       {canWrite && (
         <Button
-          size="icon-sm"
+          size="icon-xs"
           variant="ghost"
           aria-label="Modifier les notes de l'affaire"
           className="shrink-0"

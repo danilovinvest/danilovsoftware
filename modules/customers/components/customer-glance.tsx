@@ -1,24 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { PencilIcon, StickyNoteIcon, UsersIcon } from "lucide-react";
+import { PencilIcon, StickyNoteIcon } from "lucide-react";
 import { usePermission } from "@/modules/auth";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import * as api from "../lib/api";
 import { useAction } from "../hooks/use-customers";
-import type { Contact, CustomerDetail } from "../lib/types";
-import { ContactDialog } from "./contact-dialog";
-import { ContactCoordinates } from "./contacts-card";
+import type { CustomerDetail } from "../lib/types";
+import { GlanceContacts } from "./glance-contacts";
 
 /**
  * Les interlocuteurs et les notes de la fiche, dans l'en-tête (issue 60).
  *
  * Ils vivaient dans le sixième onglet : au téléphone, le numéro de l'architecte
  * était à deux clics, et les notes — l'accès, le code, « ne pas appeler avant
- * dix heures » — ne se lisaient qu'en allant les chercher. L'onglet Détails
- * garde la gestion complète, ici on lit et on corrige.
+ * dix heures » — ne se lisaient qu'en allant les chercher.
+ *
+ * C'est désormais le seul endroit où les interlocuteurs se gèrent : l'onglet
+ * Fiche n'en porte plus de seconde liste (voir `glance-contacts.tsx`).
  */
 export function CustomerGlance({
   customer,
@@ -30,48 +31,17 @@ export function CustomerGlance({
   className?: string;
 }) {
   const canWrite = usePermission("customers:write");
-  const [editing, setEditing] = useState<Contact | null>(null);
   if (customer.contacts.length === 0 && !customer.notes && !canWrite) return null;
 
   return (
     <div data-demo="customer-glance" className={cn("flex flex-col gap-2", className)}>
-      {customer.contacts.length > 0 && (
-        <ul className="flex flex-col gap-1">
-          {customer.contacts.map((contact) => (
-            <li key={contact.id} className="flex min-w-0 flex-wrap items-center gap-x-2 text-sm">
-              <UsersIcon className="text-muted-foreground size-3.5 shrink-0" />
-              {canWrite ? (
-                <button
-                  type="button"
-                  className="font-medium hover:underline"
-                  title="Modifier l'interlocuteur"
-                  onClick={() => setEditing(contact)}
-                >
-                  {contact.full_name}
-                </button>
-              ) : (
-                <span className="font-medium">{contact.full_name}</span>
-              )}
-              <ContactCoordinates contact={contact} />
-            </li>
-          ))}
-        </ul>
-      )}
-
+      <GlanceContacts
+        customerId={customer.id}
+        contacts={customer.contacts}
+        canWrite={canWrite}
+        onChanged={onChanged}
+      />
       <CustomerNotes customer={customer} canWrite={canWrite} onChanged={onChanged} />
-
-      {editing && (
-        <ContactDialog
-          key={editing.id}
-          customerId={customer.id}
-          contact={editing}
-          open
-          onOpenChange={(open) => {
-            if (!open) setEditing(null);
-          }}
-          onSaved={onChanged}
-        />
-      )}
     </div>
   );
 }

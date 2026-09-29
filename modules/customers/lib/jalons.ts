@@ -480,7 +480,7 @@ const SONDAGE: Jalon[] = [
   },
   {
     key: "survey_report_sent_at",
-    label: "Rapport de sondage",
+    label: "Rapport de sondage envoyé",
     hint: "Livrable : le rapport remis au client",
     picks: false,
   },

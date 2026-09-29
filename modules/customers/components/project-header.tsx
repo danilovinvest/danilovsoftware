@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
-import { ArrowUpRightIcon, ChevronRightIcon } from "lucide-react";
+import type { ReactNode } from "react";
+import { ChevronRightIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { CollapsibleTrigger } from "@/components/ui/collapsible";
 import { TONE_SOFT } from "@/shared/ui/panel";
 import { formatAmount, formatDate } from "@/shared/lib/format";
@@ -29,10 +30,17 @@ function periodeChantier(started: string | null, finished: string | null): strin
 }
 
 /**
- * L'en-tête d'une affaire, replié comme déplié.
+ * La ligne d'une affaire, repliée comme dépliée.
  *
- * Replié, il répond seul à « où en est-on » : la frise, l'attente, le montant.
- * C'est tout le bouton qui déplie l'affaire.
+ * Repliée, elle répond seule à « où en est-on » : le numéro, l'intitulé, le
+ * délai, la frise, la prochaine action, le montant. Le reste — mission,
+ * sondage, adresse, période, responsable — descend sur une seconde ligne, en
+ * gris : on le cherche, on ne le lit pas d'abord.
+ *
+ * Le texte déplie l'affaire ; la société, Claude et le menu « … » vivent à
+ * droite, **hors** du bouton : un bouton dans un bouton est invalide, et le
+ * clic déplierait l'affaire au lieu d'agir. L'étape n'y est plus en pastille :
+ * la frise la dit déjà, cran par cran.
  */
 export function ProjectHeader({
   project,
@@ -44,6 +52,7 @@ export function ProjectHeader({
   points,
   action,
   open,
+  actions,
 }: {
   project: Project;
   metier: Metier;
@@ -55,12 +64,21 @@ export function ProjectHeader({
   points: CyclePoint[];
   action: NextAction;
   open: boolean;
+  /** La société, Claude et le menu, à droite de la ligne. */
+  actions: ReactNode;
 }) {
   const periode = periodeChantier(project.started_at, project.finished_at);
+  const secondaire = [
+    metier === "etudes" ? PROJECT_MISSION[mission].label : null,
+    survey ? "sondage" : null,
+  ].filter(Boolean);
 
   return (
-    <>
-      <CollapsibleTrigger className="hover:bg-muted/30 flex w-full items-center gap-3 px-4 py-3 text-left transition-colors">
+    <div
+      data-demo="project-line"
+      className="hover:bg-muted/30 flex items-center gap-2 pr-3 transition-colors"
+    >
+      <CollapsibleTrigger className="flex min-w-0 flex-1 items-center gap-3 py-3 pl-4 text-left">
         <ChevronRightIcon
           className={cn(
             "text-muted-foreground size-4 shrink-0 transition-transform",
@@ -80,14 +98,6 @@ export function ProjectHeader({
               </span>
             )}
             <span className="truncate text-sm font-medium">{project.label}</span>
-            {metier === "etudes" && (
-              <span
-                data-demo="project-mission"
-                className="text-muted-foreground bg-muted rounded-md px-1.5 py-0.5 text-[0.65rem]"
-              >
-                {PROJECT_MISSION[mission].label}
-              </span>
-            )}
             {echeance && (
               <span
                 data-demo="project-deadline"
@@ -99,13 +109,11 @@ export function ProjectHeader({
                 {echeance.label}
               </span>
             )}
-            {survey && (
-              <span className="text-muted-foreground bg-muted rounded-md px-1.5 py-0.5 text-[0.65rem]">
-                sondage
-              </span>
-            )}
           </div>
           <div className="text-muted-foreground truncate text-xs">
+            {secondaire.length > 0 && (
+              <span data-demo="project-mission">{secondaire.join(" · ")} · </span>
+            )}
             {site || "Chantier non renseigné"}
             {periode && <span data-demo="project-periode"> · {periode}</span>}
             {project.manager_name && ` · ${project.manager_name}`}
@@ -116,7 +124,7 @@ export function ProjectHeader({
 
         <span
           className={cn(
-            "hidden shrink-0 rounded-md px-1.5 py-0.5 text-[0.7rem] whitespace-nowrap md:inline-block",
+            "hidden max-w-48 shrink-0 truncate rounded-md px-1.5 py-0.5 text-[0.7rem] whitespace-nowrap md:inline-block",
             action.alert ? TONE_SOFT[action.tone] : "text-muted-foreground",
           )}
         >
@@ -128,29 +136,52 @@ export function ProjectHeader({
         </span>
       </CollapsibleTrigger>
 
-      {/*
-        Le chemin vers le chantier, sous l'adresse et hors du bouton qui déplie
-        l'affaire : un lien dans un bouton serait invalide, et le clic déplierait
-        l'affaire au lieu de l'ouvrir.
+      <div className="flex shrink-0 items-center gap-1">{actions}</div>
+    </div>
+  );
+}
 
-        Seulement pour une affaire signée ou réalisée : les écrans Chantiers et
-        Études ne listent que celles-là. Il emmène l'identifiant, et suit le
-        métier — une étude va dans Études, des travaux dans Chantiers. Il n'y a
-        pas de route `/chantiers/{id}` et il n'en faut pas : une route dynamique
-        ne s'exporte pas en statique, ce dont l'application de bureau dépend.
-      */}
-      {(project.stage === "gagne" || project.stage === "realise") && (
-        <div className="-mt-2 pb-2.5 pl-11">
-          <Link
-            href={`/${metier === "etudes" ? "etudes" : "chantiers"}?affaire=${project.id}`}
-            data-demo="project-worksite-link"
-            className="text-info inline-flex items-center gap-1 text-xs hover:underline"
-          >
-            {metier === "etudes" ? "Voir l'étude" : "Voir le chantier"}
-            <ArrowUpRightIcon className="size-3" />
-          </Link>
-        </div>
-      )}
+/**
+ * La société de l'affaire, et le seul endroit où elle se change.
+ *
+ * Elle se lit autant qu'elle se clique : « GROUPE · déduite » dit à qui est
+ * l'affaire sans rien ouvrir. Elle était aussi dans le menu, sous un autre nom
+ * — deux portes pour un même geste, dont une qu'on ne voyait pas.
+ */
+export function ProjectIssuerBadge({
+  project,
+  metier,
+  canWrite,
+  onClick,
+}: {
+  project: Project;
+  metier: Metier;
+  canWrite: boolean;
+  onClick: () => void;
+}) {
+  const label = (
+    <>
+      {metier === "etudes" ? "STRUCTURE" : "GROUPE"}
+      {!project.issuer && <span className="font-normal">· déduite</span>}
     </>
+  );
+  if (!canWrite) {
+    return (
+      <span className="text-muted-foreground hidden px-2 text-[0.7rem] font-medium sm:inline">
+        {label}
+      </span>
+    );
+  }
+  return (
+    <Button
+      size="xs"
+      variant="outline"
+      data-demo="project-issuer"
+      className="text-muted-foreground text-[0.7rem]"
+      title="Basculer l'affaire vers l'autre société"
+      onClick={onClick}
+    >
+      {label}
+    </Button>
   );
 }

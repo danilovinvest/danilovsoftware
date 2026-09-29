@@ -10,7 +10,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { formatAmount } from "@/shared/lib/format";
 import { cn } from "@/lib/utils";
 import { amountToInput, parseAmountInput } from "../lib/amount";
@@ -143,7 +142,7 @@ export type SettlementEditorProps = {
  * recopie sur le devis, et le champ se fige pour ne jamais afficher deux
  * nombres qui pourraient se contredire.
  */
-export function SettlementEditor({
+function SettlementEditor({
   amount,
   kind = "acompte",
   paidAt,
@@ -312,8 +311,12 @@ function editorKey(editor: SettlementEditorProps): string {
 }
 
 /**
- * Les règlements en boîte de dialogue : « à faire maintenant » et la ligne
- * d'un devis y mènent, là où l'œil est déjà.
+ * Les règlements en boîte de dialogue — **la** surface de cette saisie.
+ *
+ * La frise, « à faire maintenant », la ligne du devis, l'après-signature et la
+ * fiche d'un chantier y mènent toutes, sous le même titre : le nom du cran
+ * (« Acompte encaissé », « Solde encaissé »), que porte aussi la ligne de
+ * l'après-signature.
  */
 export function SettlementDialog({
   open,
@@ -343,7 +346,24 @@ export function SettlementDialog({
   );
 }
 
-/** Les règlements depuis une ligne — l'après-signature, la fiche d'un chantier. */
+/**
+ * Ce que dit le bouton qui ouvre la saisie : le même partout — le cran de la
+ * frise, la ligne de l'après-signature, la fiche d'un chantier.
+ */
+export function settlementTriggerLabel(paid: boolean): string {
+  return paid ? "Modifier" : "Encaisser";
+}
+
+/**
+ * Les règlements depuis une ligne — l'après-signature, la fiche d'un chantier.
+ *
+ * Il ouvrait un panneau accroché au bouton, là où la frise et « à faire
+ * maintenant » ouvraient une boîte : deux surfaces pour la même saisie. C'est
+ * désormais la même boîte, `SettlementDialog`, sous le même titre. La boîte
+ * plutôt que le panneau parce qu'elle tient sur un téléphone — trois champs et
+ * une liste de virements débordaient d'un panneau de 320 pixels — et qu'elle
+ * s'ouvre aussi d'un geste sans ancre, comme un bouton du bandeau « à faire ».
+ */
 export function SettlementButton({
   disabled,
   ...editor
@@ -351,20 +371,24 @@ export function SettlementButton({
   const [open, setOpen] = useState(false);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button size="xs" variant={editor.paid ? "ghost" : "outline"} disabled={disabled}>
-          {editor.paid ? "Modifier" : "Encaisser"}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="max-h-[80vh] w-80 overflow-y-auto" align="end">
-        <SettlementEditor
-          key={`${open}·${editorKey(editor)}`}
+    <>
+      <Button
+        size="xs"
+        variant={editor.paid ? "ghost" : "outline"}
+        disabled={disabled}
+        onClick={() => setOpen(true)}
+      >
+        {settlementTriggerLabel(editor.paid)}
+      </Button>
+      {/* Montée à l'ouverture seulement : le brouillon repart du devis. */}
+      {open && (
+        <SettlementDialog
+          open
+          onOpenChange={setOpen}
           {...editor}
           pending={editor.pending || disabled}
-          onClose={() => setOpen(false)}
         />
-      </PopoverContent>
-    </Popover>
+      )}
+    </>
   );
 }
