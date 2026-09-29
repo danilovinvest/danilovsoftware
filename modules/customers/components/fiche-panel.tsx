@@ -1,31 +1,61 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
+import { PencilIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePermission } from "@/modules/auth";
 import { formatDate } from "@/shared/lib/format";
 import * as api from "../lib/api";
 import { CUSTOMER_SOURCE } from "../lib/labels";
-import { ContactsCard } from "./contacts-card";
 import { EnumBadge } from "./enum-badge";
 import { ReferrerPicker } from "./referrer-picker";
 import { ClassificationEditor } from "./classification-card";
 import { formatSiret } from "../lib/classification";
 import type { CustomerDetail } from "../lib/types";
 
-/** Onglet « Détails » : ce qu'on consulte de temps en temps, pas tous les jours. */
-export function DetailsPanel({
+/**
+ * Onglet « Fiche » (il s'appelait « Détails ») : ce qu'on consulte de temps en
+ * temps, pas tous les jours — et ce qu'on y corrige.
+ *
+ * Chaque carte porte son propre geste. « Modifier » ouvre le formulaire de la
+ * fiche, le même que celui de l'en-tête : le réécrire en champs éditables sur
+ * place aurait donné deux saisies de la même ligne, qui auraient divergé au
+ * premier champ ajouté. Le classement et le parrain s'écrivent déjà à la volée
+ * par leurs propres routes, et le restent.
+ *
+ * Les interlocuteurs n'y sont plus : ils se gèrent entièrement sous le nom du
+ * client (`glance-contacts.tsx`), et une seconde liste ici n'était qu'un doublon
+ * aux gestes différents. Les notes de la fiche y sont aussi (issue 60).
+ */
+export function FichePanel({
   customer,
   onChanged,
+  onEdit,
 }: {
   customer: CustomerDetail;
   onChanged: () => void;
+  /** Ouvre le formulaire de la fiche ; absent sans le droit d'écrire. */
+  onEdit?: () => void;
 }) {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <Card className="gap-0 py-0">
+      <Card className="gap-0 py-0" data-demo="fiche-informations">
         <CardHeader className="border-b py-4">
           <CardTitle className="text-sm">Informations</CardTitle>
+          {onEdit && (
+            <CardAction>
+              <Button
+                size="sm"
+                variant="outline"
+                title="Nom, coordonnées, adresse, source, propriétaire"
+                onClick={onEdit}
+              >
+                <PencilIcon />
+                Modifier
+              </Button>
+            </CardAction>
+          )}
         </CardHeader>
         <CardContent className="flex flex-col gap-3 py-4 text-sm">
           <Row label="Adresse">
@@ -63,14 +93,6 @@ export function DetailsPanel({
           />
         </CardContent>
       </Card>
-
-      <ContactsCard
-        customerId={customer.id}
-        contacts={customer.contacts}
-        onChanged={onChanged}
-      />
-
-      {/* Les notes de la fiche sont montées dans l'en-tête (issue 60). */}
     </div>
   );
 }

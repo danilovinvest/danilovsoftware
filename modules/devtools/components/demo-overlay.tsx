@@ -57,16 +57,19 @@ function Spotlight({ demo, index, step }: { demo: Demo; index: number; step: Dem
       return;
     }
     const started = performance.now();
-    let clicked = !step.click;
+    // Les clics à faire, un par image au plus : l'entrée d'un menu n'existe
+    // qu'une fois le menu ouvert, et Radix l'ouvre au rendu suivant.
+    const clicks = step.click === undefined ? [] : [step.click].flat();
+    let clicked = 0;
     let scrolled = false;
     let frame = 0;
 
     const tick = () => {
-      if (!clicked && step.click) {
-        const trigger = document.querySelector<HTMLElement>(step.click);
+      if (clicked < clicks.length) {
+        const trigger = document.querySelector<HTMLElement>(clicks[clicked]);
         if (trigger) {
           activate(trigger);
-          clicked = true;
+          clicked += 1;
         }
       }
       const found = Array.from(document.querySelectorAll<HTMLElement>(step.target)).filter(

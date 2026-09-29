@@ -15,8 +15,12 @@
 export type DemoStep = {
   /** L'écran où se trouve la zone. Absent, l'étape reste sur l'écran courant. */
   path?: string;
-  /** Un élément à cliquer d'abord — un onglet, un bouton qui ouvre un tiroir. */
-  click?: string;
+  /**
+   * Un élément à cliquer d'abord — un onglet, un bouton qui ouvre un tiroir.
+   * Une liste se clique dans l'ordre, chacun dès qu'il paraît : l'entrée d'un
+   * menu n'existe qu'une fois le menu ouvert.
+   */
+  click?: string | string[];
   /** La zone à entourer. */
   target: string;
   title: string;
@@ -46,6 +50,64 @@ const FICHE_ETUDE = "/customers/7419530d-fbb2-4937-aaf5-2403b315f71b";
 const FICHE_COPRO = "/customers/de2ea332-b3dd-491a-8ea4-b423612731aa";
 
 export const DEMOS: Demo[] = [
+  {
+    id: "fiche-simplifiee-entete",
+    title: "La fiche client, simplifiée sans rien retirer",
+    date: "2026-09-29",
+    steps: [
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="customer-status"]',
+        title: "Une seule zone de statut",
+        body:
+          "Statut, qualité de client, type, relation, société, relecture : les badges se " +
+          "lisent tous au même endroit, à côté du nom. Il y avait en dessous un bouton " +
+          "« Passer en client », deux phrases « choisi à la main » et deux cases à cocher. " +
+          "La rangée entière ouvre désormais le menu « Statut ».",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="customer-status"]',
+        target:
+          '[data-demo="client-toggle"], [data-demo="customer-issuer-auto"], [data-demo="review-completed"]',
+        title: "Tout ce qu'un humain tranche, dans un menu",
+        body:
+          "Client ou prospect, la société de la fiche, « Vérifiée » et « Fiche complète ». " +
+          "Rendre la main s'appelle partout « Laisser les pièces décider » — la société " +
+          "disait « les devis », pour le même geste. Qui a tranché et quand se lit toujours " +
+          "sans rien ouvrir, sur une seule ligne sous les coordonnées.",
+      },
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="customer-glance"]',
+        title: "Les interlocuteurs se gèrent ici, entièrement",
+        body:
+          "Ils s'affichaient deux fois : sous le nom pour les lire, dans l'onglet Détails " +
+          "pour en ajouter et en retirer. Il n'en reste qu'une liste, qui fait tout — " +
+          "ajouter, corriger, retirer, le badge « Principal » et les notes de chacun. " +
+          "La ligne « où en est l'affaire » a quitté l'en-tête : chaque affaire le dit déjà.",
+      },
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="customer-more"]',
+        title: "Deux boutons et un menu",
+        body:
+          "« Modifier » et Claude restent visibles. « Chercher dans les courriels » rejoint " +
+          "archiver et supprimer sous « … » : c'est une reprise ponctuelle, pas un geste " +
+          "de tous les jours.",
+      },
+      {
+        path: `${FICHE_ETUDE}?vue=fiche`,
+        target: '[data-demo="fiche-informations"]',
+        title: "« Détails » devient « Fiche », en dernier",
+        body:
+          "Les onglets suivent l'usage : Affaires, Échanges, Tâches, Courriels, Documents, " +
+          "Graphe, puis Fiche. Chaque carte porte son geste — « Modifier » ouvre le " +
+          "formulaire de la fiche, le classement et le parrain s'écrivent sur place. Les " +
+          "anciens liens « ?vue=details » ouvrent toujours cet onglet.",
+      },
+    ],
+  },
   {
     id: "acompte-facture-le",
     title: "L'acompte facturé se date, et se corrige",
@@ -164,7 +226,7 @@ export const DEMOS: Demo[] = [
           "affaire : qui l'a apportée — souvent le syndic, dessiné alors en tirets bleus.",
       },
       {
-        path: `${FICHE_COPRO}?vue=details`,
+        path: `${FICHE_COPRO}?vue=fiche`,
         target: '[data-demo="fiche-classification"]',
         title: "Trois axes au lieu d'un",
         body:
@@ -403,7 +465,7 @@ export const DEMOS: Demo[] = [
       },
       {
         path: FICHE_ETUDE,
-        click: '[data-demo="customer-issuer"]',
+        click: '[data-demo="customer-status"]',
         target: '[data-demo="customer-issuer-auto"]',
         title: "Chaque choix dit ce qu'il change",
         body: "Ranger la fiche dans une société la cache à l'autre : le badge et le périmètre lisent la même règle. « Les deux » est la sortie du client qui commande une étude à STRUCTURE puis des travaux à GROUPE. Le dernier choix rend la main aux devis, et la fiche dit alors qui avait tranché, et quand.",
@@ -544,7 +606,7 @@ export const DEMOS: Demo[] = [
         body: "Les interlocuteurs et les notes de la fiche vivaient dans le sixième onglet : au téléphone, le numéro de l'architecte était à deux clics. Ils sont sous le nom du client, le numéro s'appelle et l'adresse s'écrit d'un geste. Un clic sur un nom le corrige, le crayon corrige les notes sur place.",
       },
       {
-        path: `${FICHE_ETUDE}?vue=details`,
+        path: FICHE_ETUDE,
         target: '[data-demo="contacts-card"]',
         title: "Un interlocuteur se corrige",
         body: "Corriger un numéro obligeait à supprimer puis recréer l'interlocuteur. Le crayon ouvre sa fiche, avec ses notes, et n'envoie que ce qui a changé.",
@@ -564,6 +626,7 @@ export const DEMOS: Demo[] = [
     steps: [
       {
         path: FICHE_ETUDE,
+        click: '[data-demo="customer-status"]',
         target: '[data-demo="client-toggle"]',
         title: "Client ou prospect, dans les deux sens",
         body: "Une fiche que ses pièces disaient cliente ne pouvait pas redevenir prospect : la promotion automatique la reclassait au tour suivant. Le bouton pose désormais un choix, qui l'emporte sur les pièces dans la liste, les compteurs et la fiche. L'écran dit qui l'a fait et quand, et « laisser les pièces décider » le retire.",
@@ -993,13 +1056,14 @@ export const DEMOS: Demo[] = [
           sans courrier ne le montre pas, et la démo s'ouvrirait sur du vide.
         */
         path: "/customers/d4804e98-5283-42fe-ab4e-3f14d17b1720",
+        click: '[data-demo="customer-more"]',
         target: '[data-demo="bouton-chercher-courriels"]',
         title: "Le bouton qui ne rendait qu'une erreur",
         body: "Cette fonctionnalité n'avait jamais abouti une seule fois en production : un appel, cinq minutes d'attente, puis un encadré rouge portant une erreur de transport brute. La cause n'était ni le réseau, ni la clé, ni le compte — tous mesurés sains — mais le modèle demandé. Le CRM réclamait « moonshotai/kimi-k3 », que le catalogue de NVIDIA annonce toujours et qui ne renvoie plus rien du tout : pas un refus, pas un quota dépassé, aucun octet. Passés un par un, quatre-vingt-deux identifiants du catalogue donnent trois modèles qui répondent, quatre qui rendent 404 tout en étant listés, et cinq muets — dont celui-là, et dont le 90B vision demandé le matin même.",
       },
       {
         path: "/customers/d4804e98-5283-42fe-ab4e-3f14d17b1720",
-        click: '[data-demo="bouton-chercher-courriels"]',
+        click: ['[data-demo="customer-more"]', '[data-demo="bouton-chercher-courriels"]'],
         target: '[data-demo="chercher-messagerie"]',
         title: "Le modèle qui répond, et qui le dit (comptez une minute)",
         body: "Le modèle retenu a été mesuré avant d'être choisi : il répond en 171 millisecondes, et il sait lire une image, si bien que l'analyse des devis en PDF n'aura pas à en changer. La fenêtre annonce désormais quel modèle a lu et en combien de temps — c'est la même phrase qu'avant, mais elle a enfin quelque chose à dire. Deux garde-fous l'accompagnent. Le silence est borné à une minute au lieu de cinq : un modèle qui n'a pas commencé à répondre en une minute ne répondra pas, alors qu'une génération déjà commencée peut légitimement durer, et les deux ne se règlent pas ensemble. Et une erreur de transport ne s'affiche plus jamais : le détail va au journal, l'écran reçoit une phrase qui dit quoi faire. Les refus déjà rédigés en français, eux, continuent de s'afficher tels quels — « le modèle est saturé », « le dossier est trop long » sont écrits pour être lus.",
