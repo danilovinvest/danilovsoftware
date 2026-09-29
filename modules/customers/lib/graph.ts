@@ -91,6 +91,7 @@ const FAMILY_BY_RELATION: Record<CustomerRelation, GraphFamily> = {
   partenaire_technique: "partenaire",
   fournisseur: "fournisseur",
   sous_traitant: "partenaire",
+  intervenant: "partenaire",
 };
 
 export function familyOf(customer: Pick<Customer, "kind" | "relation">): GraphFamily {

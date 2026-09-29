@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { getCustomer } from "../lib/api";
 import { allocationPlan } from "../lib/allocation";
 import { canIssueCreditNote, netToPay, toCents, fromCents } from "../lib/credit-notes";
+import { piecesForPayer } from "../lib/payer";
 import { pieceRefText } from "../lib/piece-ref";
 import { allocateReceipt } from "../lib/receipts-api";
 import { useAction } from "../hooks/use-customers";
@@ -69,7 +70,9 @@ export function AllocateDialog({
   );
   const [amounts, setAmounts] = useState<Record<string, string>>({});
   const allocate = useAction(allocateReceipt, { inline: true });
-  const quotes = data?.quotes ?? [];
+  // Les pièces de la fiche, puis celles des affaires qu'elle paie pour
+  // d'autres (migration 107) : un virement d'AGEFIM règle la SDC du Marot.
+  const { quotes, owners } = data ? piecesForPayer(data) : { quotes: [], owners: {} };
   const pieces = payablePieces(quotes);
   const plan = allocationPlan(
     part.amount,
@@ -111,6 +114,7 @@ export function AllocateDialog({
         <PieceRows
           pieces={pieces}
           quotes={quotes}
+          owners={owners}
           amounts={amounts}
           loading={payer.id !== null && !data}
           onChange={(id, value) => setAmounts((current) => ({ ...current, [id]: value }))}
@@ -136,12 +140,15 @@ export function AllocateDialog({
 function PieceRows({
   pieces,
   quotes,
+  owners,
   amounts,
   loading,
   onChange,
 }: {
   pieces: Quote[];
   quotes: Quote[];
+  /** La fiche des pièces payées pour une autre, par identifiant de pièce. */
+  owners: Record<string, string>;
   amounts: Record<string, string>;
   loading: boolean;
   onChange: (id: string, value: string) => void;
@@ -165,6 +172,7 @@ function PieceRows({
                 {pieceRefText(quote.issuer, quote.reference) || quote.label}
               </span>
               <span className="text-muted-foreground block truncate text-xs">
+                {owners[quote.id] ? `pour ${owners[quote.id]} · ` : ""}
                 {quote.label} · {due === null ? "montant inconnu" : `reste ${formatAmount(due)}`}
               </span>
             </span>

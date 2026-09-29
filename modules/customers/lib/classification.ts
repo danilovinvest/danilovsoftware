@@ -11,9 +11,11 @@ import type { Customer, CustomerKind, CustomerRelation } from "./types";
 /**
  * Ce que le type laisse supposer, tant que personne n'a tranché.
  *
- * Un syndic, un architecte, un notaire ou un maître d'œuvre nous amènent des
- * clients. Un ingénieur travaille avec nous. Le reste est, jusqu'à preuve du
- * contraire, un client — c'est ce qu'était toute fiche avant la migration 82.
+ * Un syndic, son gestionnaire, un architecte, un notaire ou un maître d'œuvre
+ * nous amènent des clients. Un ingénieur travaille avec nous. Un organisme —
+ * contrôleur, mairie, huissier — intervient sans nous payer ni nous amener
+ * personne (migration 107). Le reste est, jusqu'à preuve du contraire, un
+ * client — c'est ce qu'était toute fiche avant la migration 82.
  *
  * Sa jumelle serveur est `relationByKind` (`api/internal/customers/relation_rule.go`),
  * qui filtre la liste par relation et écrit `relation_effective` sur les nœuds
@@ -25,12 +27,14 @@ const RELATION_BY_KIND: Record<CustomerKind, CustomerRelation> = {
   copropriete: "client_final",
   autre: "client_final",
   syndic: "prescripteur",
+  gestionnaire: "prescripteur",
   architecte: "prescripteur",
   maitre_oeuvre: "prescripteur",
   notaire: "prescripteur",
   ingenieur: "partenaire_technique",
   fournisseur: "fournisseur",
   sous_traitant: "sous_traitant",
+  organisme: "intervenant",
 };
 
 /**

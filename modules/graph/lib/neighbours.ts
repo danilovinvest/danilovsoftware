@@ -21,12 +21,14 @@ const ROLE: Record<string, [outgoing: string, incoming: string]> = {
   "link:payeur": ["Payé par", "Paie pour"],
   referred_project: ["A apporté des affaires à", "Affaires apportées par"],
   referred_customer: ["A recommandé", "Recommandé par"],
+  pays_for: ["Paie les affaires de", "Affaires payées par"],
 };
 
 function describe(edge: ModelEdge, outgoing: boolean): { key: string; title: string; detail: string } {
   const role = ROLE[edge.kind];
   if (role) {
-    const detail = edge.kind === "referred_project" ? `${edge.weight} affaire${edge.weight > 1 ? "s" : ""}` : "";
+    const counted = edge.kind === "referred_project" || edge.kind === "pays_for";
+    const detail = counted ? `${edge.weight} affaire${edge.weight > 1 ? "s" : ""}` : "";
     return { key: `${edge.kind}:${outgoing ? "out" : "in"}`, title: role[outgoing ? 0 : 1], detail };
   }
   switch (edge.kind) {

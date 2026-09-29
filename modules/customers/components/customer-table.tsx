@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { Fragment, useState } from "react";
-import { ChevronRightIcon } from "lucide-react";
+import { ChevronRightIcon, TagsIcon } from "lucide-react";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -23,6 +24,8 @@ import { useCycleOrders } from "../hooks/use-cycle-orders";
 import { EnumBadge } from "./enum-badge";
 import { ProjectCycle } from "./project-cycle";
 import { CustomerCards, type ListRow } from "./customer-cards";
+import { ReclassDialog } from "./reclass-dialog";
+import { RowMenu } from "./row-menu";
 import {
   ActionCell,
   CategoryBadges,
@@ -53,6 +56,7 @@ export function CustomerTable({
   issuer,
   sort = "name",
   onSort,
+  onChanged,
 }: {
   items: CustomerListItem[];
   loading: boolean;
@@ -62,6 +66,8 @@ export function CustomerTable({
   sort?: NonNullable<CustomerFilters["sort"]>;
   /** Absent, les en-têtes restent de simples intitulés. */
   onSort?: (sort: NonNullable<CustomerFilters["sort"]>) => void;
+  /** Relit la liste après un reclassement ; absent, le « … » ne s'affiche pas. */
+  onChanged?: () => void;
 }) {
   // Les affaires arrivent déjà avec la ligne du client : déplier ne déclenche
   // aucune requête.
@@ -84,6 +90,8 @@ export function CustomerTable({
     le temps de la réponse, et c'est nous qui l'avons écrit.
   */
   const [reviews, setReviews] = useState<Record<string, Review>>({});
+  // La fiche qu'on reclasse depuis son « … » (migration 107).
+  const [reclassing, setReclassing] = useState<CustomerListItem | null>(null);
 
   function reviewChanged(customerId: string, next: Review) {
     setReviews((current) => ({ ...current, [customerId]: next }));
@@ -158,6 +166,7 @@ export function CustomerTable({
               */}
               <TableHead className="w-16 text-center">Vérifiée</TableHead>
               <TableHead className="w-16 text-center">Complète</TableHead>
+              <TableHead className="w-8" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -190,6 +199,7 @@ export function CustomerTable({
                     <TableCell>
                       <Bar className="ml-auto h-2.5 w-16" />
                     </TableCell>
+                    <TableCell />
                     <TableCell />
                     <TableCell />
                   </TableRow>
@@ -279,6 +289,13 @@ export function CustomerTable({
                             />
                           </TableCell>
                         ))}
+                        <TableCell className="pl-0">
+                          {canWrite && onChanged && (
+                            <RowMenu label={`Actions sur ${customer.display_name}`} demo="customer-row-menu">
+                              <ReclassItem onSelect={() => setReclassing(customer)} />
+                            </RowMenu>
+                          )}
+                        </TableCell>
                       </TableRow>
 
                       {open &&
@@ -327,6 +344,7 @@ export function CustomerTable({
                             {/* La relecture porte sur la fiche, pas sur l'affaire. */}
                             <TableCell className="py-2" />
                             <TableCell className="py-2" />
+                            <TableCell className="py-2" />
                           </TableRow>
                         ))}
                     </Fragment>
@@ -335,6 +353,23 @@ export function CustomerTable({
           </TableBody>
         </Table>
       </div>
+      {reclassing && onChanged && (
+        <ReclassDialog
+          customer={reclassing}
+          onClose={() => setReclassing(null)}
+          onSaved={onChanged}
+        />
+      )}
     </>
+  );
+}
+
+/** « Reclasser… » : le type et la relation, sans ouvrir la fiche. */
+function ReclassItem({ onSelect }: { onSelect: () => void }) {
+  return (
+    <DropdownMenuItem onSelect={onSelect}>
+      <TagsIcon />
+      Reclasser…
+    </DropdownMenuItem>
   );
 }

@@ -45,6 +45,7 @@ export const QuoteList = memo(function QuoteList({
   carrierId,
   onSettle,
   moveTargets = [],
+  payerName = "",
   onChanged,
 }: {
   quotes: Quote[];
@@ -56,6 +57,8 @@ export const QuoteList = memo(function QuoteList({
   onSettle?: (kind: "acompte" | "solde") => void;
   /** Les autres affaires vivantes de la fiche, où une pièce peut être déplacée. */
   moveTargets?: MoveTarget[];
+  /** Qui règle l'affaire à la place de la fiche (migration 107), vide sinon. */
+  payerName?: string;
   onChanged: () => void;
 }) {
   const canDelete = usePermission("quotes:delete");
@@ -125,6 +128,11 @@ export const QuoteList = memo(function QuoteList({
               <PieceRef issuer={quote.issuer} reference={quote.reference} fallback={quote.label || "Devis"} />
               <EnumBadge value={quote.kind} entries={QUOTE_KIND} />
               <EnumBadge value={quote.status} entries={QUOTE_STATUS} />
+              {payerName && estFacture(quote) && (
+                <span data-demo="invoice-payer" className="text-xs font-medium">
+                  payée par {payerName}
+                </span>
+              )}
 
               {revision > 1 && (
                 <span className="text-muted-foreground bg-muted rounded-md px-1.5 py-0.5 text-[0.65rem]">

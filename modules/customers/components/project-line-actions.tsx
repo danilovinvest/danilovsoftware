@@ -28,6 +28,7 @@ export function ProjectLineActions({
   onIssuer,
   onEdit,
   onAddQuote,
+  onPayer,
   onClose,
   onArchive,
   onDelete,
@@ -42,6 +43,7 @@ export function ProjectLineActions({
   onIssuer: () => void;
   onEdit: () => void;
   onAddQuote: () => void;
+  onPayer: () => void;
   onClose: () => void;
   onArchive: () => void;
   onDelete: () => void;
@@ -71,6 +73,7 @@ export function ProjectLineActions({
         canWriteQuotes={canWriteQuotes}
         onEdit={onEdit}
         onAddQuote={onAddQuote}
+        onPayer={onPayer}
         onClose={onClose}
         onArchive={onArchive}
         onDelete={onDelete}

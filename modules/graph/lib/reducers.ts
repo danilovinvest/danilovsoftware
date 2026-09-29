@@ -63,6 +63,8 @@ function edgeColor(data: EdgeAttrs, palette: CanvasPalette): string {
   if (data.family === "referred_project" || data.family === "referred_customer") {
     return rgba(palette.categories.apporteur, 0.75);
   }
+  // L'argent : la teinte des copropriétés, qu'un payeur règle le plus souvent.
+  if (data.family === "pays_for") return rgba(palette.categories.copropriete, 0.75);
   if (data.family === "link") return rgba(palette.foreground, 0.55);
   if (data.family === "shared_contact") return rgba(palette.categories.interlocuteur, 0.4);
   return rgba(palette.muted, 0.3);

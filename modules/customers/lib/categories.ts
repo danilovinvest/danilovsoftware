@@ -28,6 +28,7 @@ export type CustomerCategory = {
 export const CUSTOMER_CATEGORIES: CustomerCategory[] = [
   { key: "coproprietes", label: "Copropriétés", filters: { kind: ["copropriete"] } },
   { key: "syndics", label: "Syndics", filters: { kind: ["syndic"] } },
+  { key: "gestionnaires", label: "Gestionnaires", filters: { kind: ["gestionnaire"] } },
   {
     key: "prescripteurs",
     label: "Prescripteurs",
@@ -36,6 +37,8 @@ export const CUSTOMER_CATEGORIES: CustomerCategory[] = [
   { key: "apporteurs", label: "Apporteurs d'affaires", filters: { referrer: true } },
   { key: "fournisseurs", label: "Fournisseurs", filters: { relation: ["fournisseur"] } },
   { key: "sous_traitants", label: "Sous-traitants", filters: { relation: ["sous_traitant"] } },
+  // Contrôleurs, mairies, huissiers : ni clients ni prescripteurs (migration 107).
+  { key: "organismes", label: "Organismes", filters: { relation: ["intervenant"] } },
 ];
 
 /** La catégorie que les filtres désignent exactement, ou `""`. */

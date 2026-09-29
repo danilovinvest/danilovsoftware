@@ -241,6 +241,7 @@ export const ProjectBlock = memo(function ProjectBlock({
               onIssuer={() => setDialog({ kind: "issuer" })}
               onEdit={() => onEdit(project)}
               onAddQuote={onAddQuote}
+              onPayer={() => setDialog({ kind: "payer" })}
               onClose={() => setDialog({ kind: "closure" })}
               onArchive={() => void archive.archiver()}
               onDelete={() => setDialog({ kind: "delete" })}

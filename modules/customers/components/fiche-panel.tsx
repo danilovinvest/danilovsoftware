@@ -12,6 +12,7 @@ import { EnumBadge } from "./enum-badge";
 import { ReferrerPicker } from "./referrer-picker";
 import { ClassificationEditor } from "./classification-card";
 import { ContactList } from "./contact-list";
+import { PaysForCard } from "./pays-for-card";
 import { formatSiret } from "../lib/classification";
 import type { CustomerDetail } from "../lib/types";
 
@@ -78,6 +79,10 @@ export function FichePanel({
           <Row label="SIRET">{customer.siret ? formatSiret(customer.siret) : "—"}</Row>
         </CardContent>
       </Card>
+
+      {customer.pays_for && customer.pays_for.projects.length > 0 && (
+        <PaysForCard paysFor={customer.pays_for} />
+      )}
 
       <ContactList
         variant="full"

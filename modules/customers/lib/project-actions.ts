@@ -27,6 +27,7 @@ export type BlockDialog =
   | { kind: "settlement"; reglement: "acompte" | "solde" }
   | { kind: "complete" }
   | { kind: "issuer" }
+  | { kind: "payer" }
   | { kind: "closure" }
   | { kind: "order" }
   | { kind: "delete" };

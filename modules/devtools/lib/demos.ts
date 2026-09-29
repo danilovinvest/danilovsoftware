@@ -51,6 +51,58 @@ const FICHE_COPRO = "/customers/de2ea332-b3dd-491a-8ea4-b423612731aa";
 
 export const DEMOS: Demo[] = [
   {
+    id: "tiers-et-payeur",
+    title: "Les tiers sortent des clients, et une affaire dit qui la paie",
+    date: "2026-09-29",
+    steps: [
+      {
+        path: "/customers",
+        target: 'a[href="/customers?type=gestionnaire"], a[href="/customers?relation=intervenant"]',
+        title: "Deux types de tiers de plus",
+        body:
+          "Gestionnaires d'immeubles — ceux qui gèrent plusieurs copropriétés pour un syndic — " +
+          "et organismes : contrôleur, mairie, huissier. Ni l'un ni l'autre n'est un client : " +
+          "ils ne remontent plus dans Clients, Prospects ni parmi les fiches à enrichir.",
+      },
+      {
+        path: "/customers?statut=tous",
+        target: '[data-demo="customer-row-menu"]',
+        title: "Reclasser une fiche depuis la liste",
+        body:
+          "Le « … » de chaque ligne ouvre « Reclasser… » : le type et la relation, sans ouvrir " +
+          "la fiche. Balitrand, Chancel, OXIA ou ArcelorMittal se rangent en une minute, et " +
+          "l'écran dit avant le clic si la fiche sortira de Clients et Prospects.",
+      },
+      {
+        path: FICHE_COPRO,
+        click: '[data-demo="project-delete"]',
+        target: '[data-demo="project-payer"]',
+        title: "Payé par…",
+        body:
+          "Une affaire peut être réglée par une autre fiche que la sienne : AGEFIM pour la SDC " +
+          "du Marot, une SAS au lieu de la SCI. La ligne de l'affaire et ses factures disent " +
+          "alors « payé par … », et le lien payeur de la fiche est proposé, jamais imposé.",
+      },
+      {
+        path: "/billing/a-affecter",
+        target: '[data-demo="pending-list"]',
+        title: "Le virement du payeur s'affecte aux affaires qu'il règle",
+        body:
+          "« Affecter… » sur un encaissement du payeur liste ses pièces, puis celles des " +
+          "affaires qu'il paie pour d'autres, marquées « pour SDC … ». Sa fiche montre ces " +
+          "affaires dans un bloc « Règle pour ».",
+      },
+      {
+        path: "/customers/graphe",
+        target: '[data-demo="graphe-liens"]',
+        title: "Paie pour, dans le graphe de toute la base",
+        body:
+          "Un lien « Paie pour » relie le payeur au client, épais du nombre d'affaires " +
+          "réglées. Les organismes ont leur couleur, les gestionnaires rejoignent les syndics.",
+      },
+    ],
+  },
+  {
     id: "encaissements-complets",
     title: "Encaissements complets : compte crédité, avoirs, virement sans facture",
     date: "2026-09-29",

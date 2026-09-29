@@ -17,12 +17,14 @@ export type CustomerKind =
   | "societe"
   | "copropriete"
   | "syndic"
+  | "gestionnaire"
   | "architecte"
   | "ingenieur"
   | "maitre_oeuvre"
   | "notaire"
   | "fournisseur"
   | "sous_traitant"
+  | "organisme"
   | "autre";
 
 /**
@@ -34,7 +36,8 @@ export type CustomerRelation =
   | "prescripteur"
   | "partenaire_technique"
   | "fournisseur"
-  | "sous_traitant";
+  | "sous_traitant"
+  | "intervenant";
 /** Étape du pipeline, ordonnée : une affaire n'en occupe qu'une à la fois. */
 /**
  * Les types d'intervention, dans l'ordre où le dirigeant les a dictés.
@@ -377,6 +380,12 @@ export type Project = {
    */
   archived_at: string | null;
   /**
+   * Qui règle l'affaire à la place de la fiche (migration 107), nul quand la
+   * fiche paie elle-même. Il ne s'écrit que par `setProjectPayer`.
+   */
+  payer_customer_id: string | null;
+  payer_name: string;
+  /**
    * Le délai annoncé au client, et la deadline qu'on se donne en interne.
    * L'interne précède l'annoncée ; l'écart entre les deux est la marge.
    */
@@ -695,7 +704,26 @@ export type CustomerDetail = Customer & {
   unallocated_parts: PaymentPart[];
   /** Les preuves jointes aux crans de la frise, toutes affaires confondues. */
   step_proofs: StepProof[];
+  /**
+   * Ce que la fiche règle pour d'autres (migration 107) : leurs affaires et
+   * leurs pièces, dans le périmètre du compte.
+   */
+  pays_for: PaysFor | null;
+  /** Le payeur que la fiche désigne par un lien `payeur`, proposé pour ses affaires. */
+  suggested_payer: { id: string; name: string } | null;
 };
+
+/** Une affaire qu'une fiche règle pour une autre. */
+export type PaidProject = {
+  id: string;
+  label: string;
+  reference: string;
+  stage: ProjectStage;
+  customer_id: string;
+  customer_name: string;
+};
+
+export type PaysFor = { projects: PaidProject[]; quotes: Quote[] };
 
 /**
  * Combien de fiches derrière chaque filtre de travail.
@@ -858,6 +886,9 @@ export type ProjectPayload = Omit<
   | "manager_name"
   | "engineer_name"
   | "drafter_name"
+  // Sa propre route (`PUT …/payer`) : le formulaire de l'affaire ne le porte pas.
+  | "payer_customer_id"
+  | "payer_name"
 >;
 
 /**

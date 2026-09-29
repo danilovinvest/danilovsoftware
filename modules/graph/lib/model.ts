@@ -13,12 +13,19 @@ import type { CustomersGraph, GraphEdge, GraphEdgeKind, GraphNode } from "./type
  */
 
 /** Les familles de traits, telles que les filtres les proposent. */
-export type EdgeFamily = "link" | "referred_project" | "referred_customer" | "shared_contact" | "shared_domain";
+export type EdgeFamily =
+  | "link"
+  | "referred_project"
+  | "referred_customer"
+  | "pays_for"
+  | "shared_contact"
+  | "shared_domain";
 
 export const EDGE_FAMILY_ORDER: EdgeFamily[] = [
   "link",
   "referred_project",
   "referred_customer",
+  "pays_for",
   "shared_contact",
   "shared_domain",
 ];
@@ -27,6 +34,7 @@ export const EDGE_FAMILY_META: Record<EdgeFamily, { label: string; inferred: boo
   link: { label: "Liens posés (syndic, architecte, payeur)", inferred: false },
   referred_project: { label: "Affaires apportées", inferred: false },
   referred_customer: { label: "Fiches recommandées", inferred: false },
+  pays_for: { label: "Paie pour (payeur d'une affaire)", inferred: false },
   shared_contact: { label: "Interlocuteurs communs", inferred: true },
   shared_domain: { label: "Domaines professionnels communs", inferred: true },
 };

@@ -133,6 +133,7 @@ export const NAV_SECTIONS: NavSection[] = [
           { href: "/customers?statut=prospect", label: "Prospects" },
           { href: "/customers?type=copropriete", label: "Copropriétés" },
           { href: "/customers?type=syndic", label: "Syndics" },
+          { href: "/customers?type=gestionnaire", label: "Gestionnaires" },
           {
             href: "/customers?relation=prescripteur,partenaire_technique",
             label: "Prescripteurs",
@@ -140,6 +141,7 @@ export const NAV_SECTIONS: NavSection[] = [
           { href: "/customers?apporteur=1", label: "Apporteurs d'affaires" },
           { href: "/customers?relation=fournisseur", label: "Fournisseurs" },
           { href: "/customers?relation=sous_traitant", label: "Sous-traitants" },
+          { href: "/customers?relation=intervenant", label: "Organismes" },
           { href: "/customers/graphe", label: "Graphe" },
         ],
       },

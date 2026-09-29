@@ -133,6 +133,7 @@ describe("reducers", () => {
       prescripteur: gray,
       fournisseur: gray,
       sous_traitant: gray,
+      organisme: gray,
       client: gray,
       prospect: gray,
       interlocuteur: [0, 255, 0],

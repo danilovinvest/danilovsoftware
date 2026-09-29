@@ -80,12 +80,14 @@ export const CUSTOMER_KIND: Entry<CustomerKind> = {
   societe: { label: "Société", tone: "neutral" },
   copropriete: { label: "Copropriété", tone: "neutral" },
   syndic: { label: "Syndic", tone: "neutral" },
+  gestionnaire: { label: "Gestionnaire d'immeubles", tone: "neutral" },
   architecte: { label: "Architecte", tone: "neutral" },
   ingenieur: { label: "Ingénieur / BET", tone: "neutral" },
   maitre_oeuvre: { label: "Maître d'œuvre", tone: "neutral" },
   notaire: { label: "Notaire / avocat", tone: "neutral" },
   fournisseur: { label: "Fournisseur", tone: "neutral" },
   sous_traitant: { label: "Sous-traitant", tone: "neutral" },
+  organisme: { label: "Organisme (contrôle, mairie, huissier)", tone: "neutral" },
   autre: { label: "Autre", tone: "neutral" },
 };
 
@@ -96,6 +98,7 @@ export const CUSTOMER_RELATION: Entry<CustomerRelation> = {
   partenaire_technique: { label: "Partenaire technique", tone: "warning" },
   fournisseur: { label: "Fournisseur", tone: "neutral" },
   sous_traitant: { label: "Sous-traitant", tone: "neutral" },
+  intervenant: { label: "Intervenant", tone: "neutral" },
 };
 
 /**

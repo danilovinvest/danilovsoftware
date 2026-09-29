@@ -72,6 +72,8 @@ const project: Project = {
   id: "aff",
   customer_id: "copro",
   label: "Mise en sécurité incendie",
+  payer_customer_id: null,
+  payer_name: "",
   stage: "realise",
   outcome: null,
   outcome_note: "",
@@ -170,6 +172,8 @@ const detail: CustomerDetail = {
   referrer: null,
   is_referrer: false,
   unallocated_parts: [],
+  pays_for: null,
+  suggested_payer: null,
   contacts: [contact("vidal", "Me Vidal", { role_label: "contact sur place", phone: "06 86 42 18 43" })],
   projects: [project],
   quotes: [

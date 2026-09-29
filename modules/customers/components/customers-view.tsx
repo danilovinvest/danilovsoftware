@@ -146,6 +146,7 @@ export function CustomersView() {
         ) : (
           <>
             <CustomerTable
+              onChanged={reload}
               items={data?.items ?? []}
               loading={loading}
               issuer={filters.issuer}

@@ -13,6 +13,18 @@ describe("categoryOfNode", () => {
     expect(categoryOfNode(fiche("a", { kind: "syndic", relation_effective: "prescripteur" }))).toBe("syndic");
     expect(categoryOfNode(fiche("a", { kind: "copropriete" }))).toBe("copropriete");
   });
+  test("un gestionnaire se range avec les syndics, un organisme à part", () => {
+    expect(categoryOfNode(fiche("a", { kind: "gestionnaire", relation_effective: "prescripteur" }))).toBe(
+      "syndic",
+    );
+    expect(categoryOfNode(fiche("a", { kind: "organisme", relation_effective: "intervenant" }))).toBe(
+      "organisme",
+    );
+    // Une relation choisie « intervenant » range aussi une société en organisme.
+    expect(categoryOfNode(fiche("a", { kind: "societe", relation_effective: "intervenant" }))).toBe(
+      "organisme",
+    );
+  });
   test("la relation effective range le reste", () => {
     expect(categoryOfNode(fiche("a", { relation_effective: "partenaire_technique" }))).toBe("prescripteur");
     expect(categoryOfNode(fiche("a", { relation_effective: "fournisseur" }))).toBe("fournisseur");
@@ -100,6 +112,7 @@ describe("buildModel", () => {
   test("familyOf range les liens posés ensemble", () => {
     expect(familyOf("link:payeur")).toBe("link");
     expect(familyOf("shared_domain")).toBe("shared_domain");
+    expect(familyOf("pays_for")).toBe("pays_for");
   });
 });
 
@@ -120,6 +133,14 @@ describe("neighbourGroups", () => {
   test("les affaires apportées disent combien", () => {
     const group = neighbourGroups(model, "archi")[0];
     expect(group.items[0].detail).toBe("2 affaires");
+  });
+
+  test("un payeur dit pour qui il paie, et combien d'affaires", () => {
+    const paid = buildModel(payload([fiche("agefim"), fiche("marot")], [link("agefim", "marot", "pays_for", 3)]));
+    const payer = neighbourGroups(paid, "agefim")[0];
+    expect(payer.title).toBe("Paie les affaires de");
+    expect(payer.items[0].detail).toBe("3 affaires");
+    expect(neighbourGroups(paid, "marot")[0].title).toBe("Affaires payées par");
   });
 
   test("un interlocuteur liste ses fiches", () => {

@@ -34,7 +34,8 @@ export type GraphNode = {
  *
  * Explicites : `link:<rôle>` (posé à la main — `source` a pour rôle `target`),
  * `referred_project` (`source` a apporté `weight` affaires à `target`),
- * `referred_customer` (`source` a recommandé `target`).
+ * `referred_customer` (`source` a recommandé `target`), `pays_for` (`source`
+ * règle `weight` affaires de `target`, migration 107).
  *
  * Déduits (`inferred`) : `shared_contact` (une adresse ou un numéro commun),
  * `shared_domain` (un domaine professionnel commun). Sans sens : `source` est
@@ -46,6 +47,7 @@ export type GraphEdgeKind =
   | "link:payeur"
   | "referred_project"
   | "referred_customer"
+  | "pays_for"
   | "shared_contact"
   | "shared_domain";
 

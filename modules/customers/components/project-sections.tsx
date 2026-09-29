@@ -134,6 +134,7 @@ function MoneySection({ customer, project, quotes, proofs, settlement, canWrite,
         moveTargets={customer.projects
           .filter((p) => p.archived_at === null)
           .map((p) => ({ id: p.id, label: p.label, reference: p.reference }))}
+        payerName={project.payer_name}
         onChanged={onChanged}
       />
       <JoinedQuoteDocs proofs={proofs} />
