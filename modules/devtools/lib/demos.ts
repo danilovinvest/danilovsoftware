@@ -948,7 +948,7 @@ export const DEMOS: Demo[] = [
     steps: [
       {
         path: "/customers/0b66bb72-7660-43a3-aa42-5be6e5ffe2b6",
-        click: '[id$="-trigger-details"]',
+        click: '[id$="-trigger-fiche"]',
         target: '[data-demo="fiche-parrain"]',
         title: "Recommandé par, choisi parmi tout le CRM",
         body: "La source disait « Recommandation » sans dire par qui. La recherche porte sur toutes les fiches, archivées comprises, et sur les interlocuteurs de chacune — c'est souvent l'architecte ou le voisin d'un client qui recommande. La personne introuvable se crée d'ici, comme une fiche. Le même champ apparaît à la création d'un client dès que la source est « Recommandation ». Le parrain s'ouvre d'un clic, et s'écrit par sa propre route : corriger le téléphone de la fiche ne l'efface pas.",
