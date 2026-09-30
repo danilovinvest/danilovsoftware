@@ -18,10 +18,12 @@ import { errorMessage } from "@/shared/api/errors";
 import { formatAgo, formatDate, formatDateTime, plural } from "@/shared/lib/format";
 import { ErrorNotice, Skeleton, Spinner } from "@/shared/ui/feedback";
 import { SelectField, TextField } from "@/shared/ui/form";
+import { usePermission } from "@/modules/auth";
 import { SettingsPage, SettingsRow, SettingsRows, SettingsSection } from "@/modules/settings";
 import { useMailbox } from "../hooks/use-mail";
 import * as api from "../lib/api";
 import { RerouteSection } from "./reroute-section";
+import { SendTest } from "./send-test";
 
 /**
  * Raccorder la boîte de l'entreprise.
@@ -35,6 +37,9 @@ import { RerouteSection } from "./reroute-section";
 export function MailPanel() {
   const { accounts, runs, unknown, running, now, loading, error: loadError, reload } =
     useMailbox();
+  // L'essai d'envoi demande `mail:write`, comme raccorder : inutile de montrer
+  // à qui ne l'a pas un bouton que l'API refuserait.
+  const canWrite = usePermission("mail:write");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   /**
@@ -94,7 +99,9 @@ export function MailPanel() {
             messages de la boîte, seuls ceux que vous lisez entrent en base
           </SettingsRow>
           <SettingsRow label="Écriture">
-            Aucune : le CRM lit la boîte, il n&apos;envoie rien
+            Le CRM lit la boîte et n&apos;y modifie rien. Il n&apos;envoie que ce
+            qu&apos;on lui demande : l&apos;essai d&apos;envoi ci-dessous, et le
+            rapport mensuel au comptable
           </SettingsRow>
         </SettingsRows>
       </SettingsSection>
@@ -192,6 +199,12 @@ export function MailPanel() {
                 >
                   <XIcon className="size-3.5" />
                 </Button>
+                {/*
+                  En dernier dans la ligne : son formulaire prend toute la
+                  largeur et passe dessous, sous les autres gestes et non entre
+                  eux.
+                */}
+                {canWrite && <SendTest account={account} disabled={pending} />}
               </div>
             ))}
 
