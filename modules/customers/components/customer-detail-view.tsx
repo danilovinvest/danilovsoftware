@@ -26,6 +26,7 @@ import { FichePanel } from "./fiche-panel";
 import { CustomerGraph } from "./customer-graph";
 import { InteractionsPanel } from "./interactions-panel";
 import { ProjectsPanel } from "./projects-panel";
+import { SupplierOrdersPanel } from "./supplier-orders-panel";
 import { SyncFooter } from "./sync-footer";
 import { SyndicPortfolio } from "./syndic-portfolio";
 import { lastListHref } from "../lib/list-query";
@@ -36,7 +37,7 @@ import { lastListHref } from "../lib/list-query";
   « Fiche » ; l'ancienne valeur d'adresse reste lue, pour que les liens déjà
   partagés (`?vue=details`) ouvrent toujours le bon onglet.
 */
-const VUES = ["affaires", "immeuble", "portefeuille", "echanges", "taches", "courriels", "documents", "graphe", "fiche"];
+const VUES = ["affaires", "immeuble", "portefeuille", "commandes", "echanges", "taches", "courriels", "documents", "graphe", "fiche"];
 // Les cabinets : eux seuls ont un portefeuille d'immeubles (migration 109).
 const CABINETS = new Set(["syndic", "gestionnaire"]);
 const ALIAS: Record<string, string> = { details: "fiche" };
@@ -67,6 +68,8 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
   // L'onglet d'une copropriété — et de toute fiche qu'un lien y envoie : une
   // SDC rangée en société a aussi des lots et des arrêtés.
   const immeuble = vueDemandee === "immeuble" || customer?.kind === "copropriete";
+  // L'onglet d'un fournisseur — et de toute fiche qu'une commande désigne.
+  const fournisseur = vueDemandee === "commandes" || customer?.kind === "fournisseur";
   const vue =
     searchParams.get("affaire") ||
     !VUES.includes(vueDemandee) ||
@@ -262,6 +265,11 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
               Immeuble
             </TabsTrigger>
           )}
+          {fournisseur && (
+            <TabsTrigger className={TAB} value="commandes" data-demo="tab-commandes">
+              Commandes
+            </TabsTrigger>
+          )}
           {cabinet && (
             <TabsTrigger className={TAB} value="portefeuille" data-demo="tab-portefeuille">
               Portefeuille
@@ -307,6 +315,13 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
         {immeuble && (
           <TabsContent value="immeuble" className="mt-4">
             {vue === "immeuble" && <BuildingPanel customer={customer} />}
+          </TabsContent>
+        )}
+
+        {/* Ce qu'on a commandé à ce fournisseur, chantier par chantier. */}
+        {fournisseur && (
+          <TabsContent value="commandes" className="mt-4">
+            {vue === "commandes" && <SupplierOrdersPanel supplierId={customer.id} />}
           </TabsContent>
         )}
 

@@ -21,6 +21,7 @@ import { JoinedQuoteDocs } from "./joined-quote-docs";
 import { ProjectBillingLine } from "./project-billing-line";
 import { ProjectJalons } from "./project-jalons";
 import { ProjectNotes } from "./project-notes";
+import { ProjectOrders } from "./project-orders";
 import { ProjectSection } from "./project-section";
 import { ProjectTimeline } from "./project-timeline";
 import { QuoteList } from "./quote-list";
@@ -153,6 +154,8 @@ function MoneySection({ customer, project, quotes, proofs, settlement, canWrite,
         canWrite={canWrite}
         onChanged={onChanged}
       />
+      {/* Le coût matière, en face des devis comme la sous-traitance. */}
+      <ProjectOrders projectId={project.id} canWrite={canWrite} onChanged={onChanged} />
     </div>
   );
 }

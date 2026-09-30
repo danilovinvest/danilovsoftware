@@ -51,6 +51,42 @@ const FICHE_COPRO = "/customers/de2ea332-b3dd-491a-8ea4-b423612731aa";
 
 export const DEMOS: Demo[] = [
   {
+    id: "commandes-fournisseur",
+    title: "Les commandes fournisseur : à qui, sous quel numéro, pour quand",
+    date: "2026-09-30",
+    steps: [
+      {
+        path: FICHE_COPRO,
+        click: '[data-demo="tab-devis"]',
+        target: '[data-demo="project-orders"]',
+        title: "Les commandes d'une affaire",
+        body:
+          "Sous les devis, en face des montants : chaque commande dit le fournisseur, le numéro de " +
+          "son devis, ce qui est commandé, la livraison ou le retrait et son jour. Le coût matière " +
+          "engagé additionne ce qui est commandé ou livré, et dit quand il en ignore.",
+      },
+      {
+        path: FICHE_COPRO,
+        click: ['[data-demo="tab-devis"]', '[data-demo="project-orders"] button'],
+        target: '[data-demo="order-dialog"]',
+        title: "Commander franchit le cran",
+        body:
+          "Passer une commande au statut « Commandé » pose « Matériaux commandés » sur l'affaire, au " +
+          "jour de la commande, et y inscrit ce qui est commandé. Annuler ne le retire pas : ce " +
+          "qu'une machine a coché se corrige à la main, sur la frise.",
+      },
+      {
+        path: "/customers?relation=fournisseur",
+        target: '[data-demo="customer-table"], table',
+        title: "La fiche d'un fournisseur",
+        body:
+          "Chaque fournisseur a un onglet « Commandes » : tout ce qu'on lui a commandé, chantier par " +
+          "chantier, avec ce qui attend encore d'être livré. Le lien du fournisseur, sur une " +
+          "commande, y mène.",
+      },
+    ],
+  },
+  {
     id: "espace-copropriete",
     title: "L'espace copropriété : interventions, lots et occupants, dossier réglementaire",
     date: "2026-09-30",
