@@ -51,6 +51,34 @@ const FICHE_COPRO = "/customers/de2ea332-b3dd-491a-8ea4-b423612731aa";
 
 export const DEMOS: Demo[] = [
   {
+    id: "espace-partenaires",
+    title: "L'espace partenaires : affaires apportées ou prescrites, transformation, classement",
+    date: "2026-09-30",
+    steps: [
+      {
+        path: FICHE_COPRO,
+        click: '[data-demo="tab-devis"]',
+        target: '[data-demo="project-partners"]',
+        title: "Les partenaires d'une affaire",
+        body:
+          "En tête des devis : qui a prescrit l'affaire, qui intervient sur le même chantier, qui on " +
+          "a recommandé. « Partenaires… » pose ces rôles, et note ce que le client a réglé " +
+          "directement au bureau d'études — pour mémoire, jamais compté dans le chiffre d'OMPT. " +
+          "L'apporteur, unique, se pose toujours à part.",
+      },
+      {
+        path: "/customers/partenaires",
+        target: '[data-demo="partner-ranking"], [data-demo="partner-ranking-head"]',
+        title: "Le classement des partenaires",
+        body:
+          "Qui amène des affaires, combien se signent, et ce qu'elles rapportent : marché signé, " +
+          "facturé, encaissé. Seuls ceux qui ont apporté ou prescrit une affaire y figurent. Le nom " +
+          "mène à l'onglet « Partenaire » de la fiche, qui liste ses affaires une à une, projets " +
+          "communs et recommandations compris.",
+      },
+    ],
+  },
+  {
     id: "factures-fournisseur-et-courriels",
     title: "Factures fournisseur, marge d'une affaire, courriels triés par chantier",
     date: "2026-09-30",

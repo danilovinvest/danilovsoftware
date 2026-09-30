@@ -695,6 +695,8 @@ export type CustomerDetail = Customer & {
   referrer: Referrer | null;
   /** Apporteur d'affaires : a apporté une affaire chez un autre, ou recommandé une fiche. */
   is_referrer: boolean;
+  /** Porte un rôle de partenaire sur une affaire (migration 113). */
+  is_partner?: boolean;
   contacts: Contact[];
   projects: Project[];
   quotes: Quote[];

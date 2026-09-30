@@ -26,10 +26,13 @@ import { FichePanel } from "./fiche-panel";
 import { CustomerGraph } from "./customer-graph";
 import { InteractionsPanel } from "./interactions-panel";
 import { ProjectsPanel } from "./projects-panel";
+import { PartnerPanel } from "./partner-panel";
 import { SupplierOrdersPanel } from "./supplier-orders-panel";
 import { SyncFooter } from "./sync-footer";
 import { SyndicPortfolio } from "./syndic-portfolio";
+import { relationOf } from "../lib/classification";
 import { lastListHref } from "../lib/list-query";
+import { hasPartnerSpace } from "../lib/partners";
 
 /*
   Les onglets, dans l'ordre où on les ouvre : le quotidien d'abord, la fiche
@@ -37,7 +40,7 @@ import { lastListHref } from "../lib/list-query";
   « Fiche » ; l'ancienne valeur d'adresse reste lue, pour que les liens déjà
   partagés (`?vue=details`) ouvrent toujours le bon onglet.
 */
-const VUES = ["affaires", "immeuble", "portefeuille", "commandes", "echanges", "taches", "courriels", "documents", "graphe", "fiche"];
+const VUES = ["affaires", "immeuble", "portefeuille", "commandes", "partenaire", "echanges", "taches", "courriels", "documents", "graphe", "fiche"];
 // Les cabinets : eux seuls ont un portefeuille d'immeubles (migration 109).
 const CABINETS = new Set(["syndic", "gestionnaire"]);
 const ALIAS: Record<string, string> = { details: "fiche" };
@@ -70,9 +73,22 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
   const immeuble = vueDemandee === "immeuble" || customer?.kind === "copropriete";
   // L'onglet d'un fournisseur — et de toute fiche qu'une commande désigne.
   const fournisseur = vueDemandee === "commandes" || customer?.kind === "fournisseur";
+  // L'onglet d'un prescripteur, d'un architecte ou d'un apporteur — et de
+  // toute fiche qu'un lien y envoie. Des montants : `quotes:read`, comme la route.
+  const partenaire =
+    canReadQuotes &&
+    (vueDemandee === "partenaire" ||
+      (customer
+        ? hasPartnerSpace({
+            relation: relationOf(customer).value,
+            is_referrer: customer.is_referrer,
+            is_partner: customer.is_partner,
+          })
+        : false));
   const vue =
     searchParams.get("affaire") ||
     !VUES.includes(vueDemandee) ||
+    (vueDemandee === "partenaire" && !partenaire) ||
     (vueDemandee === "portefeuille" && !cabinet)
       ? "affaires"
       : vueDemandee;
@@ -275,6 +291,11 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
               Portefeuille
             </TabsTrigger>
           )}
+          {partenaire && (
+            <TabsTrigger className={TAB} value="partenaire" data-demo="tab-partenaire">
+              Partenaire
+            </TabsTrigger>
+          )}
           <TabsTrigger className={TAB} value="echanges">
             Échanges
             <TabCount value={customer.interactions_total} />
@@ -330,6 +351,13 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
             {vue === "portefeuille" && (
               <SyndicPortfolio customerId={customer.id} customerName={customer.display_name} />
             )}
+          </TabsContent>
+        )}
+
+        {/* Ce que ce partenaire a apporté ou prescrit, et ce que c'est devenu. */}
+        {partenaire && (
+          <TabsContent value="partenaire" className="mt-4">
+            {vue === "partenaire" && <PartnerPanel customerId={customer.id} />}
           </TabsContent>
         )}
 

@@ -22,6 +22,7 @@ import { ProjectBillingLine } from "./project-billing-line";
 import { ProjectJalons } from "./project-jalons";
 import { ProjectNotes } from "./project-notes";
 import { ProjectOrders } from "./project-orders";
+import { ProjectPartners } from "./project-partners";
 import { ProjectSection } from "./project-section";
 import { ProjectTimeline } from "./project-timeline";
 import { QuoteList } from "./quote-list";
@@ -130,6 +131,8 @@ function MoneySection({ customer, project, quotes, proofs, settlement, canWrite,
       {coproApplies(customer.kind, project, customer.syndic_id !== null) && (
         <ProjectBillingLine projectId={project.id} />
       )}
+      {/* Qui a prescrit l'affaire, qui y intervient, qui on a recommandé. */}
+      <ProjectPartners projectId={project.id} ownerId={customer.id} canWrite={canWrite} />
       {/* En tête des devis : c'est l'argent qui est entré, ou qui doit entrer. */}
       <InvoiceTotals project={project} />
       <QuoteList

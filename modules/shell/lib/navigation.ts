@@ -139,6 +139,8 @@ export const NAV_SECTIONS: NavSection[] = [
             label: "Prescripteurs",
           },
           { href: "/customers?apporteur=1", label: "Apporteurs d'affaires" },
+          // Qui amène des affaires, et ce qu'elles rapportent (migration 113).
+          { href: "/customers/partenaires", label: "Classement partenaires", permission: "quotes:read" },
           { href: "/customers?relation=fournisseur", label: "Fournisseurs" },
           { href: "/customers?relation=sous_traitant", label: "Sous-traitants" },
           { href: "/customers?relation=intervenant", label: "Organismes" },
