@@ -73,6 +73,14 @@ export type MailMessage = {
    */
   matched_detail?: string;
   /**
+   * L'affaire dont parle le courriel (migration 112) : lue dans le texte
+   * (« indice », avec ce qui l'a désignée) ou tranchée à la main (« manuel »).
+   * Le courriel reste sur sa fiche — celle de qui l'écrit.
+   */
+  project_id?: string;
+  project_by?: "indice" | "manuel";
+  project_detail?: string;
+  /**
    * Vrai quand le message répond à une conversation (il porte In-Reply-To ou
    * References), faux pour un premier message. Le serveur dit le fait ; l'écran
    * en tire « Réponse » ou « Nouveau ».
@@ -250,4 +258,20 @@ export type MailThread = {
   gmail_url: string;
   /** Du plus ancien au plus récent. */
   messages: ThreadMessage[];
+};
+
+/** Un chantier dont parlent les courriels d'une fiche. */
+export type MailProject = {
+  project_id: string;
+  label: string;
+  customer_id: string;
+  customer_name: string;
+  messages: number;
+  last_at: string;
+};
+
+export type MailProjects = {
+  projects: MailProject[];
+  /** Les courriels de la fiche qui ne désignent aucune affaire. */
+  unlinked: number;
 };

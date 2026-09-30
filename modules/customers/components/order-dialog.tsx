@@ -59,6 +59,9 @@ export function OrderDialog({
     expected_at: order?.expected_at ?? "",
     amount: amountToInput(order?.amount_ht ?? null),
     invoice_reference: order?.invoice_reference ?? "",
+    invoiced_at: order?.invoiced_at ?? "",
+    invoiced_amount: amountToInput(order?.invoiced_amount_ht ?? null),
+    paid_at: order?.paid_at ?? "",
     document_url: order?.document_url ?? "",
     note: order?.note ?? "",
   }));
@@ -73,7 +76,15 @@ export function OrderDialog({
     if (!open) onClose();
   });
   const parsed = parseAmountInput(draft.amount);
-  const invalid = draft.supplier_id === "" || draft.label.trim() === "" || parsed === undefined;
+  const billed = parseAmountInput(draft.invoiced_amount);
+  // La règle du serveur : une facture datée ou réglée porte son montant.
+  const billedMissing = (draft.invoiced_at !== "" || draft.paid_at !== "") && !billed;
+  const invalid =
+    draft.supplier_id === "" ||
+    draft.label.trim() === "" ||
+    parsed === undefined ||
+    billed === undefined ||
+    billedMissing;
   const wasFirm = order ? order.status === "commande" || order.status === "livre" : false;
   // La règle du serveur, telle quelle : une commande qui devient ferme.
   const willMark = !wasFirm && (draft.status === "commande" || draft.status === "livre");
@@ -97,6 +108,9 @@ export function OrderDialog({
       ordered_at: draft.ordered_at || null,
       expected_at: draft.expected_at || null,
       amount_ht: parsed ?? null,
+      invoiced_at: draft.invoiced_at || null,
+      invoiced_amount_ht: billed ?? null,
+      paid_at: draft.paid_at || null,
     });
     if (!next) return;
     onSaved(next);
@@ -173,17 +187,48 @@ export function OrderDialog({
             onChange={(event) => set("expected_at", event.target.value)}
           />
           <TextField
-            label="N° de facture fournisseur"
-            value={draft.invoice_reference}
-            onChange={(event) => set("invoice_reference", event.target.value)}
-          />
-          <TextField
             label="Lien du document"
             placeholder="Lien OneDrive ou SharePoint"
+            wrapperClassName="sm:col-span-2"
             value={draft.document_url}
             onChange={(event) => set("document_url", event.target.value)}
           />
         </div>
+        {/* La facture du fournisseur : c'est elle, une fois arrivée, qui fait le coût matière. */}
+        <fieldset className="grid gap-3 rounded-lg border p-3 sm:grid-cols-2" data-demo="order-invoice">
+          <legend className="text-muted-foreground px-1 text-xs font-medium">Facture du fournisseur</legend>
+          <TextField
+            label="N° de facture"
+            value={draft.invoice_reference}
+            onChange={(event) => set("invoice_reference", event.target.value)}
+          />
+          <TextField
+            label="Montant facturé HT"
+            inputMode="decimal"
+            value={draft.invoiced_amount}
+            hint="Il remplace le montant commandé dans le coût de l'affaire."
+            error={
+              draft.invoiced_amount !== "" && billed === undefined
+                ? "Un montant en euros."
+                : billedMissing
+                  ? "Une facture datée ou réglée porte son montant."
+                  : undefined
+            }
+            onChange={(event) => set("invoiced_amount", event.target.value)}
+          />
+          <TextField
+            label="Facturée le"
+            type="date"
+            value={draft.invoiced_at}
+            onChange={(event) => set("invoiced_at", event.target.value)}
+          />
+          <TextField
+            label="Réglée le"
+            type="date"
+            value={draft.paid_at}
+            onChange={(event) => set("paid_at", event.target.value)}
+          />
+        </fieldset>
         <TextAreaField
           label="Note"
           placeholder="Interlocuteur au dépôt, créneau de livraison…"

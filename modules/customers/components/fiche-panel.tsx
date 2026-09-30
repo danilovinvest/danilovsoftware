@@ -88,6 +88,7 @@ export function FichePanel({
       <ContactList
         variant="full"
         customerId={customer.id}
+        kind={customer.kind}
         contacts={customer.contacts}
         canWrite={canWrite}
         onChanged={onChanged}

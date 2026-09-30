@@ -39,6 +39,7 @@ export function CustomerGlance({
       <ContactList
         variant="compact"
         customerId={customer.id}
+        kind={customer.kind}
         contacts={customer.contacts}
         canWrite={canWrite}
         onChanged={onChanged}

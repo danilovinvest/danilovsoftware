@@ -13,11 +13,13 @@ import {
   DELIVERY_MODE,
   ORDER_STATUS,
   deleteOrder,
+  invoiceDrift,
   listProjectOrders,
   orderCost,
   orderLate,
   type SupplierOrder,
 } from "../lib/supplier-orders";
+import { projectMargin, type MarginQuote } from "../lib/margin";
 import { EnumBadge } from "./enum-badge";
 import { OrderDialog } from "./order-dialog";
 import { RowMenu } from "./row-menu";
@@ -29,13 +31,23 @@ import { RowMenu } from "./row-menu";
  * a un sens. Chaque ligne dit à qui, sous quel numéro, et pour quand ; une
  * commande dont la date est passée sans être livrée se signale. Le coût engagé
  * additionne ce qui est commandé ou livré, et dit quand il en ignore.
+ *
+ * La facture du fournisseur vit sur sa commande (migration 112) : arrivée,
+ * c'est son montant qui compte, et l'écart avec le devis se dit. Sous la liste,
+ * la **marge** : le marché hors taxes moins la sous-traitance et la matière —
+ * seulement quand il y a un marché chiffré et quelque chose à en déduire.
  */
 export function ProjectOrders({
   projectId,
+  quotes,
+  subcontractingTotal,
   canWrite,
   onChanged,
 }: {
   projectId: string;
+  /** Les pièces de l'affaire et sa sous-traitance : de quoi lire la marge. */
+  quotes: MarginQuote[];
+  subcontractingTotal: string | null;
   canWrite: boolean;
   /** Une commande ferme franchit un cran : la fiche se relit. */
   onChanged: () => void;
@@ -46,6 +58,7 @@ export function ProjectOrders({
   const orders = data ?? [];
   const cost = orderCost(orders);
   const today = todayLocal();
+  const margin = projectMargin(quotes, subcontractingTotal, cost);
 
   function adopt(next: SupplierOrder[]) {
     void mutate(next, { revalidate: false });
@@ -79,6 +92,7 @@ export function ProjectOrders({
             <span className="text-muted-foreground font-normal">
               {" "}
               · coût engagé {formatAmount(String(cost.firm / 100))} HT
+              {cost.invoiced > 0 && `, dont ${formatAmount(String(cost.invoiced / 100))} facturés`}
               {cost.unknown > 0 && `, ${cost.unknown} sans montant`}
             </span>
           )}
@@ -109,7 +123,6 @@ export function ProjectOrders({
                     {[
                       order.supplier_reference && `devis ${order.supplier_reference}`,
                       order.ordered_at && `commandé le ${formatDate(order.ordered_at)}`,
-                      order.invoice_reference && `facture ${order.invoice_reference}`,
                     ]
                       .filter(Boolean)
                       .map((part) => ` · ${part}`)
@@ -122,10 +135,13 @@ export function ProjectOrders({
                       {late && " — date passée, à relancer"}
                     </div>
                   )}
+                  <InvoiceLine order={order} />
                   {order.note && <p className="text-muted-foreground text-xs break-words">{order.note}</p>}
                 </div>
-                {order.amount_ht && (
-                  <span className="font-medium tabular-nums">{formatAmount(order.amount_ht)} HT</span>
+                {(order.invoiced_amount_ht ?? order.amount_ht) && (
+                  <span className="font-medium tabular-nums">
+                    {formatAmount(order.invoiced_amount_ht ?? order.amount_ht)} HT
+                  </span>
                 )}
                 {order.document_url && (
                   <a
@@ -150,6 +166,25 @@ export function ProjectOrders({
           })}
         </ul>
       )}
+      {margin && (
+        <p
+          className={margin.margin < 0 ? "text-danger text-xs" : "text-muted-foreground text-xs"}
+          data-demo="project-margin"
+        >
+          Marge {margin.signed ? "" : "prévue "}
+          <strong className="tabular-nums">{formatAmount(String(margin.margin / 100))} HT</strong> ({margin.rate} %) :{" "}
+          {formatAmount(String(margin.market / 100))} {margin.signed ? "signés" : "proposés"}
+          {margin.subcontracting > 0 && ` − ${formatAmount(String(margin.subcontracting / 100))} de sous-traitance`}
+          {margin.material > 0 && ` − ${formatAmount(String(margin.material / 100))} de matière`}
+          {(margin.blind.quotes > 0 || margin.blind.orders > 0) &&
+            ` · incomplète : ${[
+              margin.blind.quotes > 0 && `${margin.blind.quotes} devis sans montant HT`,
+              margin.blind.orders > 0 && `${margin.blind.orders} commande(s) sans montant`,
+            ]
+              .filter(Boolean)
+              .join(", ")}`}
+        </p>
+      )}
       {editing && (
         <OrderDialog
           projectId={projectId}
@@ -159,5 +194,34 @@ export function ProjectOrders({
         />
       )}
     </section>
+  );
+}
+
+/** La facture du fournisseur : ce qu'il a facturé, l'écart avec son devis, et si elle est réglée. */
+export function InvoiceLine({ order }: { order: SupplierOrder }) {
+  if (!order.invoiced_amount_ht) {
+    return order.invoice_reference ? (
+      <div className="text-muted-foreground text-xs">facture {order.invoice_reference}, montant non saisi</div>
+    ) : null;
+  }
+  const drift = invoiceDrift(order);
+  return (
+    <div className="text-xs">
+      <span className="text-muted-foreground">
+        Facturé{order.invoice_reference && ` ${order.invoice_reference}`}
+        {order.invoiced_at && ` le ${formatDate(order.invoiced_at)}`}
+      </span>
+      {drift !== null && drift !== 0 && (
+        <span className={drift > 0 ? "text-warning" : "text-success"}>
+          {" "}
+          · {drift > 0 ? "+" : "−"}
+          {formatAmount(String(Math.abs(drift) / 100))} sur le devis ({formatAmount(order.amount_ht)})
+        </span>
+      )}
+      <span className={order.paid_at ? "text-muted-foreground" : "text-warning"}>
+        {" "}
+        · {order.paid_at ? `réglée le ${formatDate(order.paid_at)}` : "à régler"}
+      </span>
+    </div>
   );
 }

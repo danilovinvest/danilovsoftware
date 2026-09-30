@@ -51,6 +51,52 @@ const FICHE_COPRO = "/customers/de2ea332-b3dd-491a-8ea4-b423612731aa";
 
 export const DEMOS: Demo[] = [
   {
+    id: "factures-fournisseur-et-courriels",
+    title: "Factures fournisseur, marge d'une affaire, courriels triés par chantier",
+    date: "2026-09-30",
+    steps: [
+      {
+        path: FICHE_COPRO,
+        click: '[data-demo="tab-devis"]',
+        target: '[data-demo="project-margin"], [data-demo="project-orders"]',
+        title: "La marge de l'affaire",
+        body:
+          "Le marché hors taxes, moins la sous-traitance et la matière. Elle ne s'affiche que s'il " +
+          "y a un devis chiffré et quelque chose à en déduire, et dit ce qu'elle ignore : un devis " +
+          "sans montant, une commande sans prix.",
+      },
+      {
+        path: FICHE_COPRO,
+        click: ['[data-demo="tab-devis"]', '[data-demo="project-orders"] button'],
+        target: '[data-demo="order-invoice"]',
+        title: "La facture du fournisseur, sur sa commande",
+        body:
+          "Numéro, date, montant facturé hors taxes, jour du règlement. Une fois la facture " +
+          "arrivée, c'est son montant qui fait le coût matière de l'affaire, et l'écart avec le " +
+          "devis du fournisseur s'affiche sur la ligne.",
+      },
+      {
+        path: "/billing/achats",
+        target: '[data-demo="purchases-table"], [data-demo="purchases-head"]',
+        title: "Les achats, fournisseur par fournisseur",
+        body:
+          "Facturation → Achats : ce qu'on commande à chacun, ce qu'il facture, ce qui reste à lui " +
+          "régler. « Écart sur devis » compare le facturé au commandé sur les commandes qui portent " +
+          "les deux : c'est ce qui dit qu'un fournisseur dépasse ses devis.",
+      },
+      {
+        path: "/customers?relation=fournisseur",
+        target: '[data-demo="customer-table"], table',
+        title: "Les courriels d'un fournisseur, par chantier",
+        body:
+          "Ouvrez un fournisseur : son onglet Courriels se trie par chantier. Un courriel reste " +
+          "chez le fournisseur et dit de quelle affaire il parle : le numéro de son devis, le client " +
+          "cité, l'adresse du chantier. « Chantier… » tranche à la main pour le reste. Et ses " +
+          "interlocuteurs se rangent par rôle : commercial, comptabilité, dépôt.",
+      },
+    ],
+  },
+  {
     id: "commandes-fournisseur",
     title: "Les commandes fournisseur : à qui, sous quel numéro, pour quand",
     date: "2026-09-30",

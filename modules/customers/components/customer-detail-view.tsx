@@ -349,7 +349,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
 
         {canReadMail && (
           <TabsContent value="courriels" className="mt-4">
-            <CustomerMail customerId={customer.id} />
+            <CustomerMail key={customer.id} customerId={customer.id} />
             <SyncFooter />
           </TabsContent>
         )}

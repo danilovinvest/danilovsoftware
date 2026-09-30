@@ -9,7 +9,7 @@ import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/componen
 import { askConfirm } from "@/shared/ui/confirm";
 import * as api from "../lib/api";
 import { useAction } from "../hooks/use-customers";
-import type { Contact } from "../lib/types";
+import type { Contact, CustomerKind } from "../lib/types";
 import { ContactDialog } from "./contact-dialog";
 import { CompactContactRow, FullContactRow, type ContactGestures } from "./contact-rows";
 
@@ -18,6 +18,8 @@ const HEADER_LIMIT = 3;
 
 type ListProps = {
   customerId: string;
+  /** Le type de la fiche : il choisit les rôles proposés à la saisie. */
+  kind?: CustomerKind;
   contacts: Contact[];
   canWrite: boolean;
   onChanged: () => void;
@@ -158,7 +160,7 @@ function byPrimary(contacts: Contact[]): Contact[] {
  * lui-même la marque à l'ancien (`ClearPrimaryContact`), il n'y en a jamais
  * deux.
  */
-function useContactGestures({ customerId, canWrite, onChanged }: ListProps) {
+function useContactGestures({ customerId, kind, canWrite, onChanged }: ListProps) {
   /** `undefined` fermé, `null` nouveau, un interlocuteur corrigé sinon. */
   const [editing, setEditing] = useState<Contact | null | undefined>(undefined);
   const remove = useAction((id: string) => api.deleteContact(id));
@@ -205,6 +207,7 @@ function useContactGestures({ customerId, canWrite, onChanged }: ListProps) {
       <ContactDialog
         key={editing?.id ?? "new"}
         customerId={customerId}
+        kind={kind}
         contact={editing}
         open
         onOpenChange={(open) => {

@@ -184,6 +184,8 @@ export const NAV_SECTIONS: NavSection[] = [
           { href: "/billing/a-affecter", label: "À affecter" },
           // Les factures dues et l'échelle de relance de chacune (migration 109).
           { href: "/billing/recouvrement", label: "Recouvrement" },
+          // Ce qu'on commande aux fournisseurs, ce qu'ils facturent (migration 112).
+          { href: "/billing/achats", label: "Achats" },
           {
             href: "/billing/tresorerie",
             label: "Flux de trésorerie",

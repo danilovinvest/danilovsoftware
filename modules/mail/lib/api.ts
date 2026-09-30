@@ -5,6 +5,7 @@ import type {
   MailAttachment,
   MailMessage,
   MailPage,
+  MailProjects,
   MailRun,
   MailKind,
   MailScope,
@@ -78,11 +79,32 @@ export function listCustomerMail(
   limit = 100,
   signal?: AbortSignal,
   offset = 0,
+  /** Une affaire, ou « none » pour ce qui n'en désigne aucune. */
+  project = "",
 ) {
+  const filter = project ? `&project=${encodeURIComponent(project)}` : "";
   return apiFetch<{ items: MailMessage[]; total: number }>(
-    `/v1/customers/${customerId}/mail?limit=${limit}&offset=${offset}`,
+    `/v1/customers/${customerId}/mail?limit=${limit}&offset=${offset}${filter}`,
     { signal },
   );
+}
+
+/** Les chantiers dont parlent les courriels d'une fiche, dans le périmètre du compte. */
+export function listCustomerMailProjects(customerId: string, signal?: AbortSignal) {
+  return apiFetch<MailProjects>(`/v1/customers/${customerId}/mail/projects`, { signal });
+}
+
+/** Dit de quelle affaire parlent ces courriels de la fiche ; `null` : d'aucune. */
+export function setCustomerMailProject(
+  customerId: string,
+  ids: string[],
+  projectId: string | null,
+  wholeThread: boolean,
+) {
+  return apiFetch<{ updated: number }>(`/v1/customers/${customerId}/mail/project`, {
+    method: "PUT",
+    body: { ids, project_id: projectId, whole_thread: wholeThread },
+  });
 }
 
 /**

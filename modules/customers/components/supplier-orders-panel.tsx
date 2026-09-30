@@ -8,6 +8,7 @@ import { ListSkeleton } from "@/shared/ui/loading";
 import { formatAmount, formatDate, plural, todayLocal } from "@/shared/lib/format";
 import { DELIVERY_MODE, ORDER_STATUS, listSupplierOrders, orderCost, orderLate } from "../lib/supplier-orders";
 import { EnumBadge } from "./enum-badge";
+import { InvoiceLine } from "./project-orders";
 
 /**
  * L'onglet « Commandes » d'un fournisseur (feuille de route du 29/09,
@@ -84,9 +85,12 @@ export function SupplierOrdersPanel({ supplierId }: { supplierId: string }) {
                     .filter(Boolean)
                     .join(" · ")}
                 </div>
+                <InvoiceLine order={order} />
               </div>
-              {order.amount_ht && (
-                <span className="font-medium tabular-nums">{formatAmount(order.amount_ht)} HT</span>
+              {(order.invoiced_amount_ht ?? order.amount_ht) && (
+                <span className="font-medium tabular-nums">
+                  {formatAmount(order.invoiced_amount_ht ?? order.amount_ht)} HT
+                </span>
               )}
             </li>
           );

@@ -155,7 +155,13 @@ function MoneySection({ customer, project, quotes, proofs, settlement, canWrite,
         onChanged={onChanged}
       />
       {/* Le coût matière, en face des devis comme la sous-traitance. */}
-      <ProjectOrders projectId={project.id} canWrite={canWrite} onChanged={onChanged} />
+      <ProjectOrders
+        projectId={project.id}
+        quotes={quotes}
+        subcontractingTotal={project.subcontracting_total}
+        canWrite={canWrite}
+        onChanged={onChanged}
+      />
     </div>
   );
 }
