@@ -904,7 +904,7 @@ export const DEMOS: Demo[] = [
         path: "/dashboard",
         target: '[data-demo="dashboard-blocked"]',
         title: "« Signé, mais bloqué » lit enfin la base",
-        body: "Ces quatre listes étaient tirées d'une empreinte de la référence du devis : le tableau de bord pouvait réclamer un acompte déjà payé. Elles viennent maintenant des chantiers réels, par les mêmes règles que l'écran Chantiers, et chaque ligne ouvre le chantier concerné. Le reste du tableau de bord lit encore l'export du 1er septembre : c'est l'issue suivante.",
+        body: "Ces quatre listes étaient tirées d'une empreinte de la référence du devis : le tableau de bord pouvait réclamer un acompte déjà payé. Elles viennent maintenant des chantiers réels, par les mêmes règles que l'écran Chantiers, et chaque ligne ouvre le chantier concerné.",
       },
       {
         path: "/customers",

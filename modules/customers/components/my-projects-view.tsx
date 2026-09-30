@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { errorMessage } from "@/shared/api/errors";
 import * as api from "../lib/api";
 import { INTERVENTION_SCOPE, PROJECT_STAGE } from "../lib/labels";
-import { deadlineOf, type Deadline } from "../lib/mission";
+import { deadlineOf, urgencyOf, type Deadline, type ProjectUrgency } from "../lib/mission";
 import type { Tone } from "../lib/labels";
 import { EnumBadge } from "./enum-badge";
 import type { MyProject } from "../lib/types";
@@ -20,8 +20,7 @@ import { customerHref } from "@/shared/lib/routes";
 /** Le plafond d'une page côté API : la liste arrive triée par urgence. */
 const LIMIT = 200;
 
-/** Où en est un dossier, dans l'ordre même où le serveur les trie. */
-type Urgency = "retard" | "sans_action" | "suivi";
+type Urgency = ProjectUrgency;
 
 type Role = "responsable" | "ingenieur" | "dessinateur";
 
@@ -45,18 +44,6 @@ const TONE_TEXT: Record<Tone, string> = {
   warning: "text-warning",
   danger: "text-danger",
 };
-
-/**
- * L'urgence d'un dossier, avec la règle même qui a trié la liste côté serveur
- * (`ListProjectsForUser`) : une prochaine action échue, ou un délai dépassé
- * tant que la mission n'est pas rendue — `deadlineOf`. Les deux doivent
- * évoluer ensemble.
- */
-function urgencyOf(project: MyProject, deadline: Deadline | null): Urgency {
-  if (project.next_task?.is_overdue || deadline?.late) return "retard";
-  if (!project.next_task) return "sans_action";
-  return "suivi";
-}
 
 function holds(project: MyProject, role: Role): boolean {
   if (role === "responsable") return project.is_manager;

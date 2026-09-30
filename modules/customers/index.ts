@@ -57,6 +57,9 @@ export { DepositTag, depositTotalOf } from "./components/deposit-field";
 export { getCustomer } from "./lib/api";
 // « À attribuer » vit sur le tableau de bord : il lit et attribue les affaires sans responsable.
 export { listUnassigned, setProjectManager } from "./lib/api";
+// Il lit aussi les comptes de cycle et les dossiers de l'appelant : les mêmes
+// questions que la liste des fiches et « Mes dossiers », donc les mêmes appels.
+export { getStats, listMyProjects } from "./lib/api";
 export * from "./lib/types";
 export { ImportView } from "./import";
 export { paymentCarrier, settlementOf } from "./lib/settlement";
