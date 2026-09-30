@@ -329,14 +329,26 @@ export function worksiteContext(input: {
   };
 }
 
-export function dashboardContext(input: { relances: number; blocked: number }): ClaudeContext {
+/**
+ * Un compte est nul tant que sa lecture n'est pas revenue — ou a échoué. Il se
+ * dit alors « non lu » : un zéro annoncerait une bonne nouvelle que personne
+ * n'a vérifiée.
+ */
+export function dashboardContext(input: {
+  relances: number | null;
+  blocked: number | null;
+  overdue: number | null;
+}): ClaudeContext {
+  const known = (n: number | null, singular: string, suffix: string) =>
+    n === null ? `Non lu (${suffix})` : `${count(n, singular)} ${suffix}`;
   return {
     subject: "Le tableau de bord",
-    target: "mon tableau de bord : les devis à relancer, les affaires signées mais bloquées, l'agenda et les tâches du jour",
+    target: "mon tableau de bord : les fiches à relancer, les affaires signées mais bloquées, mes tâches en retard, l'agenda d'aujourd'hui et de demain",
     items: [
-      { label: "Relances", detail: `${count(input.relances, "devis", "devis")} en attente de réponse` },
-      { label: "Signé, bloqué", detail: `${count(input.blocked, "affaire")} qui attendent autre chose` },
-      { label: "Agenda et tâches", detail: "Les rendez-vous et les tâches du jour" },
+      { label: "Relances", detail: known(input.relances, "fiche", "à relancer") },
+      { label: "Signé, bloqué", detail: known(input.blocked, "alerte", "après signature") },
+      { label: "Tâches", detail: known(input.overdue, "tâche", "en retard") },
+      { label: "Agenda", detail: "Les rendez-vous d'aujourd'hui et de demain" },
     ],
     prompts: [
       { label: "Mon brief du jour", detail: "Les trois choses à faire en premier, et pourquoi." },

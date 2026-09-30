@@ -1,21 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { UserRoundXIcon } from "lucide-react";
 import { useAuth, usePermission } from "@/modules/auth";
-import {
-  listUnassigned,
-  PROJECT_STAGE,
-  setProjectManager,
-  type UnassignedPage,
-} from "@/modules/customers";
-import { scopeParam, useScope } from "@/modules/group";
+import { PROJECT_STAGE, setProjectManager } from "@/modules/customers";
 import { Button } from "@/components/ui/button";
 import { errorMessage } from "@/shared/api/errors";
 import { formatDate } from "@/shared/lib/format";
 import { ErrorNotice } from "@/shared/ui/feedback";
 import { Panel, RowShell } from "@/shared/ui/panel";
+import { useRefreshMyProjects, useUnassigned } from "../hooks/use-live";
+import { PanelEmpty, PanelState } from "./parts";
 
 /**
  * « À attribuer » : les dossiers actifs que personne ne porte.
@@ -28,29 +24,13 @@ import { Panel, RowShell } from "@/shared/ui/panel";
  * d'un clic. On résorbe, on ne s'affole pas.
  */
 export function UnassignedPanel() {
-  const scope = useScope();
   const { account } = useAuth();
   const canWrite = usePermission("customers:write");
-  const [version, setVersion] = useState(0);
-  const [result, setResult] = useState<{ key: string; page: UnassignedPage | null; error: string | null } | null>(
-    null,
-  );
+  const live = useUnassigned(8);
+  const refreshMyProjects = useRefreshMyProjects();
   const [pending, setPending] = useState<string | null>(null);
   const [writeError, setWriteError] = useState<string | null>(null);
-  const key = `${scope}·${version}`;
-
-  useEffect(() => {
-    const controller = new AbortController();
-    listUnassigned({ limit: 8, issuer: scopeParam(scope) }, controller.signal)
-      .then((page) => setResult({ key: `${scope}·${version}`, page, error: null }))
-      .catch((cause) => {
-        if (!controller.signal.aborted) setResult({ key: `${scope}·${version}`, page: null, error: errorMessage(cause) });
-      });
-    return () => controller.abort();
-  }, [scope, version]);
-
-  const current = result?.key === key ? result : null;
-  const page = current?.page ?? null;
+  const page = live.data;
 
   async function attribuer(projectId: string) {
     if (!account) return;
@@ -58,7 +38,9 @@ export function UnassignedPanel() {
     setWriteError(null);
     try {
       await setProjectManager(projectId, account.id);
-      setVersion((value) => value + 1);
+      // Attendues : le bouton reste éteint tant que la ligne n'a pas quitté la
+      // liste, sans quoi un second clic réécrirait la même attribution.
+      await Promise.all([live.reload(), refreshMyProjects()]);
     } catch (cause) {
       setWriteError(errorMessage(cause));
     } finally {
@@ -77,51 +59,53 @@ export function UnassignedPanel() {
         }
         icon={UserRoundXIcon}
         tone="warning"
-        action={<span className="text-xl font-bold tabular-nums">{page ? page.total : "…"}</span>}
+        action={page ? <span className="text-xl leading-none font-bold tabular-nums">{page.total}</span> : undefined}
         bodyClassName="divide-y"
       >
-        {current?.error && (
-          <div className="p-3">
-            <ErrorNotice message={current.error} />
-          </div>
-        )}
         {writeError && (
           <div className="p-3">
             <ErrorNotice message={writeError} />
           </div>
         )}
-        {page && page.items.length === 0 && (
-          <p className="text-muted-foreground px-4 py-5 text-center text-xs">
-            Chaque dossier actif a son responsable et sa prochaine action.
-          </p>
-        )}
-        {page?.items.map((item) => (
-          <RowShell key={item.id}>
-            <Link href={`/customers/${item.customer_id}`} className="min-w-0 flex-1">
-              <span className="block truncate text-[13px] font-semibold">{item.customer_name}</span>
-              <span className="text-muted-foreground block truncate text-[11px]">
-                {item.reference && <span className="font-mono">{item.reference} · </span>}
-                {item.label} · {PROJECT_STAGE[item.stage]?.label ?? item.stage}
-              </span>
-              <span className="text-muted-foreground/70 block text-[11px]">
-                {item.manager_name ? `Suivi par ${item.manager_name}` : "Sans responsable"}
-                {" · "}
-                {item.next_task ? `${item.next_task.title}` : "aucune prochaine action"}
-                {item.internal_deadline_at && ` · deadline ${formatDate(item.internal_deadline_at)}`}
-              </span>
-            </Link>
-            {canWrite && !item.manager_id && account && (
-              <Button
-                size="xs"
-                variant="outline"
-                disabled={pending === item.id}
-                onClick={() => void attribuer(item.id)}
-              >
-                M&apos;attribuer
-              </Button>
-            )}
-          </RowShell>
-        ))}
+        <PanelState live={live}>
+          {(data) =>
+            data.items.length === 0 ? (
+              <PanelEmpty>Chaque dossier actif a son responsable et sa prochaine action.</PanelEmpty>
+            ) : (
+              /* Deux colonnes dès qu'il y a la place : huit lignes pleine
+                 largeur repoussaient tout le reste sous le pli. */
+              <div className="-mb-px grid lg:grid-cols-2">
+                {data.items.map((item) => (
+                  <RowShell key={item.id} className="border-b">
+                    <Link href={`/customers/${item.customer_id}`} className="min-w-0 flex-1">
+                      <span className="block truncate text-[13px] font-semibold">{item.customer_name}</span>
+                      <span className="text-muted-foreground block truncate text-[11px]">
+                        {item.reference && <span className="font-mono">{item.reference} · </span>}
+                        {item.label} · {PROJECT_STAGE[item.stage]?.label ?? item.stage}
+                      </span>
+                      <span className="text-muted-foreground/70 block truncate text-[11px]">
+                        {item.manager_name ? `Suivi par ${item.manager_name}` : "Sans responsable"}
+                        {" · "}
+                        {item.next_task ? item.next_task.title : "aucune prochaine action"}
+                        {item.internal_deadline_at && ` · deadline ${formatDate(item.internal_deadline_at)}`}
+                      </span>
+                    </Link>
+                    {canWrite && !item.manager_id && account && (
+                      <Button
+                        size="xs"
+                        variant="outline"
+                        disabled={pending === item.id}
+                        onClick={() => void attribuer(item.id)}
+                      >
+                        M&apos;attribuer
+                      </Button>
+                    )}
+                  </RowShell>
+                ))}
+              </div>
+            )
+          }
+        </PanelState>
       </Panel>
     </div>
   );

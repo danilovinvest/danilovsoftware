@@ -124,3 +124,24 @@ export function deadlineOf(
     late: false,
   };
 }
+
+/** Où en est un dossier confié, dans l'ordre même où le serveur les trie. */
+export type ProjectUrgency = "retard" | "sans_action" | "suivi";
+
+/**
+ * L'urgence d'un dossier, avec la règle même qui a trié la liste côté serveur
+ * (`ListProjectsForUser`) : une prochaine action échue, ou un délai dépassé
+ * tant que la mission n'est pas rendue — `deadlineOf`. Les deux doivent
+ * évoluer ensemble.
+ *
+ * Elle vit ici et non dans « Mes dossiers » : le tableau de bord la lit aussi,
+ * et deux copies auraient fini par ne plus compter les mêmes retards.
+ */
+export function urgencyOf(
+  project: { next_task?: { is_overdue: boolean } | null },
+  deadline: Deadline | null,
+): ProjectUrgency {
+  if (project.next_task?.is_overdue || deadline?.late) return "retard";
+  if (!project.next_task) return "sans_action";
+  return "suivi";
+}

@@ -58,7 +58,7 @@ const contexts = [
     invoices: 0,
     depositReceived: false,
   }),
-  dashboardContext({ relances: 4, blocked: 2 }),
+  dashboardContext({ relances: 4, blocked: 2, overdue: 0 }),
 ];
 
 describe("buildPrompt", () => {

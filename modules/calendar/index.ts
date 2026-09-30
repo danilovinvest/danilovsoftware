@@ -35,6 +35,8 @@ export {
   createEvent,
   deleteCalendar,
   listCustomerEvents,
+  // Le tableau de bord montre les rendez-vous du jour sans monter l'agenda.
+  listEvents,
   listCalendars,
   updateCalendar,
   disconnectAccount,
