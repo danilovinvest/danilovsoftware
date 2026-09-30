@@ -207,6 +207,20 @@ export function disconnectMailbox(id: string) {
   return apiFetch<void>(`/v1/mail/accounts/${id}`, { method: "DELETE" });
 }
 
+/**
+ * Envoie le message d'essai depuis une boîte raccordée.
+ *
+ * L'appel attend la réponse du serveur d'envoi — quelques secondes, trente au
+ * plus. Un refus revient en phrase lisible : identifiants, destinataire,
+ * serveur injoignable.
+ */
+export function sendTestMail(accountId: string, to: string) {
+  return apiFetch<{ from: string }>(`/v1/mail/accounts/${accountId}/test`, {
+    method: "POST",
+    body: { to },
+  });
+}
+
 export function syncNow() {
   return apiFetch<{ started: boolean }>("/v1/mail/sync", { method: "POST" });
 }
