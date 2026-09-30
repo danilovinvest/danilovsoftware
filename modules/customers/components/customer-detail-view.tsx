@@ -26,6 +26,7 @@ import { CustomerGraph } from "./customer-graph";
 import { InteractionsPanel } from "./interactions-panel";
 import { ProjectsPanel } from "./projects-panel";
 import { SyncFooter } from "./sync-footer";
+import { SyndicPortfolio } from "./syndic-portfolio";
 import { lastListHref } from "../lib/list-query";
 
 /*
@@ -34,7 +35,9 @@ import { lastListHref } from "../lib/list-query";
   « Fiche » ; l'ancienne valeur d'adresse reste lue, pour que les liens déjà
   partagés (`?vue=details`) ouvrent toujours le bon onglet.
 */
-const VUES = ["affaires", "echanges", "taches", "courriels", "documents", "graphe", "fiche"];
+const VUES = ["affaires", "portefeuille", "echanges", "taches", "courriels", "documents", "graphe", "fiche"];
+// Les cabinets : eux seuls ont un portefeuille d'immeubles (migration 109).
+const CABINETS = new Set(["syndic", "gestionnaire"]);
 const ALIAS: Record<string, string> = { details: "fiche" };
 
 /**
@@ -47,9 +50,25 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
   const { customer, loading, error, reload, mutate } = useCustomer(customerId);
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  const canReadQuotes = usePermission("quotes:read");
   const brute = searchParams.get("vue") ?? "";
   const vueDemandee = ALIAS[brute] ?? brute;
-  const vue = searchParams.get("affaire") || !VUES.includes(vueDemandee) ? "affaires" : vueDemandee;
+  /*
+    L'onglet d'un cabinet — et de toute fiche qu'un lien y envoie : la gestion
+    d'une copropriété mène au portefeuille de son syndic, que sa fiche soit
+    déjà rangée en syndic ou encore en société (aucune n'a été reclassée en
+    masse).
+  */
+  const cabinet =
+    // Des montants et des factures : la route demande aussi `quotes:read`.
+    canReadQuotes &&
+    (vueDemandee === "portefeuille" || (customer ? CABINETS.has(customer.kind) : false));
+  const vue =
+    searchParams.get("affaire") ||
+    !VUES.includes(vueDemandee) ||
+    (vueDemandee === "portefeuille" && !cabinet)
+      ? "affaires"
+      : vueDemandee;
   const [editing, setEditing] = useState(false);
   const [enriching, setEnriching] = useState(false);
 
@@ -224,7 +243,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
       */}
       <Tabs value={vue} onValueChange={changerVue}>
         {/*
-          Sept onglets ne tiennent pas sur un téléphone de 390 pixels. La barre
+          Sept ou huit onglets ne tiennent pas sur un téléphone de 390 pixels. La barre
           passe à la ligne (`flex-wrap`, hauteur libérée de son `h-8`) plutôt que
           de défiler : un onglet coupé au bord ne se voit pas. `justify-start`
           garde « Affaires » à gauche.
@@ -234,6 +253,11 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
             Affaires
             <TabCount value={customer.projects.length} />
           </TabsTrigger>
+          {cabinet && (
+            <TabsTrigger className={TAB} value="portefeuille" data-demo="tab-portefeuille">
+              Portefeuille
+            </TabsTrigger>
+          )}
           <TabsTrigger className={TAB} value="echanges">
             Échanges
             <TabCount value={customer.interactions_total} />
@@ -264,6 +288,19 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
             onChanged={reload}
           />
         </TabsContent>
+
+        {/*
+          Les immeubles d'un cabinet, ce qu'ils ont rapporté et doivent encore.
+          Monté à l'ouverture seulement, comme le graphe : ses lectures ne
+          coûtent rien à qui ne regarde pas.
+        */}
+        {cabinet && (
+          <TabsContent value="portefeuille" className="mt-4">
+            {vue === "portefeuille" && (
+              <SyndicPortfolio customerId={customer.id} customerName={customer.display_name} />
+            )}
+          </TabsContent>
+        )}
 
         <TabsContent value="echanges" className="mt-4">
           <InteractionsPanel

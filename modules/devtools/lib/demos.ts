@@ -51,6 +51,74 @@ const FICHE_COPRO = "/customers/de2ea332-b3dd-491a-8ea4-b423612731aa";
 
 export const DEMOS: Demo[] = [
   {
+    id: "espace-syndic",
+    title: "L'espace syndic : portefeuille d'immeubles, circuit de facturation, recouvrement",
+    date: "2026-09-30",
+    steps: [
+      {
+        path: FICHE_COPRO,
+        click: '[data-demo="tab-fiche"]',
+        target: '[data-demo="fiche-gestion"]',
+        title: "La gestion d'un immeuble",
+        body:
+          "L'immeuble survit à ses syndics. Changer de cabinet dans « Géré par » termine le mandat " +
+          "précédent au lieu de l'effacer : les syndics successifs se lisent ici, avec la personne " +
+          "qui suit l'immeuble et ce qui lui est propre pour facturer — son libellé de relevé surtout.",
+      },
+      {
+        click: '[data-demo="fiche-gestion"] a[href*="vue=portefeuille"]',
+        target: '[data-demo="portfolio-figures"]',
+        title: "Le portefeuille d'un syndic",
+        body:
+          "Un onglet de plus sur la fiche d'un cabinet : ce qu'il pèse — facturé, encaissé, reste " +
+          "dû — et combien de jours il met à payer, en moyenne sur ses factures payées et datées.",
+      },
+      {
+        target: '[data-demo="portfolio-buildings"]',
+        title: "Immeuble par immeuble",
+        body:
+          "Chaque copropriété gérée, ses affaires ouvertes, son facturé, son encaissé et ce qu'elle " +
+          "doit encore. « Hérité » : un prédécesseur la gérait. « Ancien mandat » : le cabinet ne " +
+          "la gère plus, ses affaires d'alors restent comptées ici.",
+      },
+      {
+        target: '[data-demo="portfolio-succession"]',
+        title: "Cerutti devenu CGI, AGEFIM devenu OXIA",
+        body:
+          "« Repris par… » relie un cabinet à son successeur, et peut lui transférer ses immeubles " +
+          "au jour dit. L'ancienne fiche reste, avec son histoire.",
+      },
+      {
+        target: '[data-demo="portfolio-handlers"], [data-demo="billing-rules"]',
+        title: "Qui suit quoi, et comment on facture",
+        body:
+          "Les gestionnaires du cabinet et les immeubles de chacun — la personne à appeler. À côté, " +
+          "le circuit de facturation : adresse où envoyer, référence fournisseur OMPT, portail de " +
+          "validation, libellé attendu sur le relevé.",
+      },
+      {
+        path: FICHE_COPRO,
+        click: '[data-demo="tab-apres"]',
+        target: '[data-demo="copro-validations"]',
+        title: "Les validations d'une copropriété",
+        body:
+          "Sous l'après-signature d'une affaire de copropriété : assemblée générale, vote des " +
+          "travaux, fonds de l'assureur attendus puis reçus, bon pour accord du syndic, PV qu'il " +
+          "contresigne. Toutes facultatives — aucune ne bloque la suite.",
+      },
+      {
+        path: "/billing/recouvrement",
+        target: '[data-demo="recovery-list"], [data-demo="recovery-head"]',
+        title: "Le recouvrement",
+        body:
+          "Les factures dues et où en est la relance de chacune : courriel, LRAR, huissier, " +
+          "assignation, décision. Chaque marche garde le montant réclamé ce jour-là ; le reste dû " +
+          "se recalcule, et un montant réclamé périmé se signale. La même échelle s'ouvre par le " +
+          "« … » d'une facture.",
+      },
+    ],
+  },
+  {
     id: "routage-courriels",
     title: "Les courriels d'une adresse partagée trouvent leur immeuble, ou attendent qu'on les classe",
     date: "2026-09-29",

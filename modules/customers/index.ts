@@ -21,6 +21,7 @@ export * from "./lib/labels";
 export * from "./lib/cycle";
 // La mission, le numéro de dossier et les délais : lus aussi par l'écran Études.
 export * from "./lib/mission";
+export { EMPTY_COPRO } from "./lib/copro-jalons";
 export {
   EMPTY_JALONS,
   EMPTY_MARKS,
@@ -70,4 +71,7 @@ export { PlanEvent } from "./components/plan-event";
 export { AllocateDialog } from "./components/allocate-dialog";
 export { ReceiptDialog } from "./components/receipt-dialog";
 export { listPendingReceipts } from "./lib/receipts-api";
+// Le recouvrement (migration 109) : lu aussi par Facturation → Recouvrement.
+export { RecoveryList } from "./components/recovery-list";
+export { listRecovery } from "./lib/syndic-api";
 export * from "./lib/receipt-types";

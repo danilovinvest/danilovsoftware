@@ -13,9 +13,12 @@ import type {
   Quote,
   StepProof,
 } from "../lib/types";
+import { coproApplies } from "../lib/copro-jalons";
+import { CoproValidations } from "./copro-validations";
 import { depositTotalOf, type SettlementTransfers } from "./deposit-field";
 import { InvoiceTotals } from "./invoice-totals";
 import { JoinedQuoteDocs } from "./joined-quote-docs";
+import { ProjectBillingLine } from "./project-billing-line";
 import { ProjectJalons } from "./project-jalons";
 import { ProjectNotes } from "./project-notes";
 import { ProjectSection } from "./project-section";
@@ -122,6 +125,10 @@ export function ProjectSections(props: SectionsProps) {
 function MoneySection({ customer, project, quotes, proofs, settlement, canWrite, onSettle, onChanged }: SectionsProps) {
   return (
     <div className="flex flex-col gap-3">
+      {/* Où envoyer la facture, quand un syndic ou un payeur suit l'affaire. */}
+      {coproApplies(customer.kind, project, customer.syndic_id !== null) && (
+        <ProjectBillingLine projectId={project.id} />
+      )}
       {/* En tête des devis : c'est l'argent qui est entré, ou qui doit entrer. */}
       <InvoiceTotals project={project} />
       <QuoteList
@@ -152,6 +159,8 @@ function MoneySection({ customer, project, quotes, proofs, settlement, canWrite,
 
 /** Les jalons d'après-signature, cochables ici comme dans la frise. */
 function AfterSignature({
+  customer,
+  project,
   metier,
   mission,
   jalons,
@@ -164,37 +173,43 @@ function AfterSignature({
 }: SectionsProps) {
   const { porteur } = settlement;
   return (
-    <ProjectJalons
-      metier={metier}
-      mission={mission}
-      jalons={jalons}
-      onMaterials={onMaterials}
-      depositTotal={depositTotalOf(porteur)}
-      onDeposit={settlement.encaisser}
-      onDepositRemove={settlement.retirerAcompte}
-      depositPaidAt={porteur?.deposit_paid_at ?? null}
-      depositTransfers={depositTransfers}
-      // Même verrou que la frise : ces cases écrivent par la même route,
-      // qui remplace la ligne entière.
-      disabled={!canWrite || busy}
-      onToggle={async (key, value) => {
-        // « Facturé » appartient au devis : décoché, il dit qu'il n'y a pas
-        // d'acompte, daté il corrige le jour. Les autres jalons passent par
-        // leur table.
-        if (key === "deposit_invoiced_at") {
-          await settlement.facturerAcompte(value);
-          return;
-        }
-        // L'encaissement passe par l'éditeur des règlements ; ce chemin ne
-        // reste que pour un jalon qui n'en aurait pas.
-        if (key === "deposit_paid_at") {
-          await (value
-            ? settlement.encaisser(jalons.deposit_amount, value.slice(0, 10))
-            : settlement.retirerAcompte());
-          return;
-        }
-        void onOverride({ [key]: value });
-      }}
-    />
+    <div className="flex flex-col gap-3">
+      <ProjectJalons
+        metier={metier}
+        mission={mission}
+        jalons={jalons}
+        onMaterials={onMaterials}
+        depositTotal={depositTotalOf(porteur)}
+        onDeposit={settlement.encaisser}
+        onDepositRemove={settlement.retirerAcompte}
+        depositPaidAt={porteur?.deposit_paid_at ?? null}
+        depositTransfers={depositTransfers}
+        // Même verrou que la frise : ces cases écrivent par la même route,
+        // qui remplace la ligne entière.
+        disabled={!canWrite || busy}
+        onToggle={async (key, value) => {
+          // « Facturé » appartient au devis : décoché, il dit qu'il n'y a pas
+          // d'acompte, daté il corrige le jour. Les autres jalons passent par
+          // leur table.
+          if (key === "deposit_invoiced_at") {
+            await settlement.facturerAcompte(value);
+            return;
+          }
+          // L'encaissement passe par l'éditeur des règlements ; ce chemin ne
+          // reste que pour un jalon qui n'en aurait pas.
+          if (key === "deposit_paid_at") {
+            await (value
+              ? settlement.encaisser(jalons.deposit_amount, value.slice(0, 10))
+              : settlement.retirerAcompte());
+            return;
+          }
+          void onOverride({ [key]: value });
+        }}
+      />
+      {/* Un particulier n'a pas d'assemblée générale : le bloc suit la fiche. */}
+      {coproApplies(customer.kind, project, customer.syndic_id !== null) && (
+        <CoproValidations jalons={jalons} disabled={!canWrite || busy} onWrite={onOverride} />
+      )}
+    </div>
   );
 }

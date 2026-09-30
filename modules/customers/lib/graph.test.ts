@@ -172,6 +172,7 @@ const detail: CustomerDetail = {
   ...customer(),
   referrer: null,
   is_referrer: false,
+  syndic_id: null,
   unallocated_parts: [],
   pays_for: null,
   suggested_payer: null,

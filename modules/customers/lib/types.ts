@@ -1,3 +1,4 @@
+import type { CoproValidations } from "./syndic-types";
 import type { PaymentPart } from "./receipt-types";
 
 export type CustomerStatus = "prospect" | "client" | "perdu" | "archive";
@@ -595,7 +596,7 @@ export type Milestones = {
   /** Ce qui se passe pendant la négociation : le prix, un délai, un tiers. */
   negotiation_note: string;
   signed_at: string | null;
-};
+} & Partial<CoproValidations>;
 
 /** Réponse de GET /v1/customers/{id} : fiche + collections en un seul appel. */
 /**
@@ -718,6 +719,8 @@ export type CustomerDetail = Customer & {
   pays_for: PaysFor | null;
   /** Le payeur que la fiche désigne par un lien `payeur`, proposé pour ses affaires. */
   suggested_payer: { id: string; name: string } | null;
+  /** Le syndic courant de la fiche, nul sans mandat en cours (migration 109). */
+  syndic_id: string | null;
 };
 
 /** Une affaire qu'une fiche règle pour une autre. */

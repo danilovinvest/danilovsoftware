@@ -19,6 +19,7 @@ import { euros, formatAmount, formatDate, formatDateTime, todayLocal } from "@/s
 import { usePermission } from "@/modules/auth";
 import { ClaudeButton, worksiteContext } from "@/modules/assistant";
 import {
+  EMPTY_COPRO,
   MILESTONE_KEYS,
   ProjectClosureDialog,
   ProjectJalons,
@@ -164,6 +165,9 @@ function Body({
     report_validated_at: w.report_validated_at,
     report_sent_at: w.report_sent_at,
     survey_done_at: w.survey_done_at,
+    // Les validations d'une copropriété ne vivent que sur la fiche : la fiche
+    // latérale d'un chantier ne les montre pas, et n'en envoie aucune.
+    ...EMPTY_COPRO,
     ...optimiste,
   };
 

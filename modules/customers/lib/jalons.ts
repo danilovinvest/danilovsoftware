@@ -1,5 +1,7 @@
 import type { Milestones, PaymentStatus, Project, ProjectMission, Quote } from "./types";
 import { balanceFact, depositFact, paymentCarrier } from "./settlement";
+import { EMPTY_COPRO, readCopro } from "./copro-jalons";
+import type { CoproValidations } from "./syndic-types";
 
 /**
  * Les jalons d'après-signature d'une affaire.
@@ -86,7 +88,7 @@ export type Jalons = {
   report_validated_at: string | null;
   report_sent_at: string | null;
   survey_done_at: string | null;
-};
+} & CoproValidations;
 
 export const EMPTY_JALONS: Jalons = {
   deposit_invoiced_at: null,
@@ -116,6 +118,7 @@ export const EMPTY_JALONS: Jalons = {
   report_validated_at: null,
   report_sent_at: null,
   survey_done_at: null,
+  ...EMPTY_COPRO,
 };
 
 /**
@@ -174,6 +177,7 @@ export function readJalons(
     survey_done_at: m?.survey_done_at ?? null,
     review_requested_at: m?.review_requested_at ?? null,
     review_received_at: m?.review_received_at ?? null,
+    ...readCopro(m),
   };
 }
 
@@ -278,7 +282,10 @@ export type Jalon = {
     exclusion, chaque ligne de l'écran devrait se demander si elle affiche un
     instant ou un tableau.
   */
-  key: Exclude<keyof Jalons, "materials" | "deposit_amount">;
+  key: Exclude<
+    keyof Jalons,
+    "materials" | "deposit_amount" | "insurance_funds_insurer" | "insurance_funds_amount"
+  >;
   label: string;
   hint: string;
   /**
@@ -289,9 +296,10 @@ export type Jalon = {
    * facture d'acompte rattrapée n'est pas partie le jour du clic.
    * `"materials"` — la liste de ce qui a été commandé, et la date suit.
    * `"deposit"` — le montant encaissé, qui se corrige ensuite.
+   * `"insurance"` — l'assureur et le montant attendus, puis le jour reçu.
    * `false` — une case, et c'est tout.
    */
-  picks: false | "date" | "day" | "materials" | "deposit";
+  picks: false | "date" | "day" | "materials" | "deposit" | "insurance";
   /**
    * Une étape qui n'arrive pas toujours — des corrections, un rapport validé
    * par un tiers. Elle ne bloque pas la suite quand elle reste vide.

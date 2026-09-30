@@ -12,6 +12,7 @@ import { EnumBadge } from "./enum-badge";
 import { ReferrerPicker } from "./referrer-picker";
 import { ClassificationEditor } from "./classification-card";
 import { ContactList } from "./contact-list";
+import { ManagementCard } from "./management-card";
 import { PaysForCard } from "./pays-for-card";
 import { formatSiret } from "../lib/classification";
 import type { CustomerDetail } from "../lib/types";
@@ -109,6 +110,14 @@ export function FichePanel({
           />
         </CardContent>
       </Card>
+
+      {/*
+        Une copropriété, ou toute fiche qu'un syndic gère : ses syndics
+        successifs, qui la suit, et son circuit de facturation (migration 109).
+      */}
+      {(customer.kind === "copropriete" || customer.syndic_id !== null) && (
+        <ManagementCard customerId={customer.id} syndicId={customer.syndic_id} />
+      )}
     </div>
   );
 }

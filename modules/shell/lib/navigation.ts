@@ -182,6 +182,8 @@ export const NAV_SECTIONS: NavSection[] = [
           // Les virements reçus avant leur pièce (29/09) : la seule liste de
           // la facturation qui lit la base aujourd'hui.
           { href: "/billing/a-affecter", label: "À affecter" },
+          // Les factures dues et l'échelle de relance de chacune (migration 109).
+          { href: "/billing/recouvrement", label: "Recouvrement" },
           {
             href: "/billing/tresorerie",
             label: "Flux de trésorerie",

@@ -1,7 +1,14 @@
 "use client";
 
 import { memo, useState } from "react";
-import { ArrowRightLeftIcon, BanknoteIcon, FileMinusIcon, FileTextIcon, ReceiptIcon } from "lucide-react";
+import {
+  ArrowRightLeftIcon,
+  BanknoteIcon,
+  FileMinusIcon,
+  FileTextIcon,
+  ReceiptIcon,
+  ScaleIcon,
+} from "lucide-react";
 import { usePermission } from "@/modules/auth";
 import { PreviewLink } from "@/modules/files";
 import { ClaudeButton, quoteContext } from "@/modules/assistant";
@@ -14,9 +21,11 @@ import * as api from "../lib/api";
 import { PAYMENT_STATUS, QUOTE_KIND, QUOTE_STATUS } from "../lib/labels";
 import { revisions } from "../lib/cycle";
 import { settledKinds } from "../lib/settlement";
+import { pieceRefText } from "../lib/piece-ref";
 import { canIssueCreditNote } from "../lib/credit-notes";
 import { useAction } from "../hooks/use-customers";
 import { CreditNoteDialog } from "./credit-note-dialog";
+import { DunningDialog } from "./dunning-dialog";
 import { EnumBadge } from "./enum-badge";
 import { MoveQuoteDialog, type MoveTarget } from "./move-quote-dialog";
 import { PieceRef } from "./piece-ref";
@@ -78,6 +87,8 @@ export const QuoteList = memo(function QuoteList({
   const [settling, setSettling] = useState<{ quote: Quote; kind: "acompte" | "solde" } | null>(null);
   // L'avoir qu'on émet sur une facture (migration 105).
   const [crediting, setCrediting] = useState<Quote | null>(null);
+  // L'échelle de recouvrement d'une facture due (migration 109).
+  const [dunning, setDunning] = useState<Quote | null>(null);
 
   async function supprimer(quote: Quote) {
     const nom = quote.reference || quote.label || "ce devis";
@@ -225,6 +236,13 @@ export const QuoteList = memo(function QuoteList({
                     Émettre un avoir…
                   </DropdownMenuItem>
                 )}
+                {/* Une facture due se relance : la même pièce qu'un avoir peut réduire. */}
+                {canIssueCreditNote(quote) && (
+                  <DropdownMenuItem onSelect={() => setDunning(quote)} data-demo="quote-dunning">
+                    <ScaleIcon />
+                    Recouvrement…
+                  </DropdownMenuItem>
+                )}
                 {canWrite &&
                   quote.id !== carrierId &&
                   settledKinds(quote).map((kind) => (
@@ -334,6 +352,13 @@ export const QuoteList = memo(function QuoteList({
           quotes={quotes}
           onClose={() => setCrediting(null)}
           onSaved={onChanged}
+        />
+      )}
+      {dunning && (
+        <DunningDialog
+          quoteId={dunning.id}
+          title={pieceRefText(dunning.issuer, dunning.reference) || dunning.label}
+          onClose={() => setDunning(null)}
         />
       )}
       {settling && (

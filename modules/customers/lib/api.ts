@@ -1,3 +1,4 @@
+import type { CoproValidations } from "./syndic-types";
 import { apiFetch, type Paginated } from "@/shared/api/client";
 import type {
   ClassificationPayload,
@@ -251,7 +252,7 @@ export type MilestonesPayload = {
   negotiation_at: string | null;
   negotiation_note: string;
   signed_at: string | null;
-};
+} & CoproValidations;
 
 /** Les clés écrivables des jalons, pour trier un geste avant de l'envoyer. */
 export const MILESTONE_KEYS = [
@@ -261,6 +262,9 @@ export const MILESTONE_KEYS = [
   "plans_started_at", "plans_review_at", "corrections_at", "final_ready_at",
   "report_written_at", "report_validated_at", "report_sent_at", "survey_done_at",
   "contact_at", "rdv_at", "quote_sent_at", "negotiation_at", "negotiation_note", "signed_at",
+  // Les validations d'une copropriété (migration 109).
+  "ag_at", "works_voted_at", "syndic_approval_at", "insurance_funds_insurer",
+  "insurance_funds_amount", "insurance_funds_received_at", "pv_syndic_sent_at", "pv_syndic_signed_at",
 ] as const satisfies readonly (keyof MilestonesPayload)[];
 
 /**
