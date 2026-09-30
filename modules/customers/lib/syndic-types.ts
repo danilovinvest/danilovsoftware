@@ -144,6 +144,8 @@ export type SyndicPeriod = {
   ended_at: string | null;
   current: boolean;
   note: string;
+  /** Le numéro de l'immeuble chez ce syndic (migration 110). */
+  reference: string;
 };
 
 export type BuildingHandler = {

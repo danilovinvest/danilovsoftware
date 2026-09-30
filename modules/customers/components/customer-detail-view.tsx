@@ -17,6 +17,7 @@ import { ErrorNotice } from "@/shared/ui/feedback";
 import { formatPhone } from "@/shared/lib/format";
 import { useCustomer } from "../hooks/use-customer";
 import { CustomerForm } from "./customer-form";
+import { BuildingPanel } from "./building-panel";
 import { CustomerGlance } from "./customer-glance";
 import { CustomerStatus, StatusOverrides } from "./customer-status";
 import { CustomerMoreMenu } from "./customer-more-menu";
@@ -35,7 +36,7 @@ import { lastListHref } from "../lib/list-query";
   « Fiche » ; l'ancienne valeur d'adresse reste lue, pour que les liens déjà
   partagés (`?vue=details`) ouvrent toujours le bon onglet.
 */
-const VUES = ["affaires", "portefeuille", "echanges", "taches", "courriels", "documents", "graphe", "fiche"];
+const VUES = ["affaires", "immeuble", "portefeuille", "echanges", "taches", "courriels", "documents", "graphe", "fiche"];
 // Les cabinets : eux seuls ont un portefeuille d'immeubles (migration 109).
 const CABINETS = new Set(["syndic", "gestionnaire"]);
 const ALIAS: Record<string, string> = { details: "fiche" };
@@ -63,6 +64,9 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
     // Des montants et des factures : la route demande aussi `quotes:read`.
     canReadQuotes &&
     (vueDemandee === "portefeuille" || (customer ? CABINETS.has(customer.kind) : false));
+  // L'onglet d'une copropriété — et de toute fiche qu'un lien y envoie : une
+  // SDC rangée en société a aussi des lots et des arrêtés.
+  const immeuble = vueDemandee === "immeuble" || customer?.kind === "copropriete";
   const vue =
     searchParams.get("affaire") ||
     !VUES.includes(vueDemandee) ||
@@ -253,6 +257,11 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
             Affaires
             <TabCount value={customer.projects.length} />
           </TabsTrigger>
+          {immeuble && (
+            <TabsTrigger className={TAB} value="immeuble" data-demo="tab-immeuble">
+              Immeuble
+            </TabsTrigger>
+          )}
           {cabinet && (
             <TabsTrigger className={TAB} value="portefeuille" data-demo="tab-portefeuille">
               Portefeuille
@@ -294,6 +303,13 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
           Monté à l'ouverture seulement, comme le graphe : ses lectures ne
           coûtent rien à qui ne regarde pas.
         */}
+        {/* Ce qui appartient à l'immeuble : interventions, occupants, arrêtés. */}
+        {immeuble && (
+          <TabsContent value="immeuble" className="mt-4">
+            {vue === "immeuble" && <BuildingPanel customer={customer} />}
+          </TabsContent>
+        )}
+
         {cabinet && (
           <TabsContent value="portefeuille" className="mt-4">
             {vue === "portefeuille" && (

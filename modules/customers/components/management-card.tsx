@@ -12,6 +12,7 @@ import { TextField } from "@/shared/ui/form";
 import { Bar } from "@/shared/ui/loading";
 import { formatDate, formatPhone } from "@/shared/lib/format";
 import { useAction } from "../hooks/use-customers";
+import { setLinkReference } from "../lib/building-api";
 import { getManagement, setLinkPeriod } from "../lib/syndic-api";
 import { refreshSyndicViews } from "../lib/syndic-cache";
 import { periodText } from "../lib/syndic-labels";
@@ -81,6 +82,7 @@ export function ManagementCard({
                         <span className="text-muted-foreground text-xs">
                           {period.current ? "en cours" : "terminé"}
                           {periodText(period, formatDate) && ` · ${periodText(period, formatDate)}`}
+                          {period.reference && ` · immeuble n° ${period.reference}`}
                           {period.note && ` · ${period.note}`}
                         </span>
                         {canWrite && <PeriodButton period={period} onSaved={reload} />}
@@ -145,18 +147,16 @@ function PeriodButton({ period, onSaved }: { period: SyndicPeriod; onSaved: () =
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button size="xs" variant="ghost" aria-label={`Dates du mandat de ${period.syndic_name}`}>
-          Dates…
+        <Button size="xs" variant="ghost" aria-label={`Dates et numéro du mandat de ${period.syndic_name}`}>
+          Mandat…
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-64" align="start">
         {open && (
           <PeriodForm
             period={period}
-            onSaved={() => {
-              setOpen(false);
-              onSaved();
-            }}
+            onReload={onSaved}
+            onDone={() => setOpen(false)}
           />
         )}
       </PopoverContent>
@@ -164,14 +164,32 @@ function PeriodButton({ period, onSaved }: { period: SyndicPeriod; onSaved: () =
   );
 }
 
-function PeriodForm({ period, onSaved }: { period: SyndicPeriod; onSaved: () => void }) {
+function PeriodForm({
+  period,
+  onReload,
+  onDone,
+}: {
+  period: SyndicPeriod;
+  /** Relit la carte : les dates ont pu être écrites même si le numéro a échoué. */
+  onReload: () => void;
+  onDone: () => void;
+}) {
   const [from, setFrom] = useState(period.started_at?.slice(0, 10) ?? "");
   const [to, setTo] = useState(period.ended_at?.slice(0, 10) ?? "");
-  const save = useAction(setLinkPeriod, { inline: true });
+  const [reference, setReference] = useState(period.reference);
+  // Deux routes, une saisie : les bornes du mandat, puis le numéro s'il change.
+  const save = useAction(
+    async () => {
+      await setLinkPeriod(period.link_id, { started_at: from || null, ended_at: to || null });
+      if (reference.trim() !== period.reference) await setLinkReference(period.link_id, reference);
+    },
+    { inline: true },
+  );
 
   async function submit() {
-    const ok = await save.run(period.link_id, { started_at: from || null, ended_at: to || null });
-    if (ok !== null) onSaved();
+    const ok = await save.run();
+    onReload();
+    if (ok !== null) onDone();
   }
 
   return (
@@ -185,6 +203,13 @@ function PeriodForm({ period, onSaved }: { period: SyndicPeriod; onSaved: () => 
         value={to}
         hint="Vide : le mandat est en cours."
         onChange={(event) => setTo(event.target.value)}
+      />
+      <TextField
+        label="Numéro de l'immeuble chez ce syndic"
+        placeholder="0155"
+        value={reference}
+        hint="Celui qu'il porte sur ses courriers et ses bons de commande."
+        onChange={(event) => setReference(event.target.value)}
       />
       <div className="flex justify-end">
         <Button size="sm" disabled={save.pending} onClick={() => void submit()}>

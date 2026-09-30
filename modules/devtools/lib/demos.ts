@@ -51,6 +51,52 @@ const FICHE_COPRO = "/customers/de2ea332-b3dd-491a-8ea4-b423612731aa";
 
 export const DEMOS: Demo[] = [
   {
+    id: "espace-copropriete",
+    title: "L'espace copropriété : interventions, lots et occupants, dossier réglementaire",
+    date: "2026-09-30",
+    steps: [
+      {
+        path: FICHE_COPRO,
+        click: '[data-demo="tab-immeuble"]',
+        target: '[data-demo="building-history"]',
+        title: "Les interventions sur l'immeuble",
+        body:
+          "Un onglet de plus sur une copropriété. L'étude et les travaux sur la même ligne de " +
+          "temps, affaires archivées comprises : c'est l'immeuble qu'on suit, pas l'affaire. Un " +
+          "compte lié à une société voit les siennes, et combien l'autre en porte.",
+      },
+      {
+        path: FICHE_COPRO,
+        click: '[data-demo="tab-immeuble"]',
+        target: '[data-demo="building-units"]',
+        title: "Lots et occupants",
+        body:
+          "Qui habite où l'on intervient, le voisin que les travaux touchent, l'exploitant du " +
+          "commerce qui signe le PV sans être le payeur. Chaque lot dit comment joindre son " +
+          "occupant et ce qu'il a à voir avec chaque affaire : concerné, impacté, signataire.",
+      },
+      {
+        path: FICHE_COPRO,
+        click: '[data-demo="tab-immeuble"]',
+        target: '[data-demo="building-documents"]',
+        title: "Le dossier réglementaire",
+        body:
+          "Arrêtés de péril et de mise en sécurité, rapports de bureau d'études, contrôles : ils " +
+          "tiennent à l'immeuble et lui restent. Un arrêté encore en vigueur s'affiche en alerte " +
+          "en tête de l'onglet ; on le date quand il est levé.",
+      },
+      {
+        path: FICHE_COPRO,
+        click: '[data-demo="tab-fiche"]',
+        target: '[data-demo="fiche-gestion"]',
+        title: "Le numéro de l'immeuble chez son syndic",
+        body:
+          "« Mandat… » sur un syndic : ses dates, et le numéro sous lequel il range l'immeuble — " +
+          "celui de ses courriers. Il appartient au mandat : un autre cabinet en donnera un autre.",
+      },
+    ],
+  },
+  {
     id: "espace-syndic",
     title: "L'espace syndic : portefeuille d'immeubles, circuit de facturation, recouvrement",
     date: "2026-09-30",
