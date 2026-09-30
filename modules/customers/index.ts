@@ -76,4 +76,6 @@ export { RecoveryList } from "./components/recovery-list";
 export { PartnerRanking } from "./components/partner-ranking";
 export { listRecovery } from "./lib/syndic-api";
 export { listPurchases, type SupplierPurchases } from "./lib/supplier-orders";
+// Le rapprochement bancaire (migration 114) : Facturation → Rapprochement.
+export { BankReconciliation } from "./components/bank-reconciliation";
 export * from "./lib/receipt-types";

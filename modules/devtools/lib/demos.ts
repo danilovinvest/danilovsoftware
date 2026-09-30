@@ -51,6 +51,50 @@ const FICHE_COPRO = "/customers/de2ea332-b3dd-491a-8ea4-b423612731aa";
 
 export const DEMOS: Demo[] = [
   {
+    id: "rapprochement-bancaire",
+    title: "Rapprochement bancaire, relevé manquant, suivi de fin de chantier",
+    date: "2026-09-30",
+    steps: [
+      {
+        path: "/billing/rapprochement",
+        target: '[data-demo="bank-accounts"]',
+        title: "Où en est chaque compte",
+        body:
+          "Les quatre comptes : jusqu'où leurs relevés sont importés, ce qui reste à rapprocher, " +
+          "et ce qui manque — un relevé jamais importé, un trou entre deux relevés, rien depuis plus " +
+          "de quarante jours. Cliquer une carte ne montre que ses lignes.",
+      },
+      {
+        path: "/billing/rapprochement",
+        target: '[data-demo="bank-import"]',
+        title: "Importer un relevé",
+        body:
+          "L'export CSV de la banque. Un aperçu dit combien d'écritures il porte, combien le compte " +
+          "connaît déjà et la période couverte, avant toute écriture. Importer deux fois le même " +
+          "relevé ne double rien.",
+      },
+      {
+        path: "/billing/rapprochement",
+        target: '[data-demo="bank-lines"]',
+        title: "Chaque crédit, et ce que le CRM en propose",
+        body:
+          "Un virement déjà saisi du même montant se pointe ; une facture citée dans le libellé " +
+          "s'encaisse ; un payeur reconnu se propose. « Sûr » : le montant tombe exactement, et " +
+          "« Valider les sûres » les prend en lot. Le reste se relit ligne à ligne, se met en attente " +
+          "d'affectation ou s'écarte en disant pourquoi.",
+      },
+      {
+        path: "/tasks",
+        target: '[data-demo="task-auto"]',
+        title: "Une semaine après le solde",
+        body:
+          "Quand une affaire est soldée depuis sept jours, le CRM crée la tâche « Relancer le PV de " +
+          "réception signé » (chantiers) et « Demander l'avis Google », pour le responsable de " +
+          "l'affaire. Elles se ferment seules quand le PV est signé ou l'avis demandé.",
+      },
+    ],
+  },
+  {
     id: "espace-partenaires",
     title: "L'espace partenaires : affaires apportées ou prescrites, transformation, classement",
     date: "2026-09-30",

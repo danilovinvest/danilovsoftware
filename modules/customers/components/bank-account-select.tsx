@@ -12,7 +12,11 @@ const NONE: BankAccount[] = [];
  * ouvre un compte en banque.
  */
 export function useBankAccounts(): BankAccount[] {
-  const { data } = useCached("receipts:bank-accounts", () => listBankAccounts(), STABLE);
+  const { data } = useCached(
+    "receipts:bank-accounts",
+    () => listBankAccounts(),
+    STABLE,
+  );
   return data ?? NONE;
 }
 

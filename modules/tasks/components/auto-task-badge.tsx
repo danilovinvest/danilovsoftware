@@ -20,6 +20,8 @@ const RULE_LABEL: Record<string, string> = {
   sondage: "acompte encaissé",
   rapport_sondage: "sondage réalisé",
   satisfaction: "dossier livré",
+  relance_pv_signe: "soldé depuis une semaine",
+  demande_avis: "soldé depuis une semaine",
 };
 
 export function AutoTaskBadge({ rule, className }: { rule: string; className?: string }) {
