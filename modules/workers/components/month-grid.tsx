@@ -1,7 +1,15 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { dayKey, isWeekend, STATUS_LABEL, STATUS_MARK, weekdayLetter } from "../lib/labels";
+import { dayKey, isSunday, isWeekend, STATUS_LABEL, STATUS_MARK, weekdayLetter } from "../lib/labels";
+
+/**
+ * Le dimanche se lit à part : personne ne travaille ce jour-là, et ni la
+ * grille ni le rapport ne le comptent. Des hachures plutôt qu'une teinte de
+ * plus — le gris plein est déjà celui du samedi et de « chômé ».
+ */
+const SUNDAY_CLASS =
+  "bg-[repeating-linear-gradient(135deg,var(--muted)_0_3px,transparent_3px_7px)]";
 import type { WorkerMonth, WorkerStatus } from "../lib/types";
 import { CASE_CLASSES } from "./case-classes";
 
@@ -52,7 +60,9 @@ export function MonthGrid({
                   className={cn(
                     "border-b px-0 py-1 text-center text-[11px] font-medium tabular-nums",
                     isWeekend(grille.month, j) && "bg-muted/60",
+                    isSunday(grille.month, j) && SUNDAY_CLASS,
                   )}
+                  title={isSunday(grille.month, j) ? "Dimanche : non travaillé, jamais compté" : undefined}
                 >
                   <div className="text-muted-foreground">{weekdayLetter(grille.month, j)}</div>
                   <div>{j}</div>
@@ -92,19 +102,23 @@ export function MonthGrid({
                         className={cn(
                           "border-l p-0 text-center",
                           isWeekend(grille.month, j) && "bg-muted/40",
+                          isSunday(grille.month, j) && SUNDAY_CLASS,
                         )}
                       >
                         <button
                           type="button"
                           disabled={!canWrite || enCours === `${w.id}|${day}`}
                           onClick={() => onPoser(w.id, day, SUITE[statut ?? "vide"])}
-                          aria-label={`${w.full_name}, ${j} : ${
-                            statut ? STATUS_LABEL[statut] : "non saisi"
-                          }`}
+                          aria-label={`${w.full_name}, ${j}${
+                            isSunday(grille.month, j) ? " (dimanche, non compté)" : ""
+                          } : ${statut ? STATUS_LABEL[statut] : "non saisi"}`}
                           className={cn(
                             "size-7 border border-transparent text-[11px] font-semibold transition-colors",
                             canWrite && "hover:bg-accent cursor-pointer",
                             statut && CASE_CLASSES[statut],
+                            // Une case posée un dimanche reste lisible, pour
+                            // qu'on puisse la retirer, mais elle ne pèse rien.
+                            statut && isSunday(grille.month, j) && "opacity-45",
                           )}
                         >
                           {statut ? STATUS_MARK[statut] : ""}
@@ -146,6 +160,10 @@ export function MonthGrid({
           </span>
         ))}
         <span>puis vide.</span>
+        <span className="inline-flex items-center gap-1">
+          <span className={cn("inline-block size-4 rounded-sm border", SUNDAY_CLASS)} />
+          Dimanche : non travaillé, compté nulle part.
+        </span>
       </p>
     </div>
   );

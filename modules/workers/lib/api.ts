@@ -1,5 +1,4 @@
-import { apiFetch } from "@/shared/api/client";
-import { apiBase } from "@/shared/lib/env";
+import { apiFetch, apiFetchBlob } from "@/shared/api/client";
 import type {
   PortalState,
   Report,
@@ -96,10 +95,11 @@ export function previewReport(mois: string, signal?: AbortSignal) {
   return apiFetch<Report>(`/v1/workers/report/preview?mois=${mois}`, { signal });
 }
 
-export function setReport(recipient: string, enabled: boolean) {
+/** `sender` absent : la boîte d'envoi en place n'est pas touchée. */
+export function setReport(recipient: string, enabled: boolean, sender?: string) {
   return apiFetch<ReportState>("/v1/workers/report", {
     method: "PUT",
-    body: { recipient, enabled },
+    body: sender === undefined ? { recipient, enabled } : { recipient, enabled, sender },
   });
 }
 
@@ -117,11 +117,13 @@ export function sendReport(mois: string) {
 }
 
 /**
- * L'adresse du fichier, pour le regarder sans l'envoyer.
+ * Le fichier du rapport, pour le regarder sans l'envoyer.
  *
  * Un lien direct ne porte pas le jeton d'accès — il ne vit qu'en mémoire —
- * donc le bouton le télécharge par `fetch` et non par un `href`.
+ * donc le bouton le télécharge par `fetch`. **Un chemin, pas une adresse** :
+ * `apiFetchBlob` y met lui-même la base de l'API. Lui passer une adresse
+ * complète la doublait, et chaque clic rendait « L'API est injoignable ».
  */
-export function reportCsvUrl(mois: string): string {
-  return `${apiBase()}/v1/workers/report/csv?mois=${mois}`;
+export function downloadReportCsv(mois: string): Promise<Blob> {
+  return apiFetchBlob("/v1/workers/report/csv", { query: { mois } });
 }

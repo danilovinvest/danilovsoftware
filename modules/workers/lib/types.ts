@@ -30,6 +30,10 @@ export type ReportState = {
   last_error: string;
   /** Faux si aucune boîte n'est raccordée : rien ne pourrait partir. */
   can_send: boolean;
+  /** La boîte d'où part le rapport. Vide : la première raccordée. */
+  sender: string;
+  /** Les boîtes raccordées, pour la choisir. */
+  senders: string[];
 };
 
 export type ReportLine = {
@@ -47,6 +51,8 @@ export type Report = {
   lignes: ReportLine[];
   /** Combien de samedis le mois comptait, et qui sont restés dehors. */
   samedis_exclus: number;
+  /** Et combien de dimanches : personne ne travaille ce jour-là. */
+  dimanches_exclus: number;
 };
 
 export type Worker = {
