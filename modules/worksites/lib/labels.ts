@@ -1,5 +1,5 @@
 import type { Tone } from "@/modules/customers";
-import type { StudyStatus, WorksiteStatus } from "./types";
+import type { StudyColumn, WorksiteStatus } from "./types";
 
 /**
  * Les quatre colonnes du tableau, dans l'ordre du chantier.
@@ -31,23 +31,27 @@ export const STATUS_RAIL: Record<WorksiteStatus, string> = {
 };
 
 /**
- * Les quatre crans d'une étude.
- *
- * Ils suivent l'argent : rien ne commence avant l'acompte, rien n'est fini
- * avant le solde, et entre les deux le seul jalon qui compte est le rendu des
- * plans. Proposer « à planifier » à une étude n'aurait aucun sens — un bureau
- * d'études ne réserve pas de date, il produit.
+ * Les sept colonnes du tableau des études : l'acompte, les quatre passages de
+ * main de la production, le rendu, le solde. Les crans de production portent un
+ * nom commun aux trois missions ; la carte dit, elle, ce que fait sa mission
+ * (`stepLabel`).
  */
-export const STUDY_STATUS: Record<StudyStatus, { label: string; tone: Tone }> = {
+export const STUDY_COLUMN: Record<StudyColumn, { label: string; tone: Tone }> = {
   acompte_attendu: { label: "Acompte attendu", tone: "warning" },
-  en_cours: { label: "En production", tone: "info" },
-  rendue: { label: "Plans rendus", tone: "success" },
+  calcul: { label: "Calcul ou rédaction", tone: "info" },
+  plans: { label: "Plans ou rapport", tone: "info" },
+  controle: { label: "Contrôle", tone: "info" },
+  a_envoyer: { label: "Prêt à envoyer", tone: "success" },
+  rendue: { label: "Rendue", tone: "success" },
   soldee: { label: "Soldée", tone: "neutral" },
 };
 
-export const STUDY_RAIL: Record<StudyStatus, string> = {
+export const STUDY_COLUMN_RAIL: Record<StudyColumn, string> = {
   acompte_attendu: "border-l-warning",
-  en_cours: "border-l-info",
+  calcul: "border-l-info",
+  plans: "border-l-info",
+  controle: "border-l-info",
+  a_envoyer: "border-l-success",
   rendue: "border-l-success",
   soldee: "border-l-neutral",
 };

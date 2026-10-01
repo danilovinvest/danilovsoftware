@@ -13,6 +13,7 @@
 
 /** Un devis ou une facture de l'affaire, avec son fichier sur OneDrive. */
 import type { Deadline, InterventionScope, ProjectMission } from "@/modules/customers";
+import type { ProductionStep } from "./production";
 
 export type WorksiteQuote = {
   id: string;
@@ -153,6 +154,12 @@ export type WorksiteStatus = "a_planifier" | "planifie" | "en_cours" | "realise"
  */
 export type StudyStatus = "acompte_attendu" | "en_cours" | "rendue" | "soldee";
 
+/**
+ * Une colonne du tableau des études : l'argent aux deux bouts, la production au
+ * milieu, découpée en ses quatre passages de main (`production.ts`).
+ */
+export type StudyColumn = "acompte_attendu" | ProductionStep | "rendue" | "soldee";
+
 /** Les deux métiers partagent l'écran ; ils n'y montrent pas la même chose. */
 export type Metier = "etudes" | "travaux";
 
@@ -162,6 +169,12 @@ export type ReadWorksite = {
   status: WorksiteStatus;
   /** L'avancement vu du bureau d'études. */
   study: StudyStatus;
+  /** La mission, posée ou déduite des devis : elle décide des crans. */
+  mission: ProjectMission;
+  /** Le cran de production d'une étude en cours, nul sinon. */
+  production: ProductionStep | null;
+  /** La colonne de l'étude : son cran de production quand elle est en cours. */
+  column: StudyColumn;
   /** Jours écoulés depuis le démarrage, nul quand aucune date n'est connue. */
   daysRunning: number | null;
   /** Jours depuis la dernière trace d'échange, nul s'il n'y en a jamais eu. */
@@ -188,7 +201,7 @@ export type ReadWorksite = {
 
 export type StatusBucket = {
   /** Le cran, dans l'un ou l'autre vocabulaire selon le métier de l'écran. */
-  status: WorksiteStatus | StudyStatus;
+  status: WorksiteStatus | StudyColumn;
   count: number;
 };
 

@@ -8,7 +8,8 @@ import * as api from "../lib/api";
 import { alerts, buckets, read, studyAlerts } from "../lib/derive";
 import type { Metier, ReadWorksite, WorksiteResult } from "../lib/types";
 
-export type WorksiteView = "tableau" | "planning" | "liste";
+/** « equipe » n'existe que pour les études : un chantier n'a pas de calcul ni de plans à dessiner. */
+export type WorksiteView = "tableau" | "planning" | "liste" | "equipe";
 
 type Resolved = { key: string; data: WorksiteResult | null; error: string | null };
 

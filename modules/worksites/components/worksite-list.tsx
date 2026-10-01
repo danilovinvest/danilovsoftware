@@ -12,7 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { pieceRefText, projectReference } from "@/modules/customers";
 import { euros, formatDate } from "@/shared/lib/format";
-import { STUDY_STATUS, WORKSITE_STATUS } from "../lib/labels";
+import { STUDY_COLUMN, WORKSITE_STATUS } from "../lib/labels";
 import type { Metier, ReadWorksite } from "../lib/types";
 import { StatusPill } from "./status-pill";
 
@@ -65,7 +65,7 @@ export function WorksiteList({
         <TableBody>
           {reads.map((read) => {
             const { worksite: w } = read;
-            const entry = etudes ? STUDY_STATUS[read.study] : WORKSITE_STATUS[read.status];
+            const entry = etudes ? STUDY_COLUMN[read.column] : WORKSITE_STATUS[read.status];
             return (
               <TableRow
                 key={w.id}

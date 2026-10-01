@@ -3,14 +3,14 @@
 import { TONE_SOFT } from "@/shared/ui/panel";
 import { StatusPill } from "./status-pill";
 import { cn } from "@/lib/utils";
-import { STATUS_ORDER, STUDY_ORDER } from "../lib/derive";
-import { STUDY_STATUS, WORKSITE_STATUS } from "../lib/labels";
+import { STATUS_ORDER, STUDY_COLUMNS } from "../lib/derive";
+import { STUDY_COLUMN, WORKSITE_STATUS } from "../lib/labels";
 import { WorksiteCard } from "./worksite-card";
 import type {
   Metier,
   ReadWorksite,
   StatusBucket,
-  StudyStatus,
+  StudyColumn,
   WorksiteStatus,
 } from "../lib/types";
 
@@ -36,19 +36,29 @@ export function WorksiteBoard({
   // Les deux métiers n'ont pas les mêmes colonnes : un bureau d'études ne
   // planifie pas, il produit puis rend.
   const etudes = metier === "etudes";
-  const ordre: Array<WorksiteStatus | StudyStatus> = etudes
-    ? STUDY_ORDER
+  const ordre: Array<WorksiteStatus | StudyColumn> = etudes
+    ? STUDY_COLUMNS
     : STATUS_ORDER;
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    // Sept colonnes pour les études : elles défilent dans leur cadre, jamais
+    // en emportant la page.
+    <div
+      data-demo={etudes ? "etudes-crans" : undefined}
+      className={cn(
+        "gap-3",
+        etudes
+          ? "grid auto-cols-[minmax(13rem,1fr)] grid-flow-col overflow-x-auto pb-1"
+          : "grid sm:grid-cols-2 xl:grid-cols-4",
+      )}
+    >
       {ordre.map((status) => {
         const entry = etudes
-          ? STUDY_STATUS[status as StudyStatus]
+          ? STUDY_COLUMN[status as StudyColumn]
           : WORKSITE_STATUS[status as WorksiteStatus];
         const bucket = board.find((b) => b.status === status);
         const cards = reads.filter((r) =>
-          etudes ? r.study === status : r.status === status,
+          etudes ? r.column === status : r.status === status,
         );
 
         return (

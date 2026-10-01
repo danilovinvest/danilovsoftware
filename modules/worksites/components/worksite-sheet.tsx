@@ -38,7 +38,7 @@ import {
 } from "@/modules/customers";
 import { errorMessage } from "@/shared/api/errors";
 import { ErrorNotice } from "@/shared/ui/feedback";
-import { STUDY_STATUS, WORKSITE_STATUS } from "../lib/labels";
+import { STUDY_COLUMN, WORKSITE_STATUS } from "../lib/labels";
 import { isSilent } from "../lib/derive";
 import type { Metier, ReadWorksite, WorksiteQuote } from "../lib/types";
 
@@ -97,7 +97,7 @@ function Body({
 }) {
   const { worksite: w } = read;
   const status =
-    metier === "etudes" ? STUDY_STATUS[read.study] : WORKSITE_STATUS[read.status];
+    metier === "etudes" ? STUDY_COLUMN[read.column] : WORKSITE_STATUS[read.status];
   const canWrite = usePermission("customers:write");
   /*
     Poser le démarrage à l'agenda.

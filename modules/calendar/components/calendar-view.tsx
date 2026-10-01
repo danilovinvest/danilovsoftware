@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ChevronLeftIcon, ChevronRightIcon, KeyboardIcon, PlusIcon, UserIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -43,7 +43,16 @@ import { WeekGrid } from "./week-grid";
  * leurs séries déjà dépliées en occurrences — le CRM n'a aucune RRULE à
  * interpréter pour peindre une grille.
  */
-export function CalendarView() {
+export function CalendarView({
+  banner,
+}: {
+  /**
+   * Ce qui s'affiche au-dessus de la grille pour la période peinte — les délais
+   * des dossiers. Passé par la page : l'agenda n'importe pas les chantiers, qui
+   * importent les fiches, qui importent l'agenda.
+   */
+  banner?: (range: { from: Date; to: Date }) => ReactNode;
+} = {}) {
   const { account } = useAuth();
   const calendar = useCalendar(account?.id ?? null);
   const canWrite = usePermission("calendar:write");
@@ -336,6 +345,7 @@ Rendez-vous, visites de chantier et absences de l&apos;équipe.
           </div>
 
           <div className="flex min-h-0 flex-1 flex-col">
+            {banner && calendar.ready && banner(calendar.range)}
             {error && (
               <div className="px-3 pt-3">
                 <ErrorNotice message={error} />

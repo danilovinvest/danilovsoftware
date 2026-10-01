@@ -19,13 +19,14 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ClaudeButton, worksitesContext } from "@/modules/assistant";
 import { useWorksites } from "../hooks/use-worksites";
-import { alertTotal, STATUS_ORDER, STUDY_ORDER } from "../lib/derive";
-import { STUDY_STATUS, WORKSITE_STATUS } from "../lib/labels";
-import type { Alert, Metier, StudyStatus, WorksiteStatus } from "../lib/types";
+import { alertTotal, STATUS_ORDER, STUDY_COLUMNS } from "../lib/derive";
+import { STUDY_COLUMN, WORKSITE_STATUS } from "../lib/labels";
+import type { Alert, Metier, StudyColumn, WorksiteStatus } from "../lib/types";
 import { WorksiteBoard } from "./worksite-board";
 import { WorksiteList } from "./worksite-list";
 import { WorksitePlanning } from "./worksite-planning";
 import { WorksiteSheet } from "./worksite-sheet";
+import { WorksiteTeam } from "./worksite-team";
 import { StatusPill } from "./status-pill";
 
 const VIEWS = [
@@ -33,6 +34,9 @@ const VIEWS = [
   { value: "planning", label: "Planning" },
   { value: "liste", label: "Liste" },
 ] as const;
+
+/** Les études ont une vue de plus : qui attend quoi au bureau d'études. */
+const STUDY_VIEWS = [...VIEWS, { value: "equipe", label: "Équipe" }] as const;
 
 /**
  * L'écran chantiers : les affaires signées, et ce qu'il en reste à faire.
@@ -185,11 +189,11 @@ export function WorksitesView({ metier = "travaux" }: { metier?: Metier }) {
                 sur {chiffres} devis chiffrés
               </span>
             )}
-            {(etudes ? STUDY_ORDER : STATUS_ORDER).map((status) => {
+            {(etudes ? STUDY_COLUMNS : STATUS_ORDER).map((status) => {
               const count = board.board.find((b) => b.status === status)?.count ?? 0;
               if (count === 0) return null;
               const entry = etudes
-                ? STUDY_STATUS[status as StudyStatus]
+                ? STUDY_COLUMN[status as StudyColumn]
                 : WORKSITE_STATUS[status as WorksiteStatus];
               return (
                 <StatusPill
@@ -202,11 +206,12 @@ export function WorksitesView({ metier = "travaux" }: { metier?: Metier }) {
           </p>
 
           <div className="bg-muted flex rounded-md p-0.5">
-            {VIEWS.map((entry) => (
+            {(etudes ? STUDY_VIEWS : VIEWS).map((entry) => (
               <button
                 key={entry.value}
                 type="button"
                 onClick={() => board.setView(entry.value)}
+                data-demo={`vue-${entry.value}`}
                 aria-pressed={board.view === entry.value}
                 className={cn(
                   "rounded-sm px-2.5 py-1 text-xs transition-colors",
@@ -242,6 +247,8 @@ export function WorksitesView({ metier = "travaux" }: { metier?: Metier }) {
               metier={metier}
               onSelect={board.select}
             />
+          ) : board.view === "equipe" && etudes ? (
+            <WorksiteTeam reads={reads} onSelect={board.select} />
           ) : board.view === "planning" ? (
             <WorksitePlanning reads={reads} now={board.now} onSelect={board.select} />
           ) : (
