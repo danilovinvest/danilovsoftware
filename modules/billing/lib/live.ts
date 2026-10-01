@@ -38,6 +38,8 @@ export interface ApiInvoice {
 export interface ApiInvoices {
   today: string;
   items: ApiInvoice[];
+  /** Toutes les factures du périmètre, au-delà de la borne de la réponse. */
+  total: number;
 }
 
 /** Toutes les factures vivantes du périmètre du compte. */
@@ -84,8 +86,8 @@ export function toInvoice(api: ApiInvoice, today: string): Invoice {
   const kind = kindOf(api.invoice_kind);
   const credit = kind === "avoir";
   const sign = credit ? -1 : 1;
-  const ht = num(api.amount_ht ?? api.amount_ttc);
   const ttc = num(api.amount_ttc);
+  const ht = htOf(api, ttc);
   const remaining = credit ? 0 : round(num(api.remaining));
   const net = num(api.net);
   const paid = credit ? 0 : round(Math.max(net - remaining, 0));
@@ -104,18 +106,31 @@ export function toInvoice(api: ApiInvoice, today: string): Invoice {
     kind,
     issued_at: api.issued_at,
     due_at: api.due_at,
-    amount_ht: sign * ht,
+    amount_ht: sign * (ht ?? 0),
     vat_rate: num(api.vat_rate),
-    amount_vat: round(sign * (ttc - ht)),
+    amount_vat: ht === null ? 0 : round(sign * (ttc - ht)),
     amount_ttc: sign * ttc,
     paid_amount: paid,
     remaining,
     status: api.amount_ttc === null && !credit ? "emise" : statusOf(credit, remaining, paid, late),
     days_late: late ? lateBy : 0,
     unpriced: api.amount_ttc === null,
+    ht_unknown: api.amount_ttc !== null && ht === null,
     marked_received: api.marked_received,
     payments: api.payments,
   };
+}
+
+/**
+ * Le HT d'une pièce : saisi, à défaut tiré du TTC par son taux. Sans taux, il
+ * reste inconnu — on n'invente pas une TVA, et compter le TTC pour du HT
+ * gonflerait « Facturé HT » de vingt pour cent.
+ */
+function htOf(api: ApiInvoice, ttc: number): number | null {
+  if (api.amount_ht !== null) return num(api.amount_ht);
+  const rate = num(api.vat_rate);
+  if (api.amount_ttc === null || rate <= 0) return null;
+  return round(ttc / (1 + rate / 100));
 }
 
 /**

@@ -39,7 +39,7 @@ export function BillingView() {
   // Comme RequireAuth, cette garde protège l'affichage, pas les données.
   const canSeeGroup = usePermission("users:read");
 
-  const { data, error, loading, reload, period, setPeriod, entityId, setEntityId } = useBilling(
+  const { data, error, loading, reload, period, setPeriod, entityId, setEntityId, truncated } = useBilling(
     canSeeGroup ? null : DEFAULT_ENTITY,
   );
 
@@ -94,6 +94,12 @@ export function BillingView() {
       ) : (
         <>
           <UnrecordedNotice amount={data.unrecorded.amount} count={data.unrecorded.count} />
+          {truncated > 0 && (
+            <p className="text-warning text-xs">
+              {plural(truncated, "facture ancienne", "factures anciennes")} au-delà des 2 000 lues : les totaux ne les
+              comptent pas.
+            </p>
+          )}
           <InvoiceTable invoices={data.invoices} showEntity={entityId === null} />
         </>
       )}

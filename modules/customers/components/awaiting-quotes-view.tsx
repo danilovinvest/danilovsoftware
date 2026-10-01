@@ -67,6 +67,11 @@ export function AwaitingQuotesView() {
         )}
       </header>
       {error ? <ErrorNotice message="Devis illisibles." onRetry={reload} /> : null}
+      {data && data.total > all.length ? (
+        <p className="text-warning text-xs">
+          {data.total} devis en attente : seuls les {all.length} plus anciens sont lus ici.
+        </p>
+      ) : null}
       {error && !data ? null : isLoading && !data ? (
         <TableSkeleton rows={5} columns={5} hue="indigo" />
       ) : groups.length === 0 ? (

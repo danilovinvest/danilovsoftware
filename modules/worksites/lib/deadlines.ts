@@ -52,6 +52,10 @@ function delivered(w: Worksite, metier: Metier): boolean {
  * Les délais compris entre `from` (inclus) et `to` (exclu), du plus proche au
  * plus lointain, les retards d'abord. `today` est AAAA-MM-JJ, dans le fuseau du
  * poste : un délai est un jour, pas un instant.
+ *
+ * Quand la période affichée contient aujourd'hui, un délai **dépassé avant
+ * elle** y figure aussi : un retard ne disparaît pas parce qu'on a changé de
+ * semaine, et c'est le premier à rattraper.
  */
 export function deadlinesBetween(
   worksites: Worksite[],
@@ -70,7 +74,9 @@ export function deadlinesBetween(
     ];
     for (const [raw, kind] of days) {
       const day = raw?.slice(0, 10) ?? null;
-      if (day === null || day < from || day >= to) continue;
+      if (day === null || day >= to) continue;
+      const carriedLate = day < from && day < today && from <= today && today < to;
+      if (day < from && !carriedLate) continue;
       out.push({
         worksiteId: w.id,
         customerId: w.customer_id,

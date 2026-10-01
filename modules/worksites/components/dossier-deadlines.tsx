@@ -26,12 +26,27 @@ function localDay(d: Date): string {
  */
 export function DossierDeadlines({ from, to }: { from: Date; to: Date }) {
   const issuer = scopeParam(useScope()) ?? "";
-  const { data } = useCached(`worksites:deadlines:${issuer}`, () => listWorksites("", issuer), LIVE);
+  const { data, error, mutate } = useCached(
+    `worksites:deadlines:${issuer}`,
+    () => listWorksites("", issuer),
+    LIVE,
+  );
   const [open, setOpen] = useState(true);
   const items = useMemo(
     () => deadlinesBetween(data?.items ?? [], localDay(from), localDay(to), todayLocal()),
     [data, from, to],
   );
+  // Une lecture ratée se dit : un bandeau absent voudrait dire « aucun délai ».
+  if (error && !data) {
+    return (
+      <div className="text-warning border-b px-3 py-2 text-xs" data-demo="agenda-delais">
+        Délais des dossiers illisibles pour l&apos;instant.{" "}
+        <button type="button" className="underline" onClick={() => void mutate()}>
+          Réessayer
+        </button>
+      </div>
+    );
+  }
   if (items.length === 0) return null;
   const late = items.filter((d) => d.late).length;
 

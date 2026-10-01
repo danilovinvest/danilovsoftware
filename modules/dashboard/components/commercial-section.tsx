@@ -26,7 +26,7 @@ export function CommercialSection() {
         Commercial
       </SectionTitle>
       {sales.error && <ErrorNotice message={sales.error} onRetry={sales.reload} />}
-      {sales.loading ? (
+      {sales.loading || awaiting.loading ? (
         <CardsSkeleton count={4} columns="sm:grid-cols-2 xl:grid-cols-4" hue="violet" />
       ) : sales.data ? (
         <>

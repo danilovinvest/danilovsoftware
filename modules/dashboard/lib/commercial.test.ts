@@ -24,6 +24,7 @@ test("the short window is the last three months, compared with the three before"
 test("pending leaves archived files out, and says when it was not read", () => {
   const awaiting: AwaitingQuotes = {
     today: "2026-12-01",
+    total: 3,
     items: [
       { amount_ttc: "100.00", amount_ht: null, archived: false },
       { amount_ttc: null, amount_ht: "50.00", archived: false },
@@ -35,5 +36,7 @@ test("pending leaves archived files out, and says when it was not read", () => {
     })),
   };
   expect(commercialMetrics({ months, undated: 0 }, awaiting).find((m) => m.key === "pending")?.value).toBe(150);
-  expect(commercialMetrics({ months, undated: 0 }, null).find((m) => m.key === "pending")?.note).toBe("Non lu");
+  const unread = commercialMetrics({ months, undated: 0 }, null).find((m) => m.key === "pending");
+  expect(unread?.note).toBe("Non lu");
+  expect(unread?.unread).toBe(true);
 });

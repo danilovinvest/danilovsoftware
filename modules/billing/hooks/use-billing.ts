@@ -31,6 +31,8 @@ export function useBilling(initialEntity: string | null = null) {
     data,
     error,
     loading: isLoading && !raw,
+    /** Factures que la borne de la réponse a laissées dehors : les sommes les ignorent. */
+    truncated: raw ? Math.max(raw.total - raw.items.length, 0) : 0,
     reload: () => void mutate(),
     period,
     setPeriod,

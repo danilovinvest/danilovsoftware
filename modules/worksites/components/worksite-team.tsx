@@ -27,7 +27,15 @@ export function WorksiteTeam({
 }) {
   const colleagues = useColleagues();
   const team = useMemo(
-    () => teamLoad(reads, new Map(colleagues.map((c) => [c.id, c.name]))),
+    // L'annuaire vide est un annuaire pas encore lu : l'appelant y figure
+    // toujours. Dire « Compte inconnu » pendant ce temps faisait croire à des
+    // comptes désactivés.
+    () =>
+      teamLoad(
+        reads,
+        new Map(colleagues.map((c) => [c.id, c.name])),
+        colleagues.length === 0 ? "…" : undefined,
+      ),
     [reads, colleagues],
   );
 

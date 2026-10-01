@@ -53,6 +53,7 @@ export function commercialMetrics(sales: SalesSummary, awaiting: AwaitingQuotes 
       value: pendingAmount,
       previous: null,
       note: pending === null ? "Non lu" : `${pending.length} devis`,
+      unread: pending === null,
       format: "amount",
       trend: months.map((m) => m.pending),
       trend_label: "Devis encore en attente, par mois d'émission",

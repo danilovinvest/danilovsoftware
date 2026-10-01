@@ -92,8 +92,9 @@ export function buildBillingSnapshot(
   const within = (list: Invoice[], from: number, to: number) =>
     list.filter((invoice) => {
       if (!counts(invoice)) return false;
+      // [from, to) : une facture du jour a zéro jour, et compte.
       const age = ageOf(invoice, today);
-      return age > from && age <= to;
+      return age >= from && age < to;
     });
   const billedIn = (list: Invoice[], from: number, to: number) =>
     within(list, from, to).reduce((total, invoice) => total + invoice.amount_ht, 0);
@@ -116,11 +117,15 @@ export function buildBillingSnapshot(
     return points;
   };
 
+  const htUnknown = within(scoped, 0, window).filter((invoice) => invoice.ht_unknown).length;
+
   const metrics: Metric[] = [
     {
       key: "billed",
       label: "Facturé HT",
-      hint: `Factures émises sur ${window} jours, avoirs déduits — une pièce sans date ni montant n'y entre pas`,
+      hint:
+        `Factures émises sur ${window} jours, avoirs déduits — une pièce sans date ni montant n'y entre pas` +
+        (htUnknown > 0 ? ` · ${htUnknown} sans HT ni taux, hors total` : ""),
       value: round(billedIn(scoped, 0, window)),
       previous: round(billedIn(scoped, window, window * 2)),
       format: "amount",
@@ -203,7 +208,7 @@ export function buildBillingSnapshot(
 
   const revenue: EntityRevenue[] = ENTITIES.map((entity) => {
     const mine = all.filter((invoice) => invoice.entity_id === entity.id && counts(invoice));
-    const inPeriod = mine.filter((invoice) => ageOf(invoice, today) <= window);
+    const inPeriod = within(mine, 0, window);
     return {
       entity,
       billed: round(inPeriod.reduce((t, i) => t + i.amount_ht, 0)),
@@ -271,6 +276,8 @@ export function buildBillingSnapshot(
     vat,
     flows: [],
     unrecorded: unrecordedOf(scoped),
+    unassigned: unassignedOf(within(all, 0, window), all),
+    ht_unknown: htUnknown,
     total_billed: totalBilled,
     consolidated: round(totalBilled - totalIntra),
   };
@@ -285,4 +292,21 @@ export function buildBillingSnapshot(
 function unrecordedOf(list: Invoice[]): { amount: number; count: number } {
   const hit = list.filter((i) => i.marked_received && i.payments === 0 && outstandingOf(i) > 0.01);
   return { amount: round(hit.reduce((t, i) => t + outstandingOf(i), 0)), count: hit.length };
+}
+
+/**
+ * Les factures sans société émettrice : la répartition ne les range nulle part,
+ * et le panneau le dit plutôt que de les perdre. Le compte porte sur toutes,
+ * le montant sur la période.
+ */
+function unassignedOf(
+  inPeriod: Invoice[],
+  all: Invoice[],
+): { count: number; billed: number } {
+  const known = new Set(ENTITIES.map((entity) => entity.id));
+  const orphan = (invoice: Invoice) => !known.has(invoice.entity_id);
+  return {
+    count: all.filter(orphan).length,
+    billed: round(inPeriod.filter(orphan).reduce((t, i) => t + i.amount_ht, 0)),
+  };
 }

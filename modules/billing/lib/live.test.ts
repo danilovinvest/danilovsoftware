@@ -89,3 +89,44 @@ describe("buildBillingSnapshot", () => {
     expect(snapshot.flows).toEqual([]);
   });
 });
+
+describe("the HT of an invoice", () => {
+  test("is drawn from the TTC by its rate when not entered", () => {
+    const invoice = toInvoice(api({ amount_ht: null, amount_ttc: "1100.00", vat_rate: "10" }), today);
+    expect(invoice.amount_ht).toBe(1000);
+    expect(invoice.amount_vat).toBe(100);
+    expect(invoice.ht_unknown).toBe(false);
+  });
+
+  test("stays unknown without a rate, and the TTC is not taken for it", () => {
+    const invoice = toInvoice(api({ amount_ht: null, vat_rate: null }), today);
+    expect(invoice.ht_unknown).toBe(true);
+    expect(invoice.amount_ht).toBe(0);
+    expect(invoice.amount_vat).toBe(0);
+  });
+});
+
+describe("the billing windows", () => {
+  const invoices = [
+    api({ id: "today", issued_at: today }),
+    api({ id: "edge", issued_at: "2026-07-03" }), // 90 jours : période précédente
+    api({ id: "nottc", amount_ht: null, vat_rate: null, issued_at: "2026-09-15" }),
+    api({ id: "orphan", issuer: "", issued_at: "2026-09-20" }),
+  ].map((item) => toInvoice(item, today));
+  const snapshot = buildBillingSnapshot(invoices, "90j", null, today);
+  const billed = snapshot.metrics.find((m) => m.key === "billed");
+
+  test("an invoice issued today counts, the 90th day falls in the previous window", () => {
+    expect(billed?.value).toBe(2000);
+    expect(billed?.previous).toBe(1000);
+  });
+
+  test("an invoice without HT nor rate is said, not summed", () => {
+    expect(snapshot.ht_unknown).toBe(1);
+    expect(billed?.hint).toContain("1 sans HT ni taux");
+  });
+
+  test("an invoice without issuing company is counted apart", () => {
+    expect(snapshot.unassigned).toEqual({ count: 1, billed: 1000 });
+  });
+});

@@ -58,6 +58,8 @@ export type Invoice = {
   days_late: number;
   /** La pièce ne porte pas de montant TTC : elle ne compte nulle part. */
   unpriced: boolean;
+  /** Le TTC est connu, le HT ni saisi ni calculable faute de taux : hors HT. */
+  ht_unknown: boolean;
   /**
    * Un acompte ou un solde marqué reçu sur la pièce. `reste_du` ne déduit pas
    * l'acompte : un reste dû sur une telle pièce est plus souvent un règlement
@@ -129,6 +131,10 @@ export type Metric = {
 export type BillingSnapshot = {
   /** Reste dû porté par des pièces marquées reçues, sans virement saisi. */
   unrecorded: { amount: number; count: number };
+  /** Factures sans société émettrice : hors de la répartition par société. */
+  unassigned: { count: number; billed: number };
+  /** Factures de la période dont le HT est inconnu, hors « Facturé HT ». */
+  ht_unknown: number;
   generated_at: string;
   period: Period;
   /** Entité sélectionnée, ou null pour la vue consolidée du groupe. */

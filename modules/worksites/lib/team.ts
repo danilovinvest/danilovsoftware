@@ -62,6 +62,8 @@ function personOf(read: ReadWorksite, role: ProductionRole): string | null {
 export function teamLoad(
   reads: ReadWorksite[],
   names: ReadonlyMap<string, string>,
+  /** Le nom d'une personne absente de l'annuaire — « … » tant qu'il se charge. */
+  unknown = "Compte inconnu",
 ): TeamMember[] {
   const byPerson = new Map<string, TeamMember>();
   const orphans: TeamMember = { id: null, name: "Sans intervenant", items: [], late: 0 };
@@ -79,7 +81,7 @@ export function teamLoad(
     }
     const member = byPerson.get(person) ?? {
       id: person,
-      name: names.get(person) ?? "Compte inconnu",
+      name: names.get(person) ?? unknown,
       items: [],
       late: 0,
     };

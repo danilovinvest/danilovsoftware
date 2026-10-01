@@ -26,6 +26,8 @@ export interface AwaitingQuotes {
   /** Le jour du serveur, AAAA-MM-JJ : c'est lui qui compte l'attente. */
   today: string;
   items: AwaitingQuote[];
+  /** Tous les devis en attente, au-delà des 500 que la réponse porte. */
+  total: number;
 }
 
 /** Les devis sans réponse, dans le périmètre du compte. */

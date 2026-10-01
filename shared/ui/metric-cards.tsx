@@ -23,6 +23,8 @@ export type Metric = {
   previous: number | null;
   /** Ce qu'on affiche à la place de l'écart quand `previous` est nul. */
   note?: string;
+  /** La mesure n'est pas lue : « — », jamais un zéro qui passerait pour un fait. */
+  unread?: boolean;
   format: "amount" | "count" | "percent";
   /** Douze points mensuels, du plus ancien au plus récent. */
   trend: number[];
@@ -72,6 +74,7 @@ function Delta({
 }
 
 function display(metric: Metric): string {
+  if (metric.unread) return "—";
   if (metric.format === "amount") return euros(metric.value);
   if (metric.format === "percent") return `${metric.value} %`;
   return String(metric.value);

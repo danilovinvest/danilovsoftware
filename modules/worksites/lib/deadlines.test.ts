@@ -26,6 +26,19 @@ describe("deadlinesBetween", () => {
     expect(deadlinesBetween([w], from, to, today)).toEqual([]);
   });
 
+  test("a deadline missed before the period follows into the current one", () => {
+    const w = worksiteFixture({ promised_at: "2026-09-12" });
+    expect(deadlinesBetween([w], from, to, today).map((d) => [d.day, d.late])).toEqual([
+      ["2026-09-12", true],
+    ]);
+  });
+
+  test("a past period does not repeat yesterday's misses, nor a future one", () => {
+    const w = worksiteFixture({ promised_at: "2026-09-12" });
+    expect(deadlinesBetween([w], "2026-11-01", "2026-12-01", today)).toEqual([]);
+    expect(deadlinesBetween([w], "2026-09-15", "2026-09-30", today)).toEqual([]);
+  });
+
   test("a delivered study or a finished worksite no longer speaks", () => {
     const study = worksiteFixture({ issuer: "ompt-structure", promised_at: "2026-10-20", plans_sent_at: "2026-10-01" });
     const done = worksiteFixture({ issuer: "ompt-groupe", promised_at: "2026-10-20", stage: "realise" });

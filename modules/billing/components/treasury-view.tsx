@@ -84,6 +84,7 @@ export function TreasuryView() {
           rows={data.revenue}
           totalBilled={data.total_billed}
           consolidated={data.consolidated}
+          unassigned={data.unassigned}
         />
         <FlowsPanel flows={data.flows} />
       </div>
