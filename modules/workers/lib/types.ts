@@ -53,6 +53,9 @@ export type Report = {
   samedis_exclus: number;
   /** Et combien de dimanches : personne ne travaille ce jour-là. */
   dimanches_exclus: number;
+  /** L'objet et le texte du courriel, tels qu'ils partiront (aperçu seulement). */
+  objet?: string;
+  corps?: string;
 };
 
 export type Worker = {

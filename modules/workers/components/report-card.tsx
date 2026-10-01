@@ -94,8 +94,8 @@ export function ReportCard({ month }: { month: string }) {
     const ok = await askConfirm({
       title: `Envoyer le rapport de ${monthLabel(month)} ?`,
       description:
-        `Un courriel part maintenant à ${etat?.recipient}, avec la liste des absences ` +
-        "en pièce jointe. Les samedis et les dimanches n'y figurent pas. Cet essai ne remplace pas " +
+        `Le courriel « Variables de paie » part maintenant à ${etat?.recipient}, ` +
+        "avec le détail en pièce jointe. Les samedis et les dimanches n'y figurent pas. Cet essai ne remplace pas " +
         "l'envoi automatique du dernier jour du mois.",
       confirmLabel: "Envoyer",
     });
@@ -119,8 +119,9 @@ export function ReportCard({ month }: { month: string }) {
         <MailIcon className="size-4" /> Rapport au comptable
       </h2>
       <p className="text-muted-foreground mb-3 text-xs">
-        Le dernier jour de chaque mois, la liste des absences part au comptable, en
-        pièce jointe.{" "}
+        Le dernier jour de chaque mois, les variables de paie partent au comptable : les
+        absences et les demi-journées de chacun, avec leurs dates, et le détail en pièce
+        jointe.{" "}
         <span className="font-medium">Les samedis et les dimanches n&apos;y figurent pas</span> : ni
         présence, ni absence, ni congé. Les samedis restent visibles dans la grille ci-dessus, où
         se décide s&apos;ils ont été travaillés.
@@ -220,6 +221,16 @@ export function ReportCard({ month }: { month: string }) {
           </Button>
         )}
       </div>
+
+      {apercu && rapport?.corps && (
+        <div className="bg-muted/30 mt-3 rounded-lg border p-3 text-xs" data-demo="ouvriers-courriel">
+          <p className="mb-2">
+            <span className="text-muted-foreground">Objet : </span>
+            <span className="font-medium">{rapport.objet}</span>
+          </p>
+          <pre className="font-sans break-words whitespace-pre-wrap">{rapport.corps}</pre>
+        </div>
+      )}
 
       {apercu && rapport && (
         <div className="mt-3 overflow-x-auto rounded-lg border">
