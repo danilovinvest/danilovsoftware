@@ -29,6 +29,7 @@ export const CUSTOMER_CATEGORIES: CustomerCategory[] = [
   { key: "coproprietes", label: "Copropriétés", filters: { kind: ["copropriete"] } },
   { key: "syndics", label: "Syndics", filters: { kind: ["syndic"] } },
   { key: "gestionnaires", label: "Gestionnaires", filters: { kind: ["gestionnaire"] } },
+  { key: "agences", label: "Agences immobilières", filters: { kind: ["agence_immobiliere"] } },
   {
     key: "prescripteurs",
     label: "Prescripteurs",

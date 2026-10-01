@@ -59,7 +59,7 @@ export const CATEGORY_META: Record<GraphCategory, { label: string; hue: Hue; hin
   prescripteur: {
     label: "Prescripteurs",
     hue: "cyan",
-    hint: "Architectes, ingénieurs, maîtres d'œuvre, partenaires techniques.",
+    hint: "Architectes, ingénieurs, maîtres d'œuvre, agences immobilières, partenaires techniques.",
   },
   fournisseur: { label: "Fournisseurs", hue: "amber", hint: "Ils nous livrent." },
   sous_traitant: { label: "Sous-traitants", hue: "pink", hint: "Ils exécutent pour nous." },

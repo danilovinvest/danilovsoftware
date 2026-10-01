@@ -11,8 +11,8 @@ import type { Customer, CustomerKind, CustomerRelation } from "./types";
 /**
  * Ce que le type laisse supposer, tant que personne n'a tranché.
  *
- * Un syndic, son gestionnaire, un architecte, un notaire ou un maître d'œuvre
- * nous amènent des clients. Un ingénieur travaille avec nous. Un organisme —
+ * Un syndic, son gestionnaire, une agence immobilière, un architecte, un notaire
+ * ou un maître d'œuvre nous amènent des clients. Un ingénieur travaille avec nous. Un organisme —
  * contrôleur, mairie, huissier — intervient sans nous payer ni nous amener
  * personne (migration 107). Le reste est, jusqu'à preuve du contraire, un
  * client — c'est ce qu'était toute fiche avant la migration 82.
@@ -28,6 +28,7 @@ const RELATION_BY_KIND: Record<CustomerKind, CustomerRelation> = {
   autre: "client_final",
   syndic: "prescripteur",
   gestionnaire: "prescripteur",
+  agence_immobiliere: "prescripteur",
   architecte: "prescripteur",
   maitre_oeuvre: "prescripteur",
   notaire: "prescripteur",

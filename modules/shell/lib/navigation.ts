@@ -135,6 +135,7 @@ export const NAV_SECTIONS: NavSection[] = [
           { href: "/customers?type=copropriete", label: "Copropriétés" },
           { href: "/customers?type=syndic", label: "Syndics" },
           { href: "/customers?type=gestionnaire", label: "Gestionnaires" },
+          { href: "/customers?type=agence_immobiliere", label: "Agences immobilières" },
           {
             href: "/customers?relation=prescripteur,partenaire_technique",
             label: "Prescripteurs",

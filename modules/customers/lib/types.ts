@@ -19,6 +19,7 @@ export type CustomerKind =
   | "copropriete"
   | "syndic"
   | "gestionnaire"
+  | "agence_immobiliere"
   | "architecte"
   | "ingenieur"
   | "maitre_oeuvre"

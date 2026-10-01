@@ -81,6 +81,7 @@ export const CUSTOMER_KIND: Entry<CustomerKind> = {
   copropriete: { label: "Copropriété", tone: "neutral" },
   syndic: { label: "Syndic", tone: "neutral" },
   gestionnaire: { label: "Gestionnaire d'immeubles", tone: "neutral" },
+  agence_immobiliere: { label: "Agence immobilière", tone: "neutral" },
   architecte: { label: "Architecte", tone: "neutral" },
   ingenieur: { label: "Ingénieur / BET", tone: "neutral" },
   maitre_oeuvre: { label: "Maître d'œuvre", tone: "neutral" },

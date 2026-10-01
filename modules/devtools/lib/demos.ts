@@ -51,6 +51,22 @@ const FICHE_COPRO = "/customers/de2ea332-b3dd-491a-8ea4-b423612731aa";
 
 export const DEMOS: Demo[] = [
   {
+    id: "agence-immobiliere",
+    title: "Un type de fiche de plus : l'agence immobilière",
+    date: "2026-10-01",
+    steps: [
+      {
+        path: "/customers?type=agence_immobiliere",
+        target: 'a[href="/customers?type=agence_immobiliere"]',
+        title: "Les agences immobilières ont leur liste",
+        body:
+          "« Agence immobilière » se choisit désormais comme type, à la création comme en " +
+          "correction d'une fiche. Elle nous amène des clients : elle est prescripteur par défaut, " +
+          "sort des Clients et Prospects, et se retrouve ici, sous Fiches client.",
+      },
+    ],
+  },
+  {
     id: "structure-production-relances",
     title: "Études par cran de production, charge de l'équipe, délais à l'agenda, devis sans réponse",
     date: "2026-10-01",
