@@ -51,6 +51,58 @@ const FICHE_COPRO = "/customers/de2ea332-b3dd-491a-8ea4-b423612731aa";
 
 export const DEMOS: Demo[] = [
   {
+    id: "structure-production-relances",
+    title: "Études par cran de production, charge de l'équipe, délais à l'agenda, devis sans réponse",
+    date: "2026-10-01",
+    steps: [
+      {
+        path: "/etudes",
+        click: '[data-demo="vue-tableau"]',
+        target: '[data-demo="etudes-crans"]',
+        title: "Une colonne par cran de production",
+        body:
+          "« En production » était un seul tas. Les études se rangent désormais au cran où elles " +
+          "attendent — calcul ou rédaction, plans, contrôle, prêt à envoyer —, entre l'acompte " +
+          "attendu et la remise. Le cran se lit des jalons de l'après-signature, selon la mission.",
+      },
+      {
+        path: "/etudes",
+        click: '[data-demo="vue-equipe"]',
+        target: '[data-demo="etudes-equipe"]',
+        title: "Qui attend quoi",
+        body:
+          "Chaque étude en production figure une fois, chez la personne dont dépend le pas suivant : " +
+          "l'ingénieur au calcul et au contrôle, le dessinateur aux plans, le responsable à l'envoi. " +
+          "« Sans intervenant » d'abord : ce sont les dossiers que personne ne porte.",
+      },
+      {
+        path: "/calendar",
+        target: '[data-demo="agenda-delais"]',
+        title: "Les délais des dossiers dans l'agenda",
+        body:
+          "Les dates promises au client et les deadlines internes de la période affichée, en retard " +
+          "d'abord. Un clic ouvre l'affaire. Rien ne s'écrit dans l'agenda : ce sont les dates des affaires.",
+      },
+      {
+        path: "/customers/devis-en-attente",
+        target: '[data-demo="awaiting-head"]',
+        title: "Les devis sans réponse",
+        body:
+          "Tous les devis envoyés que le client n'a ni signés ni refusés, avec le montant en jeu. " +
+          "Les fiches archivées sont écartées par défaut — l'interrupteur les remontre.",
+      },
+      {
+        path: "/customers/devis-en-attente",
+        target: '[data-demo="awaiting-a_relancer"]',
+        title: "À relancer, et relancer d'ici",
+        body:
+          "Envoyés depuis plus de trois semaines sans relance depuis. « Relancer » ouvre la boîte de " +
+          "toujours, motif et texte, et remet le compteur à zéro. La date d'émission manquante est lue " +
+          "dans le PDF à chaque tour de copie OneDrive.",
+      },
+    ],
+  },
+  {
     id: "rapprochement-bancaire",
     title: "Rapprochement bancaire, relevé manquant, suivi de fin de chantier",
     date: "2026-09-30",

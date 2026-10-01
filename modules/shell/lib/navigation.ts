@@ -131,6 +131,7 @@ export const NAV_SECTIONS: NavSection[] = [
           { href: "/customers?statut=tous", label: "Toutes" },
           { href: "/customers", label: "Clients" },
           { href: "/customers?statut=prospect", label: "Prospects" },
+          { href: "/customers/devis-en-attente", label: "Devis sans réponse", permission: "quotes:read" },
           { href: "/customers?type=copropriete", label: "Copropriétés" },
           { href: "/customers?type=syndic", label: "Syndics" },
           { href: "/customers?type=gestionnaire", label: "Gestionnaires" },

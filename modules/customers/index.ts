@@ -77,6 +77,9 @@ export { listPendingReceipts } from "./lib/receipts-api";
 // Le recouvrement (migration 109) : lu aussi par Facturation → Recouvrement.
 export { RecoveryList } from "./components/recovery-list";
 export { PartnerRanking } from "./components/partner-ranking";
+export { AwaitingQuotesView } from "./components/awaiting-quotes-view";
+export { listAwaitingQuotes, type AwaitingQuote, type AwaitingQuotes } from "./lib/awaiting-api";
+export { groupAwaiting, amountAtStake, readAwaiting } from "./lib/awaiting";
 export { listRecovery } from "./lib/syndic-api";
 export { listPurchases, type SupplierPurchases } from "./lib/supplier-orders";
 // Le rapprochement bancaire (migration 114) : Facturation → Rapprochement.
