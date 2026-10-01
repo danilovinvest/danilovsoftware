@@ -80,6 +80,7 @@ export { PartnerRanking } from "./components/partner-ranking";
 export { AwaitingQuotesView } from "./components/awaiting-quotes-view";
 export { listAwaitingQuotes, type AwaitingQuote, type AwaitingQuotes } from "./lib/awaiting-api";
 export { groupAwaiting, amountAtStake, readAwaiting } from "./lib/awaiting";
+export { getSales, type SalesMonth, type SalesSummary } from "./lib/sales-api";
 export { listRecovery } from "./lib/syndic-api";
 export { listPurchases, type SupplierPurchases } from "./lib/supplier-orders";
 // Le rapprochement bancaire (migration 114) : Facturation → Rapprochement.

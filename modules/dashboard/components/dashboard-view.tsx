@@ -20,6 +20,7 @@ import { AgendaPanel } from "./agenda-panel";
 import { BlockedPanels } from "./blocked-panels";
 import { CycleStrip } from "./cycle-strip";
 import { ExportSection } from "./export-section";
+import { CommercialSection } from "./commercial-section";
 import { MyProjectsPanel } from "./my-projects-panel";
 import { SectionTitle } from "./parts";
 import { TasksPanel } from "./tasks-panel";
@@ -47,6 +48,8 @@ const dayFormat = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "nume
 export function DashboardView() {
   const { account } = useAuth();
   const canReadTasks = usePermission("tasks:read");
+  // Des montants de devis : la permission des pièces, comme leur écran.
+  const canReadQuotes = usePermission("quotes:read");
 
   const cycle = useCycleCounts();
   const tasks = useMyTasks(canReadTasks);
@@ -111,6 +114,8 @@ export function DashboardView() {
         <SectionTitle>Où en sont les fiches</SectionTitle>
         <CycleStrip live={cycle} />
       </section>
+
+      {canReadQuotes && <CommercialSection />}
 
       <section className="flex flex-col gap-3">
         <SectionTitle>Ma journée</SectionTitle>

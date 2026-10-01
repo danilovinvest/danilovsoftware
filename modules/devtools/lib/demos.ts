@@ -100,6 +100,23 @@ export const DEMOS: Demo[] = [
           "toujours, motif et texte, et remet le compteur à zéro. La date d'émission manquante est lue " +
           "dans le PDF à chaque tour de copie OneDrive.",
       },
+      {
+        path: "/dashboard",
+        target: '[data-demo="dashboard-commercial"]',
+        title: "Le commercial, lu de la base",
+        body:
+          "Signé et devis émis sur trois mois, montant en attente de réponse, taux de signature sur " +
+          "douze mois : ces chiffres venaient de l'export du 1er septembre, ils viennent désormais des devis.",
+      },
+      {
+        path: "/billing",
+        target: '[data-demo="billing-unrecorded"]',
+        title: "La facturation sur les vraies factures",
+        body:
+          "Les factures de démonstration ont disparu : le journal, les compteurs, la balance âgée et la " +
+          "TVA lisent les factures de la base. Le reste dû porté par des factures marquées reçues sans " +
+          "virement saisi est montré à part — c'est le plus souvent un règlement jamais enregistré.",
+      },
     ],
   },
   {
