@@ -114,7 +114,7 @@ function useReview(customer: CustomerDetail) {
 }
 
 /** Les badges, tous visibles : on les lit avant d'agir. */
-function StatusBadges({ customer, review }: { customer: Customer; review: Review }) {
+function StatusBadges({ customer, review }: { customer: CustomerDetail; review: Review }) {
   return (
     <>
       <EnumBadge value={customer.status} entries={CUSTOMER_STATUS} />
@@ -130,6 +130,17 @@ function StatusBadges({ customer, review }: { customer: Customer; review: Review
       )}
       <EnumBadge value={customer.kind} entries={CUSTOMER_KIND} />
       <RelationBadge customer={customer} />
+      {/* A apporté une affaire chez un autre : c'est ce qu'on attend d'un
+          prescripteur, et ce que ni le type ni la relation ne disent. */}
+      {customer.is_referrer && (
+        <span
+          data-demo="fiche-apporteur"
+          title="A apporté au moins une affaire chez un autre client, ou recommandé une fiche"
+          className="text-warning rounded-md border px-1.5 py-0.5 text-xs font-medium"
+        >
+          Apporteur
+        </span>
+      )}
       <CustomerIssuerBadge customer={customer} />
       {/* La relecture ne se lit plus sur deux cases : un repère suffit, le menu dit qui et quand. */}
       {review.verified_at && <ReviewMark label="Vérifiée" at={review.verified_at} />}

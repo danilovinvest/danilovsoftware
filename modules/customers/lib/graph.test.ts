@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { missingFields, relationOf, formatSiret } from "./classification";
 import { buildGraph } from "./graph";
+import { customerHref } from "@/shared/lib/routes";
 import type {
   Contact,
   Customer,
@@ -63,6 +64,7 @@ const contact = (id: string, full_name: string, over: Partial<Contact> = {}): Co
   emails: [],
   phones: [],
   notes: "",
+  shared_address: false,
   created_at: "2025-09-10T09:00:00Z",
   updated_at: "2025-09-10T09:00:00Z",
   ...over,
@@ -72,6 +74,8 @@ const project: Project = {
   id: "aff",
   customer_id: "copro",
   label: "Mise en sécurité incendie",
+  payer_customer_id: null,
+  payer_name: "",
   stage: "realise",
   outcome: null,
   outcome_note: "",
@@ -160,11 +164,19 @@ const payment = (id: string, quote_id: string, amount: string, paid_at: string):
   note: "",
   created_at: paid_at,
   created_by_name: "",
+  group_id: null,
+  bank_account_id: null,
+  bank_account_label: "",
 });
 
 const detail: CustomerDetail = {
   ...customer(),
   referrer: null,
+  is_referrer: false,
+  syndic_id: null,
+  unallocated_parts: [],
+  pays_for: null,
+  suggested_payer: null,
   contacts: [contact("vidal", "Me Vidal", { role_label: "contact sur place", phone: "06 86 42 18 43" })],
   projects: [project],
   quotes: [
@@ -285,7 +297,7 @@ describe("buildGraph", () => {
     expect(edge("manager", "manager-contact:eske")).toBeDefined();
     expect(edge("manager", "manager-contact:hano")).toBeDefined();
     expect(edge("manager", "fiche:magda")).toBeDefined();
-    expect(node("fiche:magda")?.href).toBe("/customers/magda");
+    expect(node("fiche:magda")?.href).toBe(customerHref("magda"));
   });
 
   test("l'affaire est apportée par le syndic, par un seul nœud syndic", () => {

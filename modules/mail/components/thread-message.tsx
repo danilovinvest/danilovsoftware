@@ -127,6 +127,7 @@ function MessageHeader({
         {message.matched && message.customer_name && message.matched_by && (
           <p className="text-muted-foreground/80 mt-0.5 text-[11px]">
             Rattaché à {message.customer_name} {MATCHED_BY[message.matched_by] ?? ""}
+            {message.matched_detail && ` : ${message.matched_detail}`}
           </p>
         )}
       </div>

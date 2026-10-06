@@ -18,6 +18,7 @@ import { PlanEvent } from "./plan-event";
 import { ProjectClosureDialog } from "./project-closure-dialog";
 import { ProjectIssuerDialog } from "./project-issuer-dialog";
 import { ProjectOnboardingDrawer } from "./project-onboarding";
+import { ProjectPayerDialog } from "./project-payer-dialog";
 import { RelanceDialog } from "./relance-dialog";
 
 /**
@@ -99,6 +100,16 @@ export function ProjectBlockDialogs({
         <ProjectIssuerDialog
           project={project}
           quotes={quotes}
+          open
+          onOpenChange={openChange}
+          onSaved={onChanged}
+        />
+      );
+    case "payer":
+      return (
+        <ProjectPayerDialog
+          customer={customer}
+          project={project}
           open
           onOpenChange={openChange}
           onSaved={onChanged}

@@ -1,3 +1,6 @@
+import type { CoproValidations } from "./syndic-types";
+import type { PaymentPart } from "./receipt-types";
+
 export type CustomerStatus = "prospect" | "client" | "perdu" | "archive";
 export type CustomerSource =
   | "site_web"
@@ -15,12 +18,15 @@ export type CustomerKind =
   | "societe"
   | "copropriete"
   | "syndic"
+  | "gestionnaire"
+  | "agence_immobiliere"
   | "architecte"
   | "ingenieur"
   | "maitre_oeuvre"
   | "notaire"
   | "fournisseur"
   | "sous_traitant"
+  | "organisme"
   | "autre";
 
 /**
@@ -32,7 +38,8 @@ export type CustomerRelation =
   | "prescripteur"
   | "partenaire_technique"
   | "fournisseur"
-  | "sous_traitant";
+  | "sous_traitant"
+  | "intervenant";
 /** Étape du pipeline, ordonnée : une affaire n'en occupe qu'une à la fois. */
 /**
  * Les types d'intervention, dans l'ordre où le dirigeant les a dictés.
@@ -72,6 +79,7 @@ export type ProjectOutcome =
   | "concurrence"
   | "refuse_par_nous"
   | "transfere"
+  | "arrete"
   | "stand_by"
   | "bloque_tiers";
 export type QuoteKind =
@@ -180,6 +188,10 @@ export type CustomerListItem = {
   reference: string;
   display_name: string;
   kind: CustomerKind;
+  /** La relation choisie à la main, nulle quand le type la laisse deviner. */
+  relation: CustomerRelation | null;
+  /** A apporté une affaire chez un autre (dans le périmètre), ou recommandé une fiche. */
+  is_referrer: boolean;
   status: CustomerStatus;
   source: CustomerSource;
   company_name: string;
@@ -290,6 +302,13 @@ export type Contact = {
   phones: string[];
   is_primary: boolean;
   notes: string;
+  /**
+   * L'adresse est partagée (29/09) : une gestionnaire, un ingénieur qui écrit
+   * pour plusieurs dossiers. Gardée pour écrire, elle ne rattache plus aucun
+   * courriel à elle seule — le routage lit l'adresse du chantier, la
+   * référence d'une pièce, le nom dans l'objet, ou range dans « À classer ».
+   */
+  shared_address: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -369,6 +388,12 @@ export type Project = {
    * elle reste sur la fiche, repliée.
    */
   archived_at: string | null;
+  /**
+   * Qui règle l'affaire à la place de la fiche (migration 107), nul quand la
+   * fiche paie elle-même. Il ne s'écrit que par `setProjectPayer`.
+   */
+  payer_customer_id: string | null;
+  payer_name: string;
   /**
    * Le délai annoncé au client, et la deadline qu'on se donne en interne.
    * L'interne précède l'annoncée ; l'écart entre les deux est la marge.
@@ -572,7 +597,7 @@ export type Milestones = {
   /** Ce qui se passe pendant la négociation : le prix, un délai, un tiers. */
   negotiation_note: string;
   signed_at: string | null;
-};
+} & Partial<CoproValidations>;
 
 /** Réponse de GET /v1/customers/{id} : fiche + collections en un seul appel. */
 /**
@@ -643,6 +668,11 @@ export type QuotePayment = {
   note: string;
   created_at: string;
   created_by_name: string;
+  /** Les lignes d'un même virement réparti partagent ce groupe. */
+  group_id: string | null;
+  /** Le compte sur lequel il est tombé (migration 104), nul tant qu'on ne l'a pas dit. */
+  bank_account_id: string | null;
+  bank_account_label: string;
 };
 
 /**
@@ -664,6 +694,10 @@ export type ReferrerCandidate = Referrer & { status: string; city: string };
 export type CustomerDetail = Customer & {
   /** De qui vient ce client, quand il a été recommandé. */
   referrer: Referrer | null;
+  /** Apporteur d'affaires : a apporté une affaire chez un autre, ou recommandé une fiche. */
+  is_referrer: boolean;
+  /** Porte un rôle de partenaire sur une affaire (migration 113). */
+  is_partner?: boolean;
   contacts: Contact[];
   projects: Project[];
   quotes: Quote[];
@@ -674,9 +708,35 @@ export type CustomerDetail = Customer & {
   milestones: Milestones[];
   /** Les virements des devis de la fiche, chacun disant son `quote_id`. */
   payments: QuotePayment[];
+  /**
+   * Ce que la fiche a reçu sans que cela règle une pièce : parts hors CRM et
+   * encaissements en attente d'affectation.
+   */
+  unallocated_parts: PaymentPart[];
   /** Les preuves jointes aux crans de la frise, toutes affaires confondues. */
   step_proofs: StepProof[];
+  /**
+   * Ce que la fiche règle pour d'autres (migration 107) : leurs affaires et
+   * leurs pièces, dans le périmètre du compte.
+   */
+  pays_for: PaysFor | null;
+  /** Le payeur que la fiche désigne par un lien `payeur`, proposé pour ses affaires. */
+  suggested_payer: { id: string; name: string } | null;
+  /** Le syndic courant de la fiche, nul sans mandat en cours (migration 109). */
+  syndic_id: string | null;
 };
+
+/** Une affaire qu'une fiche règle pour une autre. */
+export type PaidProject = {
+  id: string;
+  label: string;
+  reference: string;
+  stage: ProjectStage;
+  customer_id: string;
+  customer_name: string;
+};
+
+export type PaysFor = { projects: PaidProject[]; quotes: Quote[] };
 
 /**
  * Combien de fiches derrière chaque filtre de travail.
@@ -710,6 +770,13 @@ export type CustomerFilters = {
   search?: string;
   status?: CustomerStatus[];
   source?: CustomerSource[];
+  /**
+   * Les catégories de la barre latérale : le type, la relation **effective**
+   * (choisie, à défaut déduite du type — `relationOf`), les apporteurs.
+   */
+  kind?: CustomerKind[];
+  relation?: CustomerRelation[];
+  referrer?: boolean;
   city?: string;
   owner_id?: string;
   sort?: "recent" | "name" | "updated" | "requested" | "amount";
@@ -736,7 +803,9 @@ export type CustomerPayload = {
 
 export type ContactPayload = Omit<
   Contact,
-  "id" | "customer_id" | "created_at" | "updated_at"
+  // L'adresse partagée a sa route (`setContactSharedAddress`) : le formulaire
+  // ne la porte pas, et ne doit pas pouvoir l'effacer.
+  "id" | "customer_id" | "created_at" | "updated_at" | "shared_address"
 >;
 
 /**
@@ -832,6 +901,9 @@ export type ProjectPayload = Omit<
   | "manager_name"
   | "engineer_name"
   | "drafter_name"
+  // Sa propre route (`PUT …/payer`) : le formulaire de l'affaire ne le porte pas.
+  | "payer_customer_id"
+  | "payer_name"
 >;
 
 /**

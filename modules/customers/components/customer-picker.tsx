@@ -25,8 +25,7 @@ import type {
   CustomerListItem,
   CustomerPayload,
   InterventionScope,
-  Project,
-} from "../lib/types";
+  Project, CustomerKind } from "../lib/types";
 
 /**
  * Choisir une fiche client, par la recherche.
@@ -55,6 +54,7 @@ export function CustomerPicker({
   placeholder = "Chercher un client ou un prospect…",
   className,
   allowCreate = false,
+  createAs,
   disabled = false,
 }: {
   /** Absent dans une barre de filtres, où le champ se lit seul. */
@@ -74,6 +74,12 @@ export function CustomerPicker({
    * ce qui existe, et « Créer » y serait une fausse manœuvre à portée de clic.
    */
   allowCreate?: boolean;
+  /**
+   * Le type de la fiche créée d'ici, quand ce n'est pas un client qui appelle :
+   * un fournisseur naît fournisseur, sans affaire ni premier appel. Absent, la
+   * fiche naît prospect d'un appel, avec son affaire — le cas du secrétariat.
+   */
+  createAs?: CustomerKind;
   /** Le temps que l'écran appelant sache quoi afficher, ou pendant un envoi. */
   disabled?: boolean;
 }) {
@@ -241,7 +247,7 @@ export function CustomerPicker({
     setEchec(null);
     let cree: Customer;
     try {
-      cree = await createCustomer(nouvelleFiche(cherche));
+      cree = await createCustomer(nouvelleFiche(cherche, createAs));
     } catch {
       setEchec("La fiche n'a pas pu être créée.");
       setCreation(false);
@@ -260,6 +266,11 @@ export function CustomerPicker({
     onChange(cree.id, cree.display_name);
     setOpen(false);
     setQuery("");
+    // Un tiers n'appelle pas pour un chantier : ni affaire, ni premier appel.
+    if (createAs) {
+      setCreation(false);
+      return;
+    }
     try {
       const ne = await createProject(cree.id, nouveauProjet());
       setProjet(ne);
@@ -389,12 +400,12 @@ export function CustomerPicker({
  * adresse serait pire que de les laisser vides — « on ne sait pas » n'est pas
  * « autre », et la fiche se complète en deux minutes une fois raccroché.
  */
-function nouvelleFiche(nom: string): CustomerPayload {
+function nouvelleFiche(nom: string, kind?: CustomerKind): CustomerPayload {
   return {
     display_name: nom,
-    kind: "particulier",
+    kind: kind ?? "particulier",
     status: "prospect",
-    source: "telephone",
+    source: kind ? "autre" : "telephone",
     company_name: "",
     email: "",
     phone: "",

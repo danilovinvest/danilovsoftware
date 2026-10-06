@@ -224,6 +224,10 @@ function MailWorkspace({ mailbox }: { mailbox: ReturnType<typeof useMailbox> }) 
               if (element) rows.current.set(key, element);
               else rows.current.delete(key);
             }}
+            onClassified={() => {
+              void threads.mutate();
+              void opened.mutate();
+            }}
           />
         </Card>
 

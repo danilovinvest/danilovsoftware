@@ -1,12 +1,11 @@
 import { ENTITIES } from "@/modules/group";
-import { SEED_INVOICES, SEED_VAT_REGIME, type SeedInvoice } from "./seed";
+import { daysBetween } from "./live";
+import { VAT_REGIME } from "./regimes";
 import type {
   AgedBucket,
   BillingSnapshot,
   EntityRevenue,
-  IntraFlow,
   Invoice,
-  InvoiceStatus,
   Metric,
   Period,
   VatRow,
@@ -15,84 +14,34 @@ import type {
 /**
  * Fabrique de l'écran de facturation.
  *
- * Comme pour le tableau de bord, tout est dérivé d'une seule source, ce qui
- * garantit que les panneaux s'accordent : la balance âgée, les flux internes
- * et la consolidation sont trois lectures des mêmes factures, pas trois jeux
- * de chiffres indépendants.
+ * Tout est dérivé d'une seule source — les factures de la base, converties par
+ * `lib/live.ts` —, ce qui garantit que les panneaux s'accordent : la balance
+ * âgée, la TVA et la répartition par société sont trois lectures des mêmes
+ * factures, pas trois jeux de chiffres indépendants.
+ *
+ * Module **pur** : le jour vient du serveur (`today`, AAAA-MM-JJ), jamais de
+ * l'horloge du poste.
  */
 
-const DAY = 86_400_000;
 const WINDOW: Record<Period, number> = { "30j": 30, "90j": 90, "12m": 365 };
-
-function iso(now: number, daysAgo: number): string {
-  return new Date(now - daysAgo * DAY).toISOString();
-}
 
 function round(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-/**
- * Statut d'une facture.
- *
- * « en retard » se déduit de l'échéance, il ne se saisit pas : une facture
- * émise le devient d'elle-même le lendemain de sa date limite. Le stocker
- * ferait dépendre la vérité d'un traitement nocturne, et une facture réglée le
- * matin resterait rouge jusqu'au soir.
- */
-function statusOf(seed: SeedInvoice, ttc: number, overdue: boolean): InvoiceStatus {
-  if (seed.credit) return "avoir";
-  if (seed.draft) return "brouillon";
-  if (seed.paid >= ttc - 0.01) return "reglee";
-  // Le retard prime sur le règlement partiel : une facture échue à moitié
-  // payée est en retard, et c'est ce que l'on veut voir. Le montant encore dû
-  // est porté par la colonne « reste dû », il n'a pas besoin d'un statut.
-  if (overdue) return "retard";
-  if (seed.paid > 0) return "partielle";
-  return "emise";
+/** Une pièce sans montant ne compte nulle part : on ignore ce qu'elle vaut. */
+function counts(invoice: Invoice): boolean {
+  return !invoice.unpriced;
 }
 
-function materialize(now: number): Invoice[] {
-  return SEED_INVOICES.map((seed) => {
-    const vat = round((seed.ht * seed.vat) / 100);
-    const ttc = round(seed.ht + vat);
-    const dueDays = seed.issued - seed.terms;
-    const overdue = !seed.draft && !seed.credit && dueDays > 0;
-
-    return {
-      id: seed.number,
-      number: seed.number,
-      entity_id: seed.entity,
-      customer_name: seed.customer,
-      customer_entity_id: seed.customerEntity ?? null,
-      label: seed.label,
-      kind: seed.kind,
-      issued_at: iso(now, seed.issued),
-      due_at: iso(now, dueDays),
-      amount_ht: seed.ht,
-      vat_rate: seed.vat,
-      amount_vat: vat,
-      amount_ttc: ttc,
-      paid_amount: seed.paid,
-      status: statusOf(seed, ttc, overdue),
-      days_late: overdue && seed.paid < ttc - 0.01 ? dueDays : 0,
-    } satisfies Invoice;
-  });
-}
-
-/** Une facture au brouillon n'existe pas encore : elle ne compte nulle part. */
-function isIssued(invoice: Invoice): boolean {
-  return invoice.status !== "brouillon";
-}
-
-/** Reste dû, avoirs compris — un avoir diminue la créance du client. */
+/** Reste dû selon la règle du recouvrement. */
 function outstandingOf(invoice: Invoice): number {
-  if (!isIssued(invoice)) return 0;
-  return round(invoice.amount_ttc - invoice.paid_amount);
+  return counts(invoice) ? invoice.remaining : 0;
 }
 
-function daysAgo(now: number, isoDate: string): number {
-  return Math.round((now - new Date(isoDate).getTime()) / DAY);
+/** Jours depuis l'émission ; une pièce sans date est hors de toute période. */
+function ageOf(invoice: Invoice, today: string): number {
+  return invoice.issued_at ? daysBetween(invoice.issued_at, today) : Number.POSITIVE_INFINITY;
 }
 
 /** Bornes de la période de déclaration de TVA en cours. */
@@ -128,35 +77,29 @@ function monthBucket(now: Date, date: Date): number {
 }
 
 export function buildBillingSnapshot(
+  all: Invoice[],
   period: Period,
   entityId: string | null,
-  at: Date = new Date(),
+  today: string,
 ): BillingSnapshot {
-  const now = at.getTime();
+  const at = new Date(`${today.slice(0, 10)}T12:00:00`);
   const window = WINDOW[period];
-  const all = materialize(now);
 
   const scoped = entityId === null ? all : all.filter((i) => i.entity_id === entityId);
 
   // ---- Compteurs -----------------------------------------------------------
 
+  const within = (list: Invoice[], from: number, to: number) =>
+    list.filter((invoice) => {
+      if (!counts(invoice)) return false;
+      // [from, to) : une facture du jour a zéro jour, et compte.
+      const age = ageOf(invoice, today);
+      return age >= from && age < to;
+    });
   const billedIn = (list: Invoice[], from: number, to: number) =>
-    list
-      .filter((invoice) => {
-        if (!isIssued(invoice)) return false;
-        const age = daysAgo(now, invoice.issued_at);
-        return age > from && age <= to;
-      })
-      .reduce((total, invoice) => total + invoice.amount_ht, 0);
-
+    within(list, from, to).reduce((total, invoice) => total + invoice.amount_ht, 0);
   const paidIn = (list: Invoice[], from: number, to: number) =>
-    list
-      .filter((invoice) => {
-        if (!isIssued(invoice)) return false;
-        const age = daysAgo(now, invoice.issued_at);
-        return age > from && age <= to;
-      })
-      .reduce((total, invoice) => total + invoice.paid_amount, 0);
+    within(list, from, to).reduce((total, invoice) => total + invoice.paid_amount, 0);
 
   const outstanding = scoped.reduce((total, i) => total + outstandingOf(i), 0);
   const overdueList = scoped.filter((invoice) => invoice.days_late > 0);
@@ -167,18 +110,22 @@ export function buildBillingSnapshot(
   const series = (pick: (invoice: Invoice) => number) => {
     const points = Array.from({ length: 12 }, () => 0);
     for (const invoice of scoped) {
-      if (!isIssued(invoice)) continue;
-      const bucket = monthBucket(at, new Date(invoice.issued_at));
+      if (!counts(invoice) || !invoice.issued_at) continue;
+      const bucket = monthBucket(at, new Date(`${invoice.issued_at.slice(0, 10)}T12:00:00`));
       if (bucket >= 0 && bucket < 12) points[bucket] += pick(invoice);
     }
     return points;
   };
 
+  const htUnknown = within(scoped, 0, window).filter((invoice) => invoice.ht_unknown).length;
+
   const metrics: Metric[] = [
     {
       key: "billed",
       label: "Facturé HT",
-      hint: `Factures émises sur ${window} jours, avoirs déduits`,
+      hint:
+        `Factures émises sur ${window} jours, avoirs déduits — une pièce sans date ni montant n'y entre pas` +
+        (htUnknown > 0 ? ` · ${htUnknown} sans HT ni taux, hors total` : ""),
       value: round(billedIn(scoped, 0, window)),
       previous: round(billedIn(scoped, window, window * 2)),
       format: "amount",
@@ -212,7 +159,7 @@ export function buildBillingSnapshot(
     {
       key: "overdue",
       label: "En retard",
-      hint: "Factures dont l'échéance est dépassée et le solde non réglé",
+      hint: "Factures dont l'échéance saisie est dépassée et le solde non réglé — sans échéance, une facture n'est jamais en retard",
       value: round(overdue),
       previous: null,
       note:
@@ -230,6 +177,7 @@ export function buildBillingSnapshot(
   // ---- Balance âgée --------------------------------------------------------
 
   const buckets: AgedBucket[] = [
+    { key: "sans_echeance", label: "Sans échéance", amount: 0, count: 0 },
     { key: "a_echoir", label: "À échoir", amount: 0, count: 0 },
     { key: "0_30", label: "1 à 30 j", amount: 0, count: 0 },
     { key: "31_60", label: "31 à 60 j", amount: 0, count: 0 },
@@ -241,8 +189,17 @@ export function buildBillingSnapshot(
     const due = outstandingOf(invoice);
     if (due <= 0) continue;
     const late = invoice.days_late;
-    const index =
-      late <= 0 ? 0 : late <= 30 ? 1 : late <= 60 ? 2 : late <= 90 ? 3 : 4;
+    const index = !invoice.due_at
+      ? 0
+      : late <= 0
+        ? 1
+        : late <= 30
+          ? 2
+          : late <= 60
+            ? 3
+            : late <= 90
+              ? 4
+              : 5;
     buckets[index].amount = round(buckets[index].amount + due);
     buckets[index].count += 1;
   }
@@ -250,12 +207,8 @@ export function buildBillingSnapshot(
   // ---- Répartition par société, toujours sur le groupe entier --------------
 
   const revenue: EntityRevenue[] = ENTITIES.map((entity) => {
-    const mine = all.filter(
-      (invoice) => invoice.entity_id === entity.id && isIssued(invoice),
-    );
-    const inPeriod = mine.filter(
-      (invoice) => daysAgo(now, invoice.issued_at) <= window,
-    );
+    const mine = all.filter((invoice) => invoice.entity_id === entity.id && counts(invoice));
+    const inPeriod = within(mine, 0, window);
     return {
       entity,
       billed: round(inPeriod.reduce((t, i) => t + i.amount_ht, 0)),
@@ -276,13 +229,14 @@ export function buildBillingSnapshot(
   // ---- TVA collectée sur la période de déclaration en cours ---------------
 
   const vat: VatRow[] = ENTITIES.map((entity) => {
-    const regime = SEED_VAT_REGIME[entity.id] ?? "trimestriel";
+    const regime = VAT_REGIME[entity.id] ?? "trimestriel";
     const start = declarationStart(at, regime).getTime();
     const mine = all.filter(
       (invoice) =>
         invoice.entity_id === entity.id &&
-        isIssued(invoice) &&
-        new Date(invoice.issued_at).getTime() >= start,
+        counts(invoice) &&
+        invoice.issued_at !== null &&
+        new Date(`${invoice.issued_at.slice(0, 10)}T12:00:00`).getTime() >= start,
     );
     return {
       entity_id: entity.id,
@@ -295,41 +249,10 @@ export function buildBillingSnapshot(
   });
 
   // ---- Flux internes -------------------------------------------------------
-
-  const flowMap = new Map<string, IntraFlow>();
-  for (const invoice of all) {
-    if (invoice.customer_entity_id === null || !isIssued(invoice)) continue;
-    if (daysAgo(now, invoice.issued_at) > window) continue;
-
-    const kind =
-      invoice.kind === "loyer"
-        ? "loyer"
-        : invoice.kind === "honoraires"
-          ? "honoraires"
-          : "refacturation";
-    const key = `${invoice.entity_id}>${invoice.customer_entity_id}:${kind}`;
-    const existing = flowMap.get(key);
-    if (existing) {
-      existing.amount_ht = round(existing.amount_ht + invoice.amount_ht);
-      existing.invoices += 1;
-      continue;
-    }
-    flowMap.set(key, {
-      id: key,
-      from_entity_id: invoice.entity_id,
-      to_entity_id: invoice.customer_entity_id,
-      kind,
-      label:
-        kind === "loyer"
-          ? "Loyers des locaux"
-          : kind === "honoraires"
-            ? "Honoraires de direction"
-            : "Refacturation de prestations",
-      amount_ht: invoice.amount_ht,
-      invoices: 1,
-    });
-  }
-  const flows = [...flowMap.values()].sort((a, b) => b.amount_ht - a.amount_ht);
+  //
+  // Le CRM ne sait pas encore qu'un client est une société du groupe
+  // (`customer_entity_id` reste nul) : aucun flux n'est inventé, et le panneau
+  // le dit plutôt que d'afficher zéro.
 
   // ---- Consolidation -------------------------------------------------------
   //
@@ -341,18 +264,49 @@ export function buildBillingSnapshot(
   const totalIntra = round(revenue.reduce((total, row) => total + row.intra, 0));
 
   return {
-    generated_at: at.toISOString(),
+    generated_at: today,
     period,
     entity_id: entityId,
     metrics,
     invoices: scoped
       .slice()
-      .sort((a, b) => b.issued_at.localeCompare(a.issued_at)),
+      .sort((a, b) => (b.issued_at ?? "").localeCompare(a.issued_at ?? "")),
     aged: buckets,
     revenue,
     vat,
-    flows,
+    flows: [],
+    unrecorded: unrecordedOf(scoped),
+    unassigned: unassignedOf(within(all, 0, window), all),
+    ht_unknown: htUnknown,
     total_billed: totalBilled,
     consolidated: round(totalBilled - totalIntra),
+  };
+}
+
+/**
+ * Le reste dû porté par des pièces marquées reçues sans aucun virement saisi.
+ * Mesuré le 01/10 : 1,21 M€ des 1,30 M€ de reste dû de GROUPE. `reste_du` ne
+ * déduit pas un acompte marqué reçu sur la facture elle-même, et l'écran le
+ * dit au lieu de l'additionner en silence aux vrais impayés.
+ */
+function unrecordedOf(list: Invoice[]): { amount: number; count: number } {
+  const hit = list.filter((i) => i.marked_received && i.payments === 0 && outstandingOf(i) > 0.01);
+  return { amount: round(hit.reduce((t, i) => t + outstandingOf(i), 0)), count: hit.length };
+}
+
+/**
+ * Les factures sans société émettrice : la répartition ne les range nulle part,
+ * et le panneau le dit plutôt que de les perdre. Le compte porte sur toutes,
+ * le montant sur la période.
+ */
+function unassignedOf(
+  inPeriod: Invoice[],
+  all: Invoice[],
+): { count: number; billed: number } {
+  const known = new Set(ENTITIES.map((entity) => entity.id));
+  const orphan = (invoice: Invoice) => !known.has(invoice.entity_id);
+  return {
+    count: all.filter(orphan).length,
+    billed: round(inPeriod.filter(orphan).reduce((t, i) => t + i.amount_ht, 0)),
   };
 }

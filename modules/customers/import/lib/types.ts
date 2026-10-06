@@ -59,6 +59,8 @@ export type PlannedProject = {
 export type PlannedCustomer = {
   action: "create" | "update";
   existing_id: string | null;
+  /** La fiche existante reconnue sous une autre orthographe (29/09) : rejointe, pas recréée. */
+  twin_of?: string;
   display_name: string;
   company_name: string;
   kind: CustomerKind;

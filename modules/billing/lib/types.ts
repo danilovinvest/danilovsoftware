@@ -3,9 +3,9 @@ import type { Entity } from "@/modules/group";
 /**
  * Types du module facturation.
  *
- * Comme pour le tableau de bord, ils décrivent la réponse d'un futur
- * `GET /v1/billing` : rien n'est pré-formaté, les montants sont des nombres et
- * les dates des ISO 8601. Le jour où l'API existera, seul le hook changera.
+ * Les factures viennent de `GET /v1/invoices` (01/10) et sont converties par
+ * `lib/live.ts` ; tout le reste se dérive d'elles dans `lib/snapshot.ts`.
+ * Les montants sont des nombres, les dates des jours `AAAA-MM-JJ`.
  */
 
 export type Period = "30j" | "90j" | "12m";
@@ -18,48 +18,61 @@ export type Period = "30j" | "90j" | "12m";
  * ferait dépendre la vérité d'un traitement nocturne.
  */
 export type InvoiceStatus =
-  | "brouillon"
   | "emise"
   | "partielle"
   | "reglee"
   | "retard"
   | "avoir";
 
-export type InvoiceKind =
-  | "etude"
-  | "sondages"
-  | "travaux"
-  | "attestation"
-  | "loyer"
-  | "honoraires"
-  | "commission"
-  | "refacturation";
+/** La nature d'une facture, telle que la base la porte (`invoice_kind`). */
+export type InvoiceKind = "facture" | "acompte" | "situation" | "solde" | "avoir";
 
 export type Invoice = {
   id: string;
   number: string;
-  /** Société émettrice — une facture appartient toujours à une entité. */
+  /** Société émettrice, vide quand la pièce n'en porte pas. */
   entity_id: string;
+  customer_id: string;
   customer_name: string;
-  /** Renseigné quand le client est une autre société du groupe. */
+  project_id: string;
+  /**
+   * Renseigné quand le client est une autre société du groupe. Le CRM ne le
+   * sait pas encore : toujours nul, et le panneau des flux internes le dit.
+   */
   customer_entity_id: string | null;
   label: string;
   kind: InvoiceKind;
-  issued_at: string;
-  due_at: string;
+  /** Nul quand la pièce n'a pas de date d'émission : hors de toute période. */
+  issued_at: string | null;
+  /** Nul quand aucune échéance n'est saisie : jamais « en retard ». */
+  due_at: string | null;
   amount_ht: number;
   vat_rate: number;
   amount_vat: number;
   amount_ttc: number;
   paid_amount: number;
+  /** Reste dû selon `reste_du`, la règle du recouvrement. */
+  remaining: number;
   status: InvoiceStatus;
-  /** Jours de retard, 0 si l'échéance n'est pas passée. */
+  /** Jours de retard, 0 si l'échéance n'est pas passée ou pas saisie. */
   days_late: number;
+  /** La pièce ne porte pas de montant TTC : elle ne compte nulle part. */
+  unpriced: boolean;
+  /** Le TTC est connu, le HT ni saisi ni calculable faute de taux : hors HT. */
+  ht_unknown: boolean;
+  /**
+   * Un acompte ou un solde marqué reçu sur la pièce. `reste_du` ne déduit pas
+   * l'acompte : un reste dû sur une telle pièce est plus souvent un règlement
+   * jamais saisi qu'un impayé.
+   */
+  marked_received: boolean;
+  /** Nombre de virements saisis sur la pièce. */
+  payments: number;
 };
 
 /** Tranche de la balance âgée : l'ancienneté d'un impayé décide de l'action. */
 export type AgedBucket = {
-  key: "a_echoir" | "0_30" | "31_60" | "61_90" | "90_plus";
+  key: "sans_echeance" | "a_echoir" | "0_30" | "31_60" | "61_90" | "90_plus";
   label: string;
   amount: number;
   count: number;
@@ -116,6 +129,12 @@ export type Metric = {
 };
 
 export type BillingSnapshot = {
+  /** Reste dû porté par des pièces marquées reçues, sans virement saisi. */
+  unrecorded: { amount: number; count: number };
+  /** Factures sans société émettrice : hors de la répartition par société. */
+  unassigned: { count: number; billed: number };
+  /** Factures de la période dont le HT est inconnu, hors « Facturé HT ». */
+  ht_unknown: number;
   generated_at: string;
   period: Period;
   /** Entité sélectionnée, ou null pour la vue consolidée du groupe. */

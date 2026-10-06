@@ -7,6 +7,25 @@
  * des autres n'est jamais entré dans la base.
  */
 
+/** Ce que le re-routage a fait, ou ferait, fiche par fiche (29/09). */
+export type RerouteLine = {
+  customer_id: string;
+  name: string;
+  examined: number;
+  kept: number;
+  moved: number;
+  queued: number;
+};
+
+export type RerouteReport = {
+  applied: boolean;
+  examined: number;
+  kept: number;
+  moved: number;
+  queued: number;
+  fiches: RerouteLine[];
+};
+
 export type MailAccount = {
   id: string;
   email: string;
@@ -47,6 +66,20 @@ export type MailMessage = {
    * ce que chaque rapprochement apporte.
    */
   matched_by: string;
+  /**
+   * Pour un rattachement par indice, ce qui l'a désigné : « adresse du
+   * chantier « 1 rue Chabaud » », « référence DE2026-0048 »… Un rattachement
+   * deviné doit pouvoir se relire.
+   */
+  matched_detail?: string;
+  /**
+   * L'affaire dont parle le courriel (migration 112) : lue dans le texte
+   * (« indice », avec ce qui l'a désignée) ou tranchée à la main (« manuel »).
+   * Le courriel reste sur sa fiche — celle de qui l'écrit.
+   */
+  project_id?: string;
+  project_by?: "indice" | "manuel";
+  project_detail?: string;
   /**
    * Vrai quand le message répond à une conversation (il porte In-Reply-To ou
    * References), faux pour un premier message. Le serveur dit le fait ; l'écran
@@ -150,7 +183,10 @@ export type AttachResult = {
  * les conversations dont le dernier mot est celui d'un correspondant, et que
  * personne n'a marquées traitées depuis.
  */
-export type MailView = "a_traiter" | "tous" | "rapproches" | "sans_fiche" | "envoyes";
+export type MailView = "a_traiter" | "tous" | "rapproches" | "sans_fiche" | "a_classer" | "envoyes";
+
+/** Une fiche que le routage propose pour une conversation « à classer ». */
+export type RoutingCandidate = { id: string; name: string };
 
 /** Une conversation, telle qu'une ligne de la liste la montre. */
 export type ThreadSummary = {
@@ -180,6 +216,14 @@ export type ThreadSummary = {
   todo: boolean;
   /** Le dernier « traité », même rouvert depuis. */
   done_at: string | null;
+  /**
+   * Un de ses messages attend d'être classé : son adresse est partagée, ou
+   * plusieurs fiches sont possibles, et aucun indice n'a tranché (29/09).
+   */
+  queued: boolean;
+  /** Les fiches proposées, et pourquoi le routage n'a pas tranché. */
+  candidates: RoutingCandidate[];
+  queue_reason: string;
 };
 
 export type ThreadCounts = Record<MailView, number>;
@@ -214,4 +258,20 @@ export type MailThread = {
   gmail_url: string;
   /** Du plus ancien au plus récent. */
   messages: ThreadMessage[];
+};
+
+/** Un chantier dont parlent les courriels d'une fiche. */
+export type MailProject = {
+  project_id: string;
+  label: string;
+  customer_id: string;
+  customer_name: string;
+  messages: number;
+  last_at: string;
+};
+
+export type MailProjects = {
+  projects: MailProject[];
+  /** Les courriels de la fiche qui ne désignent aucune affaire. */
+  unlinked: number;
 };

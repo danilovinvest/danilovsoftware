@@ -7,11 +7,11 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { usePermission } from "@/modules/auth";
 import { Spinner } from "@/shared/ui/feedback";
-import { customerHref } from "@/shared/lib/routes";
 import { createCustomer, searchReferrers } from "../lib/api";
 import { useDebounced } from "../hooks/use-customers";
 import { CUSTOMER_STATUS } from "../lib/labels";
 import type { CustomerStatus, Referrer, ReferrerCandidate } from "../lib/types";
+import { appHref } from "@/shared/lib/routes";
 
 /**
  * De qui vient un client recommandé.
@@ -117,7 +117,7 @@ export function ReferrerPicker({
           <UsersIcon className="text-muted-foreground size-3.5 shrink-0" />
         )}
         <Link
-          href={customerHref(value.customer_id)}
+          href={appHref(`/customers/${value.customer_id}`)}
           className="text-info inline-flex min-w-0 flex-1 items-center gap-1 truncate text-sm hover:underline"
         >
           <span className="truncate">

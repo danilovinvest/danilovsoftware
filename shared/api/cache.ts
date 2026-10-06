@@ -1,6 +1,6 @@
 "use client";
 
-import useSWR, { unload, type SWRConfiguration, type SWRResponse } from "swr";
+import useSWR, { mutate as mutateAll, unload, type SWRConfiguration, type SWRResponse } from "swr";
 import { onSessionEnd } from "./client";
 
 /**
@@ -97,4 +97,16 @@ export function useCached<T>(
   config: SWRConfiguration = LIVE,
 ): SWRResponse<T, unknown> {
   return useSWR<T, unknown>(key, load, config);
+}
+
+/**
+ * Relit toutes les lectures dont la clé commence par l'un de ces préfixes.
+ *
+ * Une écriture périme parfois des écrans qui ne sont pas le sien : une marche
+ * de recouvrement change le portefeuille du syndic et la liste de la
+ * facturation. Les nommer par préfixe évite à chaque écran de connaître les
+ * clés exactes des autres — société et identifiant compris.
+ */
+export function revalidatePrefixes(...prefixes: string[]): void {
+  void mutateAll((key) => typeof key === "string" && prefixes.some((prefix) => key.startsWith(prefix)));
 }

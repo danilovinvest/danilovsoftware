@@ -10,9 +10,9 @@ import { errorMessage } from "@/shared/api/errors";
 import { formatDate } from "@/shared/lib/format";
 import { ErrorNotice } from "@/shared/ui/feedback";
 import { Panel, RowShell } from "@/shared/ui/panel";
-import { customerHref } from "@/shared/lib/routes";
 import { useRefreshMyProjects, useUnassigned } from "../hooks/use-live";
 import { PanelEmpty, PanelState } from "./parts";
+import { appHref } from "@/shared/lib/routes";
 
 /**
  * « À attribuer » : les dossiers actifs que personne ne porte.
@@ -78,7 +78,7 @@ export function UnassignedPanel() {
               <div className="-mb-px grid lg:grid-cols-2">
                 {data.items.map((item) => (
                   <RowShell key={item.id} className="border-b">
-                    <Link href={customerHref(item.customer_id)} className="min-w-0 flex-1">
+                    <Link href={appHref(`/customers/${item.customer_id}`)} className="min-w-0 flex-1">
                       <span className="block truncate text-[13px] font-semibold">{item.customer_name}</span>
                       <span className="text-muted-foreground block truncate text-[11px]">
                         {item.reference && <span className="font-mono">{item.reference} · </span>}

@@ -9,6 +9,7 @@ import {
   HardHatIcon,
   PencilIcon,
   RotateCcwIcon,
+  WalletIcon,
   Trash2Icon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,7 @@ export function ProjectMenu({
   canWriteQuotes,
   onEdit,
   onAddQuote,
+  onPayer,
   onClose,
   onArchive,
   onDelete,
@@ -53,6 +55,8 @@ export function ProjectMenu({
   canWriteQuotes: boolean;
   onEdit: () => void;
   onAddQuote: () => void;
+  /** Dit quelle fiche règle l'affaire à la place de la sienne (migration 107). */
+  onPayer: () => void;
   /** Termine le chantier — ou le rouvre s'il porte déjà une date de fin. */
   onClose: () => void;
   /** Range l'affaire : elle sort des listes de travail et reste sur la fiche. */
@@ -92,6 +96,19 @@ export function ProjectMenu({
         {canWriteQuotes && (
           <DropdownMenuItem className={MENU_ITEM} data-demo="project-new-quote" onSelect={onAddQuote}>
             <MenuAction icon={<FilePlusIcon />} label="Nouveau devis…" hint="Étude, sondage ou lot de travaux" />
+          </DropdownMenuItem>
+        )}
+        {canWrite && (
+          <DropdownMenuItem className={MENU_ITEM} data-demo="project-payer" onSelect={onPayer}>
+            <MenuAction
+              icon={<WalletIcon />}
+              label="Payé par…"
+              hint={
+                project.payer_name
+                  ? `Aujourd'hui : ${project.payer_name}`
+                  : "Une autre fiche règle cette affaire"
+              }
+            />
           </DropdownMenuItem>
         )}
         <ExecutionItems

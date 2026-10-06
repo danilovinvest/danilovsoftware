@@ -83,6 +83,15 @@ export function isWeekend(month: string, day: number): boolean {
   return wd === 0 || wd === 6;
 }
 
+/**
+ * Vrai le dimanche. Personne ne travaille ce jour-là : la colonne se lit à
+ * part du samedi, qui lui se décide — travaillé ou non — dans la grille.
+ */
+export function isSunday(month: string, day: number): boolean {
+  const [year, m] = month.split("-").map(Number);
+  return new Date(year, m - 1, day).getDay() === 0;
+}
+
 /** La clé d'une case : AAAA-MM-JJ. */
 export function dayKey(month: string, day: number): string {
   return `${month}-${String(day).padStart(2, "0")}`;

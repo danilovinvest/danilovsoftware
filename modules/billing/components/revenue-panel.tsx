@@ -17,10 +17,13 @@ export function RevenuePanel({
   rows,
   totalBilled,
   consolidated,
+  unassigned,
 }: {
   rows: EntityRevenue[];
   totalBilled: number;
   consolidated: number;
+  /** Factures sans société émettrice, que la répartition ne range nulle part. */
+  unassigned: { count: number; billed: number };
 }) {
   const max = Math.max(...rows.map((row) => row.billed), 1);
   const intra = totalBilled - consolidated;
@@ -64,6 +67,13 @@ export function RevenuePanel({
             </div>
           );
         })}
+        {unassigned.count > 0 && (
+          <p className="text-muted-foreground text-[11px]" data-demo="billing-unassigned">
+            {plural(unassigned.count, "facture")} sans société émettrice, hors de cette
+            répartition{unassigned.billed > 0 ? ` (${eurosShort(unassigned.billed)} sur la période)` : ""}
+            .
+          </p>
+        )}
       </div>
 
       {/*

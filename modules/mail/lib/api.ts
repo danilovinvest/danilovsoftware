@@ -5,6 +5,7 @@ import type {
   MailAttachment,
   MailMessage,
   MailPage,
+  MailProjects,
   MailRun,
   MailKind,
   MailScope,
@@ -13,6 +14,7 @@ import type {
   ThreadPage,
   UnknownSender,
   AttachResult,
+  RerouteReport,
 } from "./types";
 
 export function listAccounts(signal?: AbortSignal) {
@@ -77,11 +79,32 @@ export function listCustomerMail(
   limit = 100,
   signal?: AbortSignal,
   offset = 0,
+  /** Une affaire, ou « none » pour ce qui n'en désigne aucune. */
+  project = "",
 ) {
+  const filter = project ? `&project=${encodeURIComponent(project)}` : "";
   return apiFetch<{ items: MailMessage[]; total: number }>(
-    `/v1/customers/${customerId}/mail?limit=${limit}&offset=${offset}`,
+    `/v1/customers/${customerId}/mail?limit=${limit}&offset=${offset}${filter}`,
     { signal },
   );
+}
+
+/** Les chantiers dont parlent les courriels d'une fiche, dans le périmètre du compte. */
+export function listCustomerMailProjects(customerId: string, signal?: AbortSignal) {
+  return apiFetch<MailProjects>(`/v1/customers/${customerId}/mail/projects`, { signal });
+}
+
+/** Dit de quelle affaire parlent ces courriels de la fiche ; `null` : d'aucune. */
+export function setCustomerMailProject(
+  customerId: string,
+  ids: string[],
+  projectId: string | null,
+  wholeThread: boolean,
+) {
+  return apiFetch<{ updated: number }>(`/v1/customers/${customerId}/mail/project`, {
+    method: "PUT",
+    body: { ids, project_id: projectId, whole_thread: wholeThread },
+  });
 }
 
 /**
@@ -146,6 +169,28 @@ export function attachCustomerMail(customerId: string, ids: string[], rememberSe
   });
 }
 
+/**
+ * Rattache toute la conversation d'un message à une fiche, sans retenir
+ * d'adresse : c'est le geste de la file « à classer », dont l'adresse est
+ * justement partagée — la retenir sur la fiche la ferait rattacher à tort.
+ */
+export function attachThreadToCustomer(customerId: string, messageId: string) {
+  return apiFetch<AttachResult>(`/v1/customers/${customerId}/mail/attach`, {
+    method: "POST",
+    body: { ids: [messageId], remember_sender: false, whole_thread: true },
+  });
+}
+
+/** « Aucune » : la conversation ne concerne aucune des fiches proposées. */
+export function dismissThread(messageId: string) {
+  return apiFetch<{ dismissed: number }>(`/v1/mail/threads/${messageId}/dismiss`, { method: "PUT" });
+}
+
+/** Repasse les indices sur les rattachements par adresse partagée. Simule sans `apply`. */
+export function rerouteMail(apply: boolean) {
+  return apiFetch<RerouteReport>("/v1/mail/reroute", { method: "POST", body: { apply } });
+}
+
 export function detachCustomerMail(customerId: string, messageId: string) {
   return apiFetch<void>(`/v1/customers/${customerId}/mail/${messageId}`, {
     method: "DELETE",
@@ -205,6 +250,20 @@ export function connectMailbox(input: ConnectInput) {
 
 export function disconnectMailbox(id: string) {
   return apiFetch<void>(`/v1/mail/accounts/${id}`, { method: "DELETE" });
+}
+
+/**
+ * Envoie le message d'essai depuis une boîte raccordée.
+ *
+ * L'appel attend la réponse du serveur d'envoi — quelques secondes, trente au
+ * plus. Un refus revient en phrase lisible : identifiants, destinataire,
+ * serveur injoignable.
+ */
+export function sendTestMail(accountId: string, to: string) {
+  return apiFetch<{ from: string }>(`/v1/mail/accounts/${accountId}/test`, {
+    method: "POST",
+    body: { to },
+  });
 }
 
 export function syncNow() {

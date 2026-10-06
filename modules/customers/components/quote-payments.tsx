@@ -11,7 +11,9 @@ import * as api from "../lib/api";
 import { useAction } from "../hooks/use-customers";
 import { parseAmountInput } from "../lib/amount";
 import type { QuotePayment } from "../lib/types";
+import { BankAccountSelect } from "./bank-account-select";
 import { RowMenu } from "./row-menu";
+import { PaymentAccountDialog } from "./payment-account-dialog";
 
 /**
  * Les virements d'un règlement, un par ligne.
@@ -49,6 +51,8 @@ export function QuotePayments({
   onChanged: () => void;
 }) {
   const [saisie, setSaisie] = useState(false);
+  // Le virement dont on corrige le compte crédité (migration 104).
+  const [compte, setCompte] = useState<QuotePayment | null>(null);
   const ajouter = useAction(api.addQuotePayment, { inline: true });
   const retirer = useAction(api.removeQuotePayment, { inline: true });
   const enCours = ajouter.pending || retirer.pending;
@@ -71,6 +75,13 @@ export function QuotePayments({
                 {formatAmount(payment.amount)}
               </span>
               {payment.reference && <span className="truncate">{payment.reference}</span>}
+              {/* Le relevé où le retrouver : le solde de Theuwissen est tombé
+                  sur le sous-compte 3. */}
+              {payment.bank_account_label && (
+                <span className="bg-muted truncate rounded-md px-1.5 text-[0.65rem]" data-demo="payment-account">
+                  {payment.bank_account_label}
+                </span>
+              )}
               {/*
                 Retirer un virement changeait le montant du règlement d'un clic,
                 sans rien demander : il passe par le « … » de la ligne et se
@@ -90,6 +101,8 @@ export function QuotePayments({
                       if (ok && (await retirer.run(quoteId, payment.id))) onChanged();
                     }}
                     deleteLabel="Supprimer le virement…"
+                    onEdit={() => setCompte(payment)}
+                    editLabel="Compte crédité…"
                   />
                 </span>
               )}
@@ -99,6 +112,13 @@ export function QuotePayments({
             Le total n'apparaît qu'à partir de deux lignes : sous un virement
             unique, il répéterait le montant juste au-dessus.
           */}
+          {compte && (
+            <PaymentAccountDialog
+              payment={compte}
+              onClose={() => setCompte(null)}
+              onSaved={onChanged}
+            />
+          )}
           {payments.length > 1 && (
             <li className="text-muted-foreground flex items-center gap-2 text-xs">
               <span>{payments.length} virements</span>
@@ -159,12 +179,18 @@ function PaymentForm({
   kind: "acompte" | "solde";
   pending: boolean;
   error: string | null;
-  onSave: (input: { paid_at: string; amount: string; reference: string }) => void;
+  onSave: (input: {
+    paid_at: string;
+    amount: string;
+    reference: string;
+    bank_account_id: string | null;
+  }) => void;
   onCancel: () => void;
 }) {
   const [paidAt, setPaidAt] = useState("");
   const [amount, setAmount] = useState("");
   const [reference, setReference] = useState("");
+  const [account, setAccount] = useState<string | null>(null);
   const parsed = parseAmountInput(amount);
   // `null` — le champ vide — n'est pas une réponse ici : un virement sans
   // montant ne compterait dans aucun total.
@@ -176,7 +202,7 @@ function PaymentForm({
       onSubmit={(event) => {
         event.preventDefault();
         if (illisible || pending || !paidAt) return;
-        onSave({ paid_at: paidAt, amount: parsed, reference: reference.trim() });
+        onSave({ paid_at: paidAt, amount: parsed, reference: reference.trim(), bank_account_id: account });
       }}
     >
       <div className="flex flex-wrap items-center gap-1">
@@ -206,6 +232,14 @@ function PaymentForm({
           value={reference}
           disabled={pending}
           onChange={(event) => setReference(event.target.value)}
+        />
+        <BankAccountSelect
+          label=""
+          emptyLabel="Compte non dit"
+          value={account}
+          onChange={setAccount}
+          disabled={pending}
+          className="w-48"
         />
         <Button type="submit" size="xs" disabled={pending || illisible || !paidAt}>
           Enregistrer

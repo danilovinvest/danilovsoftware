@@ -18,7 +18,6 @@ type Entry<T extends string> = Record<T, { label: string; tone: Tone }>;
  * plus de place pour signaler celles qui en sont un.
  */
 export const INVOICE_STATUS: Entry<InvoiceStatus> = {
-  brouillon: { label: "Brouillon", tone: "neutral" },
   emise: { label: "Émise", tone: "info" },
   partielle: { label: "Partiellement réglée", tone: "warning" },
   reglee: { label: "Réglée", tone: "success" },
@@ -31,19 +30,15 @@ export const STATUS_ORDER: InvoiceStatus[] = [
   "partielle",
   "emise",
   "reglee",
-  "brouillon",
   "avoir",
 ];
 
 export const INVOICE_KIND: Record<InvoiceKind, string> = {
-  etude: "Étude",
-  sondages: "Sondages",
-  travaux: "Travaux",
-  attestation: "Attestation",
-  loyer: "Loyer",
-  honoraires: "Honoraires",
-  commission: "Commission",
-  refacturation: "Refacturation",
+  facture: "Facture",
+  acompte: "Acompte",
+  situation: "Situation",
+  solde: "Solde",
+  avoir: "Avoir",
 };
 
 export const ENTITY_ROLE: Record<

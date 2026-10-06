@@ -107,7 +107,7 @@ function Badges({
   const done = !thread.todo && thread.done_at !== null;
   const any =
     thread.customer_name || showAccount || thread.attachment_count > 0 || thread.last_outgoing ||
-    thread.bulk || done || reopened;
+    thread.bulk || done || reopened || thread.queued;
   if (!any) return null;
 
   return (
@@ -115,6 +115,11 @@ function Badges({
       {thread.customer_name && (
         <span className={cn(chip, "bg-success-soft text-success max-w-40 truncate")}>
           {thread.customer_name}
+        </span>
+      )}
+      {thread.queued && (
+        <span className={cn(chip, "bg-warning-soft text-warning")} title="Le routage n'a pas su trancher">
+          À classer
         </span>
       )}
       {showAccount && thread.account && (

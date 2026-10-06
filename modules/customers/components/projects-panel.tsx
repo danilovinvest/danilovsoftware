@@ -11,6 +11,7 @@ import { readCycle, type CyclePoint } from "../lib/cycle";
 import { EMPTY_JALONS, EMPTY_MARKS, type Jalons, type StepMarks } from "../lib/jalons";
 import { useAction } from "../hooks/use-customers";
 import { ArchivedProjects } from "./archived-projects";
+import { CustomerReceipts, ReceiptButton } from "./customer-receipts";
 import { ProjectBlock } from "./project-block";
 import { ProjectCycle } from "./project-cycle";
 import { ProjectDialog } from "./project-dialogs";
@@ -216,7 +217,11 @@ export function ProjectsPanel({
   if (vivantes.length === 0) {
     return (
       <div className="flex flex-col gap-4">
-        {canWrite && <NewProjectButton onClick={() => setCreating(true)} />}
+        <div className="flex flex-wrap justify-end gap-2">
+          <ReceiptButton customer={customer} onChanged={onChanged} />
+          {canWrite && <NewProjectButton onClick={() => setCreating(true)} />}
+        </div>
+        <CustomerReceipts customer={customer} onChanged={onChanged} />
         <Card className="gap-0 py-4">
           {/*
             Le cycle se montre même vide : la frise grise dit d'un coup d'œil
@@ -247,11 +252,15 @@ export function ProjectsPanel({
 
   return (
     <div className="flex flex-col gap-3">
-      {canWrite && (
-        <div className="flex justify-end">
-          <NewProjectButton onClick={() => setCreating(true)} />
-        </div>
-      )}
+      {/*
+        Un virement arrivé avant sa pièce s'inscrit ici, et ce qui attend son
+        affectation se lit avant les affaires (29/09).
+      */}
+      <div className="flex flex-wrap justify-end gap-2">
+        <ReceiptButton customer={customer} onChanged={onChanged} />
+        {canWrite && <NewProjectButton onClick={() => setCreating(true)} />}
+      </div>
+      <CustomerReceipts customer={customer} onChanged={onChanged} />
 
       {/*
         L'échec d'une écriture de jalon se lisait nulle part : la surcouche

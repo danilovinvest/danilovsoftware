@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { customerHref } from "@/shared/lib/routes";
 import { Bar } from "@/shared/ui/loading";
 import { formatAmount } from "@/shared/lib/format";
 import { CUSTOMER_SOURCE } from "../lib/labels";
@@ -9,7 +8,8 @@ import type { NextAction } from "../lib/cycle";
 import type { CustomerListItem, ProjectSummary, Review } from "../lib/types";
 import { EnumBadge } from "./enum-badge";
 import { ProjectCycle } from "./project-cycle";
-import { ActionCell, IssuerBadge, PhoneLink, ReviewBox, readListProject } from "./customer-list-parts";
+import { ActionCell, CategoryBadges, IssuerBadge, PhoneLink, ReviewBox, readListProject } from "./customer-list-parts";
+import { appHref } from "@/shared/lib/routes";
 
 /** Une fiche lue pour la liste, telle que le tableau la prépare. */
 export type ListRow = {
@@ -65,12 +65,13 @@ export function CustomerCards({
             <div className="flex min-w-0 items-start justify-between gap-3">
               <div className="min-w-0">
                 <Link
-                  href={customerHref(customer.id)}
+                  href={appHref(`/customers/${customer.id}`)}
                   className="font-medium break-words hover:underline"
                 >
                   {customer.display_name}
                 </Link>
                 <IssuerBadge issuer={customer.issuer} />
+                <CategoryBadges customer={customer} />
                 <p className="text-muted-foreground truncate font-mono text-xs">
                   {customer.reference}
                   {customer.city && ` · ${customer.city}`}

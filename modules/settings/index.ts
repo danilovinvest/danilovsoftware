@@ -2,7 +2,7 @@
  * Surface publique du module « réglages ». Les autres modules et les routes de
  * l'app n'importent que d'ici, jamais d'un fichier interne.
  */
-export { SettingsNav } from "./components/settings-nav";
+export { SettingsFrame } from "./components/settings-frame";
 export { ReturnRouteTracker } from "./components/return-route-tracker";
 export {
   PreferencesProvider,
@@ -30,7 +30,7 @@ export { SETTINGS_NAVIGATION, settingsLabel } from "./lib/navigation";
 export type { PermissionEntry, Role, WorkspaceUser } from "./lib/types";
 export type { Preferences, ThemeChoice } from "./lib/preferences";
 
-// Le connecteur d'assistant en OAuth. La page de consentement, elle, n'est pas
-// reprise ici : on autorise depuis le CRM web, jamais depuis l'application.
-export { ConnectedAssistants } from "./components/connected-assistants";
+// L'écran de consentement d'un connecteur d'assistant. Il vit hors du groupe
+// `(crm)` : on y arrive depuis l'assistant pour une seule question.
+export { ConsentView } from "./components/consent-view";
 export { listGrants, revokeGrant, type OAuthGrant } from "./lib/oauth-api";

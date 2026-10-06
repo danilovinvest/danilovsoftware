@@ -1,16 +1,18 @@
 "use client";
 
-import { FlaskConicalIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePermission } from "@/modules/auth";
 import { plural } from "@/shared/lib/format";
 import { MetricCards } from "@/shared/ui/metric-cards";
+import { ErrorNotice } from "@/shared/ui/feedback";
+import { TableSkeleton } from "@/shared/ui/loading";
 import { useBilling } from "../hooks/use-billing";
 import { ENTITY_BY_ID } from "@/modules/group";
 import { PERIODS, formatSiren } from "../lib/labels";
 import { EntitySwitcher } from "./entity-switcher";
 import { InvoiceTable } from "./invoice-table";
 import { StructurePanel } from "./structure-panel";
+import { UnrecordedNotice } from "./unrecorded-notice";
 
 /** La société d'exploitation dont le CRM suit les clients. */
 const DEFAULT_ENTITY = "ompt-structure";
@@ -37,7 +39,7 @@ export function BillingView() {
   // Comme RequireAuth, cette garde protège l'affichage, pas les données.
   const canSeeGroup = usePermission("users:read");
 
-  const { data, period, setPeriod, entityId, setEntityId } = useBilling(
+  const { data, error, loading, reload, period, setPeriod, entityId, setEntityId, truncated } = useBilling(
     canSeeGroup ? null : DEFAULT_ENTITY,
   );
 
@@ -50,21 +52,12 @@ export function BillingView() {
         <p className="text-muted-foreground mt-0.5 text-sm">
           {entity
             ? `${entity.legal_form} · SIREN ${formatSiren(entity.siren)} · ${entity.naf_label}`
-            : `Les cinq sociétés du groupe · ${plural(data.invoices.length, "facture")} au journal`}
+            : data
+              ? `Le groupe · ${plural(data.invoices.length, "facture")} au journal`
+              : "Le groupe"}
         </p>
       </header>
 
-      <div className="border-warning/30 bg-warning-soft/50 text-warning flex items-start gap-2 rounded-xl border px-3 py-2 text-xs">
-        <FlaskConicalIcon className="mt-0.5 size-3.5 shrink-0" />
-        <p>
-          <span className="font-medium">Factures de démonstration.</span> Les
-          cinq identités juridiques — raisons sociales, SIREN, formes, codes NAF,
-          dates d&apos;immatriculation — sont réelles et proviennent du registre
-          national des entreprises. Tout ce qui est facturé ici est inventé, y
-          compris les loyers et honoraires entre sociétés : la répartition du
-          capital et les conventions internes ne sont pas publiques.
-        </p>
-      </div>
 
       {canSeeGroup && <EntitySwitcher value={entityId} onChange={setEntityId} />}
 
@@ -92,10 +85,24 @@ export function BillingView() {
             ))}
           </div>
         </div>
-        <MetricCards metrics={data.metrics} />
+        {data && <MetricCards metrics={data.metrics} />}
       </section>
 
-      <InvoiceTable invoices={data.invoices} showEntity={entityId === null} />
+      {error ? <ErrorNotice message="Factures illisibles." onRetry={reload} /> : null}
+      {loading || !data ? (
+        error ? null : <TableSkeleton rows={6} columns={7} hue="jade" />
+      ) : (
+        <>
+          <UnrecordedNotice amount={data.unrecorded.amount} count={data.unrecorded.count} />
+          {truncated > 0 && (
+            <p className="text-warning text-xs">
+              {plural(truncated, "facture ancienne", "factures anciennes")} au-delà des 2 000 lues : les totaux ne les
+              comptent pas.
+            </p>
+          )}
+          <InvoiceTable invoices={data.invoices} showEntity={entityId === null} />
+        </>
+      )}
 
       {canSeeGroup && <StructurePanel />}
     </div>

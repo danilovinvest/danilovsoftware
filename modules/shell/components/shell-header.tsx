@@ -97,9 +97,8 @@ export function ShellHeader({ children }: { children: React.ReactNode }) {
       <div className="flex shrink-0 items-center gap-2 md:gap-2.5">
         {/* Sur un écran large, la recherche vit dans la colonne ; ce
             déclencheur-ci ne sert que là où elle n'est pas — sur un téléphone,
-            où la colonne est un tiroir, et dans les réglages, dont la colonne
-            ne la porte pas. */}
-        <CommandSearch className={inSettings ? undefined : "md:hidden"} />
+            où la colonne est un tiroir. */}
+        <CommandSearch className="md:hidden" />
 
         {/*
           Une barre pour trois gestes : un contour commun, un fond de carte,

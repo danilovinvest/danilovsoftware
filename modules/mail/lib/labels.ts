@@ -11,4 +11,5 @@ export const MATCHED_BY: Record<string, string> = {
   fil: "par le fil",
   manuel: "à la main",
   modele: "par le modèle",
+  indice: "par un indice",
 };

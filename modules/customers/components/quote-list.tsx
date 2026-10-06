@@ -1,20 +1,36 @@
 "use client";
 
 import { memo, useState } from "react";
-import { BanknoteIcon, FileTextIcon } from "lucide-react";
+import {
+  ArrowRightLeftIcon,
+  BanknoteIcon,
+  FileMinusIcon,
+  FileTextIcon,
+  ReceiptIcon,
+  ScaleIcon,
+} from "lucide-react";
 import { usePermission } from "@/modules/auth";
 import { PreviewLink } from "@/modules/files";
 import { ClaudeButton, quoteContext } from "@/modules/assistant";
 import { Button } from "@/components/ui/button";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/shared/ui/feedback";
 import { formatAmount, formatDate } from "@/shared/lib/format";
 import { askConfirm } from "@/shared/ui/confirm";
-import { cn } from "@/lib/utils";
 import * as api from "../lib/api";
-import { PAYMENT_STATUS, QUOTE_ISSUER, QUOTE_KIND, QUOTE_STATUS } from "../lib/labels";
+import { PAYMENT_STATUS, QUOTE_KIND, QUOTE_STATUS } from "../lib/labels";
 import { revisions } from "../lib/cycle";
+import { settledKinds } from "../lib/settlement";
+import { pieceRefText } from "../lib/piece-ref";
+import { canIssueCreditNote } from "../lib/credit-notes";
 import { useAction } from "../hooks/use-customers";
+import { CreditNoteDialog } from "./credit-note-dialog";
+import { DunningDialog } from "./dunning-dialog";
 import { EnumBadge } from "./enum-badge";
+import { MoveQuoteDialog, type MoveTarget } from "./move-quote-dialog";
+import { PieceRef } from "./piece-ref";
+import { PieceSettlementDialog } from "./piece-settlement-dialog";
+import { QuoteAmount } from "./quote-amount";
 import { QuoteDialog } from "./quote-dialog";
 import { QuotePayments } from "./quote-payments";
 import { RowMenu } from "./row-menu";
@@ -37,6 +53,8 @@ export const QuoteList = memo(function QuoteList({
   payments,
   carrierId,
   onSettle,
+  moveTargets = [],
+  payerName = "",
   onChanged,
 }: {
   quotes: Quote[];
@@ -46,6 +64,10 @@ export const QuoteList = memo(function QuoteList({
   carrierId: string | null;
   /** Ouvre l'éditeur des règlements de l'affaire — le même que partout. */
   onSettle?: (kind: "acompte" | "solde") => void;
+  /** Les autres affaires vivantes de la fiche, où une pièce peut être déplacée. */
+  moveTargets?: MoveTarget[];
+  /** Qui règle l'affaire à la place de la fiche (migration 107), vide sinon. */
+  payerName?: string;
   onChanged: () => void;
 }) {
   const canDelete = usePermission("quotes:delete");
@@ -60,6 +82,13 @@ export const QuoteList = memo(function QuoteList({
     On ne pouvait que le supprimer, ce qui perdait aussi ce qu'il avait de juste.
   */
   const [editing, setEditing] = useState<Quote | null>(null);
+  // Déplacer une pièce, corriger l'encaissé hors de la pièce porteuse (29/09).
+  const [moving, setMoving] = useState<Quote | null>(null);
+  const [settling, setSettling] = useState<{ quote: Quote; kind: "acompte" | "solde" } | null>(null);
+  // L'avoir qu'on émet sur une facture (migration 105).
+  const [crediting, setCrediting] = useState<Quote | null>(null);
+  // L'échelle de recouvrement d'une facture due (migration 109).
+  const [dunning, setDunning] = useState<Quote | null>(null);
 
   async function supprimer(quote: Quote) {
     const nom = quote.reference || quote.label || "ce devis";
@@ -105,15 +134,16 @@ export const QuoteList = memo(function QuoteList({
 
           return (
             <li key={quote.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5">
-              <span className="font-mono text-xs">{quote.reference || quote.label || "Devis"}</span>
-              {/* La société qui émet : sur une même affaire, l'étude est à
-                  STRUCTURE et les travaux à GROUPE, et la référence seule ne le
-                  dit pas — les deux numérotent chacune de leur côté. */}
-              {quote.issuer && (
-                <EnumBadge value={quote.issuer} entries={QUOTE_ISSUER} />
-              )}
+              {/* La société en lettre devant le numéro (G, S) : les deux
+                  numérotent chacune de leur côté. */}
+              <PieceRef issuer={quote.issuer} reference={quote.reference} fallback={quote.label || "Devis"} />
               <EnumBadge value={quote.kind} entries={QUOTE_KIND} />
               <EnumBadge value={quote.status} entries={QUOTE_STATUS} />
+              {payerName && estFacture(quote) && (
+                <span data-demo="invoice-payer" className="text-xs font-medium">
+                  payée par {payerName}
+                </span>
+              )}
 
               {revision > 1 && (
                 <span className="text-muted-foreground bg-muted rounded-md px-1.5 py-0.5 text-[0.65rem]">
@@ -133,66 +163,26 @@ export const QuoteList = memo(function QuoteList({
                 </span>
               )}
 
+              {/* Le solde aussi : un solde hérité de la reprise comptait dans
+                  l'encaissé de l'affaire sans jamais se montrer (Anisimova). */}
+              {quote.balance_status !== "non_applicable" && (
+                <span className="text-muted-foreground text-xs" data-demo="quote-balance-line">
+                  solde {PAYMENT_STATUS[quote.balance_status].label.toLowerCase()}
+                  {quote.balance_status === "recu" &&
+                    quote.balance_paid_at &&
+                    ` le ${formatDate(quote.balance_paid_at)}`}
+                  {quote.balance_amount && ` · ${formatAmount(quote.balance_amount)}`}
+                </span>
+              )}
+
               <span className="text-muted-foreground text-xs">{formatDate(quote.issued_at)}</span>
 
-              <span className="ml-auto flex items-center gap-2">
-                {delta !== 0 && (
-                  <span
-                    className={cn(
-                      "text-xs tabular-nums",
-                      delta < 0 ? "text-success" : "text-warning",
-                    )}
-                    title={`Écart avec ${previous?.reference || "le devis précédent"}`}
-                  >
-                    {delta > 0 ? "+" : ""}
-                    {Math.round(delta).toLocaleString("fr-FR")} €
-                  </span>
-                )}
-                <span className="text-sm font-medium tabular-nums">
-                  {quote.amount_ttc || quote.amount_ht
-                    ? formatAmount(quote.amount_ttc ?? quote.amount_ht)
-                    : quote.amount_note || "—"}
-                </span>
-                {/* D'où vient le chiffre : lu du PDF, l'infobulle montre la
-                    ligne du document qui l'a justifié. */}
-                {quote.amount_source === "pdf" && (
-                  <span
-                    data-demo="quote-amount-source"
-                    title={quote.amount_evidence || "Montant lu dans le PDF du devis"}
-                    className="text-muted-foreground bg-muted rounded-md px-1.5 py-0.5 text-[0.65rem]"
-                  >
-                    lu du PDF
-                  </span>
-                )}
-                {/*
-                  Ce que le document dit, quand il contredit la saisie.
-
-                  Mesuré le 16/09 : quatorze devis sur les quarante-neuf qui
-                  portaient à la fois une saisie et un PDF — une remise, une
-                  révision, ou un TTC ramené en HT. Le CRM ne corrige rien : il
-                  le dit, l'infobulle montre la ligne du document, et la
-                  décision reste commerciale.
-                */}
-                {quote.amount_pdf_ht &&
-                  quote.amount_ht &&
-                  Math.abs(Number(quote.amount_pdf_ht) - Number(quote.amount_ht)) > 0.01 && (
-                    <span
-                      data-demo="quote-amount-divergence"
-                      title={
-                        quote.amount_pdf_evidence ||
-                        "Montant lu dans le PDF, différent de celui saisi"
-                      }
-                      className="text-warning bg-muted rounded-md px-1.5 py-0.5 text-[0.65rem]"
-                    >
-                      le PDF dit {formatAmount(quote.amount_pdf_ht)}
-                    </span>
-                  )}
-                {quote.amount_read_error && !quote.amount_ht && !quote.amount_ttc && (
-                  <span className="text-warning text-[0.65rem]" title={quote.amount_read_error}>
-                    montant illisible
-                  </span>
-                )}
-              </span>
+              <QuoteAmount
+                quote={quote}
+                quotes={quotes}
+                delta={delta}
+                previousRef={previous?.reference || "le devis précédent"}
+              />
 
               {/*
                 Le devis lui-même, quand la copie OneDrive en connaît l'adresse.
@@ -204,6 +194,9 @@ export const QuoteList = memo(function QuoteList({
                 size="xs"
                 iconOnly
                 context={quoteContext({
+                  id: quote.id,
+                  project: quote.project_label,
+                  projectId: quote.project_id,
                   reference: quote.reference,
                   kind: QUOTE_KIND[quote.kind].label,
                   document: quote.drive_name,
@@ -230,7 +223,41 @@ export const QuoteList = memo(function QuoteList({
                 editLabel="Modifier le devis…"
                 onDelete={canDelete ? () => void supprimer(quote) : undefined}
                 deleteLabel="Supprimer le devis…"
-              />
+              >
+                {canWrite && (
+                  <DropdownMenuItem onSelect={() => setMoving(quote)} data-demo="quote-move">
+                    <ArrowRightLeftIcon />
+                    Déplacer vers une autre affaire…
+                  </DropdownMenuItem>
+                )}
+                {canWrite && canIssueCreditNote(quote) && (
+                  <DropdownMenuItem onSelect={() => setCrediting(quote)} data-demo="quote-credit-note">
+                    <FileMinusIcon />
+                    Émettre un avoir…
+                  </DropdownMenuItem>
+                )}
+                {/* Une facture due se relance : la même pièce qu'un avoir peut réduire. */}
+                {canIssueCreditNote(quote) && (
+                  <DropdownMenuItem onSelect={() => setDunning(quote)} data-demo="quote-dunning">
+                    <ScaleIcon />
+                    Recouvrement…
+                  </DropdownMenuItem>
+                )}
+                {canWrite &&
+                  quote.id !== carrierId &&
+                  settledKinds(quote).map((kind) => (
+                    <DropdownMenuItem
+                      key={kind}
+                      onSelect={() => setSettling({ quote, kind })}
+                      data-demo="quote-settlement-fix"
+                    >
+                      <ReceiptIcon />
+                      {kind === "acompte"
+                        ? "Corriger l'acompte de cette pièce…"
+                        : "Corriger le solde de cette pièce…"}
+                    </DropdownMenuItem>
+                  ))}
+              </RowMenu>
               {quote.drive_url && (
                 <PreviewLink
                   url={quote.drive_url}
@@ -312,6 +339,38 @@ export const QuoteList = memo(function QuoteList({
           onChanged();
         }}
       />
+      <MoveQuoteDialog
+        key={moving?.id ?? "move-closed"}
+        quote={moving}
+        targets={moveTargets.filter((target) => target.id !== moving?.project_id)}
+        onOpenChange={(open) => !open && setMoving(null)}
+        onMoved={onChanged}
+      />
+      {crediting && (
+        <CreditNoteDialog
+          invoice={crediting}
+          quotes={quotes}
+          onClose={() => setCrediting(null)}
+          onSaved={onChanged}
+        />
+      )}
+      {dunning && (
+        <DunningDialog
+          quoteId={dunning.id}
+          title={pieceRefText(dunning.issuer, dunning.reference) || dunning.label}
+          onClose={() => setDunning(null)}
+        />
+      )}
+      {settling && (
+        <PieceSettlementDialog
+          quote={settling.quote}
+          kind={settling.kind}
+          payments={payments}
+          canWrite={canWrite}
+          onClose={() => setSettling(null)}
+          onChanged={onChanged}
+        />
+      )}
     </>
   );
 });

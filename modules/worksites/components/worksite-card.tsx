@@ -9,7 +9,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { eurosShort, formatDate } from "@/shared/lib/format";
-import { STATUS_RAIL, STUDY_RAIL } from "../lib/labels";
+import { deliveredAt } from "@/modules/customers";
+import { columnDetail } from "../lib/derive";
+import { STATUS_RAIL, STUDY_COLUMN_RAIL } from "../lib/labels";
 import type { Metier, ReadWorksite } from "../lib/types";
 
 /**
@@ -38,7 +40,7 @@ export function WorksiteCard({
       onClick={() => onSelect(w.id)}
       className={cn(
         "bg-card hover:bg-accent/40 flex w-full flex-col gap-1.5 rounded-lg border border-l-4 px-2.5 py-2 text-left shadow-2xs transition-colors",
-        etudes ? STUDY_RAIL[read.study] : STATUS_RAIL[read.status],
+        etudes ? STUDY_COLUMN_RAIL[read.column] : STATUS_RAIL[read.status],
       )}
     >
       <span className="flex items-start justify-between gap-2">
@@ -69,17 +71,7 @@ export function WorksiteCard({
             afficher « sans date » sur un livrable ferait chercher une date qui
             n'existe pas dans ce métier. */}
         {etudes ? (
-          w.plans_sent_at ? (
-            <span className="text-success flex items-center gap-1">
-              <FileCheckIcon className="size-3 shrink-0" />
-              rendus le {formatDate(w.plans_sent_at)}
-            </span>
-          ) : (
-            <span className="text-muted-foreground/70 flex items-center gap-1">
-              <FileCheckIcon className="size-3 shrink-0" />
-              plans à rendre
-            </span>
-          )
+          <StudyLine read={read} />
         ) : w.started_at ? (
           <span className="text-muted-foreground/70 flex items-center gap-1">
             <CalendarPlusIcon className="size-3 shrink-0" />
@@ -113,5 +105,29 @@ export function WorksiteCard({
         )}
       </span>
     </button>
+  );
+}
+
+/**
+ * Ce qu'une étude attend, dans les mots de sa mission : « Plans à dessiner »,
+ * « Rapport à valider ». Rendue, la date du livrable — dossier, rapport ou
+ * rapport de sondage, selon la mission, et non plus les seuls plans.
+ */
+function StudyLine({ read }: { read: ReadWorksite }) {
+  const rendu = deliveredAt(read.worksite, read.mission);
+  if (rendu) {
+    return (
+      <span className="text-success flex items-center gap-1">
+        <FileCheckIcon className="size-3 shrink-0" />
+        rendue le {formatDate(rendu)}
+      </span>
+    );
+  }
+  const detail = columnDetail(read);
+  return (
+    <span className="text-muted-foreground/70 flex items-center gap-1">
+      <FileCheckIcon className="size-3 shrink-0" />
+      {detail ?? "à rendre"}
+    </span>
   );
 }

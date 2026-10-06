@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import Link from "next/link";
+import { WaypointsIcon } from "lucide-react";
 import { Background, Controls, ReactFlow, type Edge, type Node } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { cn } from "@/lib/utils";
@@ -178,8 +180,17 @@ export function CustomerGraph({ customer, onChanged }: { customer: CustomerDetai
               ))}
             </div>
             {relationsError !== undefined && (
-              <span className="text-danger ml-auto text-xs">Les relations n&apos;ont pas pu être lues.</span>
+              <span className="text-danger text-xs">Les relations n&apos;ont pas pu être lues.</span>
             )}
+            {/* La fiche vue d'un cran ; le graphe global la montre au milieu de toute la base. */}
+            <Link
+              href={`/customers/graphe?focus=${customer.id}`}
+              className="text-muted-foreground hover:text-foreground ml-auto inline-flex items-center gap-1 text-xs underline-offset-2 hover:underline"
+              data-demo="graphe-global-lien"
+            >
+              <WaypointsIcon className="size-3.5" />
+              Ouvrir dans le graphe global
+            </Link>
           </div>
           <div className="h-[520px] sm:h-[640px]">
             <GraphViewContext.Provider value={vue}>

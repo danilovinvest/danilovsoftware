@@ -17,6 +17,7 @@ import { ErrorNotice } from "@/shared/ui/feedback";
 import { formatPhone } from "@/shared/lib/format";
 import { useCustomer } from "../hooks/use-customer";
 import { CustomerForm } from "./customer-form";
+import { BuildingPanel } from "./building-panel";
 import { CustomerGlance } from "./customer-glance";
 import { CustomerStatus, StatusOverrides } from "./customer-status";
 import { CustomerMoreMenu } from "./customer-more-menu";
@@ -25,8 +26,13 @@ import { FichePanel } from "./fiche-panel";
 import { CustomerGraph } from "./customer-graph";
 import { InteractionsPanel } from "./interactions-panel";
 import { ProjectsPanel } from "./projects-panel";
+import { PartnerPanel } from "./partner-panel";
+import { SupplierOrdersPanel } from "./supplier-orders-panel";
 import { SyncFooter } from "./sync-footer";
+import { SyndicPortfolio } from "./syndic-portfolio";
+import { relationOf } from "../lib/classification";
 import { lastListHref } from "../lib/list-query";
+import { hasPartnerSpace } from "../lib/partners";
 
 /*
   Les onglets, dans l'ordre où on les ouvre : le quotidien d'abord, la fiche
@@ -34,7 +40,9 @@ import { lastListHref } from "../lib/list-query";
   « Fiche » ; l'ancienne valeur d'adresse reste lue, pour que les liens déjà
   partagés (`?vue=details`) ouvrent toujours le bon onglet.
 */
-const VUES = ["affaires", "echanges", "taches", "courriels", "documents", "graphe", "fiche"];
+const VUES = ["affaires", "immeuble", "portefeuille", "commandes", "partenaire", "echanges", "taches", "courriels", "documents", "graphe", "fiche"];
+// Les cabinets : eux seuls ont un portefeuille d'immeubles (migration 109).
+const CABINETS = new Set(["syndic", "gestionnaire"]);
 const ALIAS: Record<string, string> = { details: "fiche" };
 
 /**
@@ -47,9 +55,43 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
   const { customer, loading, error, reload, mutate } = useCustomer(customerId);
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  const canReadQuotes = usePermission("quotes:read");
   const brute = searchParams.get("vue") ?? "";
   const vueDemandee = ALIAS[brute] ?? brute;
-  const vue = searchParams.get("affaire") || !VUES.includes(vueDemandee) ? "affaires" : vueDemandee;
+  /*
+    L'onglet d'un cabinet — et de toute fiche qu'un lien y envoie : la gestion
+    d'une copropriété mène au portefeuille de son syndic, que sa fiche soit
+    déjà rangée en syndic ou encore en société (aucune n'a été reclassée en
+    masse).
+  */
+  const cabinet =
+    // Des montants et des factures : la route demande aussi `quotes:read`.
+    canReadQuotes &&
+    (vueDemandee === "portefeuille" || (customer ? CABINETS.has(customer.kind) : false));
+  // L'onglet d'une copropriété — et de toute fiche qu'un lien y envoie : une
+  // SDC rangée en société a aussi des lots et des arrêtés.
+  const immeuble = vueDemandee === "immeuble" || customer?.kind === "copropriete";
+  // L'onglet d'un fournisseur — et de toute fiche qu'une commande désigne.
+  const fournisseur = vueDemandee === "commandes" || customer?.kind === "fournisseur";
+  // L'onglet d'un prescripteur, d'un architecte ou d'un apporteur — et de
+  // toute fiche qu'un lien y envoie. Des montants : `quotes:read`, comme la route.
+  const partenaire =
+    canReadQuotes &&
+    (vueDemandee === "partenaire" ||
+      (customer
+        ? hasPartnerSpace({
+            relation: relationOf(customer).value,
+            is_referrer: customer.is_referrer,
+            is_partner: customer.is_partner,
+          })
+        : false));
+  const vue =
+    searchParams.get("affaire") ||
+    !VUES.includes(vueDemandee) ||
+    (vueDemandee === "partenaire" && !partenaire) ||
+    (vueDemandee === "portefeuille" && !cabinet)
+      ? "affaires"
+      : vueDemandee;
   const [editing, setEditing] = useState(false);
   const [enriching, setEnriching] = useState(false);
 
@@ -195,7 +237,9 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
           )}
           <ClaudeButton
             size="sm"
+            demo="claude-fiche"
             context={customerContext({
+              id: customer.id,
               name: customer.display_name,
               reference: customer.reference,
               projects: customer.projects.length,
@@ -222,7 +266,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
       */}
       <Tabs value={vue} onValueChange={changerVue}>
         {/*
-          Sept onglets ne tiennent pas sur un téléphone de 390 pixels. La barre
+          Sept ou huit onglets ne tiennent pas sur un téléphone de 390 pixels. La barre
           passe à la ligne (`flex-wrap`, hauteur libérée de son `h-8`) plutôt que
           de défiler : un onglet coupé au bord ne se voit pas. `justify-start`
           garde « Affaires » à gauche.
@@ -232,6 +276,26 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
             Affaires
             <TabCount value={customer.projects.length} />
           </TabsTrigger>
+          {immeuble && (
+            <TabsTrigger className={TAB} value="immeuble" data-demo="tab-immeuble">
+              Immeuble
+            </TabsTrigger>
+          )}
+          {fournisseur && (
+            <TabsTrigger className={TAB} value="commandes" data-demo="tab-commandes">
+              Commandes
+            </TabsTrigger>
+          )}
+          {cabinet && (
+            <TabsTrigger className={TAB} value="portefeuille" data-demo="tab-portefeuille">
+              Portefeuille
+            </TabsTrigger>
+          )}
+          {partenaire && (
+            <TabsTrigger className={TAB} value="partenaire" data-demo="tab-partenaire">
+              Partenaire
+            </TabsTrigger>
+          )}
           <TabsTrigger className={TAB} value="echanges">
             Échanges
             <TabCount value={customer.interactions_total} />
@@ -263,6 +327,40 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
           />
         </TabsContent>
 
+        {/*
+          Les immeubles d'un cabinet, ce qu'ils ont rapporté et doivent encore.
+          Monté à l'ouverture seulement, comme le graphe : ses lectures ne
+          coûtent rien à qui ne regarde pas.
+        */}
+        {/* Ce qui appartient à l'immeuble : interventions, occupants, arrêtés. */}
+        {immeuble && (
+          <TabsContent value="immeuble" className="mt-4">
+            {vue === "immeuble" && <BuildingPanel customer={customer} />}
+          </TabsContent>
+        )}
+
+        {/* Ce qu'on a commandé à ce fournisseur, chantier par chantier. */}
+        {fournisseur && (
+          <TabsContent value="commandes" className="mt-4">
+            {vue === "commandes" && <SupplierOrdersPanel supplierId={customer.id} />}
+          </TabsContent>
+        )}
+
+        {cabinet && (
+          <TabsContent value="portefeuille" className="mt-4">
+            {vue === "portefeuille" && (
+              <SyndicPortfolio customerId={customer.id} customerName={customer.display_name} />
+            )}
+          </TabsContent>
+        )}
+
+        {/* Ce que ce partenaire a apporté ou prescrit, et ce que c'est devenu. */}
+        {partenaire && (
+          <TabsContent value="partenaire" className="mt-4">
+            {vue === "partenaire" && <PartnerPanel customerId={customer.id} />}
+          </TabsContent>
+        )}
+
         <TabsContent value="echanges" className="mt-4">
           <InteractionsPanel
             customerId={customer.id}
@@ -279,7 +377,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
 
         {canReadMail && (
           <TabsContent value="courriels" className="mt-4">
-            <CustomerMail customerId={customer.id} />
+            <CustomerMail key={customer.id} customerId={customer.id} />
             <SyncFooter />
           </TabsContent>
         )}

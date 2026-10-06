@@ -117,6 +117,14 @@ export function ProjectHeader({
             {site || "Chantier non renseigné"}
             {periode && <span data-demo="project-periode"> · {periode}</span>}
             {project.manager_name && ` · ${project.manager_name}`}
+            {/* Le payeur quand ce n'est pas la fiche (migration 107) : c'est
+                de lui que l'argent arrive, et c'est sa fiche qu'on rappelle. */}
+            {project.payer_name && (
+              <span data-demo="project-payer-line" className="text-foreground">
+                {" "}
+                · payé par {project.payer_name}
+              </span>
+            )}
           </div>
         </div>
 

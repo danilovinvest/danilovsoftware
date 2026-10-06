@@ -14,7 +14,7 @@ import { useAutomations } from "../hooks/use-automations";
 import * as api from "../lib/api";
 import { describeCron } from "../lib/cron";
 import { askConfirm } from "@/shared/ui/confirm";
-import { automationHref } from "@/shared/lib/routes";
+import { appHref } from "@/shared/lib/routes";
 
 /**
  * La liste des automatisations.
@@ -102,7 +102,7 @@ export function AutomationList() {
         },
       });
       reload();
-      router.push(automationHref(created.id));
+      router.push(appHref(`/automations/${created.id}`));
     } catch (cause) {
       setFailure(errorMessage(cause));
       setPending(false);
@@ -171,7 +171,7 @@ export function AutomationList() {
               className="hover:bg-accent/50 flex items-center gap-1 pr-2 transition-colors"
             >
               <Link
-                href={automationHref(automation.id)}
+                href={appHref(`/automations/${automation.id}`)}
                 className="flex min-w-0 flex-1 flex-wrap items-center gap-3 px-4 py-3"
               >
                 <span

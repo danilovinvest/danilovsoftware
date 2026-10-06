@@ -9,7 +9,12 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { errorMessage } from "@/shared/api/errors";
 import { notifyError, notifySuccess } from "@/shared/ui/toaster";
 import * as api from "../lib/api";
-import { filtersFromQuery, filtersToQuery, rememberListQuery } from "../lib/list-query";
+import {
+  filtersFromQuery,
+  filtersToQuery,
+  hasCategory,
+  rememberListQuery,
+} from "../lib/list-query";
 import type { CustomerFilters, CustomerListItem } from "../lib/types";
 
 /**
@@ -121,10 +126,16 @@ const DEFAULTS: CustomerFilters = {
  * un doublon. Une recherche porte donc sur **toutes** les fiches tant que le
  * statut est celui du défaut. Un statut choisi (Prospects, Perdus…) reste
  * respecté : c'est une question qu'on a posée, pas un réglage d'ouverture.
+ *
+ * Une catégorie (Syndics, Fournisseurs, Apporteurs…) suit la même règle : la
+ * plupart des syndics ne sont pas des clients, et « Syndics » ouvert depuis la
+ * barre latérale sous le défaut « Clients » en montrait un sur neuf.
  */
 export function effectiveStatus(filters: CustomerFilters): CustomerFilters["status"] {
   const parDefaut = filters.status?.join() === DEFAULTS.status?.join();
-  return filters.search?.trim() && parDefaut ? undefined : filters.status;
+  return (filters.search?.trim() || hasCategory(filters)) && parDefaut
+    ? undefined
+    : filters.status;
 }
 
 export function useCustomerFilters() {
@@ -169,6 +180,7 @@ export function useCustomerFilters() {
         filters.search ||
           filters.city ||
           filters.source?.length ||
+          hasCategory(filters) ||
           filters.issuer ||
           filters.sort !== DEFAULTS.sort ||
           filters.status?.join() !== DEFAULTS.status?.join(),

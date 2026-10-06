@@ -1,6 +1,6 @@
 "use client";
 
-import { InboxIcon, LayersIcon, Link2Icon, SendIcon, UserRoundXIcon } from "lucide-react";
+import { InboxIcon, LayersIcon, Link2Icon, SendIcon, SplitIcon, UserRoundXIcon } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HUE } from "@/shared/ui/hue";
@@ -12,6 +12,7 @@ const ICONS: Record<MailView, LucideIcon> = {
   tous: LayersIcon,
   rapproches: Link2Icon,
   sans_fiche: UserRoundXIcon,
+  a_classer: SplitIcon,
   envoyes: SendIcon,
 };
 
