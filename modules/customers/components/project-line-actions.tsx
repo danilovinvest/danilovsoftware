@@ -3,6 +3,7 @@
 import { ClaudeButton, projectContext } from "@/modules/assistant";
 import { PROJECT_STAGE } from "../lib/labels";
 import type { Metier } from "../lib/cycle";
+import { projectReference } from "../lib/mission";
 import type { Project, Quote } from "../lib/types";
 import { ProjectIssuerBadge } from "./project-header";
 import { ProjectMenu } from "./project-menu";
@@ -27,6 +28,7 @@ export function ProjectLineActions({
   onIssuer,
   onEdit,
   onAddQuote,
+  onPayer,
   onClose,
   onArchive,
   onDelete,
@@ -41,6 +43,7 @@ export function ProjectLineActions({
   onIssuer: () => void;
   onEdit: () => void;
   onAddQuote: () => void;
+  onPayer: () => void;
   onClose: () => void;
   onArchive: () => void;
   onDelete: () => void;
@@ -52,6 +55,9 @@ export function ProjectLineActions({
         size="xs"
         iconOnly
         context={projectContext({
+          id: project.id,
+          reference: projectReference(project.reference, metier),
+          customerId: project.customer_id,
           label: project.label,
           stage: PROJECT_STAGE[project.stage].label,
           site,
@@ -67,6 +73,7 @@ export function ProjectLineActions({
         canWriteQuotes={canWriteQuotes}
         onEdit={onEdit}
         onAddQuote={onAddQuote}
+        onPayer={onPayer}
         onClose={onClose}
         onArchive={onArchive}
         onDelete={onDelete}

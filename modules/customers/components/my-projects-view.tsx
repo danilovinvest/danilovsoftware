@@ -15,7 +15,6 @@ import { deadlineOf, urgencyOf, type Deadline, type ProjectUrgency } from "../li
 import type { Tone } from "../lib/labels";
 import { EnumBadge } from "./enum-badge";
 import type { MyProject } from "../lib/types";
-import { customerHref } from "@/shared/lib/routes";
 
 /** Le plafond d'une page côté API : la liste arrive triée par urgence. */
 const LIMIT = 200;
@@ -248,7 +247,7 @@ function MyProjectRow({
 
   return (
     <Link
-      href={`${customerHref(project.customer_id)}&affaire=${project.id}`}
+      href={`/customers/${project.customer_id}?affaire=${project.id}`}
       className="hover:bg-muted/30 flex flex-wrap items-center gap-x-4 gap-y-1.5 px-4 py-3 transition-colors"
     >
       <div className="min-w-0 flex-1">

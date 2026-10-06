@@ -80,12 +80,15 @@ export const CUSTOMER_KIND: Entry<CustomerKind> = {
   societe: { label: "Société", tone: "neutral" },
   copropriete: { label: "Copropriété", tone: "neutral" },
   syndic: { label: "Syndic", tone: "neutral" },
+  gestionnaire: { label: "Gestionnaire d'immeubles", tone: "neutral" },
+  agence_immobiliere: { label: "Agence immobilière", tone: "neutral" },
   architecte: { label: "Architecte", tone: "neutral" },
   ingenieur: { label: "Ingénieur / BET", tone: "neutral" },
   maitre_oeuvre: { label: "Maître d'œuvre", tone: "neutral" },
   notaire: { label: "Notaire / avocat", tone: "neutral" },
   fournisseur: { label: "Fournisseur", tone: "neutral" },
   sous_traitant: { label: "Sous-traitant", tone: "neutral" },
+  organisme: { label: "Organisme (contrôle, mairie, huissier)", tone: "neutral" },
   autre: { label: "Autre", tone: "neutral" },
 };
 
@@ -96,6 +99,7 @@ export const CUSTOMER_RELATION: Entry<CustomerRelation> = {
   partenaire_technique: { label: "Partenaire technique", tone: "warning" },
   fournisseur: { label: "Fournisseur", tone: "neutral" },
   sous_traitant: { label: "Sous-traitant", tone: "neutral" },
+  intervenant: { label: "Intervenant", tone: "neutral" },
 };
 
 /**
@@ -116,7 +120,7 @@ export const PROJECT_STAGE: Entry<ProjectStage> = {
 export const STAGE_ORDER = Object.keys(PROJECT_STAGE) as ProjectStage[];
 
 /**
- * Issues possibles. Les cinq premières closent l'affaire, les deux dernières
+ * Issues possibles. Les six premières closent l'affaire, les deux dernières
  * la suspendent — c'est l'API qui fait autorité sur cette répartition
  * (project_outcomes_closing / _pausing), reprise ici pour la couleur.
  */
@@ -126,6 +130,9 @@ export const PROJECT_OUTCOME: Entry<ProjectOutcome> = {
   concurrence: { label: "Autre BET choisi", tone: "danger" },
   refuse_par_nous: { label: "Refusé de notre côté", tone: "danger" },
   transfere: { label: "Transféré à un confrère", tone: "neutral" },
+  // Le seul arrêt qui n'est pas une issue de vente : une affaire signée
+  // interrompue en cours de route (migration 103).
+  arrete: { label: "Arrêté en cours de route", tone: "danger" },
   stand_by: { label: "Stand by client", tone: "warning" },
   bloque_tiers: { label: "Bloqué par un tiers", tone: "warning" },
 };

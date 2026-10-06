@@ -7,7 +7,11 @@ import { errorMessage } from "@/shared/api/errors";
 import { listEvents, type CalendarEvent } from "@/modules/calendar";
 import {
   deadlineOf,
+  getSales,
   getStats,
+  listAwaitingQuotes,
+  type AwaitingQuotes,
+  type SalesSummary,
   listMyProjects,
   listUnassigned,
   urgencyOf,
@@ -224,4 +228,21 @@ export function useRefreshMyProjects(): () => Promise<void> {
   return useCallback(async () => {
     await mutate(MY_PROJECTS_KEY);
   }, [mutate]);
+}
+
+/**
+ * La synthèse commerciale : douze mois de devis, et ceux qui attendent une
+ * réponse. La seconde partage la clé de l'écran « Devis sans réponse », qui
+ * s'ouvre donc déjà chargé depuis le tableau de bord. Nulles sans `quotes:read`.
+ */
+export function useSales(enabled: boolean): Live<SalesSummary> {
+  const issuer = scopeParam(useScope());
+  return useLive(enabled ? `dashboard:sales:${issuer ?? ""}` : null, () => getSales(issuer));
+}
+
+export function useAwaitingQuotes(enabled: boolean): Live<AwaitingQuotes> {
+  const issuer = scopeParam(useScope());
+  return useLive(enabled ? `customers:awaiting:${issuer ?? ""}` : null, () =>
+    listAwaitingQuotes(issuer),
+  );
 }

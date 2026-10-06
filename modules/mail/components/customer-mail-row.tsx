@@ -13,7 +13,7 @@ import { useCustomerMessageBody } from "../hooks/use-threads";
 import { splitQuote } from "../lib/quote";
 import { Attachments } from "./attachments";
 import { MailKindBadge } from "./mail-kind-badge";
-import type { MailMessage } from "../lib/types";
+import type { MailMessage, MailProject } from "../lib/types";
 
 /**
  * Un courriel de la fiche : une ligne, qui se déplie sur le message entier.
@@ -26,6 +26,7 @@ import type { MailMessage } from "../lib/types";
 export function CustomerMailRow({
   customerId,
   message,
+  project,
   open,
   onToggle,
   picked,
@@ -36,6 +37,8 @@ export function CustomerMailRow({
 }: {
   customerId: string;
   message: MailMessage;
+  /** L'affaire dont parle le courriel, quand elle est dans le périmètre du compte. */
+  project?: MailProject;
   open: boolean;
   onToggle: () => void;
   picked: boolean;
@@ -113,6 +116,20 @@ export function CustomerMailRow({
           </button>
         )}
       </div>
+
+      {project && (
+        <p className="text-muted-foreground px-3 pb-2 text-[11px] sm:pl-16" data-demo="mail-project-link">
+          Chantier :{" "}
+          <Link
+            href={`/customers/${project.customer_id}?affaire=${project.project_id}`}
+            className="text-foreground font-medium hover:underline"
+          >
+            {project.customer_name} — {project.label}
+          </Link>
+          {/* Un lien deviné doit pouvoir se relire. */}
+          {message.project_by === "manuel" ? " · choisi à la main" : message.project_detail && ` · ${message.project_detail}`}
+        </p>
+      )}
 
       {open && <ExpandedMail customerId={customerId} message={message} />}
     </div>

@@ -57,6 +57,16 @@ export const VIEWS: ViewSpec[] = [
     },
   },
   {
+    key: "a_classer",
+    label: "À classer",
+    hint: "Une adresse partagée ou plusieurs fiches possibles : le routage propose, vous tranchez",
+    empty: {
+      title: "Rien à classer",
+      description:
+        "Chaque courriel d'une adresse partagée a trouvé sa fiche par un indice : l'adresse du chantier, une référence DE ou FA, le nom dans l'objet.",
+    },
+  },
+  {
     key: "envoyes",
     label: "Envoyés",
     hint: "Les conversations où l'entreprise a écrit",

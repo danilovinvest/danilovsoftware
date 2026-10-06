@@ -20,19 +20,22 @@ type Page = { items: MailMessage[]; total: number };
  * lues, si bien que revenir sur l'onglet est instantané. Elles se relisent
  * toutes quand la boîte apporte du nouveau.
  *
+ * `project` restreint à un chantier (migration 112) — l'identifiant d'une
+ * affaire, ou « none » — et entre dans la clé : chaque tri a ses pages.
+ *
  * Les pages passent par `apiFetch`, comme toute lecture du CRM : `useSWRInfinite`
  * n'est que la forme « par pages » du cache partagé, sous le même préfixe.
  */
-export function useCustomerMailPages(customerId: string) {
+export function useCustomerMailPages(customerId: string, project = "") {
   const pulse = useMailPulse();
   const result = useSWRInfinite<Page>(
     (index, previous: Page | null) =>
       previous && previous.items.length < CUSTOMER_MAIL_PAGE
         ? null
-        : `mail:customer:${customerId}:${index}`,
+        : `mail:customer:${customerId}:${project}:${index}`,
     (key: string) => {
       const index = Number(key.split(":").pop());
-      return api.listCustomerMail(customerId, CUSTOMER_MAIL_PAGE, undefined, index * CUSTOMER_MAIL_PAGE);
+      return api.listCustomerMail(customerId, CUSTOMER_MAIL_PAGE, undefined, index * CUSTOMER_MAIL_PAGE, project);
     },
     { ...LIVE, revalidateFirstPage: false },
   );

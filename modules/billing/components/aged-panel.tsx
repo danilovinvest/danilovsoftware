@@ -11,13 +11,14 @@ import type { AgedBucket } from "../lib/types";
  * quinze jours se relance par e-mail, une créance de quatre mois se traite
  * autrement — et il n'existe pas de seuil unique qui vaille pour les deux.
  */
-const TONE = ["neutral", "info", "warning", "danger", "danger"] as const;
+// « Sans échéance » d'abord : sans date limite, rien ne dit qu'il faut relancer.
+const TONE = ["neutral", "neutral", "info", "warning", "danger", "danger"] as const;
 
 export function AgedPanel({ buckets }: { buckets: AgedBucket[] }) {
   const max = Math.max(...buckets.map((bucket) => bucket.amount), 1);
   const total = buckets.reduce((sum, bucket) => sum + bucket.amount, 0);
   const late = buckets
-    .filter((bucket) => bucket.key !== "a_echoir")
+    .filter((bucket) => bucket.key !== "a_echoir" && bucket.key !== "sans_echeance")
     .reduce((sum, bucket) => sum + bucket.amount, 0);
 
   return (

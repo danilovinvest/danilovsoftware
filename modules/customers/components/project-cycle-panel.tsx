@@ -4,6 +4,7 @@ import { ListOrderedIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { CyclePoint, Metier } from "../lib/cycle";
 import { ProjectCycle, type CycleEdit } from "./project-cycle";
+import { ProjectHaltBar, type ProjectHalt } from "./project-halt-bar";
 
 const TITRE: Record<Metier, string> = {
   etudes: "OMPT STRUCTURE · étude",
@@ -30,6 +31,7 @@ export function ProjectCyclePanel({
   canOrder,
   onOrder,
   edit,
+  halt,
 }: {
   points: CyclePoint[];
   /** La frise de l'autre société, nulle quand une seule y travaille. */
@@ -39,6 +41,8 @@ export function ProjectCyclePanel({
   canOrder: boolean;
   onOrder: () => void;
   edit: CycleEdit | undefined;
+  /** Arrêter, mettre en pause, reprendre : le geste vit sous la frise qu'il arrête. */
+  halt: ProjectHalt;
 }) {
   const autre: Metier = metier === "etudes" ? "travaux" : "etudes";
 
@@ -67,6 +71,7 @@ export function ProjectCyclePanel({
           </div>
         )}
         <ProjectCycle points={points} edit={edit} />
+        <ProjectHaltBar halt={halt} />
       </div>
 
       {pointsSecond && (

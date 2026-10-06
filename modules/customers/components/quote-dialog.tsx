@@ -305,18 +305,19 @@ export function QuoteDialog({
             }
           />
           {/*
-            L'émetteur ne se propose que pour **corriger** : à la création, le
-            serveur le déduit de la nature de la prestation. C'est le devis qui
-            porte le SIREN et la TVA, donc c'est là que l'erreur se répare.
+            La société, à la création aussi (29/09) : chaque société numérote de
+            son côté, et c'est elle qui dit quelle DE2026-0016 on saisit. Vide,
+            le serveur la déduit de la nature à la création et garde celle de
+            la pièce à la correction.
           */}
-          {quote && (
-            <SelectField
-              label="Société qui émet"
-              options={toOptions(QUOTE_ISSUER)}
-              value={values.issuer ?? ""}
-              onValueChange={(value) => setValues({ ...values, issuer: value || null })}
-            />
-          )}
+          <SelectField
+            label="Société qui émet"
+            id="quote-issuer"
+            options={toOptions(QUOTE_ISSUER)}
+            emptyLabel={quote ? "Non renseignée" : "Selon la nature"}
+            value={values.issuer ?? ""}
+            onValueChange={(value) => setValues({ ...values, issuer: value || null })}
+          />
           <SelectField
             label="Acompte"
             options={toOptions(PAYMENT_STATUS)}

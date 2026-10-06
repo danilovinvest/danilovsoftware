@@ -2,7 +2,7 @@
 
 import * as api from "../lib/api";
 import { depositTotalOf, type SettlementEditorProps } from "../components/deposit-field";
-import { paymentCarrier } from "../lib/settlement";
+import { balanceFact, depositFact, paymentCarrier } from "../lib/settlement";
 import { useAction } from "./use-customers";
 import type { PaymentStatus, Quote, QuotePayment } from "../lib/types";
 
@@ -28,13 +28,26 @@ export function useProjectSettlement(
   transfers: { payments: QuotePayment[]; canWrite: boolean },
 ) {
   const porteur = paymentCarrier(quotes);
+  /*
+    La pièce où chaque règlement s'écrit : celle qui porte la **marque** qui
+    franchit le cran, quand ce n'est pas le porteur (29/09). Un acompte marqué
+    reçu sur un devis, puis une facture devenue porteuse : « Retirer » écrivait
+    sur la facture, et le cran restait coché par le devis — il ne se décochait
+    plus. Sans marque ailleurs, c'est le porteur, comme avant.
+  */
+  const markFor = (kind: "acompte" | "solde") => {
+    const fact = kind === "acompte" ? depositFact(quotes) : balanceFact(quotes);
+    return quotes.find((quote) => quote.id === fact.markOn) ?? porteur;
+  };
+  const cibles = { deposit_amount: markFor("acompte"), balance_amount: markFor("solde") };
 
   const write = (route: typeof api.setQuoteDeposit, field: "deposit_amount" | "balance_amount") =>
     (status: PaymentStatus, amount?: string | null, paidAt?: string) => {
-      if (!porteur) throw new Error("Aucun devis à mettre à jour sur cette affaire.");
-      return route(porteur.id, {
+      const cible = cibles[field];
+      if (!cible) throw new Error("Aucun devis à mettre à jour sur cette affaire.");
+      return route(cible.id, {
         status,
-        amount: amount === undefined ? porteur[field] : amount,
+        amount: amount === undefined ? cible[field] : amount,
         paid_at: paidAt,
       }).then((quote) => {
         // Le cran change tout de suite ; le rechargement complète le reste.
@@ -84,6 +97,7 @@ export function useProjectSettlement(
    */
   function editorProps(kind: "acompte" | "solde"): SettlementEditorProps {
     const acompte = kind === "acompte";
+    const porteur = acompte ? cibles.deposit_amount : cibles.balance_amount;
     return {
       kind,
       amount: (acompte ? porteur?.deposit_amount : porteur?.balance_amount) ?? null,

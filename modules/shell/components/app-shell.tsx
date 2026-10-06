@@ -12,7 +12,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { SettingsIcon } from "lucide-react";
-import { ReturnRouteTracker, settingsLabel } from "@/modules/settings";
+import { ReturnRouteTracker } from "@/modules/settings";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { NAVIGATION } from "../lib/navigation";
@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { AppSidebar } from "./app-sidebar";
 import { PageTitleProvider, usePageTitle } from "./page-title";
 import { ShellHeader } from "./shell-header";
+import { StatusBar } from "./status-bar";
 
 /**
  * Largeur de la colonne. Plus large que les 236 px de Twenty : les entrées ont
@@ -75,6 +76,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 {children}
               </main>
             </div>
+            {/* Le pied de page coiffe toute la largeur, comme l'en-tête : il
+                parle du CRM entier, pas de l'écran ouvert. */}
+            <StatusBar />
           </SidebarProvider>
         </div>
       </TooltipProvider>
@@ -91,10 +95,10 @@ function ShellBreadcrumb() {
   const pathname = usePathname();
   const pageTitle = usePageTitle();
 
-  // Les réglages ne figurent pas dans NAVIGATION — on y entre par le menu de
-  // l'espace de travail — mais le fil d'Ariane doit quand même les situer.
+  // Les réglages ne figurent pas dans NAVIGATION — on y entre par le bouton
+  // de l'en-tête. La section, elle, est nommée par le cadre des réglages
+  // (`SettingsFrame`) : la répéter ici ferait deux fils d'Ariane identiques.
   if (pathname.startsWith("/settings")) {
-    const section = settingsLabel(pathname);
     return (
       <Breadcrumb>
         <BreadcrumbList className="flex-nowrap gap-1 text-sm whitespace-nowrap sm:gap-1">
@@ -102,22 +106,8 @@ function ShellBreadcrumb() {
             <span className="bg-selected text-brand-text flex size-5 shrink-0 items-center justify-center rounded-md">
               <SettingsIcon className="size-3.5" />
             </span>
-            {section ? (
-              <BreadcrumbLink asChild className="hover:text-foreground">
-                <Link href="/settings">Paramètres</Link>
-              </BreadcrumbLink>
-            ) : (
-              <BreadcrumbPage className="truncate font-medium">Paramètres</BreadcrumbPage>
-            )}
+            <BreadcrumbPage className="truncate font-medium">Paramètres</BreadcrumbPage>
           </BreadcrumbItem>
-          {section && (
-            <>
-              <BreadcrumbSeparator className="[&>svg]:size-3" />
-              <BreadcrumbItem className="min-w-0">
-                <BreadcrumbPage className="truncate font-medium">{section}</BreadcrumbPage>
-              </BreadcrumbItem>
-            </>
-          )}
         </BreadcrumbList>
       </Breadcrumb>
     );

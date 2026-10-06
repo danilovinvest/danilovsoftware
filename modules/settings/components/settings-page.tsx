@@ -1,11 +1,12 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Gabarit d'une page de réglages.
+ * Gabarit d'une page de réglages, posé dans `SettingsFrame`.
  *
- * Twenty n'étale pas ses réglages sur toute la largeur : le contenu tient dans
- * une colonne étroite, titre en petit, sections espacées. C'est ce qui
- * distingue une page de configuration d'une page de données.
+ * Le contenu tient dans une colonne étroite, titre en petit, sections
+ * espacées : c'est ce qui distingue une page de configuration d'une page de
+ * données. Le titre est à la taille des sections, comme dans le dialogue de
+ * réglages de shadcn — le fil d'Ariane du cadre nomme déjà la page.
  */
 export function SettingsPage({
   title,
@@ -17,11 +18,11 @@ export function SettingsPage({
   children: React.ReactNode;
 }) {
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
+    <div className="flex w-full max-w-3xl flex-col gap-6">
       <header>
-        <h1 className="text-base font-semibold">{title}</h1>
+        <h1 className="text-sm font-medium">{title}</h1>
         {description && (
-          <p className="text-muted-foreground mt-0.5 text-sm">{description}</p>
+          <p className="text-muted-foreground mt-1 text-xs">{description}</p>
         )}
       </header>
       {children}

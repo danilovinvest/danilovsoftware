@@ -4,7 +4,6 @@ import Link from "next/link";
 import { FolderKanbanIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDate, plural } from "@/shared/lib/format";
-import { customerHref } from "@/shared/lib/routes";
 import { Panel, RowShell, TONE_TEXT } from "@/shared/ui/panel";
 import type { Live, MyProjectRow } from "../hooks/use-live";
 import { PanelEmpty, PanelLink, PanelMore, PanelState } from "./parts";
@@ -65,7 +64,7 @@ function ProjectRow({ row }: { row: MyProjectRow }) {
   return (
     <RowShell className="p-0">
       <Link
-        href={`${customerHref(project.customer_id)}&affaire=${project.id}`}
+        href={`/customers/${project.customer_id}?affaire=${project.id}`}
         className="block min-w-0 flex-1 px-4 py-2.5"
       >
         <span className="flex items-center gap-2">

@@ -18,7 +18,6 @@ import { usePermission } from "@/modules/auth";
 import { cn } from "@/lib/utils";
 import { HUE } from "@/shared/ui/hue";
 import type { MailThread, ThreadMessage } from "../lib/types";
-import { customerHref } from "@/shared/lib/routes";
 
 /**
  * Les gestes d'une conversation, du plus fréquent au plus rare.
@@ -94,7 +93,7 @@ export function ThreadActions({
 
       {thread.customer_id ? (
         <Button size="xs" variant="outline" asChild>
-          <Link href={customerHref(thread.customer_id)}>
+          <Link href={`/customers/${thread.customer_id}`}>
             <UserRoundIcon />
             <span className="max-w-40 truncate">{thread.customer_name || "Ouvrir la fiche"}</span>
           </Link>
@@ -133,7 +132,11 @@ export function ThreadActions({
         context={mailContext({
           subject: thread.subject,
           from: last ? (last.from_name || last.from_email) : "",
+          fromEmail: last?.from_email,
+          date: last ? new Date(last.sent_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : undefined,
+          messageId: last?.id,
           customer: thread.customer_id ? thread.customer_name : null,
+          customerId: thread.customer_id || null,
         })}
       />
     </div>

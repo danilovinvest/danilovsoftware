@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { ReceiptEuroIcon } from "lucide-react";
 import {
   Table,
@@ -21,9 +22,10 @@ import type { Invoice, InvoiceStatus } from "../lib/types";
 /**
  * Le journal des ventes.
  *
- * La colonne « Reste dû » est calculée et non stockée : c'est la différence
- * entre le TTC et ce qui a été encaissé. Un montant réglé à moitié doit sauter
- * aux yeux sans qu'on ait à soustraire de tête.
+ * La colonne « Reste dû » est celle du recouvrement (`reste_du`), calculée par
+ * le serveur et jamais stockée : un montant réglé à moitié doit sauter aux yeux
+ * sans qu'on ait à soustraire de tête. Une facture sans échéance n'est jamais
+ * en retard, et une pièce sans montant le dit au lieu d'afficher zéro.
  */
 export function InvoiceTable({
   invoices,
@@ -93,24 +95,26 @@ export function InvoiceTable({
             <TableBody>
               {visible.map((invoice) => {
                 const status = INVOICE_STATUS[invoice.status];
-                const due =
-                  invoice.status === "brouillon" || invoice.status === "avoir"
-                    ? 0
-                    : invoice.amount_ttc - invoice.paid_amount;
+                const due = invoice.unpriced ? 0 : invoice.remaining;
 
                 return (
                   <TableRow key={invoice.id}>
                     <TableCell>
                       <p className="font-mono text-xs font-medium">{invoice.number}</p>
                       <p className="text-muted-foreground text-[11px]">
-                        {formatDate(invoice.issued_at)} ·{" "}
+                        {invoice.issued_at ? formatDate(invoice.issued_at) : "Sans date"} ·{" "}
                         {INVOICE_KIND[invoice.kind]}
                       </p>
                     </TableCell>
 
                     <TableCell className="max-w-72">
                       <p className="truncate text-sm">
-                        {invoice.customer_name}
+                        <Link
+                          href={`/customers/${invoice.customer_id}?affaire=${invoice.project_id}&onglet=devis`}
+                          className="hover:underline"
+                        >
+                          {invoice.customer_name}
+                        </Link>
                         {invoice.customer_entity_id && (
                           <span className="text-info ml-1.5 text-[11px]">
                             intra-groupe
@@ -129,14 +133,22 @@ export function InvoiceTable({
                     )}
 
                     <TableCell className="text-right text-xs tabular-nums">
-                      <span className="font-medium">{eurosShort(invoice.amount_ht)}</span>
-                      <span className="text-muted-foreground block text-[11px]">
-                        TVA {invoice.vat_rate} %
-                      </span>
+                      {invoice.unpriced ? (
+                        <span className="text-muted-foreground">Montant non saisi</span>
+                      ) : (
+                        <>
+                          <span className="font-medium">{eurosShort(invoice.amount_ht)}</span>
+                          {invoice.vat_rate > 0 && (
+                            <span className="text-muted-foreground block text-[11px]">
+                              TVA {invoice.vat_rate} %
+                            </span>
+                          )}
+                        </>
+                      )}
                     </TableCell>
 
                     <TableCell className="text-right text-xs tabular-nums">
-                      {eurosShort(invoice.amount_ttc)}
+                      {invoice.unpriced ? "—" : eurosShort(invoice.amount_ttc)}
                     </TableCell>
 
                     <TableCell
@@ -150,10 +162,15 @@ export function InvoiceTable({
                       )}
                     >
                       {due > 0 ? eurosShort(due) : "—"}
+                      {due > 0 && invoice.marked_received && invoice.payments === 0 && (
+                        <span className="text-muted-foreground block text-[11px] font-normal">
+                          marquée reçue
+                        </span>
+                      )}
                     </TableCell>
 
                     <TableCell className="text-right text-xs tabular-nums">
-                      {invoice.status === "brouillon" || invoice.status === "avoir" ? (
+                      {invoice.status === "avoir" || !invoice.due_at ? (
                         <span className="text-muted-foreground">—</span>
                       ) : (
                         <>

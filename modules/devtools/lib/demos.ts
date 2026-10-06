@@ -51,6 +51,727 @@ const FICHE_COPRO = "/customers/de2ea332-b3dd-491a-8ea4-b423612731aa";
 
 export const DEMOS: Demo[] = [
   {
+    id: "agence-immobiliere",
+    title: "Un type de fiche de plus : l'agence immobilière",
+    date: "2026-10-01",
+    steps: [
+      {
+        path: "/customers?type=agence_immobiliere",
+        target: 'a[href="/customers?type=agence_immobiliere"]',
+        title: "Les agences immobilières ont leur liste",
+        body:
+          "« Agence immobilière » se choisit désormais comme type, à la création comme en " +
+          "correction d'une fiche. Elle nous amène des clients : elle est prescripteur par défaut, " +
+          "sort des Clients et Prospects, et se retrouve ici, sous Fiches client.",
+      },
+    ],
+  },
+  {
+    id: "structure-production-relances",
+    title: "Études par cran de production, charge de l'équipe, délais à l'agenda, devis sans réponse",
+    date: "2026-10-01",
+    steps: [
+      {
+        path: "/etudes",
+        click: '[data-demo="vue-tableau"]',
+        target: '[data-demo="etudes-crans"]',
+        title: "Une colonne par cran de production",
+        body:
+          "« En production » était un seul tas. Les études se rangent désormais au cran où elles " +
+          "attendent — calcul ou rédaction, plans, contrôle, prêt à envoyer —, entre l'acompte " +
+          "attendu et la remise. Le cran se lit des jalons de l'après-signature, selon la mission.",
+      },
+      {
+        path: "/etudes",
+        click: '[data-demo="vue-equipe"]',
+        target: '[data-demo="etudes-equipe"]',
+        title: "Qui attend quoi",
+        body:
+          "Chaque étude en production figure une fois, chez la personne dont dépend le pas suivant : " +
+          "l'ingénieur au calcul et au contrôle, le dessinateur aux plans, le responsable à l'envoi. " +
+          "« Sans intervenant » d'abord : ce sont les dossiers que personne ne porte.",
+      },
+      {
+        path: "/calendar",
+        target: '[data-demo="agenda-delais"]',
+        title: "Les délais des dossiers dans l'agenda",
+        body:
+          "Les dates promises au client et les deadlines internes de la période affichée, en retard " +
+          "d'abord. Un clic ouvre l'affaire. Rien ne s'écrit dans l'agenda : ce sont les dates des affaires.",
+      },
+      {
+        path: "/customers/devis-en-attente",
+        target: '[data-demo="awaiting-head"]',
+        title: "Les devis sans réponse",
+        body:
+          "Tous les devis envoyés que le client n'a ni signés ni refusés, avec le montant en jeu. " +
+          "Les fiches archivées sont écartées par défaut — l'interrupteur les remontre.",
+      },
+      {
+        path: "/customers/devis-en-attente",
+        target: '[data-demo="awaiting-a_relancer"]',
+        title: "À relancer, et relancer d'ici",
+        body:
+          "Envoyés depuis plus de trois semaines sans relance depuis. « Relancer » ouvre la boîte de " +
+          "toujours, motif et texte, et remet le compteur à zéro. La date d'émission manquante est lue " +
+          "dans le PDF à chaque tour de copie OneDrive.",
+      },
+      {
+        path: "/dashboard",
+        target: '[data-demo="dashboard-commercial"]',
+        title: "Le commercial, lu de la base",
+        body:
+          "Signé et devis émis sur trois mois, montant en attente de réponse, taux de signature sur " +
+          "douze mois : ces chiffres venaient de l'export du 1er septembre, ils viennent désormais des devis.",
+      },
+      {
+        path: "/billing",
+        target: '[data-demo="billing-unrecorded"]',
+        title: "La facturation sur les vraies factures",
+        body:
+          "Les factures de démonstration ont disparu : le journal, les compteurs, la balance âgée et la " +
+          "TVA lisent les factures de la base. Le reste dû porté par des factures marquées reçues sans " +
+          "virement saisi est montré à part — c'est le plus souvent un règlement jamais enregistré.",
+      },
+    ],
+  },
+  {
+    id: "rapprochement-bancaire",
+    title: "Rapprochement bancaire, relevé manquant, suivi de fin de chantier",
+    date: "2026-09-30",
+    steps: [
+      {
+        path: "/billing/rapprochement",
+        target: '[data-demo="bank-accounts"]',
+        title: "Où en est chaque compte",
+        body:
+          "Les quatre comptes : jusqu'où leurs relevés sont importés, ce qui reste à rapprocher, " +
+          "et ce qui manque — un relevé jamais importé, un trou entre deux relevés, rien depuis plus " +
+          "de quarante jours. Cliquer une carte ne montre que ses lignes.",
+      },
+      {
+        path: "/billing/rapprochement",
+        target: '[data-demo="bank-import"]',
+        title: "Importer un relevé",
+        body:
+          "L'export CSV de la banque. Un aperçu dit combien d'écritures il porte, combien le compte " +
+          "connaît déjà et la période couverte, avant toute écriture. Importer deux fois le même " +
+          "relevé ne double rien.",
+      },
+      {
+        path: "/billing/rapprochement",
+        target: '[data-demo="bank-lines"]',
+        title: "Chaque crédit, et ce que le CRM en propose",
+        body:
+          "Un virement déjà saisi du même montant se pointe ; une facture citée dans le libellé " +
+          "s'encaisse ; un payeur reconnu se propose. « Sûr » : le montant tombe exactement, et " +
+          "« Valider les sûres » les prend en lot. Le reste se relit ligne à ligne, se met en attente " +
+          "d'affectation ou s'écarte en disant pourquoi.",
+      },
+      {
+        path: "/tasks",
+        target: '[data-demo="task-auto"]',
+        title: "Une semaine après le solde",
+        body:
+          "Quand une affaire est soldée depuis sept jours, le CRM crée la tâche « Relancer le PV de " +
+          "réception signé » (chantiers) et « Demander l'avis Google », pour le responsable de " +
+          "l'affaire. Elles se ferment seules quand le PV est signé ou l'avis demandé.",
+      },
+    ],
+  },
+  {
+    id: "espace-partenaires",
+    title: "L'espace partenaires : affaires apportées ou prescrites, transformation, classement",
+    date: "2026-09-30",
+    steps: [
+      {
+        path: FICHE_COPRO,
+        click: '[data-demo="tab-devis"]',
+        target: '[data-demo="project-partners"]',
+        title: "Les partenaires d'une affaire",
+        body:
+          "En tête des devis : qui a prescrit l'affaire, qui intervient sur le même chantier, qui on " +
+          "a recommandé. « Partenaires… » pose ces rôles, et note ce que le client a réglé " +
+          "directement au bureau d'études — pour mémoire, jamais compté dans le chiffre d'OMPT. " +
+          "L'apporteur, unique, se pose toujours à part.",
+      },
+      {
+        path: "/customers/partenaires",
+        target: '[data-demo="partner-ranking"], [data-demo="partner-ranking-head"]',
+        title: "Le classement des partenaires",
+        body:
+          "Qui amène des affaires, combien se signent, et ce qu'elles rapportent : marché signé, " +
+          "facturé, encaissé. Seuls ceux qui ont apporté ou prescrit une affaire y figurent. Le nom " +
+          "mène à l'onglet « Partenaire » de la fiche, qui liste ses affaires une à une, projets " +
+          "communs et recommandations compris.",
+      },
+    ],
+  },
+  {
+    id: "factures-fournisseur-et-courriels",
+    title: "Factures fournisseur, marge d'une affaire, courriels triés par chantier",
+    date: "2026-09-30",
+    steps: [
+      {
+        path: FICHE_COPRO,
+        click: '[data-demo="tab-devis"]',
+        target: '[data-demo="project-margin"], [data-demo="project-orders"]',
+        title: "La marge de l'affaire",
+        body:
+          "Le marché hors taxes, moins la sous-traitance et la matière. Elle ne s'affiche que s'il " +
+          "y a un devis chiffré et quelque chose à en déduire, et dit ce qu'elle ignore : un devis " +
+          "sans montant, une commande sans prix.",
+      },
+      {
+        path: FICHE_COPRO,
+        click: ['[data-demo="tab-devis"]', '[data-demo="project-orders"] button'],
+        target: '[data-demo="order-invoice"]',
+        title: "La facture du fournisseur, sur sa commande",
+        body:
+          "Numéro, date, montant facturé hors taxes, jour du règlement. Une fois la facture " +
+          "arrivée, c'est son montant qui fait le coût matière de l'affaire, et l'écart avec le " +
+          "devis du fournisseur s'affiche sur la ligne.",
+      },
+      {
+        path: "/billing/achats",
+        target: '[data-demo="purchases-table"], [data-demo="purchases-head"]',
+        title: "Les achats, fournisseur par fournisseur",
+        body:
+          "Facturation → Achats : ce qu'on commande à chacun, ce qu'il facture, ce qui reste à lui " +
+          "régler. « Écart sur devis » compare le facturé au commandé sur les commandes qui portent " +
+          "les deux : c'est ce qui dit qu'un fournisseur dépasse ses devis.",
+      },
+      {
+        path: "/customers?relation=fournisseur",
+        target: '[data-demo="customer-table"], table',
+        title: "Les courriels d'un fournisseur, par chantier",
+        body:
+          "Ouvrez un fournisseur : son onglet Courriels se trie par chantier. Un courriel reste " +
+          "chez le fournisseur et dit de quelle affaire il parle : le numéro de son devis, le client " +
+          "cité, l'adresse du chantier. « Chantier… » tranche à la main pour le reste. Et ses " +
+          "interlocuteurs se rangent par rôle : commercial, comptabilité, dépôt.",
+      },
+    ],
+  },
+  {
+    id: "commandes-fournisseur",
+    title: "Les commandes fournisseur : à qui, sous quel numéro, pour quand",
+    date: "2026-09-30",
+    steps: [
+      {
+        path: FICHE_COPRO,
+        click: '[data-demo="tab-devis"]',
+        target: '[data-demo="project-orders"]',
+        title: "Les commandes d'une affaire",
+        body:
+          "Sous les devis, en face des montants : chaque commande dit le fournisseur, le numéro de " +
+          "son devis, ce qui est commandé, la livraison ou le retrait et son jour. Le coût matière " +
+          "engagé additionne ce qui est commandé ou livré, et dit quand il en ignore.",
+      },
+      {
+        path: FICHE_COPRO,
+        click: ['[data-demo="tab-devis"]', '[data-demo="project-orders"] button'],
+        target: '[data-demo="order-dialog"]',
+        title: "Commander franchit le cran",
+        body:
+          "Passer une commande au statut « Commandé » pose « Matériaux commandés » sur l'affaire, au " +
+          "jour de la commande, et y inscrit ce qui est commandé. Annuler ne le retire pas : ce " +
+          "qu'une machine a coché se corrige à la main, sur la frise.",
+      },
+      {
+        path: "/customers?relation=fournisseur",
+        target: '[data-demo="customer-table"], table',
+        title: "La fiche d'un fournisseur",
+        body:
+          "Chaque fournisseur a un onglet « Commandes » : tout ce qu'on lui a commandé, chantier par " +
+          "chantier, avec ce qui attend encore d'être livré. Le lien du fournisseur, sur une " +
+          "commande, y mène.",
+      },
+    ],
+  },
+  {
+    id: "espace-copropriete",
+    title: "L'espace copropriété : interventions, lots et occupants, dossier réglementaire",
+    date: "2026-09-30",
+    steps: [
+      {
+        path: FICHE_COPRO,
+        click: '[data-demo="tab-immeuble"]',
+        target: '[data-demo="building-history"]',
+        title: "Les interventions sur l'immeuble",
+        body:
+          "Un onglet de plus sur une copropriété. L'étude et les travaux sur la même ligne de " +
+          "temps, affaires archivées comprises : c'est l'immeuble qu'on suit, pas l'affaire. Un " +
+          "compte lié à une société voit les siennes, et combien l'autre en porte.",
+      },
+      {
+        path: FICHE_COPRO,
+        click: '[data-demo="tab-immeuble"]',
+        target: '[data-demo="building-units"]',
+        title: "Lots et occupants",
+        body:
+          "Qui habite où l'on intervient, le voisin que les travaux touchent, l'exploitant du " +
+          "commerce qui signe le PV sans être le payeur. Chaque lot dit comment joindre son " +
+          "occupant et ce qu'il a à voir avec chaque affaire : concerné, impacté, signataire.",
+      },
+      {
+        path: FICHE_COPRO,
+        click: '[data-demo="tab-immeuble"]',
+        target: '[data-demo="building-documents"]',
+        title: "Le dossier réglementaire",
+        body:
+          "Arrêtés de péril et de mise en sécurité, rapports de bureau d'études, contrôles : ils " +
+          "tiennent à l'immeuble et lui restent. Un arrêté encore en vigueur s'affiche en alerte " +
+          "en tête de l'onglet ; on le date quand il est levé.",
+      },
+      {
+        path: FICHE_COPRO,
+        click: '[data-demo="tab-fiche"]',
+        target: '[data-demo="fiche-gestion"]',
+        title: "Le numéro de l'immeuble chez son syndic",
+        body:
+          "« Mandat… » sur un syndic : ses dates, et le numéro sous lequel il range l'immeuble — " +
+          "celui de ses courriers. Il appartient au mandat : un autre cabinet en donnera un autre.",
+      },
+    ],
+  },
+  {
+    id: "espace-syndic",
+    title: "L'espace syndic : portefeuille d'immeubles, circuit de facturation, recouvrement",
+    date: "2026-09-30",
+    steps: [
+      {
+        path: FICHE_COPRO,
+        click: '[data-demo="tab-fiche"]',
+        target: '[data-demo="fiche-gestion"]',
+        title: "La gestion d'un immeuble",
+        body:
+          "L'immeuble survit à ses syndics. Changer de cabinet dans « Géré par » termine le mandat " +
+          "précédent au lieu de l'effacer : les syndics successifs se lisent ici, avec la personne " +
+          "qui suit l'immeuble et ce qui lui est propre pour facturer — son libellé de relevé surtout.",
+      },
+      {
+        click: '[data-demo="fiche-gestion"] a[href*="vue=portefeuille"]',
+        target: '[data-demo="portfolio-figures"]',
+        title: "Le portefeuille d'un syndic",
+        body:
+          "Un onglet de plus sur la fiche d'un cabinet : ce qu'il pèse — facturé, encaissé, reste " +
+          "dû — et combien de jours il met à payer, en moyenne sur ses factures payées et datées.",
+      },
+      {
+        target: '[data-demo="portfolio-buildings"]',
+        title: "Immeuble par immeuble",
+        body:
+          "Chaque copropriété gérée, ses affaires ouvertes, son facturé, son encaissé et ce qu'elle " +
+          "doit encore. « Hérité » : un prédécesseur la gérait. « Ancien mandat » : le cabinet ne " +
+          "la gère plus, ses affaires d'alors restent comptées ici.",
+      },
+      {
+        target: '[data-demo="portfolio-succession"]',
+        title: "Cerutti devenu CGI, AGEFIM devenu OXIA",
+        body:
+          "« Repris par… » relie un cabinet à son successeur, et peut lui transférer ses immeubles " +
+          "au jour dit. L'ancienne fiche reste, avec son histoire.",
+      },
+      {
+        target: '[data-demo="portfolio-handlers"], [data-demo="billing-rules"]',
+        title: "Qui suit quoi, et comment on facture",
+        body:
+          "Les gestionnaires du cabinet et les immeubles de chacun — la personne à appeler. À côté, " +
+          "le circuit de facturation : adresse où envoyer, référence fournisseur OMPT, portail de " +
+          "validation, libellé attendu sur le relevé.",
+      },
+      {
+        path: FICHE_COPRO,
+        click: '[data-demo="tab-apres"]',
+        target: '[data-demo="copro-validations"]',
+        title: "Les validations d'une copropriété",
+        body:
+          "Sous l'après-signature d'une affaire de copropriété : assemblée générale, vote des " +
+          "travaux, fonds de l'assureur attendus puis reçus, bon pour accord du syndic, PV qu'il " +
+          "contresigne. Toutes facultatives — aucune ne bloque la suite.",
+      },
+      {
+        path: "/billing/recouvrement",
+        target: '[data-demo="recovery-list"], [data-demo="recovery-head"]',
+        title: "Le recouvrement",
+        body:
+          "Les factures dues et où en est la relance de chacune : courriel, LRAR, huissier, " +
+          "assignation, décision. Chaque marche garde le montant réclamé ce jour-là ; le reste dû " +
+          "se recalcule, et un montant réclamé périmé se signale. La même échelle s'ouvre par le " +
+          "« … » d'une facture.",
+      },
+    ],
+  },
+  {
+    id: "routage-courriels",
+    title: "Les courriels d'une adresse partagée trouvent leur immeuble, ou attendent qu'on les classe",
+    date: "2026-09-29",
+    steps: [
+      {
+        path: FICHE_COPRO,
+        target: '[title^="Adresse partagée : ses courriels"]',
+        title: "Une adresse partagée",
+        body:
+          "M. Dalmasso, une gestionnaire de syndic : ils écrivent pour plusieurs dossiers. Leur " +
+          "adresse reste sur la fiche pour leur écrire, mais ne rattache plus rien seule. Le « … » " +
+          "de l'interlocuteur la déclare partagée, ou la rend à la fiche.",
+      },
+      {
+        path: "/mail?vue=a_classer",
+        target: '[data-demo="mail-thread-list"]',
+        title: "Le routage par indices, puis la file « À classer »",
+        body:
+          "Un courriel d'adresse partagée est lu : l'adresse du chantier (« 1 rue Chabaud »), une " +
+          "référence DE ou FA de la société qui le reçoit, le nom de la fiche dans l'objet. Une " +
+          "fiche seule en tête le reçoit ; sinon il attend ici, au lieu de tomber sur la mauvaise.",
+      },
+      {
+        path: "/mail?vue=a_classer",
+        target: '[data-demo="mail-queue-choices"]',
+        title: "Un clic pour ranger",
+        body:
+          "Le pourquoi, puis les fiches en lice : « Rattacher » range toute la conversation sans " +
+          "retenir l'adresse, « Aucune » la sort de la file pour de bon.",
+      },
+      {
+        path: "/settings/messagerie",
+        target: '[data-demo="mail-reroute"]',
+        title: "Reprendre ce qui a été mal rangé",
+        body:
+          "Réservé à l'administration : les courriels qu'une adresse partagée avait rangés seule " +
+          "sont relus. Simuler d'abord — rien ne bouge —, puis re-router : désignés, ils changent " +
+          "de fiche ; ambigus, ils vont dans « À classer ». Les rattachements à la main ne bougent pas.",
+      },
+    ],
+  },
+  {
+    id: "tiers-et-payeur",
+    title: "Les tiers sortent des clients, et une affaire dit qui la paie",
+    date: "2026-09-29",
+    steps: [
+      {
+        path: "/customers",
+        target: 'a[href="/customers?type=gestionnaire"], a[href="/customers?relation=intervenant"]',
+        title: "Deux types de tiers de plus",
+        body:
+          "Gestionnaires d'immeubles — ceux qui gèrent plusieurs copropriétés pour un syndic — " +
+          "et organismes : contrôleur, mairie, huissier. Ni l'un ni l'autre n'est un client : " +
+          "ils ne remontent plus dans Clients, Prospects ni parmi les fiches à enrichir.",
+      },
+      {
+        path: "/customers?statut=tous",
+        target: '[data-demo="customer-row-menu"]',
+        title: "Reclasser une fiche depuis la liste",
+        body:
+          "Le « … » de chaque ligne ouvre « Reclasser… » : le type et la relation, sans ouvrir " +
+          "la fiche. Balitrand, Chancel, OXIA ou ArcelorMittal se rangent en une minute, et " +
+          "l'écran dit avant le clic si la fiche sortira de Clients et Prospects.",
+      },
+      {
+        path: FICHE_COPRO,
+        click: '[data-demo="project-delete"]',
+        target: '[data-demo="project-payer"]',
+        title: "Payé par…",
+        body:
+          "Une affaire peut être réglée par une autre fiche que la sienne : AGEFIM pour la SDC " +
+          "du Marot, une SAS au lieu de la SCI. La ligne de l'affaire et ses factures disent " +
+          "alors « payé par … », et le lien payeur de la fiche est proposé, jamais imposé.",
+      },
+      {
+        path: "/billing/a-affecter",
+        target: '[data-demo="pending-list"]',
+        title: "Le virement du payeur s'affecte aux affaires qu'il règle",
+        body:
+          "« Affecter… » sur un encaissement du payeur liste ses pièces, puis celles des " +
+          "affaires qu'il paie pour d'autres, marquées « pour SDC … ». Sa fiche montre ces " +
+          "affaires dans un bloc « Règle pour ».",
+      },
+      {
+        path: "/customers/graphe",
+        target: '[data-demo="graphe-liens"]',
+        title: "Paie pour, dans le graphe de toute la base",
+        body:
+          "Un lien « Paie pour » relie le payeur au client, épais du nombre d'affaires " +
+          "réglées. Les organismes ont leur couleur, les gestionnaires rejoignent les syndics.",
+      },
+    ],
+  },
+  {
+    id: "encaissements-complets",
+    title: "Encaissements complets : compte crédité, avoirs, virement sans facture",
+    date: "2026-09-29",
+    steps: [
+      {
+        path: FICHE_COPRO,
+        click: ['[data-demo="tab-devis"]', '[data-demo="quote-payment-add"]'],
+        target: '[data-demo="reglement-virements"]',
+        title: "Le compte crédité de chaque virement",
+        body:
+          "Un virement dit sur quel compte il est tombé : GROUPE principal, GROUPE " +
+          "sous-compte 3, OMPT STRUCTURE ou AVENUE DE GRASSE. Il se choisit à la saisie et se " +
+          "corrige depuis le « … » du virement (« Compte crédité… ») — le solde de Theuwissen " +
+          "se range enfin sur le sous-compte 3.",
+      },
+      {
+        path: FICHE_COPRO,
+        click: ['[data-demo="tab-devis"]', '[data-demo="quote-menu"]'],
+        target: '[data-demo="quote-credit-note"]',
+        title: "Émettre un avoir sur une facture",
+        body:
+          "L'avoir naît lié à la facture qu'il annule, dans son affaire et chez sa société. " +
+          "La facture affiche alors son net à payer, l'avoir dit « annule FA… », et les " +
+          "impayés, le facturé et le solde de la facture tiennent compte de lui.",
+      },
+      {
+        path: FICHE_COPRO,
+        target: '[data-demo="receipt-new"]',
+        title: "Un virement sans facture",
+        body:
+          "L'argent arrivé avant sa pièce s'inscrit sur la fiche du payeur — montant, jour, " +
+          "compte, libellé du relevé — et attend. « Affecter… » le répartit ensuite sur une ou " +
+          "plusieurs pièces ; ce qui n'est pas affecté reste en attente.",
+      },
+      {
+        path: "/billing/a-affecter",
+        target: '[data-demo="pending-new"]',
+        title: "« À affecter », pour toute la base",
+        body:
+          "Facturation → À affecter liste tous les encaissements en attente, y compris ceux " +
+          "dont le payeur n'est pas reconnu sur le relevé. On y saisit un virement, on choisit " +
+          "le payeur et les pièces au moment d'affecter.",
+      },
+    ],
+  },
+  {
+    id: "socle-pieces",
+    title: "Les pièces : numéros par société, déplacement, encaissé, frise",
+    date: "2026-09-29",
+    steps: [
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="tab-devis"]',
+        target: '[data-demo="piece-ref"]',
+        title: "G ou S devant chaque numéro",
+        body:
+          "Chaque société numérote de son côté : DE2026-0016 existe chez GROUPE et chez " +
+          "STRUCTURE. La lettre dit laquelle, sur la ligne d'un devis, les preuves de la " +
+          "frise, les chantiers et la recherche ⌘K — qui montre désormais les deux pièces. " +
+          "Le même numéro se saisit une fois par société, par l'écran comme par l'assistant.",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: ['[data-demo="tab-devis"]', '[data-demo="quote-menu"]'],
+        target: '[data-demo="quote-move"]',
+        title: "Déplacer une pièce vers une autre affaire",
+        body:
+          "Une étude ou des sondages rangés dans la mauvaise affaire changent d'affaire, avec " +
+          "leurs virements. Seules les affaires de la même fiche sont proposées, et " +
+          "l'historique des deux affaires garde une note du déplacement.",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="tab-devis"]',
+        target: '[data-demo="quote-balance-line"], [data-demo="quote-menu"]',
+        title: "L'encaissé de chaque pièce se voit et se corrige",
+        body:
+          "Le solde d'une pièce s'affiche à côté de son acompte, et le « … » d'une pièce qui ne " +
+          "porte pas le règlement de l'affaire ouvre « Corriger l'acompte / le solde de cette " +
+          "pièce » : un montant hérité de la reprise se corrige ou se retire.",
+      },
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="project-cycle"]',
+        title: "Une frise fidèle aux paiements",
+        body:
+          "« Solde encaissé » n'est coché qu'à 100 % payé : une facture de situation réglée ne " +
+          "le coche plus. « Acompte encaissé » prend le jour du vrai paiement de sa facture, et " +
+          "une marque posée à tort se retire depuis le cran.",
+      },
+    ],
+  },
+  {
+    id: "graphe-global",
+    title: "Le graphe de toute la base, vivant",
+    date: "2026-09-29",
+    steps: [
+      {
+        path: "/customers/graphe",
+        target: '[data-demo="graphe-global"]',
+        title: "Toutes les fiches, et ce qui les relie",
+        body:
+          "Chaque point est une fiche, sa couleur dit ce qu'elle est (syndic, copropriété, " +
+          "prescripteur, apporteur…) et sa taille son nombre de connexions. Les petits points " +
+          "verts sont des interlocuteurs communs : une personne présente sur plusieurs fiches, " +
+          "dessinée en étoile. Survoler montre un nœud, double-cliquer ouvre la fiche.",
+      },
+      {
+        path: "/customers/graphe",
+        target: '[data-demo="graphe-chiffres"]',
+        title: "Les chiffres de ce qu'on regarde",
+        body:
+          "Fiches et liens affichés, groupes reliés, et les cinq fiches les plus connectées : " +
+          "un clic cadre la toile sur elle.",
+      },
+      {
+        path: "/customers/graphe",
+        target: '[data-demo="graphe-filtres"]',
+        title: "Chercher, puis choisir ce qu'on voit",
+        body:
+          "La recherche trouve une fiche ou un interlocuteur et zoome dessus. Les catégories " +
+          "servent aussi de légende. Traits pleins fléchés : liens posés à la main ; traits fins " +
+          "et pâles : liens déduits. Les fiches sans lien et les archivées sont masquées par " +
+          "défaut, à un interrupteur près.",
+      },
+      {
+        path: "/customers/graphe",
+        click: '[data-demo="graphe-chiffres"] button',
+        target: '[data-demo="graphe-selection"]',
+        title: "Une fiche et ses voisins",
+        body:
+          "Choisir un nœud éteint le reste et ouvre ce panneau : catégorie, ville, affaires, " +
+          "connexions, et les voisins rangés par nature du lien — « A pour syndic », « Affaires " +
+          "apportées par »… Chaque voisin se choisit à son tour.",
+      },
+      {
+        path: "/customers/graphe",
+        target: '[data-demo="graphe-fraicheur"]',
+        title: "Il se met à jour tout seul",
+        body:
+          "Une fiche créée ou corrigée, un interlocuteur ajouté, un syndic posé : la toile se " +
+          "relit dans les quinze secondes, sans bouger ce qui était déjà placé, et le nouveau " +
+          "nœud s'allume un instant.",
+      },
+      {
+        path: FICHE_COPRO,
+        click: '[data-demo="tab-graphe"]',
+        target: '[data-demo="graphe-global-lien"]',
+        title: "Depuis une fiche",
+        body:
+          "L'onglet Graphe d'une fiche montre son voisinage immédiat ; ce lien ouvre le graphe " +
+          "global centré sur elle.",
+      },
+    ],
+  },
+  {
+    id: "categories-et-menu",
+    title: "Syndics, fournisseurs, apporteurs : les fiches par catégorie",
+    date: "2026-09-29",
+    steps: [
+      {
+        path: "/customers",
+        target: '[data-demo="nav-sub-/customers"]',
+        title: "Un menu sous « Fiches client »",
+        body:
+          "La colonne se déplie sur les listes qu'on ouvre le plus : clients, prospects, " +
+          "copropriétés, syndics, prescripteurs, apporteurs d'affaires, fournisseurs, " +
+          "sous-traitants — et le graphe de toute la base, tout en bas.",
+      },
+      {
+        path: "/customers",
+        click: '[data-sidebar="sidebar"] a[href="/customers?type=syndic"]',
+        target: '[data-demo="fiche-categorie"]',
+        title: "Chaque ligne dit ce qu'est la fiche",
+        body:
+          "Le type, la relation quand elle contredit le type, et « Apporteur » pour une fiche " +
+          "qui nous a amené une affaire. Une particulière cliente n'en porte aucun : ce sont " +
+          "les autres qu'on cherche.",
+      },
+      {
+        path: "/customers",
+        target: "#filtre-categorie",
+        title: "La même question, depuis la liste",
+        body:
+          "Le filtre « Catégorie » propose les mêmes entrées que la colonne. Les prescripteurs " +
+          "se lisent sur la relation effective : un architecte que personne n'a classé en est un.",
+      },
+      {
+        path: "/customers/graphe",
+        target: '[data-demo="graphe-global"]',
+        title: "Le graphe de toute la base",
+        body:
+          "Toutes les fiches, leurs syndics, leurs apporteurs et les interlocuteurs qu'elles " +
+          "partagent, sur une toile qui se tient à jour — voir la démo « Le graphe de toute la base ».",
+      },
+    ],
+  },
+  {
+    id: "arreter-ou-pause",
+    title: "Arrêter ou mettre en pause une affaire, depuis la frise",
+    date: "2026-09-29",
+    steps: [
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="frise-arret"]',
+        title: "Un bouton explicite, sous la frise",
+        body:
+          "« Arrêter ou mettre en pause » vit maintenant sous la frise de chaque affaire " +
+          "ouverte, et non plus seulement dans « à faire maintenant » avant la signature. Un " +
+          "chantier signé qui s'interrompt a enfin un endroit où le dire.",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="frise-arret"]',
+        target: '[data-demo="arret-choix"]',
+        title: "D'abord : pause ou arrêt",
+        body:
+          "Une affaire en pause reviendra, une affaire arrêtée ne reviendra pas d'elle-même. " +
+          "Le choix vient en premier, et le bouton final dit exactement ce qu'il fait : " +
+          "« Mettre en pause » ou « Arrêter l'affaire ».",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: ['[data-demo="frise-arret"]', '[data-demo="arret-choix"] [role="radio"]:last-child'],
+        target: '[data-demo="arret-dialog"]',
+        title: "Puis la raison, obligatoire pour un arrêt",
+        body:
+          "Une affaire signée propose d'abord « Arrêté en cours de route » — ce n'est pas une " +
+          "vente ratée. La raison écrite est exigée pour arrêter, facultative pour une pause, " +
+          "qui peut poser une tâche de reprise. Ensuite, la frise porte une pastille " +
+          "« En pause » ou « Arrêtée » avec la raison, et le bouton devient « Reprendre ».",
+      },
+    ],
+  },
+  {
+    id: "claude-ouvre-l-app",
+    title: "Le bouton Claude ouvre l'application, la demande déjà écrite",
+    date: "2026-09-29",
+    steps: [
+      {
+        path: FICHE_ETUDE,
+        target: '[data-demo="claude-fiche"]',
+        title: "Claude n'est plus un aperçu",
+        body:
+          "Le bouton ouvrait un panneau dont « Envoyer » restait grisé. Il ouvre maintenant " +
+          "l'application Claude — sur Mac, Windows, iPhone ou Android — sur une conversation " +
+          "neuve, la demande déjà écrite. Même geste sur chaque affaire, chaque devis, un " +
+          "courriel, les chantiers, les études et le tableau de bord.",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="claude-fiche"]',
+        target: '[data-demo="claude-menu"]',
+        title: "Une demande par ligne, écrite d'après l'écran",
+        body:
+          "Chaque ligne ouvre Claude avec un texte qui dit d'emblée « avec le MCP CRM » :" +
+          "Claude lit alors le CRM par votre connecteur, avec les droits de votre compte, au " +
+          "lieu de répondre de mémoire. Le texte nomme la fiche, sa référence et son " +
+          "identifiant ; une demande qui écrirait dit où, et Claude attend votre validation.",
+      },
+      {
+        path: FICHE_ETUDE,
+        click: '[data-demo="claude-fiche"]',
+        target: '[data-demo="claude-open"]',
+        title: "Ou une conversation sans demande",
+        body:
+          "« Ouvrir dans Claude » confie seulement l'objet : Claude en fait le point et attend " +
+          "votre question. Sans l'application de bureau, un rappel propose la même demande " +
+          "sur claude.ai. Sur téléphone, l'application s'ouvre ; le texte pré-rempli n'y est " +
+          "pas garanti par Anthropic.",
+      },
+    ],
+  },
+  {
     id: "fiche-simplifiee-editeurs",
     title: "Un fait, un nom, une saisie — où qu'on l'ouvre",
     date: "2026-09-29",
@@ -478,7 +1199,7 @@ export const DEMOS: Demo[] = [
           "modifier_fiche, ajouter_contact et modifier_contact.",
       },
       {
-        path: "/customers/cfd6c7df-8b0a-471b-951f-d2f4af6ad4a2",
+        path: "/customers/cfd6c7df-8b0a-471b-951f-d2f4af6ad4a2?vue=fiche",
         target: '[data-demo="contacts-card"]',
         title: "Une fiche porte autant d'interlocuteurs qu'il en faut",
         body:
@@ -718,7 +1439,7 @@ export const DEMOS: Demo[] = [
         body: "Les interlocuteurs et les notes de la fiche vivaient dans le sixième onglet : au téléphone, le numéro de l'architecte était à deux clics. Ils sont sous le nom du client, le numéro s'appelle et l'adresse s'écrit d'un geste. Un clic sur un nom le corrige, le crayon corrige les notes sur place.",
       },
       {
-        path: FICHE_ETUDE,
+        path: `${FICHE_ETUDE}?vue=fiche`,
         target: '[data-demo="contacts-card"]',
         title: "Un interlocuteur se corrige",
         body: "Corriger un numéro obligeait à supprimer puis recréer l'interlocuteur. Un clic sur son nom, ou « Modifier » dans son « … », ouvre sa fiche, avec ses notes, et n'envoie que ce qui a changé.",

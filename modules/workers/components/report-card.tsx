@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { DownloadIcon, MailIcon, SendIcon } from "lucide-react";
 import { LIVE, STABLE, useCached } from "@/shared/api/cache";
-import { apiFetchBlob } from "@/shared/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -45,6 +44,18 @@ export function ReportCard({ month }: { month: string }) {
 
   const saisie = adresse ?? etat?.recipient ?? "";
 
+  async function choisirBoite(sender: string) {
+    setPending(true);
+    try {
+      await api.setReport(etat?.recipient ?? "", etat?.enabled ?? false, sender);
+      await mutate();
+    } catch (cause) {
+      notifyError(cause instanceof Error ? cause.message : "La boîte d'envoi n'a pas été enregistrée.");
+    } finally {
+      setPending(false);
+    }
+  }
+
   async function enregistrer(enabled: boolean) {
     const mail = saisie.trim();
     if (enabled && mail === "") {
@@ -65,7 +76,7 @@ export function ReportCard({ month }: { month: string }) {
 
   async function telecharger() {
     try {
-      const blob = await apiFetchBlob(api.reportCsvUrl(month));
+      const blob = await api.downloadReportCsv(month);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -83,8 +94,8 @@ export function ReportCard({ month }: { month: string }) {
     const ok = await askConfirm({
       title: `Envoyer le rapport de ${monthLabel(month)} ?`,
       description:
-        `Un courriel part maintenant à ${etat?.recipient}, avec la liste des absences ` +
-        "en pièce jointe. Les samedis n'y figurent pas. Cet essai ne remplace pas " +
+        `Le courriel « Variables de paie » part maintenant à ${etat?.recipient}, ` +
+        "avec le détail en pièce jointe. Les samedis et les dimanches n'y figurent pas. Cet essai ne remplace pas " +
         "l'envoi automatique du dernier jour du mois.",
       confirmLabel: "Envoyer",
     });
@@ -108,10 +119,12 @@ export function ReportCard({ month }: { month: string }) {
         <MailIcon className="size-4" /> Rapport au comptable
       </h2>
       <p className="text-muted-foreground mb-3 text-xs">
-        Le dernier jour de chaque mois, la liste des absences part au comptable, en
-        pièce jointe. <span className="font-medium">Les samedis n&apos;y sont pas comptés</span> —
-        ils restent visibles dans la grille ci-dessus, où se décide s&apos;ils ont été
-        travaillés.
+        Le dernier jour de chaque mois, les variables de paie partent au comptable : les
+        absences et les demi-journées de chacun, avec leurs dates, et le détail en pièce
+        jointe.{" "}
+        <span className="font-medium">Les samedis et les dimanches n&apos;y figurent pas</span> : ni
+        présence, ni absence, ni congé. Les samedis restent visibles dans la grille ci-dessus, où
+        se décide s&apos;ils ont été travaillés.
       </p>
 
       {etat?.last_error ? (
@@ -131,7 +144,9 @@ export function ReportCard({ month }: { month: string }) {
 
       {etat && !etat.can_send && (
         <p className="text-warning mb-3 text-xs font-medium">
-          Aucune boîte de messagerie raccordée : rien ne peut partir. Réglages → Messagerie.
+          {etat.senders.length === 0
+            ? "Aucune boîte de messagerie raccordée : rien ne peut partir. Réglages → Messagerie."
+            : `La boîte d'envoi ${etat.sender} n'est plus raccordée : en choisir une autre.`}
         </p>
       )}
 
@@ -150,6 +165,28 @@ export function ReportCard({ month }: { month: string }) {
               Enregistrer
             </Button>
           </div>
+          {etat && etat.senders.length > 0 && (
+            <label className="mb-3 flex flex-wrap items-center gap-2 text-xs">
+              Envoyé depuis
+              <select
+                className="bg-background rounded-md border px-2 py-1 text-xs"
+                value={etat.sender}
+                disabled={pending}
+                onChange={(e) => void choisirBoite(e.target.value)}
+                aria-label="Boîte d'envoi du rapport"
+              >
+                <option value="">la première boîte raccordée</option>
+                {etat.sender && !etat.senders.includes(etat.sender) && (
+                  <option value={etat.sender}>{etat.sender} (débranchée)</option>
+                )}
+                {etat.senders.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <label className="mb-3 flex items-center gap-2 text-xs">
             <Switch
               checked={etat?.enabled ?? false}
@@ -185,6 +222,16 @@ export function ReportCard({ month }: { month: string }) {
         )}
       </div>
 
+      {apercu && rapport?.corps && (
+        <div className="bg-muted/30 mt-3 rounded-lg border p-3 text-xs" data-demo="ouvriers-courriel">
+          <p className="mb-2">
+            <span className="text-muted-foreground">Objet : </span>
+            <span className="font-medium">{rapport.objet}</span>
+          </p>
+          <pre className="font-sans break-words whitespace-pre-wrap">{rapport.corps}</pre>
+        </div>
+      )}
+
       {apercu && rapport && (
         <div className="mt-3 overflow-x-auto rounded-lg border">
           <table className="w-full text-xs">
@@ -216,7 +263,8 @@ export function ReportCard({ month }: { month: string }) {
             </tbody>
           </table>
           <p className="text-muted-foreground px-2 py-1.5 text-[11px]">
-            {rapport.samedis_exclus} samedi(s) écarté(s) de ce décompte.
+            {rapport.samedis_exclus} samedi(s) et {rapport.dimanches_exclus ?? 0} dimanche(s)
+            écartés de ce décompte.
           </p>
         </div>
       )}

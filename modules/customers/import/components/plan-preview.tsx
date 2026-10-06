@@ -85,6 +85,9 @@ function CustomerRow({
             >
               {customer.action === "update" ? "Mise à jour" : "Création"}
             </Badge>
+            {customer.twin_of && (
+              <span className="text-muted-foreground text-xs">rejoint « {customer.twin_of} »</span>
+            )}
             <EnumBadge value={customer.status} entries={CUSTOMER_STATUS} />
             <EnumBadge value={customer.source} entries={CUSTOMER_SOURCE} />
           </span>

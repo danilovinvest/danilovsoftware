@@ -1,3 +1,4 @@
+import type { CoproValidations } from "./syndic-types";
 import { apiFetch, type Paginated } from "@/shared/api/client";
 import type {
   ClassificationPayload,
@@ -45,6 +46,9 @@ export function listCustomers(filters: CustomerFilters, signal?: AbortSignal) {
       search: filters.search,
       status: filters.status,
       source: filters.source,
+      kind: filters.kind,
+      relation: filters.relation,
+      referrer: filters.referrer ? 1 : undefined,
       city: filters.city,
       owner_id: filters.owner_id,
       cycle: filters.cycle,
@@ -188,6 +192,14 @@ export function updateContact(id: string, payload: Partial<ContactPayload>) {
   return apiFetch<Contact>(`/v1/contacts/${id}`, { method: "PATCH", body: payload });
 }
 
+/** Déclare partagée — ou non — l'adresse d'un interlocuteur (route à part : le formulaire ne la porte pas). */
+export function setContactSharedAddress(id: string, shared: boolean) {
+  return apiFetch<{ id: string; shared_address: boolean }>(`/v1/contacts/${id}/shared-address`, {
+    method: "PUT",
+    body: { shared },
+  });
+}
+
 export function deleteContact(id: string) {
   return apiFetch<void>(`/v1/contacts/${id}`, { method: "DELETE" });
 }
@@ -240,7 +252,7 @@ export type MilestonesPayload = {
   negotiation_at: string | null;
   negotiation_note: string;
   signed_at: string | null;
-};
+} & CoproValidations;
 
 /** Les clés écrivables des jalons, pour trier un geste avant de l'envoyer. */
 export const MILESTONE_KEYS = [
@@ -250,6 +262,9 @@ export const MILESTONE_KEYS = [
   "plans_started_at", "plans_review_at", "corrections_at", "final_ready_at",
   "report_written_at", "report_validated_at", "report_sent_at", "survey_done_at",
   "contact_at", "rdv_at", "quote_sent_at", "negotiation_at", "negotiation_note", "signed_at",
+  // Les validations d'une copropriété (migration 109).
+  "ag_at", "works_voted_at", "syndic_approval_at", "insurance_funds_insurer",
+  "insurance_funds_amount", "insurance_funds_received_at", "pv_syndic_sent_at", "pv_syndic_signed_at",
 ] as const satisfies readonly (keyof MilestonesPayload)[];
 
 /**
@@ -482,7 +497,14 @@ export function setQuoteBalance(
  */
 export function addQuotePayment(
   quoteId: string,
-  payload: { paid_at: string; amount: string; reference?: string; kind?: "acompte" | "solde" },
+  payload: {
+    paid_at: string;
+    amount: string;
+    reference?: string;
+    kind?: "acompte" | "solde";
+    /** Le compte crédité (migration 104), facultatif. */
+    bank_account_id?: string | null;
+  },
 ) {
   return apiFetch<Quote>(`/v1/quotes/${quoteId}/payments`, { method: "POST", body: payload });
 }
@@ -535,6 +557,18 @@ export function deleteStepProof(id: string) {
 
 export function deleteQuote(id: string) {
   return apiFetch<void>(`/v1/quotes/${id}`, { method: "DELETE" });
+}
+
+/**
+ * Range une pièce sous une autre affaire **de la même fiche**, avec ses
+ * virements ; l'historique des deux affaires le note (29/09). Une autre fiche
+ * est le geste du déplacement d'affaire, pas de celui-ci.
+ */
+export function moveQuote(id: string, projectId: string) {
+  return apiFetch<Quote>(`/v1/quotes/${id}/project`, {
+    method: "PUT",
+    body: { project_id: projectId },
+  });
 }
 
 // --- Échanges ---------------------------------------------------------------

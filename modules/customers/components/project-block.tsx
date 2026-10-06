@@ -241,6 +241,7 @@ export const ProjectBlock = memo(function ProjectBlock({
               onIssuer={() => setDialog({ kind: "issuer" })}
               onEdit={() => onEdit(project)}
               onAddQuote={onAddQuote}
+              onPayer={() => setDialog({ kind: "payer" })}
               onClose={() => setDialog({ kind: "closure" })}
               onArchive={() => void archive.archiver()}
               onDelete={() => setDialog({ kind: "delete" })}
@@ -256,6 +257,14 @@ export const ProjectBlock = memo(function ProjectBlock({
               metier={metier}
               canOrder={canOrder}
               onOrder={() => setDialog({ kind: "order" })}
+              halt={{
+                outcome: project.outcome,
+                note: project.outcome_note,
+                canWrite,
+                pending: gestures.reopenPending || busy,
+                onHalt: () => setDialog({ kind: "outcome", mode: null }),
+                onResume: () => void gestures.act("resume"),
+              }}
               edit={
                 canWrite
                   ? {

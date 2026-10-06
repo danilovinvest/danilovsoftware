@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { EllipsisIcon, PencilIcon, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +28,7 @@ export function RowMenu({
   editLabel = "Modifier…",
   onDelete,
   deleteLabel = "Supprimer…",
+  children,
 }: {
   /** Ce que le bouton désigne, pour un lecteur d'écran : « Actions sur le devis DE2026-0009 ». */
   label: string;
@@ -37,8 +39,10 @@ export function RowMenu({
   /** Ouvre la confirmation ; absent, l'entrée ne s'affiche pas. */
   onDelete?: () => void;
   deleteLabel?: string;
+  /** Des gestes propres à la ligne, rangés entre corriger et supprimer. */
+  children?: ReactNode;
 }) {
-  if (!onEdit && !onDelete) return null;
+  if (!onEdit && !onDelete && !children) return null;
 
   return (
     <DropdownMenu>
@@ -61,7 +65,8 @@ export function RowMenu({
             {editLabel}
           </DropdownMenuItem>
         )}
-        {onEdit && onDelete && <DropdownMenuSeparator />}
+        {children}
+        {(onEdit || children) && onDelete && <DropdownMenuSeparator />}
         {onDelete && (
           <DropdownMenuItem variant="destructive" onSelect={onDelete}>
             <Trash2Icon />

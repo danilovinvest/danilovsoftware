@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PencilIcon, StickyNoteIcon } from "lucide-react";
 import { usePermission } from "@/modules/auth";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import * as api from "../lib/api";
 import { useAction } from "../hooks/use-customers";
 import type { CustomerDetail } from "../lib/types";
-import { GlanceContacts } from "./glance-contacts";
+import { ContactList } from "./contact-list";
 
 /**
  * Les interlocuteurs et les notes de la fiche, dans l'en-tête (issue 60).
@@ -18,8 +18,9 @@ import { GlanceContacts } from "./glance-contacts";
  * était à deux clics, et les notes — l'accès, le code, « ne pas appeler avant
  * dix heures » — ne se lisaient qu'en allant les chercher.
  *
- * C'est désormais le seul endroit où les interlocuteurs se gèrent : l'onglet
- * Fiche n'en porte plus de seconde liste (voir `glance-contacts.tsx`).
+ * L'en-tête n'en garde que l'essentiel : une ligne par personne, trois au plus,
+ * sans leurs notes. La liste entière vit dans l'onglet Fiche
+ * (`contact-list.tsx`, lectures `compact` et `full`).
  */
 export function CustomerGlance({
   customer,
@@ -34,9 +35,11 @@ export function CustomerGlance({
   if (customer.contacts.length === 0 && !customer.notes && !canWrite) return null;
 
   return (
-    <div data-demo="customer-glance" className={cn("flex flex-col gap-2", className)}>
-      <GlanceContacts
+    <div data-demo="customer-glance" className={cn("flex max-w-2xl flex-col gap-2", className)}>
+      <ContactList
+        variant="compact"
         customerId={customer.id}
+        kind={customer.kind}
         contacts={customer.contacts}
         canWrite={canWrite}
         onChanged={onChanged}
@@ -63,12 +66,11 @@ function CustomerNotes({
   onChanged: () => void;
 }) {
   const [draft, setDraft] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState(false);
   const save = useAction((notes: string) => api.updateCustomer(customer.id, { notes }));
 
   if (draft !== null) {
     return (
-      <div className="flex max-w-2xl flex-col gap-2">
+      <div className="flex flex-col gap-2">
         <Textarea
           autoFocus
           aria-label="Notes de la fiche"
@@ -96,41 +98,84 @@ function CustomerNotes({
     );
   }
 
-  if (!customer.notes) {
+  if (!customer.notes.trim()) {
     if (!canWrite) return null;
     return (
-      <button
-        type="button"
-        className="text-muted-foreground hover:text-foreground flex w-fit items-center gap-1.5 text-xs"
+      <Button
+        size="xs"
+        variant="ghost"
+        className="text-muted-foreground -ml-2 w-fit"
         onClick={() => setDraft("")}
       >
-        <StickyNoteIcon className="size-3.5" />
+        <StickyNoteIcon />
         Ajouter une note
-      </button>
+      </Button>
     );
   }
 
   return (
-    <div className="flex max-w-2xl items-start gap-2 text-sm">
+    <NotesText
+      notes={customer.notes}
+      onEdit={canWrite ? () => setDraft(customer.notes) : undefined}
+    />
+  );
+}
+
+/**
+ * Deux lignes, puis « Voir plus ».
+ *
+ * Le « … » isolé qu'on voyait sous certaines notes venait d'une ligne vide :
+ * `whitespace-pre-line` garde les sauts de ligne, et `line-clamp-2` posait son
+ * ellipse au bout de la deuxième ligne — vide, quand la note sautait une ligne
+ * après la première. Repliée, la note perd donc ses lignes blanches ; dépliée,
+ * elle les retrouve. Et « Voir plus » ne s'affiche que si le texte déborde
+ * vraiment, mesuré plutôt que deviné.
+ */
+function NotesText({ notes, onEdit }: { notes: string; onEdit?: () => void }) {
+  const [expanded, setExpanded] = useState(false);
+  const [element, setElement] = useState<HTMLParagraphElement | null>(null);
+  const [overflows, setOverflows] = useState(false);
+  const folded = notes.replace(/\n\s*\n+/g, "\n").trim();
+
+  useEffect(() => {
+    if (!element || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() =>
+      setOverflows(element.scrollHeight > element.clientHeight + 1),
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [element, folded]);
+
+  return (
+    <div className="flex items-start gap-2">
       <StickyNoteIcon className="text-muted-foreground mt-0.5 size-3.5 shrink-0" />
-      <button
-        type="button"
-        title={expanded ? "Replier" : "Tout lire"}
-        className={cn(
-          "text-muted-foreground min-w-0 text-left whitespace-pre-line",
-          !expanded && "line-clamp-2",
+      <div className="min-w-0 flex-1">
+        <p
+          ref={setElement}
+          className={cn(
+            "text-muted-foreground text-xs break-words whitespace-pre-line",
+            !expanded && "line-clamp-2",
+          )}
+        >
+          {expanded ? notes.trim() : folded}
+        </p>
+        {(expanded || overflows) && (
+          <button
+            type="button"
+            className="text-muted-foreground hover:text-foreground mt-0.5 text-xs font-medium"
+            onClick={() => setExpanded(!expanded)}
+          >
+            {expanded ? "Voir moins" : "Voir plus"}
+          </button>
         )}
-        onClick={() => setExpanded(!expanded)}
-      >
-        {customer.notes}
-      </button>
-      {canWrite && (
+      </div>
+      {onEdit && (
         <Button
-          size="icon-sm"
+          size="icon-xs"
           variant="ghost"
           aria-label="Modifier les notes"
-          className="shrink-0"
-          onClick={() => setDraft(customer.notes)}
+          className="text-muted-foreground -mt-1 shrink-0"
+          onClick={onEdit}
         >
           <PencilIcon />
         </Button>

@@ -1,6 +1,5 @@
 import type {
   Interaction,
-  PaymentStatus,
   ProjectMission,
   ProjectOutcome,
   ProjectStage,
@@ -9,6 +8,7 @@ import type {
 import { isPaused, PROJECT_OUTCOME, type Tone } from "./labels";
 import { EMPTY_MARKS, type Jalons, type StepMarks } from "./jalons";
 import { deadlineOf, missionOf } from "./mission";
+import { balanceFact, depositFact } from "./settlement";
 
 /**
  * Le cycle d'une affaire, de la demande au chantier.
@@ -604,11 +604,19 @@ export function readCycle(
   const negoDone = marks.negotiation_at !== null;
   const negoAt = marks.negotiation_at;
 
-  const deposit: PaymentStatus = signed?.deposit_status ?? lead?.deposit_status ?? "non_applicable";
-  const acompteDone = deposit === "recu";
-
-  const balance: PaymentStatus = signed?.balance_status ?? lead?.balance_status ?? "non_applicable";
-  const soldeDone = balance === "recu";
+  /*
+    L'acompte et le solde se lisent sur **toutes** les pièces de l'affaire,
+    par la règle de `settlement.ts` (29/09). Ils se lisaient sur la première
+    pièce signée : une facture de situation payée cochait « Solde encaissé »
+    (Koja), et un acompte marqué à tort sur une pièce que l'écran ne
+    désignait plus ne se décochait pas. Le solde n'est franchi qu'à 100 %
+    payé quand on sait compter ; l'acompte, par le paiement de sa facture —
+    qui le redate — ou à défaut par la marque qu'on retire.
+  */
+  const acompteFait = depositFact(quotes);
+  const acompteDone = acompteFait.done;
+  const soldeFait = balanceFact(quotes);
+  const soldeDone = soldeFait.done;
 
   const metier = metierForce ?? projectMetier(project, quotes);
 
@@ -698,8 +706,9 @@ export function readCycle(
       // L'acompte, la date de chantier, les jalons, le solde, l'avis : leur
       // cran écrit dans ce qui les porte. Ce qui les franchit est donc
       // exactement ce que le cran sait retirer.
-      fact: false,
-      at: acompteDone ? jalons.deposit_paid_at : null,
+      // Un paiement franchit le cran : on ne le retire qu'en l'annulant.
+      fact: acompteFait.fact,
+      at: acompteDone ? (acompteFait.at ?? jalons.deposit_paid_at) : null,
       since: jalons.deposit_invoiced_at ?? signeAt,
     },
     chantier: {
@@ -760,11 +769,11 @@ export function readCycle(
     // livraison, il attend depuis la signature.
     solde:
       mission === "rapport_attestation"
-        ? { done: soldeDone, fact: false, at: null, since: signeAt }
+        ? { done: soldeDone, fact: soldeFait.fact, at: soldeFait.at, since: signeAt }
         : {
             done: soldeDone,
-            fact: false,
-            at: soldeDone ? livreAt : null,
+            fact: soldeFait.fact,
+            at: soldeDone ? (soldeFait.at ?? livreAt) : null,
             since: livreAt ?? jalons.worksite_date,
           },
     avis: {
@@ -1204,7 +1213,8 @@ export function nextAction(
     const reason = PROJECT_OUTCOME[project.outcome!].label.toLowerCase();
     return {
       step: at("negociation").step,
-      title: "Affaire non aboutie",
+      // Un chantier signé arrêté n'est pas une vente ratée : il le dit.
+      title: project.outcome === "arrete" ? "Affaire arrêtée" : "Affaire non aboutie",
       detail: note ? `${reason} — ${note}` : reason,
       tone: "neutral",
       alert: false,

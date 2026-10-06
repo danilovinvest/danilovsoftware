@@ -23,7 +23,7 @@ export function FlowsPanel({ flows }: { flows: IntraFlow[] }) {
       title="Flux internes au groupe"
       description={
         flows.length === 0
-          ? "Aucun flux sur la période"
+          ? "Non suivis pour l'instant"
           : `${euros(total)} HT refacturés entre sociétés`
       }
       icon={RepeatIcon}
@@ -31,7 +31,10 @@ export function FlowsPanel({ flows }: { flows: IntraFlow[] }) {
       bodyClassName="divide-y"
     >
       {flows.length === 0 ? (
-        <EmptyState title="Aucune facture entre sociétés sur la période" />
+        <EmptyState
+          title="Pas encore suivis"
+          description="Le CRM ne sait pas encore qu'un client est une société du groupe : aucun flux interne ne s'en déduit, et aucun n'est inventé."
+        />
       ) : (
         flows.map((flow) => {
           const kind = FLOW_KIND[flow.kind];

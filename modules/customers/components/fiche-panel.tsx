@@ -11,6 +11,9 @@ import { CUSTOMER_SOURCE } from "../lib/labels";
 import { EnumBadge } from "./enum-badge";
 import { ReferrerPicker } from "./referrer-picker";
 import { ClassificationEditor } from "./classification-card";
+import { ContactList } from "./contact-list";
+import { ManagementCard } from "./management-card";
+import { PaysForCard } from "./pays-for-card";
 import { formatSiret } from "../lib/classification";
 import type { CustomerDetail } from "../lib/types";
 
@@ -24,9 +27,10 @@ import type { CustomerDetail } from "../lib/types";
  * premier champ ajouté. Le classement et le parrain s'écrivent déjà à la volée
  * par leurs propres routes, et le restent.
  *
- * Les interlocuteurs n'y sont plus : ils se gèrent entièrement sous le nom du
- * client (`glance-contacts.tsx`), et une seconde liste ici n'était qu'un doublon
- * aux gestes différents. Les notes de la fiche y sont aussi (issue 60).
+ * Les interlocuteurs y sont en entier — numéros, adresses, notes de chacun —
+ * avec les mêmes gestes que sous le nom du client, qui n'en montre qu'une
+ * ligne par personne (`contact-list.tsx`). Les notes de la fiche vivent dans
+ * l'en-tête (issue 60).
  */
 export function FichePanel({
   customer,
@@ -38,8 +42,9 @@ export function FichePanel({
   /** Ouvre le formulaire de la fiche ; absent sans le droit d'écrire. */
   onEdit?: () => void;
 }) {
+  const canWrite = usePermission("customers:write");
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="grid items-start gap-4 lg:grid-cols-2">
       <Card className="gap-0 py-0" data-demo="fiche-informations">
         <CardHeader className="border-b py-4">
           <CardTitle className="text-sm">Informations</CardTitle>
@@ -76,6 +81,19 @@ export function FichePanel({
         </CardContent>
       </Card>
 
+      {customer.pays_for && customer.pays_for.projects.length > 0 && (
+        <PaysForCard paysFor={customer.pays_for} />
+      )}
+
+      <ContactList
+        variant="full"
+        customerId={customer.id}
+        kind={customer.kind}
+        contacts={customer.contacts}
+        canWrite={canWrite}
+        onChanged={onChanged}
+      />
+
       {/*
         Les deux autres axes de la fiche et son syndic — ce que la vue graphe
         lit. La clé remonte l'éditeur quand la fiche relue diffère, pour qu'il
@@ -93,6 +111,14 @@ export function FichePanel({
           />
         </CardContent>
       </Card>
+
+      {/*
+        Une copropriété, ou toute fiche qu'un syndic gère : ses syndics
+        successifs, qui la suit, et son circuit de facturation (migration 109).
+      */}
+      {(customer.kind === "copropriete" || customer.syndic_id !== null) && (
+        <ManagementCard customerId={customer.id} syndicId={customer.syndic_id} />
+      )}
     </div>
   );
 }

@@ -16,7 +16,8 @@ import { TextAreaField, TextField } from "@/shared/ui/form";
 import { ErrorNotice } from "@/shared/ui/feedback";
 import * as api from "../lib/api";
 import { useAction } from "../hooks/use-customers";
-import type { Contact, ContactPayload } from "../lib/types";
+import { contactRoles } from "../lib/contact-roles";
+import type { Contact, ContactPayload, CustomerKind } from "../lib/types";
 
 const EMPTY: ContactPayload = {
   full_name: "",
@@ -63,12 +64,15 @@ function changed(initial: ContactPayload, values: ContactPayload): Partial<Conta
  */
 export function ContactDialog({
   customerId,
+  kind,
   contact = null,
   open,
   onOpenChange,
   onSaved,
 }: {
   customerId: string;
+  /** Le type de la fiche : il choisit les rôles proposés. */
+  kind?: CustomerKind;
   /** Présent, on le corrige au lieu d'en créer un. */
   contact?: Contact | null;
   open: boolean;
@@ -85,6 +89,8 @@ export function ContactDialog({
         : api.createContact(customerId, values),
     { inline: true },
   );
+
+  const roles = contactRoles(kind);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -116,12 +122,29 @@ export function ContactDialog({
             error={save.fields.full_name}
             onChange={(event) => setValues({ ...values, full_name: event.target.value })}
           />
-          <TextField
-            label="Rôle"
-            placeholder="Architecte, propriétaire…"
-            value={values.role_label}
-            onChange={(event) => setValues({ ...values, role_label: event.target.value })}
-          />
+          <div className="flex flex-col gap-1.5">
+            <TextField
+              label="Rôle"
+              placeholder="Architecte, propriétaire…"
+              value={values.role_label}
+              onChange={(event) => setValues({ ...values, role_label: event.target.value })}
+            />
+            {roles.length > 0 && (
+              <div role="group" aria-label="Rôles proposés" className="flex flex-wrap gap-1.5" data-demo="contact-roles">
+                {roles.map((role) => (
+                  <button
+                    key={role}
+                    type="button"
+                    aria-pressed={values.role_label === role}
+                    onClick={() => setValues({ ...values, role_label: role })}
+                    className="hover:bg-accent aria-pressed:bg-accent rounded-full border px-2.5 py-1 text-xs"
+                  >
+                    {role}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           {/*
             L'employeur, qui n'est pas la fiche : une copropriété est gérée par
             un cabinet, et la gestionnaire qu'on appelle appartient au cabinet.

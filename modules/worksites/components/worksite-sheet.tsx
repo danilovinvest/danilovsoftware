@@ -19,12 +19,14 @@ import { euros, formatAmount, formatDate, formatDateTime, todayLocal } from "@/s
 import { usePermission } from "@/modules/auth";
 import { ClaudeButton, worksiteContext } from "@/modules/assistant";
 import {
+  EMPTY_COPRO,
   MILESTONE_KEYS,
   ProjectClosureDialog,
   ProjectJalons,
   paymentCarrier,
   depositTotalOf,
   missionOf,
+  PieceRef,
   PlanEvent,
   projectReference,
   setMilestones,
@@ -36,7 +38,7 @@ import {
 } from "@/modules/customers";
 import { errorMessage } from "@/shared/api/errors";
 import { ErrorNotice } from "@/shared/ui/feedback";
-import { STUDY_STATUS, WORKSITE_STATUS } from "../lib/labels";
+import { STUDY_COLUMN, WORKSITE_STATUS } from "../lib/labels";
 import { isSilent } from "../lib/derive";
 import type { Metier, ReadWorksite, WorksiteQuote } from "../lib/types";
 
@@ -95,7 +97,7 @@ function Body({
 }) {
   const { worksite: w } = read;
   const status =
-    metier === "etudes" ? STUDY_STATUS[read.study] : WORKSITE_STATUS[read.status];
+    metier === "etudes" ? STUDY_COLUMN[read.column] : WORKSITE_STATUS[read.status];
   const canWrite = usePermission("customers:write");
   /*
     Poser le démarrage à l'agenda.
@@ -163,6 +165,9 @@ function Body({
     report_validated_at: w.report_validated_at,
     report_sent_at: w.report_sent_at,
     survey_done_at: w.survey_done_at,
+    // Les validations d'une copropriété ne vivent que sur la fiche : la fiche
+    // latérale d'un chantier ne les montre pas, et n'en envoie aucune.
+    ...EMPTY_COPRO,
     ...optimiste,
   };
 
@@ -295,6 +300,9 @@ function Body({
           size="xs"
           className="mt-1 self-start"
           context={worksiteContext({
+            id: w.id,
+            reference: projectReference(w.reference, metier),
+            customerId: w.customer_id,
             customer: w.customer_name,
             label: w.label,
             status: status.label,
@@ -569,9 +577,12 @@ function Section({
                 name={quote.drive_name || quote.reference || quote.label}
                 className="hover:bg-accent/50 flex w-full items-center gap-2 px-2.5 py-2 transition-colors"
               >
-                <span className="font-mono text-[11px]">
-                  {quote.reference || "sans référence"}
-                </span>
+                <PieceRef
+                  issuer={quote.issuer}
+                  reference={quote.reference}
+                  fallback="sans référence"
+                  className="text-[11px]"
+                />
                 <span className="text-muted-foreground min-w-0 flex-1 truncate text-[11px]">
                   {quote.drive_name || quote.label}
                 </span>

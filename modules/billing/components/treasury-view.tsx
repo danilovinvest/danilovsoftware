@@ -1,14 +1,16 @@
 "use client";
 
-import { FlaskConicalIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSetPageTitle } from "@/modules/shell";
+import { ErrorNotice } from "@/shared/ui/feedback";
+import { CardsSkeleton } from "@/shared/ui/loading";
 import { useBilling } from "../hooks/use-billing";
 import { PERIODS } from "../lib/labels";
 import { AgedPanel } from "./aged-panel";
 import { FlowsPanel } from "./flows-panel";
 import { RevenuePanel } from "./revenue-panel";
 import { VatPanel } from "./vat-panel";
+import { UnrecordedNotice } from "./unrecorded-notice";
 
 /**
  * Flux de trésorerie — la lecture financière du groupe.
@@ -26,26 +28,18 @@ import { VatPanel } from "./vat-panel";
 export function TreasuryView() {
   useSetPageTitle("Flux de trésorerie");
 
-  const { data, period, setPeriod } = useBilling(null);
+  const { data, error, loading, reload, period, setPeriod } = useBilling(null);
 
   return (
     <div className="flex flex-col gap-5">
       <header>
         <h1 className="text-base font-semibold">Flux de trésorerie</h1>
         <p className="text-muted-foreground mt-0.5 text-sm">
-          Encours, TVA, répartition du chiffre d&apos;affaires et refacturations
-          internes, sur les cinq sociétés.
+          Encours, TVA et répartition du chiffre d&apos;affaires, lus des factures
+          de la base, sur les sociétés du périmètre.
         </p>
       </header>
 
-      <div className="border-warning/30 bg-warning-soft/50 text-warning flex items-start gap-2 rounded-xl border px-3 py-2 text-xs">
-        <FlaskConicalIcon className="mt-0.5 size-3.5 shrink-0" />
-        <p>
-          <span className="font-medium">Montants de démonstration.</span> Les
-          cinq identités juridiques sont réelles ; les factures, loyers et
-          honoraires qui alimentent ces chiffres sont inventés.
-        </p>
-      </div>
 
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
@@ -74,6 +68,12 @@ export function TreasuryView() {
         </div>
       </div>
 
+      {error ? <ErrorNotice message="Factures illisibles." onRetry={reload} /> : null}
+      {loading || !data ? (
+        error ? null : <CardsSkeleton count={4} columns="lg:grid-cols-2" hue="jade" />
+      ) : (
+        <>
+      <UnrecordedNotice amount={data.unrecorded.amount} count={data.unrecorded.count} />
       <div className="grid items-start gap-4 lg:grid-cols-2">
         <AgedPanel buckets={data.aged} />
         <VatPanel rows={data.vat} />
@@ -84,9 +84,12 @@ export function TreasuryView() {
           rows={data.revenue}
           totalBilled={data.total_billed}
           consolidated={data.consolidated}
+          unassigned={data.unassigned}
         />
         <FlowsPanel flows={data.flows} />
       </div>
+        </>
+      )}
     </div>
   );
 }

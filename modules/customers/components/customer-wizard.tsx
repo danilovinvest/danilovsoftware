@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { CheckIcon, ChevronRightIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,12 +9,12 @@ import { cn } from "@/lib/utils";
 import { ErrorNotice } from "@/shared/ui/feedback";
 import { SelectField, TextAreaField, TextField } from "@/shared/ui/form";
 import { useDirtyGuard } from "@/shared/lib/dirty-guard";
-import { customerHref } from "@/shared/lib/routes";
 import * as api from "../lib/api";
 import { CUSTOMER_KIND, CUSTOMER_SOURCE, PROJECT_STAGE, toOptions } from "../lib/labels";
 import { useAction } from "../hooks/use-customers";
 import { ReferrerPicker } from "./referrer-picker";
 import { SimilarCustomers } from "./similar-customers";
+import { similarKey, type SimilarCustomer } from "../lib/similar";
 import type {
   CustomerKind,
   CustomerPayload,
@@ -121,6 +121,23 @@ export function CustomerWizard() {
   });
   const [ficheCreee, setFicheCreee] = useState<string | null>(null);
 
+  /*
+    Les fiches proches, et le « Créer quand même » qui les a vues (29/09).
+
+    Theussien à côté de THEUWISSEN, Coppens à côté de Coppens-Charbonnier : le
+    bloc des fiches proches s'affichait, et l'on créait quand même sans l'avoir
+    lu. « Créer la fiche » demande donc une fois de trancher — Ouvrir la fiche
+    existante, ou Créer quand même — et ce choix ne vaut que pour les fiches
+    qu'on a vues : une frappe de plus qui en fait paraître une autre redemande.
+  */
+  const [similar, setSimilar] = useState<SimilarCustomer[]>([]);
+  const [forced, setForced] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const onFound = useCallback((items: SimilarCustomer[]) => {
+    setSimilar(items);
+    setConfirming(false);
+  }, []);
+
   const submit = useAction(async () => {
     const id = fait.current.customerId ?? (await api.createCustomer(customer)).id;
     if (fait.current.customerId === null) {
@@ -151,15 +168,28 @@ export function CustomerWizard() {
     return id;
   }, { inline: true });
 
-  async function finish(event: React.FormEvent) {
-    event.preventDefault();
+  async function create(force: boolean) {
     const manque: Record<string, string> = {};
     if (customer.display_name.trim() === "") manque.display_name = "Le nom du client est requis.";
     if (!customer.source) manque.source = "Dites comment il nous a contactés.";
     setMissing(manque);
     if (Object.keys(manque).length > 0) return;
+    const key = similarKey(similar);
+    const pending = customer.display_name.trim().length >= 3 && similar.length > 0 && forced !== key;
+    // Une fiche déjà créée par un essai précédent ne redemande rien.
+    if (!force && pending && fait.current.customerId === null) {
+      setConfirming(true);
+      return;
+    }
+    if (force) setForced(key);
+    setConfirming(false);
     const id = await submit.run();
-    if (id) router.push(customerHref(id));
+    if (id) router.push(`/customers/${id}`);
+  }
+
+  function finish(event: React.FormEvent) {
+    event.preventDefault();
+    void create(false);
   }
 
   const set = (patch: Partial<CustomerPayload>) => setCustomer({ ...customer, ...patch });
@@ -204,7 +234,14 @@ export function CustomerWizard() {
             onChange={(event) => set({ email: event.target.value })}
           />
 
-          <SimilarCustomers name={customer.display_name} phone={customer.phone} email={customer.email} />
+          <SimilarCustomers
+            name={customer.display_name}
+            phone={customer.phone}
+            email={customer.email}
+            confirming={confirming}
+            onFound={onFound}
+            onForce={() => void create(true)}
+          />
 
           <TextField
             label="Objet de la demande"

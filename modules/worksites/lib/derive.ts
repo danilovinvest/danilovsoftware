@@ -3,12 +3,14 @@ import type {
   Metier,
   ReadWorksite,
   StatusBucket,
+  StudyColumn,
   StudyStatus,
   Worksite,
   WorksiteQuote,
   WorksiteStatus,
 } from "./types";
-import { deadlineOf, deliveredAt, missionOf, settlementOf } from "@/modules/customers";
+import { deadlineOf, deliveredAt, missionOf, settlementOf, type ProjectMission } from "@/modules/customers";
+import { PRODUCTION_ORDER, productionOf, stepLabel } from "./production";
 
 /**
  * Ce qui se déduit d'un chantier, et rien de plus.
@@ -72,9 +74,17 @@ export function statusOf(worksite: Worksite, now: number): WorksiteStatus {
  * c'est le livrable, et l'équivalent exact de la date de chantier.
  */
 export function studyOf(worksite: Worksite, soldee: boolean, acompte: boolean): StudyStatus {
+  const mission = missionOf(worksite, worksite.quotes);
+  const rendue = deliveredAt(worksite, mission) !== null;
+  // Un rapport ou une attestation se paie en une fois **avant** d'être rédigé :
+  // soldé n'y veut pas dire fini. Tant que rien n'est rendu et que l'affaire
+  // n'est pas marquée réalisée, il est encore en production.
+  if (soldee && !rendue && mission === "rapport_attestation" && worksite.stage !== "realise") {
+    return "en_cours";
+  }
   if (soldee) return "soldee";
   // Rendue, c'est ce que la mission livre : un dossier, un rapport, un sondage.
-  if (rendueLe(worksite) !== null) return "rendue";
+  if (rendue) return "rendue";
   if (!acompte) return "acompte_attendu";
   return "en_cours";
 }
@@ -83,12 +93,18 @@ function rendueLe(worksite: Worksite): string | null {
   return deliveredAt(worksite, missionOf(worksite, worksite.quotes));
 }
 
-export const STUDY_ORDER: StudyStatus[] = [
+/** Les colonnes du tableau des études, dans l'ordre où une étude avance. */
+export const STUDY_COLUMNS: StudyColumn[] = [
   "acompte_attendu",
-  "en_cours",
+  ...PRODUCTION_ORDER,
   "rendue",
   "soldee",
 ];
+
+/** Ce que la carte d'une étude dit de son cran, dans les mots de sa mission. */
+export function columnDetail(read: ReadWorksite): string | null {
+  return read.production ? stepLabel(read.production, read.mission) : null;
+}
 
 /**
  * Le chiffré d'un chantier.
@@ -121,11 +137,19 @@ export function read(worksite: Worksite, now: number): ReadWorksite {
   const soldee = reglement.balance === "recu";
   // Une affaire soldée a été payée : lui réclamer un acompte n'aurait pas de sens.
   const acompte = reglement.deposit === "recu" || soldee;
+  const mission: ProjectMission = missionOf(worksite, worksite.quotes);
+  const study = studyOf(worksite, soldee, acompte);
+  const production = study === "en_cours" ? productionOf(worksite, mission) : null;
 
   return {
     worksite,
     status: statusOf(worksite, now),
-    study: studyOf(worksite, soldee, acompte),
+    study,
+    mission,
+    production,
+    // Une étude « en cours » dont aucun cran ne se lit (la mission est rendue
+    // d'après ses jalons mais l'argent dit autre chose) reste au premier cran.
+    column: study === "en_cours" ? (production ?? "calcul") : study,
     daysRunning: worksite.started_at ? days(worksite.started_at, now) : null,
     daysSilent: worksite.last_interaction_at
       ? days(worksite.last_interaction_at, now)
@@ -154,9 +178,9 @@ export const STATUS_ORDER: WorksiteStatus[] = [
 
 export function buckets(reads: ReadWorksite[], metier: Metier): StatusBucket[] {
   if (metier === "etudes") {
-    return STUDY_ORDER.map((status) => ({
+    return STUDY_COLUMNS.map((status) => ({
       status,
-      count: reads.filter((r) => r.study === status).length,
+      count: reads.filter((r) => r.column === status).length,
     }));
   }
   return STATUS_ORDER.map((status) => ({
@@ -173,6 +197,19 @@ function alert(read: ReadWorksite, reason: string): Alert {
     reason,
     amount: read.amountHT,
   };
+}
+
+/**
+ * Une affaire arrêtée ou en pause n'attend personne.
+ *
+ * Les listes de travail ne lisaient pas l'issue : un chantier signé puis
+ * arrêté (`arrete`, migration 103) serait resté « signé, aucune date de
+ * démarrage » indéfiniment, et une étude en pause aurait réclamé son acompte.
+ * C'est la règle des dossiers à attribuer et de « Mes dossiers », qui lisent
+ * `outcome IS NULL`. Le tableau, lui, les garde : l'affaire existe toujours.
+ */
+function avance(read: ReadWorksite): boolean {
+  return read.worksite.outcome === "";
 }
 
 /** Le total d'une liste de travail. Nul quand rien n'y est chiffré. */
@@ -197,7 +234,8 @@ export function alertTotal(rows: Alert[]): number | null {
  * plans rendus, ou d'une facture de solde. Chacune se lit sur une colonne
  * réelle, et chacune est peuplée.
  */
-export function studyAlerts(reads: ReadWorksite[]) {
+export function studyAlerts(all: ReadWorksite[]) {
+  const reads = all.filter(avance);
   const attente = reads
     .filter((r) => r.study === "acompte_attendu")
     .map((r) => alert(r, "Signée, acompte non encaissé — l'étude ne démarre pas"));
@@ -239,7 +277,8 @@ export function studyAlerts(reads: ReadWorksite[]) {
   return { unplanned: attente, running: production, toInvoice: aFacturer, noDeposit: avis };
 }
 
-export function alerts(reads: ReadWorksite[]) {
+export function alerts(all: ReadWorksite[]) {
+  const reads = all.filter(avance);
   const unplanned = reads
     .filter((r) => r.status === "a_planifier")
     .map((r) =>

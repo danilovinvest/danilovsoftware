@@ -44,9 +44,8 @@ function formatLastSeen(iso: string): string {
 function describeDevice(userAgent: string) {
   // L'application de bureau n'est pas un navigateur, et son user-agent ne
   // ressemble à aucun : sans cette branche elle s'affichait « Navigateur
-  // inconnu » — sur la ligne même que l'utilisateur doit reconnaître comme la
-  // sienne. La coque y écrit son système (`session.rs`), qui suffit à
-  // distinguer deux postes.
+  // inconnu ». Le CRM web montre la même liste — quelqu'un qui a installé
+  // l'application y voit sa session, et doit la reconnaître.
   const app = /^OMPT CRM desktop\/[^ ]+ \(([^)]+)\)/.exec(userAgent);
   if (app) {
     return { label: `Application OMPT sur ${app[1]}`, Icon: MonitorIcon };

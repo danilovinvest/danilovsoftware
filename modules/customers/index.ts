@@ -7,6 +7,9 @@ export { CustomerDetailView } from "./components/customer-detail-view";
 export { CustomerForm } from "./components/customer-form";
 export { CustomerWizard } from "./components/customer-wizard";
 export { EnumBadge } from "./components/enum-badge";
+// La lettre de la société devant un numéro de pièce : les chantiers la posent aussi.
+export { PieceRef } from "./components/piece-ref";
+export { issuerLetter, pieceRefText } from "./lib/piece-ref";
 // Exposé pour la recherche globale du shell (⌘K), qui interroge les fiches
 // sans pour autant dépendre des composants du module.
 export { listCustomers } from "./lib/api";
@@ -18,6 +21,7 @@ export * from "./lib/labels";
 export * from "./lib/cycle";
 // La mission, le numéro de dossier et les délais : lus aussi par l'écran Études.
 export * from "./lib/mission";
+export { EMPTY_COPRO } from "./lib/copro-jalons";
 export {
   EMPTY_JALONS,
   EMPTY_MARKS,
@@ -65,3 +69,20 @@ export { ImportView } from "./import";
 export { paymentCarrier, settlementOf } from "./lib/settlement";
 export { closeProject, type ClosurePayload } from "./lib/api";
 export { PlanEvent } from "./components/plan-event";
+// L'encaissement complet (29/09) : la liste « À affecter » de la facturation
+// affecte et saisit par les mêmes boîtes que la fiche.
+export { AllocateDialog } from "./components/allocate-dialog";
+export { ReceiptDialog } from "./components/receipt-dialog";
+export { listPendingReceipts } from "./lib/receipts-api";
+// Le recouvrement (migration 109) : lu aussi par Facturation → Recouvrement.
+export { RecoveryList } from "./components/recovery-list";
+export { PartnerRanking } from "./components/partner-ranking";
+export { AwaitingQuotesView } from "./components/awaiting-quotes-view";
+export { listAwaitingQuotes, type AwaitingQuote, type AwaitingQuotes } from "./lib/awaiting-api";
+export { groupAwaiting, amountAtStake, readAwaiting } from "./lib/awaiting";
+export { getSales, type SalesMonth, type SalesSummary } from "./lib/sales-api";
+export { listRecovery } from "./lib/syndic-api";
+export { listPurchases, type SupplierPurchases } from "./lib/supplier-orders";
+// Le rapprochement bancaire (migration 114) : Facturation → Rapprochement.
+export { BankReconciliation } from "./components/bank-reconciliation";
+export * from "./lib/receipt-types";
