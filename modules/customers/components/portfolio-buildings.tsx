@@ -5,6 +5,7 @@ import { formatAmount, formatDate, plural } from "@/shared/lib/format";
 import { BUILDING_STATE, periodText } from "../lib/syndic-labels";
 import type { PortfolioBuilding, PortfolioMoney } from "../lib/syndic-types";
 import { EnumBadge } from "./enum-badge";
+import { appHref } from "@/shared/lib/routes";
 
 /**
  * Les immeubles d'un portefeuille, avec ce que chacun a rapporté et doit
@@ -44,7 +45,7 @@ export function PortfolioBuildings({
             <tr key={building.id} className="align-top">
               <td className="px-3 py-2">
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <Link href={`/customers/${building.id}`} className="font-medium hover:underline">
+                  <Link href={appHref(`/customers/${building.id}`)} className="font-medium hover:underline">
                     {building.name}
                   </Link>
                   {building.state !== "gere" && (

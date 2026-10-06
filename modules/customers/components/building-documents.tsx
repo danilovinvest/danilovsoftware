@@ -13,6 +13,7 @@ import type { Building, BuildingDocument } from "../lib/building-types";
 import type { Project } from "../lib/types";
 import { BuildingDocumentDialog } from "./building-document-dialog";
 import { RowMenu } from "./row-menu";
+import { appHref } from "@/shared/lib/routes";
 
 /**
  * Le dossier réglementaire d'un immeuble (migration 110) : arrêtés de péril et
@@ -93,7 +94,7 @@ export function BuildingDocuments({
                   </div>
                   {document.project_id && (
                     <Link
-                      href={`/customers/${customerId}?affaire=${document.project_id}`}
+                      href={appHref(`/customers/${customerId}?affaire=${document.project_id}`)}
                       className="text-xs hover:underline"
                     >
                       Affaire : {document.project_label}

@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { appHref } from "@/shared/lib/routes";
 import { DEMOS, type Demo, type DemoStep } from "../lib/demos";
 import { goToStep, stopTour, useTour } from "../lib/tour";
 
@@ -59,8 +60,11 @@ function Spotlight({ demo, index, step }: { demo: Demo; index: number; step: Dem
     puis suit sa position — le contenu défile, la fenêtre change de taille.
   */
   useEffect(() => {
-    if (step.path && here !== step.path) {
-      router.push(step.path);
+    // Les démos écrivent leurs écrans à la forme web (`/customers/<id>`) :
+    // l'application les traduit vers celle qu'elle sait servir.
+    const target = step.path ? appHref(step.path) : null;
+    if (target && here !== target) {
+      router.push(target);
       return;
     }
     const started = performance.now();

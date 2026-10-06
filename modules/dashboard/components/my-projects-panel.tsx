@@ -7,6 +7,7 @@ import { formatDate, plural } from "@/shared/lib/format";
 import { Panel, RowShell, TONE_TEXT } from "@/shared/ui/panel";
 import type { Live, MyProjectRow } from "../hooks/use-live";
 import { PanelEmpty, PanelLink, PanelMore, PanelState } from "./parts";
+import { appHref } from "@/shared/lib/routes";
 
 const MAX_ROWS = 6;
 
@@ -64,7 +65,7 @@ function ProjectRow({ row }: { row: MyProjectRow }) {
   return (
     <RowShell className="p-0">
       <Link
-        href={`/customers/${project.customer_id}?affaire=${project.id}`}
+        href={appHref(`/customers/${project.customer_id}?affaire=${project.id}`)}
         className="block min-w-0 flex-1 px-4 py-2.5"
       >
         <span className="flex items-center gap-2">

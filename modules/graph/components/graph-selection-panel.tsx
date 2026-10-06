@@ -10,6 +10,7 @@ import { HUE } from "@/shared/ui/hue";
 import { CATEGORY_META } from "../lib/categories";
 import type { GraphModel, ModelNode } from "../lib/model";
 import { neighbourGroups } from "../lib/neighbours";
+import { appHref } from "@/shared/lib/routes";
 
 /**
  * Le panneau du nœud choisi : qui c'est, combien de connexions, et ses voisins
@@ -67,7 +68,7 @@ export function GraphSelectionPanel({
       {fiche && (
         <div className="flex flex-wrap gap-2">
           <Button asChild size="sm">
-            <Link href={`/customers/${fiche.id}`}>
+            <Link href={appHref(`/customers/${fiche.id}`)}>
               <ExternalLinkIcon />
               Ouvrir la fiche
             </Link>

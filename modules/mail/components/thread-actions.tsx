@@ -18,6 +18,7 @@ import { usePermission } from "@/modules/auth";
 import { cn } from "@/lib/utils";
 import { HUE } from "@/shared/ui/hue";
 import type { MailThread, ThreadMessage } from "../lib/types";
+import { appHref } from "@/shared/lib/routes";
 
 /**
  * Les gestes d'une conversation, du plus fréquent au plus rare.
@@ -93,7 +94,7 @@ export function ThreadActions({
 
       {thread.customer_id ? (
         <Button size="xs" variant="outline" asChild>
-          <Link href={`/customers/${thread.customer_id}`}>
+          <Link href={appHref(`/customers/${thread.customer_id}`)}>
             <UserRoundIcon />
             <span className="max-w-40 truncate">{thread.customer_name || "Ouvrir la fiche"}</span>
           </Link>

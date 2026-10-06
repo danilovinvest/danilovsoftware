@@ -19,6 +19,7 @@ import type {
   Quote,
   QuotePayment,
 } from "./types";
+import { customerHref } from "@/shared/lib/routes";
 
 /**
  * La fiche en graphe : tout ce qui gravite autour d'elle, sur un seul plan.
@@ -98,9 +99,9 @@ export function familyOf(customer: Pick<Customer, "kind" | "relation">): GraphFa
   return FAMILY_BY_RELATION[relationOf(customer).value];
 }
 
-const ficheHref = (id: string) => `/customers/${id}`;
+const ficheHref = (id: string) => customerHref(id);
 const affaireHref = (customerId: string, projectId: string, onglet?: string) =>
-  `/customers/${customerId}?affaire=${projectId}${onglet ? `&onglet=${onglet}` : ""}`;
+  `${customerHref(customerId)}&affaire=${projectId}${onglet ? `&onglet=${onglet}` : ""}`;
 
 /** Une facture se reconnaît à sa référence, comme partout dans le CRM. */
 export const isInvoice = (quote: Quote) => quote.reference.trim().toUpperCase().startsWith("FA");

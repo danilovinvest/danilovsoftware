@@ -14,6 +14,7 @@ import { splitQuote } from "../lib/quote";
 import { Attachments } from "./attachments";
 import { MailKindBadge } from "./mail-kind-badge";
 import type { MailMessage, MailProject } from "../lib/types";
+import { appHref } from "@/shared/lib/routes";
 
 /**
  * Un courriel de la fiche : une ligne, qui se déplie sur le message entier.
@@ -121,7 +122,7 @@ export function CustomerMailRow({
         <p className="text-muted-foreground px-3 pb-2 text-[11px] sm:pl-16" data-demo="mail-project-link">
           Chantier :{" "}
           <Link
-            href={`/customers/${project.customer_id}?affaire=${project.project_id}`}
+            href={appHref(`/customers/${project.customer_id}?affaire=${project.project_id}`)}
             className="text-foreground font-medium hover:underline"
           >
             {project.customer_name} — {project.label}

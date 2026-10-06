@@ -18,6 +18,7 @@ import { GraphFiltersPanel } from "./graph-filters-panel";
 import { GraphSelectionPanel } from "./graph-selection-panel";
 import { GraphSkeleton } from "./graph-skeleton";
 import { GraphStatsBar } from "./graph-stats-bar";
+import { appHref } from "@/shared/lib/routes";
 
 /**
  * Le graphe de toute la base : les fiches, leurs liens posés et ceux que leurs
@@ -53,7 +54,7 @@ export function CustomersGraphScreen() {
   }, []);
   const open = useCallback(
     (id: string) => {
-      if (!id.startsWith("hub:")) router.push(`/customers/${id}`);
+      if (!id.startsWith("hub:")) router.push(appHref(`/customers/${id}`));
     },
     [router],
   );

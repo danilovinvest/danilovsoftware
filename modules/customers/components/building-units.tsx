@@ -13,6 +13,7 @@ import type { Building, BuildingUnit } from "../lib/building-types";
 import type { Project } from "../lib/types";
 import { RowMenu } from "./row-menu";
 import { UnitDialog } from "./unit-dialog";
+import { appHref } from "@/shared/lib/routes";
 
 /**
  * Les lots d'un immeuble et leurs occupants (migration 110).
@@ -81,7 +82,7 @@ export function BuildingUnits({
                 {unit.occupant_name || unit.occupant_customer_id ? (
                   <div className="break-words">
                     {unit.occupant_customer_id ? (
-                      <Link href={`/customers/${unit.occupant_customer_id}`} className="font-medium hover:underline">
+                      <Link href={appHref(`/customers/${unit.occupant_customer_id}`)} className="font-medium hover:underline">
                         {unit.occupant_name || unit.occupant_customer_name}
                       </Link>
                     ) : (
@@ -110,7 +111,7 @@ export function BuildingUnits({
                   <div key={link.project_id} className="text-xs">
                     <span className="font-medium">{UNIT_PROJECT_ROLE[link.role].label}</span>
                     <span className="text-muted-foreground"> · </span>
-                    <Link href={`/customers/${customerId}?affaire=${link.project_id}`} className="hover:underline">
+                    <Link href={appHref(`/customers/${customerId}?affaire=${link.project_id}`)} className="hover:underline">
                       {link.label}
                     </Link>
                   </div>

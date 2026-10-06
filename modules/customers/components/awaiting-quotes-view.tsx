@@ -19,6 +19,7 @@ import { listAwaitingQuotes } from "../lib/awaiting-api";
 import type { CustomerDetail, Project, Quote } from "../lib/types";
 import { PieceRef } from "./piece-ref";
 import { RelanceDialog } from "./relance-dialog";
+import { appHref } from "@/shared/lib/routes";
 
 /**
  * « Devis sans réponse » : les devis envoyés que le client n'a ni signés ni
@@ -137,7 +138,7 @@ function AwaitingRow({ read, onChanged }: { read: AwaitingRead; onChanged: () =>
     <tr className="align-top">
       <td className="px-3 py-2">
         <Link
-          href={`/customers/${quote.customer_id}?affaire=${quote.project_id}&onglet=devis`}
+          href={appHref(`/customers/${quote.customer_id}?affaire=${quote.project_id}&onglet=devis`)}
           className="font-medium hover:underline"
         >
           {quote.customer_name}

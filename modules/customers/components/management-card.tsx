@@ -18,6 +18,7 @@ import { refreshSyndicViews } from "../lib/syndic-cache";
 import { periodText } from "../lib/syndic-labels";
 import type { SyndicPeriod } from "../lib/syndic-types";
 import { BillingRulesEditor } from "./billing-rules-editor";
+import { appHref } from "@/shared/lib/routes";
 
 /**
  * « Gestion » d'une copropriété, dans l'onglet Fiche (migration 109) : ses
@@ -74,7 +75,7 @@ export function ManagementCard({
                     {data.history.map((period) => (
                       <li key={period.link_id} className="flex flex-wrap items-baseline gap-x-2">
                         <Link
-                          href={`/customers/${period.syndic_id}?vue=portefeuille`}
+                          href={appHref(`/customers/${period.syndic_id}?vue=portefeuille`)}
                           className={period.current ? "font-medium hover:underline" : "hover:underline"}
                         >
                           {period.syndic_name}

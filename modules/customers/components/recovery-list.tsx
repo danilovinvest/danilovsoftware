@@ -9,6 +9,7 @@ import { pieceRefText } from "../lib/piece-ref";
 import { DUNNING_STAGE } from "../lib/syndic-labels";
 import type { Recovery } from "../lib/syndic-types";
 import { DunningDialog } from "./dunning-dialog";
+import { appHref } from "@/shared/lib/routes";
 
 /**
  * Les factures à recouvrer, et où en est la relance de chacune.
@@ -36,7 +37,7 @@ export function RecoveryList({
           <li key={item.quote_id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-2 text-sm">
             <span className="font-mono text-xs">{pieceRefText(item.issuer, item.reference)}</span>
             <Link
-              href={`/customers/${item.customer_id}?affaire=${item.project_id}&onglet=devis`}
+              href={appHref(`/customers/${item.customer_id}?affaire=${item.project_id}&onglet=devis`)}
               className="min-w-0 font-medium break-words hover:underline"
             >
               {item.customer_name}

@@ -17,6 +17,7 @@ import { PortfolioBuildings } from "./portfolio-buildings";
 import { PortfolioHandlers } from "./portfolio-handlers";
 import { RecoveryList } from "./recovery-list";
 import { SuccessorDialog } from "./successor-dialog";
+import { appHref } from "@/shared/lib/routes";
 
 /**
  * L'onglet « Portefeuille » d'un syndic ou d'un gestionnaire (feuille de route
@@ -210,7 +211,7 @@ function Chain({ members }: { members: ChainMember[] }) {
       {members.map((member, index) => (
         <span key={member.id}>
           {index > 0 && ", "}
-          <Link href={`/customers/${member.id}?vue=portefeuille`} className="text-foreground font-medium hover:underline">
+          <Link href={appHref(`/customers/${member.id}?vue=portefeuille`)} className="text-foreground font-medium hover:underline">
             {member.name}
           </Link>
           {member.started_at && ` (${formatDate(member.started_at)})`}

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { missingFields, relationOf, formatSiret } from "./classification";
 import { buildGraph } from "./graph";
+import { customerHref } from "@/shared/lib/routes";
 import type {
   Contact,
   Customer,
@@ -296,7 +297,7 @@ describe("buildGraph", () => {
     expect(edge("manager", "manager-contact:eske")).toBeDefined();
     expect(edge("manager", "manager-contact:hano")).toBeDefined();
     expect(edge("manager", "fiche:magda")).toBeDefined();
-    expect(node("fiche:magda")?.href).toBe("/customers/magda");
+    expect(node("fiche:magda")?.href).toBe(customerHref("magda"));
   });
 
   test("l'affaire est apportée par le syndic, par un seul nœud syndic", () => {

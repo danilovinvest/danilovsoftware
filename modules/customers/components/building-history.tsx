@@ -8,6 +8,7 @@ import { PROJECT_STAGE } from "../lib/labels";
 import { projectReference } from "../lib/mission";
 import type { Project, Quote } from "../lib/types";
 import { EnumBadge } from "./enum-badge";
+import { appHref } from "@/shared/lib/routes";
 
 /**
  * L'historique des interventions sur un immeuble, de la plus récente à la plus
@@ -60,7 +61,7 @@ export function BuildingHistory({
                     <td className="px-3 py-2 tabular-nums">{project.year ?? "—"}</td>
                     <td className="px-3 py-2">
                       <Link
-                        href={`/customers/${customerId}?affaire=${project.id}`}
+                        href={appHref(`/customers/${customerId}?affaire=${project.id}`)}
                         className="font-medium hover:underline"
                       >
                         {project.label}

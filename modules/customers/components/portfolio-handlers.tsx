@@ -9,6 +9,7 @@ import { formatPhone } from "@/shared/lib/format";
 import { useAction } from "../hooks/use-customers";
 import { setContactBuildings } from "../lib/syndic-api";
 import type { BuildingRef, Gestionnaire } from "../lib/syndic-types";
+import { appHref } from "@/shared/lib/routes";
 
 /**
  * Les gestionnaires d'un cabinet, et les immeubles dont chacun a la charge.
@@ -54,7 +55,7 @@ export function PortfolioHandlers({
               <span className="text-muted-foreground">aucun immeuble désigné</span>
             ) : (
               person.buildings.map((building) => (
-                <Link key={building.id} href={`/customers/${building.id}`} className="hover:underline">
+                <Link key={building.id} href={appHref(`/customers/${building.id}`)} className="hover:underline">
                   {building.name}
                 </Link>
               ))

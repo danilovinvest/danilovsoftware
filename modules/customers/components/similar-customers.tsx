@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { formatPhone } from "@/shared/lib/format";
 import { useDebounced } from "../hooks/use-customers";
 import { findSimilarCustomers, similarReason, type SimilarCustomer } from "../lib/similar";
+import { appHref } from "@/shared/lib/routes";
 
 /**
  * Les fiches qui ressemblent à celle qu'on crée, pendant qu'on la crée.
@@ -75,7 +76,7 @@ export function SimilarCustomers({
         {items.map((item) => (
           <li key={item.id}>
             <Link
-              href={`/customers/${item.id}`}
+              href={appHref(`/customers/${item.id}`)}
               className="hover:bg-background/60 flex items-center gap-2 rounded-md px-1.5 py-1 text-sm"
             >
               <span className="min-w-0 flex-1 truncate">

@@ -23,6 +23,7 @@ import type {
   ProjectStage,
   Referrer,
 } from "../lib/types";
+import { appHref } from "@/shared/lib/routes";
 
 /** Le jour local, AAAA-MM-JJ. */
 function aujourdhui(): string {
@@ -184,7 +185,7 @@ export function CustomerWizard() {
     if (force) setForced(key);
     setConfirming(false);
     const id = await submit.run();
-    if (id) router.push(`/customers/${id}`);
+    if (id) router.push(appHref(`/customers/${id}`));
   }
 
   function finish(event: React.FormEvent) {

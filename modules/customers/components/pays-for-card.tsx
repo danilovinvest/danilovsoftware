@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { plural } from "@/shared/lib/format";
 import { PROJECT_STAGE } from "../lib/labels";
 import type { PaysFor } from "../lib/types";
+import { appHref } from "@/shared/lib/routes";
 
 /**
  * « Règle pour » : les affaires que cette fiche paie pour d'autres
@@ -30,7 +31,7 @@ export function PaysForCard({ paysFor }: { paysFor: PaysFor }) {
           {paysFor.projects.map((project) => (
             <li key={project.id} className="flex flex-wrap items-baseline gap-x-2 py-2">
               <Link
-                href={`/customers/${project.customer_id}?affaire=${project.id}`}
+                href={appHref(`/customers/${project.customer_id}?affaire=${project.id}`)}
                 className="font-medium hover:underline"
               >
                 {project.customer_name}

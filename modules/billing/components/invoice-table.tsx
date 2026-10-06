@@ -18,6 +18,7 @@ import { Panel, TONE_SOFT } from "@/shared/ui/panel";
 import { entityName } from "@/modules/group";
 import { INVOICE_KIND, INVOICE_STATUS, STATUS_ORDER } from "../lib/labels";
 import type { Invoice, InvoiceStatus } from "../lib/types";
+import { appHref } from "@/shared/lib/routes";
 
 /**
  * Le journal des ventes.
@@ -110,7 +111,7 @@ export function InvoiceTable({
                     <TableCell className="max-w-72">
                       <p className="truncate text-sm">
                         <Link
-                          href={`/customers/${invoice.customer_id}?affaire=${invoice.project_id}&onglet=devis`}
+                          href={appHref(`/customers/${invoice.customer_id}?affaire=${invoice.project_id}&onglet=devis`)}
                           className="hover:underline"
                         >
                           {invoice.customer_name}

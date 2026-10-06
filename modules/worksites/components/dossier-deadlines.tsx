@@ -10,6 +10,7 @@ import { projectReference } from "@/modules/customers";
 import { scopeParam, useScope } from "@/modules/group";
 import { listWorksites } from "../lib/api";
 import { deadlinesBetween } from "../lib/deadlines";
+import { appHref } from "@/shared/lib/routes";
 
 /** Le jour local d'une date, `AAAA-MM-JJ` — jamais `toISOString`, qui parle UTC. */
 function localDay(d: Date): string {
@@ -68,7 +69,7 @@ export function DossierDeadlines({ from, to }: { from: Date; to: Date }) {
           {items.map((d) => (
             <li key={`${d.worksiteId}:${d.kind}`} className="shrink-0">
               <Link
-                href={`/customers/${d.customerId}?affaire=${d.worksiteId}`}
+                href={appHref(`/customers/${d.customerId}?affaire=${d.worksiteId}`)}
                 className={cn(
                   "hover:bg-accent/40 flex max-w-64 flex-col rounded-md border border-l-4 px-2 py-1 text-[11px]",
                   d.late ? "border-l-danger" : d.kind === "promis" ? "border-l-warning" : "border-l-info",

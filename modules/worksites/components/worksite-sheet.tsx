@@ -41,6 +41,7 @@ import { ErrorNotice } from "@/shared/ui/feedback";
 import { STUDY_COLUMN, WORKSITE_STATUS } from "../lib/labels";
 import { isSilent } from "../lib/derive";
 import type { Metier, ReadWorksite, WorksiteQuote } from "../lib/types";
+import { appHref } from "@/shared/lib/routes";
 
 /** Le devis signé de l'affaire, celui qui porte le règlement. */
 /** La pièce qui porte le règlement : la même que la fiche client lit et écrit. */
@@ -407,7 +408,7 @@ function Body({
 
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline" size="sm">
-            <Link href={`/customers/${w.customer_id}`}>
+            <Link href={appHref(`/customers/${w.customer_id}`)}>
               Ouvrir la fiche client
             </Link>
           </Button>

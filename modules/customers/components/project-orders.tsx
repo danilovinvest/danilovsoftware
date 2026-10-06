@@ -23,6 +23,7 @@ import { projectMargin, type MarginQuote } from "../lib/margin";
 import { EnumBadge } from "./enum-badge";
 import { OrderDialog } from "./order-dialog";
 import { RowMenu } from "./row-menu";
+import { appHref } from "@/shared/lib/routes";
 
 /**
  * Les commandes fournisseur d'une affaire, sous ses devis (migration 111).
@@ -117,7 +118,7 @@ export function ProjectOrders({
                     <EnumBadge value={order.status} entries={ORDER_STATUS} />
                   </div>
                   <div className="text-muted-foreground text-xs break-words">
-                    <Link href={`/customers/${order.supplier_id}?vue=commandes`} className="hover:underline">
+                    <Link href={appHref(`/customers/${order.supplier_id}?vue=commandes`)} className="hover:underline">
                       {order.supplier_name}
                     </Link>
                     {[

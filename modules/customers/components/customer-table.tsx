@@ -36,6 +36,7 @@ import {
   readListProject,
 } from "./customer-list-parts";
 import type { CustomerFilters, CustomerListItem, Review } from "../lib/types";
+import { appHref } from "@/shared/lib/routes";
 
 /**
  * La liste des fiches, relue autour du cycle.
@@ -229,7 +230,7 @@ export function CustomerTable({
 
                         <TableCell>
                           <Link
-                            href={`/customers/${customer.id}`}
+                            href={appHref(`/customers/${customer.id}`)}
                             className="font-medium hover:underline"
                           >
                             {customer.display_name}
@@ -308,7 +309,7 @@ export function CustomerTable({
                             <TableCell className="py-2">
                               <div className="border-border ml-1 border-l pl-3">
                                 <Link
-                                  href={`/customers/${customer.id}`}
+                                  href={appHref(`/customers/${customer.id}`)}
                                   className="text-sm hover:underline"
                                 >
                                   {project.label}

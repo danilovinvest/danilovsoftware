@@ -15,6 +15,7 @@ import { LIVE, useCached } from "@/shared/api/cache";
 import { EmptyState, ErrorNotice } from "@/shared/ui/feedback";
 import { TableSkeleton } from "@/shared/ui/loading";
 import { formatAmount, formatDate, plural } from "@/shared/lib/format";
+import { appHref } from "@/shared/lib/routes";
 
 /**
  * « À affecter » : les virements reçus qui ne règlent encore aucune pièce
@@ -100,7 +101,7 @@ function PendingTable({
             {part.bank_account_label || "compte non dit"}
           </span>
           {part.customer_id ? (
-            <Link href={`/customers/${part.customer_id}`} className="text-xs font-medium hover:underline">
+            <Link href={appHref(`/customers/${part.customer_id}`)} className="text-xs font-medium hover:underline">
               {part.customer_name}
             </Link>
           ) : (

@@ -8,6 +8,7 @@ import { TableSkeleton } from "@/shared/ui/loading";
 import { formatAmount, formatDate, plural } from "@/shared/lib/format";
 import { PARTNER_LINK, PARTNER_STATE, getPartnerSpace, type PartnerTotals } from "../lib/partners";
 import { EnumBadge } from "./enum-badge";
+import { appHref } from "@/shared/lib/routes";
 
 /**
  * L'onglet « Partenaire » d'un prescripteur, d'un architecte ou d'un apporteur
@@ -63,7 +64,7 @@ export function PartnerPanel({ customerId }: { customerId: string }) {
               <tr key={project.project_id} className="align-top">
                 <td className="px-3 py-2">
                   <Link
-                    href={`/customers/${project.customer_id}?affaire=${project.project_id}`}
+                    href={appHref(`/customers/${project.customer_id}?affaire=${project.project_id}`)}
                     className="font-medium hover:underline"
                   >
                     {project.customer_name}

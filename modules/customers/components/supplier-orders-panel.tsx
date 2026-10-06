@@ -9,6 +9,7 @@ import { formatAmount, formatDate, plural, todayLocal } from "@/shared/lib/forma
 import { DELIVERY_MODE, ORDER_STATUS, listSupplierOrders, orderCost, orderLate } from "../lib/supplier-orders";
 import { EnumBadge } from "./enum-badge";
 import { InvoiceLine } from "./project-orders";
+import { appHref } from "@/shared/lib/routes";
 
 /**
  * L'onglet « Commandes » d'un fournisseur (feuille de route du 29/09,
@@ -67,7 +68,7 @@ export function SupplierOrdersPanel({ supplierId }: { supplierId: string }) {
                 </div>
                 <div className="text-xs break-words">
                   <Link
-                    href={`/customers/${order.customer_id}?affaire=${order.project_id}&onglet=devis`}
+                    href={appHref(`/customers/${order.customer_id}?affaire=${order.project_id}&onglet=devis`)}
                     className="font-medium hover:underline"
                   >
                     {order.customer_name}

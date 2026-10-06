@@ -9,6 +9,7 @@ import { EmptyState, ErrorNotice } from "@/shared/ui/feedback";
 import { SelectField } from "@/shared/ui/form";
 import { TableSkeleton } from "@/shared/ui/loading";
 import { formatAmount, formatDate, plural } from "@/shared/lib/format";
+import { appHref } from "@/shared/lib/routes";
 
 /**
  * « Achats » : ce qu'on commande à chaque fournisseur, ce qu'il facture, et ce
@@ -85,7 +86,7 @@ export function PurchasesView() {
               {rows.map((row) => (
                 <tr key={row.supplier_id} className="align-top">
                   <td className="px-3 py-2">
-                    <Link href={`/customers/${row.supplier_id}?vue=commandes`} className="font-medium hover:underline">
+                    <Link href={appHref(`/customers/${row.supplier_id}?vue=commandes`)} className="font-medium hover:underline">
                       {row.supplier_name}
                     </Link>
                     <div className="text-muted-foreground text-xs">

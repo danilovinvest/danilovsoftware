@@ -8,6 +8,7 @@ import { TableSkeleton } from "@/shared/ui/loading";
 import { formatAmount, plural } from "@/shared/lib/format";
 import { CUSTOMER_KIND } from "../lib/labels";
 import { listPartnerRanking } from "../lib/partners";
+import { appHref } from "@/shared/lib/routes";
 
 /**
  * Le classement des partenaires : qui amène des affaires, combien se signent,
@@ -65,7 +66,7 @@ export function PartnerRanking() {
                 <tr key={row.partner_id} className="align-top">
                   <td className="px-3 py-2">
                     <span className="text-muted-foreground mr-2 tabular-nums">{index + 1}.</span>
-                    <Link href={`/customers/${row.partner_id}?vue=partenaire`} className="font-medium hover:underline">
+                    <Link href={appHref(`/customers/${row.partner_id}?vue=partenaire`)} className="font-medium hover:underline">
                       {row.partner_name}
                     </Link>
                     <div className="text-muted-foreground text-xs">
